@@ -7,6 +7,7 @@ using Confuser.DynCipher;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
+using dnlib.DotNet.Pdb;
 using dnlib.DotNet.Writer;
 
 namespace Confuser.Protections.ControlFlow {
@@ -99,6 +100,14 @@ namespace Confuser.Protections.ControlFlow {
 
 			body.Instructions.Clear();
 			root.ToBody(body);
+			if (body.PdbMethod != null) {
+				body.PdbMethod = new PdbMethod() {
+					Scope = new PdbScope() {
+						Start = body.Instructions.First(),
+						End = body.Instructions.Last()
+					}
+				};
+			}
 			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
 				var index = body.Instructions.IndexOf(eh.TryEnd) + 1;
 				eh.TryEnd = index < body.Instructions.Count ? body.Instructions[index] : null;

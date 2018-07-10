@@ -179,7 +179,7 @@ namespace Confuser.Core {
 				PrintEnvironmentInfo(context);
 			}
 			catch (TypeResolveException ex) {
-                context.Logger.ErrorException("Failed to resolve a type, check if all dependencies are present in the correct version.", ex);
+				context.Logger.ErrorException("Failed to resolve a type, check if all dependencies are present in the correct version.", ex);
 				PrintEnvironmentInfo(context);
 			}
 			catch (MemberRefResolveException ex) {
@@ -219,11 +219,9 @@ namespace Confuser.Core {
 			pipeline.ExecuteStage(PipelineStage.Inspection, Inspection, () => getAllDefs(), context);
 
 			var options = new ModuleWriterOptionsBase[context.Modules.Count];
-			var listeners = new ModuleWriterListener[context.Modules.Count];
 			for (int i = 0; i < context.Modules.Count; i++) {
 				context.CurrentModuleIndex = i;
 				context.CurrentModuleWriterOptions = null;
-				context.CurrentModuleWriterListener = null;
 
 				pipeline.ExecuteStage(PipelineStage.BeginModule, BeginModule, () => getModuleDefs(context.CurrentModule), context);
 				pipeline.ExecuteStage(PipelineStage.ProcessModule, ProcessModule, () => getModuleDefs(context.CurrentModule), context);
@@ -231,20 +229,17 @@ namespace Confuser.Core {
 				pipeline.ExecuteStage(PipelineStage.EndModule, EndModule, () => getModuleDefs(context.CurrentModule), context);
 
 				options[i] = context.CurrentModuleWriterOptions;
-				listeners[i] = context.CurrentModuleWriterListener;
 			}
 
 			for (int i = 0; i < context.Modules.Count; i++) {
 				context.CurrentModuleIndex = i;
 				context.CurrentModuleWriterOptions = options[i];
-				context.CurrentModuleWriterListener = listeners[i];
 
 				pipeline.ExecuteStage(PipelineStage.WriteModule, WriteModule, () => getModuleDefs(context.CurrentModule), context);
 
 				context.OutputModules[i] = context.CurrentModuleOutput;
 				context.OutputSymbols[i] = context.CurrentModuleSymbol;
 				context.CurrentModuleWriterOptions = null;
-				context.CurrentModuleWriterListener = null;
 				context.CurrentModuleOutput = null;
 				context.CurrentModuleSymbol = null;
 			}
@@ -262,7 +257,7 @@ namespace Confuser.Core {
 		static void Inspection(ConfuserContext context) {
 			context.Logger.Info("Resolving dependencies...");
 			foreach (var dependency in context.Modules
-			                                  .SelectMany(module => module.GetAssemblyRefs().Select(asmRef => Tuple.Create(asmRef, module)))) {
+											  .SelectMany(module => module.GetAssemblyRefs().Select(asmRef => Tuple.Create(asmRef, module)))) {
 				try {
 					AssemblyDef assembly = context.Resolver.ResolveThrow(dependency.Item1, dependency.Item2);
 				}
@@ -280,7 +275,7 @@ namespace Confuser.Core {
 				else if (snKey != null && !module.IsStrongNameSigned)
 					context.Logger.WarnFormat("[{0}] SN Key is provided for an unsigned module, the output may not be working.", module.Name);
 				else if (snKey != null && module.IsStrongNameSigned &&
-				         !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
+						 !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
 					context.Logger.WarnFormat("[{0}] Provided SN Key and signed module's public key do not match, the output may not be working.", module.Name);
 			}
 
@@ -328,7 +323,7 @@ namespace Confuser.Core {
 		}
 
 		static void CopyPEHeaders(PEHeadersOptions writerOptions, ModuleDefMD module) {
-			var image = module.MetaData.PEImage;
+			var image = module.Metadata.PEImage;
 			writerOptions.MajorImageVersion = image.ImageNTHeaders.OptionalHeader.MajorImageVersion;
 			writerOptions.MajorLinkerVersion = image.ImageNTHeaders.OptionalHeader.MajorLinkerVersion;
 			writerOptions.MajorOperatingSystemVersion = image.ImageNTHeaders.OptionalHeader.MajorOperatingSystemVersion;
@@ -342,14 +337,13 @@ namespace Confuser.Core {
 		static void BeginModule(ConfuserContext context) {
 			context.Logger.InfoFormat("Processing module '{0}'...", context.CurrentModule.Name);
 
-			context.CurrentModuleWriterListener = new ModuleWriterListener();
-			context.CurrentModuleWriterListener.OnWriterEvent += (sender, e) => context.CheckCancellation();
-			context.CurrentModuleWriterOptions = new ModuleWriterOptions(context.CurrentModule, context.CurrentModuleWriterListener);
+			context.CurrentModuleWriterOptions = new ModuleWriterOptions(context.CurrentModule);
+			context.CurrentModuleWriterOptions.WriterEvent += (sender, e) => context.CheckCancellation();
 			CopyPEHeaders(context.CurrentModuleWriterOptions.PEHeadersOptions, context.CurrentModule);
 
 			if (!context.CurrentModule.IsILOnly || context.CurrentModule.VTableFixups != null)
 				context.RequestNative();
-			
+
 			var snKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNKey);
 			context.CurrentModuleWriterOptions.InitializeStrongNameSigning(context.CurrentModule, snKey);
 
@@ -451,11 +445,11 @@ namespace Confuser.Core {
 
 				Type mono = Type.GetType("Mono.Runtime");
 				context.Logger.InfoFormat("Running on {0}, {1}, {2} bits",
-				                          Environment.OSVersion,
-				                          mono == null ?
-					                          ".NET Framework v" + Environment.Version :
-					                          mono.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null),
-				                          IntPtr.Size * 8);
+										  Environment.OSVersion,
+										  mono == null ?
+											  ".NET Framework v" + Environment.Version :
+											  mono.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null),
+										  IntPtr.Size * 8);
 			}
 		}
 
@@ -464,7 +458,7 @@ namespace Confuser.Core {
 
 			using (RegistryKey ndpKey =
 				RegistryKey.OpenRemoteBaseKey(RegistryHive.LocalMachine, "").
-				            OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\")) {
+							OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\")) {
 				foreach (string versionKeyName in ndpKey.GetSubKeyNames()) {
 					if (!versionKeyName.StartsWith("v"))
 						continue;
@@ -496,7 +490,7 @@ namespace Confuser.Core {
 
 			using (RegistryKey ndpKey =
 				RegistryKey.OpenRemoteBaseKey(RegistryHive.LocalMachine, "").
-				            OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\")) {
+							OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\")) {
 				if (ndpKey.GetValue("Release") == null)
 					yield break;
 				var releaseKey = (int)ndpKey.GetValue("Release");

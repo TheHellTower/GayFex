@@ -64,10 +64,10 @@ namespace Confuser.Renamer.Analyzers {
 						#region Niks patch fix
 
 						/*
-                         * Nik's patch for maintaining relative paths. If the xaml file is referenced in this manner
-                         * "/some.namespace;component/somefolder/somecontrol.xaml"
-                         * then we want to keep the relative path and namespace intact. We should be obfuscating it like this - /some.namespace;component/somefolder/asjdjh2398498dswk.xaml
-                        * */
+						 * Nik's patch for maintaining relative paths. If the xaml file is referenced in this manner
+						 * "/some.namespace;component/somefolder/somecontrol.xaml"
+						 * then we want to keep the relative path and namespace intact. We should be obfuscating it like this - /some.namespace;component/somefolder/asjdjh2398498dswk.xaml
+						* */
 
 						string[] completePath = newName.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
 						string newShinyName = string.Empty;
@@ -108,6 +108,8 @@ namespace Confuser.Renamer.Analyzers {
 			if (wpfResInfo == null)
 				return;
 
+			var newResources = new List<EmbeddedResource>();
+
 			foreach (EmbeddedResource res in module.Resources.OfType<EmbeddedResource>()) {
 				Dictionary<string, BamlDocument> resInfo;
 
@@ -117,8 +119,7 @@ namespace Confuser.Renamer.Analyzers {
 				var stream = new MemoryStream();
 				var writer = new ResourceWriter(stream);
 
-				res.Data.Position = 0;
-				var reader = new ResourceReader(new ImageStream(res.Data));
+				var reader = new ResourceReader(res.CreateReader().AsStream());
 				IDictionaryEnumerator enumerator = reader.GetEnumerator();
 				while (enumerator.MoveNext()) {
 					var name = (string)enumerator.Key;
@@ -140,7 +141,12 @@ namespace Confuser.Renamer.Analyzers {
 					writer.AddResourceData(name, typeName, data);
 				}
 				writer.Generate();
-				res.Data = MemoryImageStream.Create(stream.ToArray());
+				newResources.Add(new EmbeddedResource(res.Name, stream.ToArray(), res.Attributes));
+			}
+
+			foreach (EmbeddedResource res in newResources) {
+				int index = module.Resources.IndexOfEmbeddedResource(res.Name);
+				module.Resources[index] = res;
 			}
 		}
 
@@ -153,11 +159,11 @@ namespace Confuser.Renamer.Analyzers {
 					var regMethod = (IMethod)instr.Operand;
 
 					if (regMethod.DeclaringType.FullName == "System.Windows.DependencyProperty" &&
-					    regMethod.Name.String.StartsWith("Register")) {
+						regMethod.Name.String.StartsWith("Register")) {
 						dpRegInstrs.Add(Tuple.Create(regMethod.Name.String.StartsWith("RegisterAttached"), instr));
 					}
 					else if (regMethod.DeclaringType.FullName == "System.Windows.EventManager" &&
-					         regMethod.Name.String == "RegisterRoutedEvent") {
+							 regMethod.Name.String == "RegisterRoutedEvent") {
 						routedEvtRegInstrs.Add(instr);
 					}
 				}
@@ -165,7 +171,7 @@ namespace Confuser.Renamer.Analyzers {
 					var methodRef = (IMethod)instr.Operand;
 
 					if (methodRef.DeclaringType.FullName == "System.Windows.Data.PropertyGroupDescription" &&
-					    methodRef.Name == ".ctor" && i - 1 >= 0 && method.Body.Instructions[i - 1].OpCode.Code == Code.Ldstr) {
+						methodRef.Name == ".ctor" && i - 1 >= 0 && method.Body.Instructions[i - 1].OpCode.Code == Code.Ldstr) {
 						foreach (var property in analyzer.LookupProperty((string)method.Body.Instructions[i - 1].Operand))
 							service.SetCanRename(property, false);
 					}
@@ -249,10 +255,10 @@ namespace Confuser.Renamer.Analyzers {
 				if (!found) {
 					if (instrInfo.Item1)
 						context.Logger.WarnFormat("Failed to find the accessors of attached dependency property '{0}' in type '{1}'.",
-						                          name, declType.FullName);
+												  name, declType.FullName);
 					else
 						context.Logger.WarnFormat("Failed to find the CLR property of normal dependency property '{0}' in type '{1}'.",
-						                          name, declType.FullName);
+												  name, declType.FullName);
 				}
 			}
 
@@ -279,7 +285,7 @@ namespace Confuser.Renamer.Analyzers {
 				EventDef eventDef = null;
 				if ((eventDef = declType.FindEvent(name)) == null) {
 					context.Logger.WarnFormat("Failed to find the CLR event of routed event '{0}' in type '{1}'.",
-					                          name, declType.FullName);
+											  name, declType.FullName);
 					continue;
 				}
 				service.SetCanRename(eventDef, false);
@@ -315,8 +321,7 @@ namespace Confuser.Renamer.Analyzers {
 
 				var resInfo = new Dictionary<string, BamlDocument>();
 
-				res.Data.Position = 0;
-				var reader = new ResourceReader(new ImageStream(res.Data));
+				var reader = new ResourceReader(res.CreateReader().AsStream());
 				IDictionaryEnumerator enumerator = reader.GetEnumerator();
 				while (enumerator.MoveNext()) {
 					var name = (string)enumerator.Key;

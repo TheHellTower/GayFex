@@ -45,10 +45,16 @@ namespace Confuser.Renamer.Analyzers {
 			// CustomAttribute
 			table = module.TablesStream.Get(Table.CustomAttribute);
 			len = table.Rows;
-			IEnumerable<CustomAttribute> attrs = Enumerable.Range(1, (int)len)
-			                                               .Select(rid => module.ResolveHasCustomAttribute(module.TablesStream.ReadCustomAttributeRow((uint)rid).Parent))
-			                                               .Distinct()
-			                                               .SelectMany(owner => owner.CustomAttributes);
+			var attrs = Enumerable.Range(1, (int)len)
+				.Select(rid => {
+					if (module.TablesStream.TryReadCustomAttributeRow((uint)rid, out var row)) {
+						return module.ResolveHasCustomAttribute(row.Parent);
+					}
+					return null;
+				})
+				.Where(a => a != null)
+				.Distinct()
+				.SelectMany(owner => owner.CustomAttributes);
 			foreach (CustomAttribute attr in attrs) {
 				if (attr.Constructor is MemberRef)
 					AnalyzeMemberRef(context, service, (MemberRef)attr.Constructor);
@@ -126,7 +132,7 @@ namespace Confuser.Renamer.Analyzers {
 				Debug.Assert(!(inst.GenericType.TypeDefOrRef is TypeSpec));
 				TypeDef openType = inst.GenericType.TypeDefOrRef.ResolveTypeDefThrow();
 				if (!context.Modules.Contains((ModuleDefMD)openType.Module) ||
-				    memberRef.IsArrayAccessors())
+					memberRef.IsArrayAccessors())
 					return;
 
 				IDnlibDef member;

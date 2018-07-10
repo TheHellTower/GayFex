@@ -30,7 +30,7 @@ namespace Confuser.Renamer {
 			if (other == null)
 				return false;
 			return new SigComparer().Equals(MethodSig, other.MethodSig) &&
-			       Name.Equals(other.Name, StringComparison.Ordinal);
+				   Name.Equals(other.Name, StringComparison.Ordinal);
 		}
 
 		public override int GetHashCode() {
@@ -53,7 +53,7 @@ namespace Confuser.Renamer {
 		}
 
 		public override string ToString() {
-			return FullNameCreator.MethodFullName("", Name, MethodSig);
+			return FullNameFactory.MethodFullName("", Name, MethodSig);
 		}
 	}
 
@@ -136,10 +136,10 @@ namespace Confuser.Renamer {
 			var ret = new VTable(typeDef.ToTypeSig());
 
 			var virtualMethods = typeDef.Methods
-			                            .Where(method => method.IsVirtual)
-			                            .ToDictionary(
-				                            method => VTableSignature.FromMethod(method),
-				                            method => method
+										.Where(method => method.IsVirtual)
+										.ToDictionary(
+											method => VTableSignature.FromMethod(method),
+											method => method
 				);
 
 			// See Partition II 12.2 for implementation algorithm
@@ -221,7 +221,7 @@ namespace Confuser.Renamer {
 						var targetSlot = vTbl.AllSlots.Single(slot => slot.MethodDef == targetMethod);
 						CheckKeyExist(storage, vTbl.SlotsMap, targetSlot.Signature, "MethodImpl Normal Sig");
 						targetSlot = vTbl.SlotsMap[targetSlot.Signature]; // Use the most derived slot
-						// Maybe implemented by above processes --- this process should take priority
+																		  // Maybe implemented by above processes --- this process should take priority
 						while (targetSlot.MethodDef.DeclaringType == typeDef)
 							targetSlot = targetSlot.Overrides;
 						vTbl.SlotsMap[targetSlot.Signature] = targetSlot.OverridedBy(method.Value);
@@ -246,7 +246,7 @@ namespace Confuser.Renamer {
 			Func<VTableSlot, VTableSlot> implLookup = slot => {
 				MethodDef impl;
 				if (virtualMethods.TryGetValue(slot.Signature, out impl) &&
-				    impl.IsNewSlot && !impl.DeclaringType.IsInterface) {
+					impl.IsNewSlot && !impl.DeclaringType.IsInterface) {
 					// Interface methods cannot implements base interface methods.
 					// The Overrides of interface slots should directly points to the root interface slot
 					var targetSlot = slot;
@@ -286,7 +286,7 @@ namespace Confuser.Renamer {
 				// when a derived type shadow the base type using newslot.
 				// In this case, use the derived type's slot in SlotsMap.
 
-				// The derived type's slots are always at a later position 
+				// The derived type's slots are always at a later position
 				// than the base type, so it would naturally 'override'
 				// their position in SlotsMap.
 				vTbl.SlotsMap[slot.Signature] = slot;
@@ -376,7 +376,7 @@ namespace Confuser.Renamer {
 			}
 			foreach (var iface in vTable.InterfaceSlots) {
 				ret.InterfaceSlots.Add(GenericArgumentResolver.Resolve(iface.Key, genInst.GenericArguments),
-				                       iface.Value.Select(slot => ResolveSlot(openType, slot, genInst.GenericArguments)).ToList());
+									   iface.Value.Select(slot => ResolveSlot(openType, slot, genInst.GenericArguments)).ToList());
 			}
 			return ret;
 		}

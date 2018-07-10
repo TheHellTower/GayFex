@@ -125,12 +125,6 @@ namespace Confuser.Core {
 		public ModuleWriterOptionsBase CurrentModuleWriterOptions { get; internal set; }
 
 		/// <summary>
-		///     Gets the writer event listener of the current module.
-		/// </summary>
-		/// <value>The writer event listener.</value>
-		public ModuleWriterListener CurrentModuleWriterListener { get; internal set; }
-
-		/// <summary>
 		///     Gets output <c>byte[]</c> of the current module
 		/// </summary>
 		/// <value>The output <c>byte[]</c>.</value>
@@ -165,17 +159,17 @@ namespace Confuser.Core {
 			if (CurrentModule == null)
 				return null;
 			if (CurrentModuleWriterOptions == null)
-				CurrentModuleWriterOptions = new NativeModuleWriterOptions(CurrentModule);
+				CurrentModuleWriterOptions = new NativeModuleWriterOptions(CurrentModule, true);
 
 			if (CurrentModuleWriterOptions is NativeModuleWriterOptions)
 				return (NativeModuleWriterOptions)CurrentModuleWriterOptions;
-			var newOptions = new NativeModuleWriterOptions(CurrentModule, CurrentModuleWriterOptions.Listener);
+			var newOptions = new NativeModuleWriterOptions(CurrentModule, true);
 			// Clone the current options to the new options
 			newOptions.AddCheckSum = CurrentModuleWriterOptions.AddCheckSum;
 			newOptions.Cor20HeaderOptions = CurrentModuleWriterOptions.Cor20HeaderOptions;
 			newOptions.Logger = CurrentModuleWriterOptions.Logger;
-			newOptions.MetaDataLogger = CurrentModuleWriterOptions.MetaDataLogger;
-			newOptions.MetaDataOptions = CurrentModuleWriterOptions.MetaDataOptions;
+			newOptions.MetadataLogger = CurrentModuleWriterOptions.MetadataLogger;
+			newOptions.MetadataOptions = CurrentModuleWriterOptions.MetadataOptions;
 			newOptions.ModuleKind = CurrentModuleWriterOptions.ModuleKind;
 			newOptions.PEHeadersOptions = CurrentModuleWriterOptions.PEHeadersOptions;
 			newOptions.ShareMethodBodies = CurrentModuleWriterOptions.ShareMethodBodies;

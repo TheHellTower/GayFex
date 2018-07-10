@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Confuser.Core;
 using dnlib.DotNet;
+using dnlib.DotNet.Pdb;
 
 namespace Confuser.Renamer {
 	internal class RenamePhase : ProtectionPhase {
@@ -55,7 +56,7 @@ namespace Confuser.Renamer {
 							if (!string.IsNullOrEmpty(local.Name))
 								local.Name = service.ObfuscateName(local.Name, mode);
 						}
-						method.Body.Scope = null;
+						method.Body.PdbMethod.Scope = new PdbScope();
 					}
 				}
 

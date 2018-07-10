@@ -8,6 +8,7 @@ using Confuser.DynCipher.Generation;
 using Confuser.Renamer;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
@@ -63,24 +64,31 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			nativeCodes.Add(Tuple.Create(native, code, (MethodBody)null));
 			if (!addedHandler) {
-				ctx.Context.CurrentModuleWriterListener.OnWriterEvent += InjectNativeCode;
+				ctx.Context.CurrentModuleWriterOptions.WriterEvent += InjectNativeCode;
 				addedHandler = true;
 			}
 		}
 
-		void InjectNativeCode(object sender, ModuleWriterListenerEventArgs e) {
+		void InjectNativeCode(object sender, ModuleWriterEventArgs e) {
 			var writer = (ModuleWriterBase)sender;
-			if (e.WriterEvent == ModuleWriterEvent.MDEndWriteMethodBodies) {
+			if (e.Event == ModuleWriterEvent.MDEndWriteMethodBodies) {
 				for (int n = 0; n < nativeCodes.Count; n++)
 					nativeCodes[n] = new Tuple<MethodDef, byte[], MethodBody>(
 						nativeCodes[n].Item1,
 						nativeCodes[n].Item2,
 						writer.MethodBodies.Add(new MethodBody(nativeCodes[n].Item2)));
 			}
-			else if (e.WriterEvent == ModuleWriterEvent.EndCalculateRvasAndFileOffsets) {
+			else if (e.Event == ModuleWriterEvent.EndCalculateRvasAndFileOffsets) {
 				foreach (var native in nativeCodes) {
-					uint rid = writer.MetaData.GetRid(native.Item1);
-					writer.MetaData.TablesHeap.MethodTable[rid].RVA = (uint)native.Item3.RVA;
+					uint rid = writer.Metadata.GetRid(native.Item1);
+          RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[rid];
+          writer.Metadata.TablesHeap.MethodTable[rid] = new RawMethodRow(
+            (uint)native.Item3.RVA,
+            methodRow.ImplFlags,
+            methodRow.Flags,
+            methodRow.Name,
+            methodRow.Signature,
+            methodRow.ParamList);
 				}
 			}
 		}

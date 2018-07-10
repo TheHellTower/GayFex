@@ -8,6 +8,7 @@ using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.Renamer;
 using dnlib.DotNet;
+using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 
 namespace Confuser.Protections.Resources {
@@ -20,12 +21,12 @@ namespace Confuser.Protections.Resources {
 		}
 
 		public void Hook() {
-			ctx.Context.CurrentModuleWriterListener.OnWriterEvent += OnWriterEvent;
+			ctx.Context.CurrentModuleWriterOptions.WriterEvent += OnWriterEvent;
 		}
 
-		void OnWriterEvent(object sender, ModuleWriterListenerEventArgs e) {
+		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
 			var writer = (ModuleWriterBase)sender;
-			if (e.WriterEvent == ModuleWriterEvent.MDBeginAddResources) {
+			if (e.Event == ModuleWriterEvent.MDBeginAddResources) {
 				ctx.Context.CheckCancellation();
 				ctx.Context.Logger.Debug("Encrypting resources...");
 				bool hasPacker = ctx.Context.Packer != null;
@@ -53,7 +54,7 @@ namespace Confuser.Protections.Resources {
 				}
 				byte[] moduleBuff;
 				using (var ms = new MemoryStream()) {
-					module.Write(ms, new ModuleWriterOptions { StrongNameKey = writer.TheOptions.StrongNameKey });
+					module.Write(ms, new ModuleWriterOptions(e.Writer.Module) { StrongNameKey = writer.TheOptions.StrongNameKey });
 					moduleBuff = ms.ToArray();
 				}
 
@@ -93,19 +94,27 @@ namespace Confuser.Protections.Resources {
 				Debug.Assert(buffIndex == compressedBuff.Length);
 				var size = (uint)encryptedBuffer.Length;
 
-				TablesHeap tblHeap = writer.MetaData.TablesHeap;
-				tblHeap.ClassLayoutTable[writer.MetaData.GetClassLayoutRid(ctx.DataType)].ClassSize = size;
-				tblHeap.FieldTable[writer.MetaData.GetRid(ctx.DataField)].Flags |= (ushort)FieldAttributes.HasFieldRVA;
+				TablesHeap tblHeap = writer.Metadata.TablesHeap;
+
+				uint classLayoutRid = writer.Metadata.GetClassLayoutRid(ctx.DataType);
+				RawClassLayoutRow classLayout = tblHeap.ClassLayoutTable[classLayoutRid];
+				tblHeap.ClassLayoutTable[classLayoutRid] = new RawClassLayoutRow(classLayout.PackingSize, size, classLayout.Parent);
+
+				uint dataFieldRid = writer.Metadata.GetRid(ctx.DataField);
+				RawFieldRow dataField = tblHeap.FieldTable[dataFieldRid];
+				tblHeap.FieldTable[dataFieldRid] = new RawFieldRow((ushort)(dataField.Flags | (ushort)FieldAttributes.HasFieldRVA), dataField.Name, dataField.Signature);
 				encryptedResource = writer.Constants.Add(new ByteArrayChunk(encryptedBuffer), 8);
 
 				// inject key values
 				MutationHelper.InjectKeys(ctx.InitMethod,
-				                          new[] { 0, 1 },
-				                          new[] { (int)(size / 4), (int)(keySeed) });
+										  new[] { 0, 1 },
+										  new[] { (int)(size / 4), (int)(keySeed) });
 			}
-			else if (e.WriterEvent == ModuleWriterEvent.EndCalculateRvasAndFileOffsets) {
-				TablesHeap tblHeap = writer.MetaData.TablesHeap;
-				tblHeap.FieldRVATable[writer.MetaData.GetFieldRVARid(ctx.DataField)].RVA = (uint)encryptedResource.RVA;
+			else if (e.Event == ModuleWriterEvent.EndCalculateRvasAndFileOffsets) {
+				TablesHeap tblHeap = writer.Metadata.TablesHeap;
+				uint fieldRvaRid = writer.Metadata.GetFieldRVARid(ctx.DataField);
+				RawFieldRVARow fieldRva = tblHeap.FieldRVATable[fieldRvaRid];
+				tblHeap.FieldRVATable[fieldRvaRid] = new RawFieldRVARow((uint)encryptedResource.RVA, fieldRva.Field);
 			}
 		}
 	}

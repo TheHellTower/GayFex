@@ -52,7 +52,7 @@ namespace Confuser.Protections.Compress {
 					context.CurrentModule.Kind = ModuleKind.NetModule;
 				}
 
-				context.CurrentModuleWriterListener.OnWriterEvent += new ResourceRecorder(ctx, context.CurrentModule).OnWriterEvent;
+				context.CurrentModuleWriterOptions.WriterEvent += new ResourceRecorder(ctx, context.CurrentModule).WriterEvent;
 			}
 		}
 
@@ -65,14 +65,18 @@ namespace Confuser.Protections.Compress {
 				targetModule = module;
 			}
 
-			public void OnWriterEvent(object sender, ModuleWriterListenerEventArgs e) {
-				if (e.WriterEvent == ModuleWriterEvent.MDEndAddResources) {
+			public void WriterEvent(object sender, ModuleWriterEventArgs e) {
+				if (e.Event == ModuleWriterEvent.MDEndAddResources) {
 					var writer = (ModuleWriterBase)sender;
 					ctx.ManifestResources = new List<Tuple<uint, uint, string>>();
-					Dictionary<uint, byte[]> stringDict = writer.MetaData.StringsHeap.GetAllRawData().ToDictionary(pair => pair.Key, pair => pair.Value);
-					foreach (RawManifestResourceRow resource in writer.MetaData.TablesHeap.ManifestResourceTable)
-						ctx.ManifestResources.Add(Tuple.Create(resource.Offset, resource.Flags, Encoding.UTF8.GetString(stringDict[resource.Name])));
-					ctx.EntryPointToken = writer.MetaData.GetToken(ctx.EntryPoint).Raw;
+					Dictionary<uint, byte[]> stringDict = writer.Metadata.StringsHeap.GetAllRawData().ToDictionary(pair => pair.Key, pair => pair.Value);
+          MDTable<RawManifestResourceRow> manifestResourceTable = writer.Metadata.TablesHeap.ManifestResourceTable;
+          for (uint i = 1; i <= manifestResourceTable.Rows; i++)
+          {
+            RawManifestResourceRow resource = manifestResourceTable[i];
+            ctx.ManifestResources.Add(Tuple.Create(resource.Offset, resource.Flags, Encoding.UTF8.GetString(stringDict[resource.Name])));
+          }
+					ctx.EntryPointToken = writer.Metadata.GetToken(ctx.EntryPoint).Raw;
 				}
 			}
 		}

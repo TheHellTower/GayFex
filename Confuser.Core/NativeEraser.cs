@@ -35,19 +35,19 @@ namespace Confuser.Core {
 					uint f = sect.Item3[methodOffset - sect.Item1];
 					uint size;
 					switch ((f & 7)) {
-						case 2:
-						case 6:
-							size = (f >> 2) + 1;
-							break;
+					case 2:
+					case 6:
+						size = (f >> 2) + 1;
+						break;
 
-						case 3:
-							f |= (uint)((sect.Item3[methodOffset - sect.Item1 + 1]) << 8);
-							size = (f >> 12) * 4;
-							uint codeSize = BitConverter.ToUInt32(sect.Item3, (int)(methodOffset - sect.Item1 + 4));
-							size += codeSize;
-							break;
-						default:
-							return;
+					case 3:
+						f |= (uint)((sect.Item3[methodOffset - sect.Item1 + 1]) << 8);
+						size = (f >> 12) * 4;
+						uint codeSize = BitConverter.ToUInt32(sect.Item3, (int)(methodOffset - sect.Item1 + 4));
+						size += codeSize;
+						break;
+					default:
+						return;
 					}
 					Erase(sect, methodOffset, size);
 				}
@@ -64,9 +64,9 @@ namespace Confuser.Core {
 				var sectHdr = origSect.PESection;
 
 				s.SetLength(0);
-				oldChunk.WriteTo(new BinaryWriter(s));
+				oldChunk.WriteTo(new DataWriter(s));
 				var buf = s.ToArray();
-				var newChunk = new BinaryReaderChunk(MemoryImageStream.Create(buf), oldChunk.GetVirtualSize());
+				var newChunk = new DataReaderChunk(oldChunk.CreateReader());
 				newChunk.SetOffset(oldChunk.FileOffset, oldChunk.RVA);
 
 				origSect.Chunk = newChunk;
@@ -77,14 +77,15 @@ namespace Confuser.Core {
 					buf));
 			}
 
-			var md = module.MetaData;
+			var md = module.Metadata;
 
 			var row = md.TablesStream.MethodTable.Rows;
 			for (uint i = 1; i <= row; i++) {
-				var method = md.TablesStream.ReadMethodRow(i);
-				var codeType = ((MethodImplAttributes)method.ImplFlags & MethodImplAttributes.CodeTypeMask);
-				if (codeType == MethodImplAttributes.IL)
-					Erase(sections, (uint)md.PEImage.ToFileOffset((RVA)method.RVA));
+				if (md.TablesStream.TryReadMethodRow(i, out var method)) {
+					var codeType = ((MethodImplAttributes)method.ImplFlags & MethodImplAttributes.CodeTypeMask);
+					if (codeType == MethodImplAttributes.IL)
+						Erase(sections, (uint)md.PEImage.ToFileOffset((RVA)method.RVA));
+				}
 			}
 
 			var res = md.ImageCor20Header.Resources;
@@ -92,7 +93,7 @@ namespace Confuser.Core {
 				Erase(sections, (uint)res.StartOffset, res.Size);
 
 			Erase(sections, md.ImageCor20Header);
-			Erase(sections, md.MetaDataHeader);
+			Erase(sections, md.MetadataHeader);
 			foreach (var stream in md.AllStreams)
 				Erase(sections, stream);
 		}

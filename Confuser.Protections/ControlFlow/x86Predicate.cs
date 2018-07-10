@@ -8,6 +8,7 @@ using Confuser.DynCipher.Generation;
 using Confuser.Renamer;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
@@ -88,17 +89,27 @@ namespace Confuser.Protections.ControlFlow {
 					.Compile<Func<int, int>>();
 
 
-				ctx.Context.CurrentModuleWriterListener.OnWriterEvent += InjectNativeCode;
+				ctx.Context.CurrentModuleWriterOptions.WriterEvent += InjectNativeCode;
 			}
 
-			void InjectNativeCode(object sender, ModuleWriterListenerEventArgs e) {
-				var writer = (ModuleWriterBase)sender;
-				if (e.WriterEvent == ModuleWriterEvent.MDEndWriteMethodBodies) {
+			void InjectNativeCode(object sender, ModuleWriterEventArgs e) {
+				var writer = e.Writer;
+				switch (e.Event) {
+				case ModuleWriterEvent.MDEndWriteMethodBodies:
 					codeChunk = writer.MethodBodies.Add(new MethodBody(code));
-				}
-				else if (e.WriterEvent == ModuleWriterEvent.EndCalculateRvasAndFileOffsets) {
-					uint rid = writer.MetaData.GetRid(native);
-					writer.MetaData.TablesHeap.MethodTable[rid].RVA = (uint)codeChunk.RVA;
+					break;
+				case ModuleWriterEvent.EndCalculateRvasAndFileOffsets:
+					uint rid = writer.Metadata.GetRid(native);
+
+					var methodRow = writer.Metadata.TablesHeap.MethodTable[rid];
+					writer.Metadata.TablesHeap.MethodTable[rid] = new RawMethodRow(
+					  (uint)codeChunk.RVA,
+					  methodRow.ImplFlags,
+					  methodRow.Flags,
+					  methodRow.Name,
+					  methodRow.Signature,
+					  methodRow.ParamList);
+					break;
 				}
 			}
 		}

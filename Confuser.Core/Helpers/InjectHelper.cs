@@ -120,7 +120,6 @@ namespace Confuser.Core.Helpers {
 					var newLocal = new Local(ctx.Importer.Import(local.Type));
 					newMethodDef.Body.Variables.Add(newLocal);
 					newLocal.Name = local.Name;
-					newLocal.PdbAttributes = local.PdbAttributes;
 
 					bodyMap[local] = newLocal;
 				}

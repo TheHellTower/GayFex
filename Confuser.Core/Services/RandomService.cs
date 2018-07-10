@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using dnlib.DotNet.Writer;
 
 namespace Confuser.Core.Services {
 	/// <summary>
@@ -155,6 +156,13 @@ namespace Confuser.Core.Services {
 		}
 
 		/// <summary>
+		///     Returns a nonnegative random integer that is less than the specified maximum.
+		/// </summary>
+		/// <param name="max">The exclusive upper bound.</param>
+		/// <returns>Requested random number.</returns>
+		public uint NextUInt32(uint max) => NextUInt32() % max;
+
+		/// <summary>
 		///     Returns a random double floating pointer number from 0 (inclusive) to 1 (exclusive).
 		/// </summary>
 		/// <returns>Requested random number.</returns>
@@ -185,6 +193,22 @@ namespace Confuser.Core.Services {
 				T tmp = list[k];
 				list[k] = list[i];
 				list[i] = tmp;
+			}
+		}
+
+		/// <summary>
+		///     Shuffles the element in the specified metadata table.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="table">The metadata table to shuffle.</param>
+		public void Shuffle<T>(MDTable<T> table) where T : struct {
+			if (table.IsEmpty) return;
+
+			for (uint i = (uint)(table.Rows - 1); i > 1; i--) {
+				uint k = NextUInt32(i + 1);
+				var tmp = table[k];
+				table[k] = table[i];
+				table[i] = tmp;
 			}
 		}
 	}

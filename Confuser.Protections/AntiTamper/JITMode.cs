@@ -10,6 +10,7 @@ using Confuser.Core.Services;
 using Confuser.Renamer;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 
 namespace Confuser.Protections.AntiTamper {
@@ -147,16 +148,16 @@ namespace Confuser.Protections.AntiTamper {
 			cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 
 			methods = parameters.Targets.OfType<MethodDef>().Where(method => method.HasBody).ToList();
-			context.CurrentModuleWriterListener.OnWriterEvent += OnWriterEvent;
+			context.CurrentModuleWriterOptions.WriterEvent += OnWriterEvent;
 		}
 
-		void OnWriterEvent(object sender, ModuleWriterListenerEventArgs e) {
+		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
 			var writer = (ModuleWriterBase)sender;
-			if (e.WriterEvent == ModuleWriterEvent.MDBeginWriteMethodBodies) {
+			if (e.Event == ModuleWriterEvent.MDBeginWriteMethodBodies) {
 				context.Logger.Debug("Extracting method bodies...");
 				CreateSection(writer);
 			}
-			else if (e.WriterEvent == ModuleWriterEvent.BeginStrongNameSign) {
+			else if (e.Event == ModuleWriterEvent.BeginStrongNameSign) {
 				context.Logger.Debug("Encrypting method section...");
 				EncryptSection(writer);
 			}
@@ -205,7 +206,7 @@ namespace Confuser.Protections.AntiTamper {
 			newSection.Add(new ByteArrayChunk(random.NextBytes(0x10)), 0x10);
 
 			// create index
-			var bodyIndex = new JITBodyIndex(methods.Select(method => writer.MetaData.GetToken(method).Raw));
+			var bodyIndex = new JITBodyIndex(methods.Select(method => writer.Metadata.GetToken(method).Raw));
 			newSection.Add(bodyIndex, 0x10);
 
 			// save methods
@@ -213,16 +214,24 @@ namespace Confuser.Protections.AntiTamper {
 				if (!method.HasBody)
 					continue;
 
-				MDToken token = writer.MetaData.GetToken(method);
+				MDToken token = writer.Metadata.GetToken(method);
 
 				var jitBody = new JITMethodBody();
-				var bodyWriter = new JITMethodBodyWriter(writer.MetaData, method.Body, jitBody, random.NextUInt32(), writer.MetaData.KeepOldMaxStack || method.Body.KeepOldMaxStack);
+				var bodyWriter = new JITMethodBodyWriter(writer.Metadata, method.Body, jitBody, random.NextUInt32(), writer.Metadata.KeepOldMaxStack || method.Body.KeepOldMaxStack);
 				bodyWriter.Write();
 				jitBody.Serialize(token.Raw, key, fieldLayout);
 				bodyIndex.Add(token.Raw, jitBody);
 
 				method.Body = NopBody;
-				writer.MetaData.TablesHeap.MethodTable[token.Rid].ImplFlags |= (ushort)MethodImplAttributes.NoInlining;
+        RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[token.Rid];
+        writer.Metadata.TablesHeap.MethodTable[token.Rid] = new RawMethodRow(
+          methodRow.RVA, 
+          (ushort)(methodRow.ImplFlags | (ushort)MethodImplAttributes.NoInlining), 
+          methodRow.Flags, 
+          methodRow.Name, 
+          methodRow.Signature,
+          methodRow.ParamList);
+   
 				context.CheckCancellation();
 			}
 			bodyIndex.PopulateSection(newSection);
@@ -246,7 +255,7 @@ namespace Confuser.Protections.AntiTamper {
 			uint encLoc = 0, encSize = 0;
 			int origSects = -1;
 			if (writer is NativeModuleWriter && writer.Module is ModuleDefMD)
-				origSects = ((ModuleDefMD)writer.Module).MetaData.PEImage.ImageSectionHeaders.Count;
+				origSects = ((ModuleDefMD)writer.Module).Metadata.PEImage.ImageSectionHeaders.Count;
 			for (int i = 0; i < sections; i++) {
 				uint nameHash;
 				if (origSects > 0) {

@@ -84,7 +84,6 @@
     <Compile Include="ILogger.cs" />
     <Compile Include="Marker.cs" />
     <Compile Include="MarkerResult.cs" />
-    <Compile Include="ModuleWriterListener.cs" />
     <Compile Include="NativeEraser.cs" />
     <Compile Include="ObfAttrMarker.cs" />
     <Compile Include="ObfAttrParser.cs" />
