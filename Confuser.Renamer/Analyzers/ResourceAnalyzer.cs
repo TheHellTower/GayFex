@@ -15,7 +15,7 @@ namespace Confuser.Renamer.Analyzers {
 
 			string asmName = module.Assembly.Name.String;
 			if (!string.IsNullOrEmpty(module.Assembly.Culture) &&
-			    asmName.EndsWith(".resources")) {
+				asmName.EndsWith(".resources")) {
 				// Satellite assembly
 				var satellitePattern = new Regex(string.Format("^(.*)\\.{0}\\.resources$", module.Assembly.Culture));
 				string nameAsmName = asmName.Substring(0, asmName.Length - ".resources".Length);
@@ -52,6 +52,13 @@ namespace Confuser.Renamer.Analyzers {
 						continue;
 
 					TypeDef type = module.FindReflection(typeName);
+					if (type == null) {
+						if (typeName.EndsWith(".Resources")) {
+							typeName = typeName.Substring(0, typeName.Length - 10) + ".My.Resources.Resources";
+							type = module.FindReflection(typeName);
+						}
+					}
+
 					if (type == null) {
 						context.Logger.WarnFormat("Could not find resource type '{0}'.", typeName);
 						continue;
