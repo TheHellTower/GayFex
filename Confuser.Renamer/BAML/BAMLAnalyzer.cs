@@ -504,12 +504,19 @@ namespace Confuser.Renamer.BAML {
 					var src = rec.Value.ToUpperInvariant();
 					if (src.EndsWith(".BAML") || src.EndsWith(".XAML")) {
 						var match = WPFAnalyzer.UriPattern.Match(src);
-						if (match.Success)
-							src = match.Groups[1].Value;
+						if (match.Success) {
+							var resourceAssemblyName = match.Groups[1].Value;
+							if (resourceAssemblyName != null && !resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+								// This resource points to another assembly.
+								// Leave it alone!
+								return;
+							}
+							src = match.Groups[2].Value;
+						}
 						else if (rec.Value.Contains("/"))
 							context.Logger.WarnFormat("Fail to extract XAML name from '{0}'.", rec.Value);
 
-						if (!src.Contains("//")) {
+						if (!src.StartsWith(packScheme, StringComparison.OrdinalIgnoreCase)) {
 							var rel = new Uri(new Uri(packScheme + "application:,,,/" + CurrentBAMLName), src);
 							src = rel.LocalPath;
 						}

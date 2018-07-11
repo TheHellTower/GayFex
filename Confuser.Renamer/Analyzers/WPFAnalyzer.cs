@@ -17,7 +17,7 @@ namespace Confuser.Renamer.Analyzers {
 		static readonly object BAMLKey = new object();
 
 		static readonly Regex ResourceNamePattern = new Regex("^.*\\.g\\.resources$");
-		internal static readonly Regex UriPattern = new Regex("(?:;COMPONENT|APPLICATION\\:,,,)(/.+\\.[BX]AML)$");
+		internal static readonly Regex UriPattern = new Regex("^(?:PACK\\://(?:COMPONENT|APPLICATION)\\:,,,)*(?:/(.+);COMPONENT)*(/.+\\.[BX]AML)$");
 		BAMLAnalyzer analyzer;
 
 		internal Dictionary<string, List<IBAMLReference>> bamlRefs = new Dictionary<string, List<IBAMLReference>>(StringComparer.OrdinalIgnoreCase);
@@ -180,8 +180,15 @@ namespace Confuser.Renamer.Analyzers {
 					var operand = ((string)instr.Operand).ToUpperInvariant();
 					if (operand.EndsWith(".BAML") || operand.EndsWith(".XAML")) {
 						var match = UriPattern.Match(operand);
-						if (match.Success)
-							operand = match.Groups[1].Value;
+						if (match.Success) {
+							var resourceAssemblyName = match.Groups[1].Value;
+							if (resourceAssemblyName != null && !resourceAssemblyName.Equals(method.Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+								// This resource points to another assembly.
+								// Leave it alone!
+								return;
+							}
+							operand = match.Groups[2].Value;
+						}
 						else if (operand.Contains("/"))
 							context.Logger.WarnFormat("Fail to extract XAML name from '{0}'.", instr.Operand);
 
