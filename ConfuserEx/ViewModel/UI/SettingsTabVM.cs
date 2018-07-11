@@ -46,7 +46,7 @@ namespace ConfuserEx.ViewModel {
 
 		public ICommand Add {
 			get {
-				return new RelayCommand(() => {
+				var cmd =  new RelayCommand(() => {
 					Debug.Assert(SelectedList != null);
 
 					var rule = new ProjectRuleVM(App.Project, new Rule());
@@ -54,12 +54,16 @@ namespace ConfuserEx.ViewModel {
 					SelectedList.Rules.Add(rule);
 					SelectedRuleIndex = SelectedList.Rules.Count - 1;
 				}, () => SelectedList != null);
+
+				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList") { cmd.RaiseCanExecuteChanged(); } };
+
+				return cmd;
 			}
 		}
 
 		public ICommand Remove {
 			get {
-				return new RelayCommand(() => {
+				var cmd = new RelayCommand(() => {
 					int selIndex = SelectedRuleIndex;
 					Debug.Assert(SelectedList != null);
 					Debug.Assert(selIndex != -1);
@@ -68,18 +72,26 @@ namespace ConfuserEx.ViewModel {
 					SelectedList.Rules.RemoveAt(selIndex);
 					SelectedRuleIndex = selIndex >= SelectedList.Rules.Count ? SelectedList.Rules.Count - 1 : selIndex;
 				}, () => SelectedRuleIndex != -1 && SelectedList != null);
+
+				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") { cmd.RaiseCanExecuteChanged(); } };
+
+				return cmd;
 			}
 		}
 
 		public ICommand Edit {
 			get {
-				return new RelayCommand(() => {
+				var cmd = new RelayCommand(() => {
 					Debug.Assert(SelectedRuleIndex != -1);
 					var dialog = new ProjectRuleView(App.Project, SelectedList.Rules[SelectedRuleIndex]);
 					dialog.Owner = Application.Current.MainWindow;
 					dialog.ShowDialog();
 					dialog.Cleanup();
 				}, () => SelectedRuleIndex != -1 && SelectedList != null);
+
+				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") { cmd.RaiseCanExecuteChanged(); } };
+
+				return cmd;
 			}
 		}
 

@@ -42,6 +42,8 @@ namespace ConfuserEx.Views {
 				rule.Protections.RemoveAt(prots.SelectedIndex);
 				prots.SelectedIndex = selIndex >= rule.Protections.Count ? rule.Protections.Count - 1 : selIndex;
 			}, () => prots.SelectedIndex != -1);
+
+			prots.SelectionChanged += (sender, args) => (RemoveBtn.Command as RelayCommand)?.RaiseCanExecuteChanged();
 		}
 
 		public void Cleanup() {

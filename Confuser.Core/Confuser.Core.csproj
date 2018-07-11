@@ -12,7 +12,6 @@
   <PropertyGroup Label="Assembly Information">
     <Title>ConfuserEx Core</Title>
     <Description>Core framework of ConfuserEx</Description>
-    <Copyright>Bla</Copyright>
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
