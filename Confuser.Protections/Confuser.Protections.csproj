@@ -14,6 +14,10 @@
     <Description>Protections and packers of ConfuserEx</Description>
   </PropertyGroup>
 
+  <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\Confuser.DynCipher\Confuser.DynCipher.csproj" />
     <ProjectReference Include="..\Confuser.Renamer\Confuser.Renamer.csproj" />

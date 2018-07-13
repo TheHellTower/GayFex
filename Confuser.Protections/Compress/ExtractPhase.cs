@@ -52,6 +52,7 @@ namespace Confuser.Protections.Compress {
 					context.CurrentModule.Kind = ModuleKind.NetModule;
 				}
 
+				context.CurrentModuleWriterOptions.MetadataOptions.Flags |= MetadataFlags.PreserveStringsOffsets;
 				context.CurrentModuleWriterOptions.WriterEvent += new ResourceRecorder(ctx, context.CurrentModule).WriterEvent;
 			}
 		}
@@ -67,14 +68,18 @@ namespace Confuser.Protections.Compress {
 
 			public void WriterEvent(object sender, ModuleWriterEventArgs e) {
 				if (e.Event == ModuleWriterEvent.MDEndAddResources) {
-					var writer = (ModuleWriterBase)sender;
-					ctx.ManifestResources = new List<Tuple<uint, uint, string>>();
-					Dictionary<uint, byte[]> stringDict = writer.Metadata.StringsHeap.GetAllRawData().ToDictionary(pair => pair.Key, pair => pair.Value);
-					MDTable<RawManifestResourceRow> manifestResourceTable = writer.Metadata.TablesHeap.ManifestResourceTable;
-					for (uint i = 1; i <= manifestResourceTable.Rows; i++) {
-						RawManifestResourceRow resource = manifestResourceTable[i];
-						ctx.ManifestResources.Add(Tuple.Create(resource.Offset, resource.Flags, Encoding.UTF8.GetString(stringDict[resource.Name])));
+					var writer = e.Writer;
+					ctx.ManifestResources = new List<(uint, uint, UTF8String)>();					
+
+					foreach (var resource in writer.Module.Resources) {
+						var rid = writer.Metadata.GetManifestResourceRid(resource);
+						if (rid != 0) {
+							// The resource has a RID assigned. So it is part of the written module.
+							var resourceRow = writer.Metadata.TablesHeap.ManifestResourceTable[rid];
+							ctx.ManifestResources.Add((resourceRow.Offset, resourceRow.Flags, resource.Name));
+						}
 					}
+
 					ctx.EntryPointToken = writer.Metadata.GetToken(ctx.EntryPoint).Raw;
 				}
 			}

@@ -330,7 +330,7 @@ namespace Confuser.Protections {
 					// Add resources
 					MDTable<RawManifestResourceRow> resTbl = writer.Metadata.TablesHeap.ManifestResourceTable;
 					foreach (var resource in ctx.ManifestResources)
-						resTbl.Add(new RawManifestResourceRow(resource.Item1, resource.Item2, writer.Metadata.StringsHeap.Add(resource.Item3), impl));
+						resTbl.Add(new RawManifestResourceRow(resource.Offset, resource.Flags, writer.Metadata.StringsHeap.Add(resource.Value), impl));
 
 					// Add exported types
 					var exTbl = writer.Metadata.TablesHeap.ExportedTypeTable;

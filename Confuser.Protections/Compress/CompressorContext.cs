@@ -13,7 +13,7 @@ namespace Confuser.Protections.Compress {
 		public byte[] KeySig;
 		public uint KeyToken;
 		public ModuleKind Kind;
-		public List<Tuple<uint, uint, string>> ManifestResources;
+		public List<(uint Offset, uint Flags, UTF8String Value)> ManifestResources;
 		public int ModuleIndex;
 		public string ModuleName;
 		public byte[] OriginModule;
