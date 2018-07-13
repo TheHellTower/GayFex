@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Confuser.Core;
@@ -69,13 +70,15 @@ namespace Confuser.Protections.Compress {
 			public void WriterEvent(object sender, ModuleWriterEventArgs e) {
 				if (e.Event == ModuleWriterEvent.MDEndAddResources) {
 					var writer = e.Writer;
-					ctx.ManifestResources = new List<(uint, uint, UTF8String)>();					
+					ctx.ManifestResources = new List<(uint, uint, UTF8String)>();
 
 					foreach (var resource in writer.Module.Resources) {
 						var rid = writer.Metadata.GetManifestResourceRid(resource);
 						if (rid != 0) {
 							// The resource has a RID assigned. So it is part of the written module.
 							var resourceRow = writer.Metadata.TablesHeap.ManifestResourceTable[rid];
+							Debug.Assert(resourceRow.Name == writer.Metadata.StringsHeap.Add(resource.Name),
+								"Resource with RID has different name in StringHeap?!");
 							ctx.ManifestResources.Add((resourceRow.Offset, resourceRow.Flags, resource.Name));
 						}
 					}
