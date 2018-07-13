@@ -84,31 +84,29 @@ namespace Confuser.Protections {
 
 			var snKey = context.Annotations.Get<StrongNameKey>(originModule, Marker.SNKey);
 			using (var ms = new MemoryStream()) {
-        var options = new ModuleWriterOptions(stubModule)
-        {
-          StrongNameKey = snKey
-        };
-        var injector = new KeyInjector(ctx);
-        options.WriterEvent += injector.WriterEvent;
+				var options = new ModuleWriterOptions(stubModule) {
+					StrongNameKey = snKey
+				};
+				var injector = new KeyInjector(ctx);
+				options.WriterEvent += injector.WriterEvent;
 
-        stubModule.Write(ms, options);
+				stubModule.Write(ms, options);
 				context.CheckCancellation();
 				ProtectStub(context, context.OutputPaths[ctx.ModuleIndex], ms.ToArray(), snKey, new StubProtection(ctx, originModule));
 			}
 		}
 
 		static string GetId(byte[] module) {
-      var md = MetadataFactory.CreateMetadata(new PEImage(module));
-      var assembly = new AssemblyNameInfo();
-      if (md.TablesStream.TryReadAssemblyRow(1, out var assemblyRow))
-      {
-        assembly.Name = md.StringsStream.ReadNoNull(assemblyRow.Name);
-        assembly.Culture = md.StringsStream.ReadNoNull(assemblyRow.Locale);
-        assembly.PublicKeyOrToken = new PublicKey(md.BlobStream.Read(assemblyRow.PublicKey));
-        assembly.HashAlgId = (AssemblyHashAlgorithm)assemblyRow.HashAlgId;
-        assembly.Version = new Version(assemblyRow.MajorVersion, assemblyRow.MinorVersion, assemblyRow.BuildNumber, assemblyRow.RevisionNumber);
-        assembly.Attributes = (AssemblyAttributes)assemblyRow.Flags;
-      }
+			var md = MetadataFactory.CreateMetadata(new PEImage(module));
+			var assembly = new AssemblyNameInfo();
+			if (md.TablesStream.TryReadAssemblyRow(1, out var assemblyRow)) {
+				assembly.Name = md.StringsStream.ReadNoNull(assemblyRow.Name);
+				assembly.Culture = md.StringsStream.ReadNoNull(assemblyRow.Locale);
+				assembly.PublicKeyOrToken = new PublicKey(md.BlobStream.Read(assemblyRow.PublicKey));
+				assembly.HashAlgId = (AssemblyHashAlgorithm)assemblyRow.HashAlgId;
+				assembly.Version = new Version(assemblyRow.MajorVersion, assemblyRow.MinorVersion, assemblyRow.BuildNumber, assemblyRow.RevisionNumber);
+				assembly.Attributes = (AssemblyAttributes)assemblyRow.Flags;
+			}
 			return GetId(assembly);
 		}
 
@@ -206,14 +204,14 @@ namespace Confuser.Protections {
 			IEnumerable<IDnlibDef> defs = InjectHelper.Inject(rtType, stubModule.GlobalType, stubModule);
 
 			switch (parameters.GetParameter(context, context.CurrentModule, "key", Mode.Normal)) {
-				case Mode.Normal:
-					compCtx.Deriver = new NormalDeriver();
-					break;
-				case Mode.Dynamic:
-					compCtx.Deriver = new DynamicDeriver();
-					break;
-				default:
-					throw new UnreachableException();
+			case Mode.Normal:
+				compCtx.Deriver = new NormalDeriver();
+				break;
+			case Mode.Dynamic:
+				compCtx.Deriver = new DynamicDeriver();
+				break;
+			default:
+				throw new UnreachableException();
 			}
 			compCtx.Deriver.Init(context, random);
 
@@ -240,15 +238,15 @@ namespace Confuser.Protections {
 			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
 
 			byte[] encryptedModule = compCtx.Encrypt(comp, compCtx.OriginModule, seed,
-			                                         progress => context.Logger.Progress((int)(progress * 10000), 10000));
+													 progress => context.Logger.Progress((int)(progress * 10000), 10000));
 			context.Logger.EndProgress();
 			context.CheckCancellation();
 
 			compCtx.EncryptedModule = encryptedModule;
 
 			MutationHelper.InjectKeys(entryPoint,
-			                          new[] { 0, 1 },
-			                          new[] { encryptedModule.Length >> 2, (int)seed });
+									  new[] { 0, 1 },
+									  new[] { encryptedModule.Length >> 2, (int)seed });
 			InjectData(stubModule, entryPoint, encryptedModule);
 
 			// Decrypt
@@ -260,7 +258,7 @@ namespace Confuser.Protections {
 				if (instr.OpCode == OpCodes.Call) {
 					var method = (IMethod)instr.Operand;
 					if (method.DeclaringType.Name == "Mutation" &&
-					    method.Name == "Crypt") {
+						method.Name == "Crypt") {
 						Instruction ldDst = instrs[i - 2];
 						Instruction ldSrc = instrs[i - 1];
 						Debug.Assert(ldDst.OpCode == OpCodes.Ldloc && ldSrc.OpCode == OpCodes.Ldloc);
@@ -270,7 +268,7 @@ namespace Confuser.Protections {
 						instrs.InsertRange(i - 2, compCtx.Deriver.EmitDerivation(decrypter, context, (Local)ldDst.Operand, (Local)ldSrc.Operand));
 					}
 					else if (method.DeclaringType.Name == "Lzma" &&
-					         method.Name == "Decompress") {
+							 method.Name == "Decompress") {
 						MethodDef decomp = comp.GetRuntimeDecompressor(stubModule, member => { });
 						instr.Operand = decomp;
 					}
@@ -303,10 +301,9 @@ namespace Confuser.Protections {
 				this.ctx = ctx;
 			}
 
-      public void WriterEvent(object sender, ModuleWriterEventArgs args)
-      {
-        OnWriterEvent(args.Writer, args.Event);
-      }
+			public void WriterEvent(object sender, ModuleWriterEventArgs args) {
+				OnWriterEvent(args.Writer, args.Event);
+			}
 
 			public void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 				if (evt == ModuleWriterEvent.MDBeginCreateTables) {
@@ -325,9 +322,9 @@ namespace Confuser.Protections {
 
 					MDTable<RawFileRow> fileTbl = writer.Metadata.TablesHeap.FileTable;
 					uint fileRid = fileTbl.Add(new RawFileRow(
-						                           (uint)FileAttributes.ContainsMetadata,
-						                           writer.Metadata.StringsHeap.Add("koi"),
-						                           hashBlob));
+												   (uint)FileAttributes.ContainsMetadata,
+												   writer.Metadata.StringsHeap.Add("koi"),
+												   hashBlob));
 					uint impl = CodedToken.Implementation.Encode(new MDToken(Table.File, fileRid));
 
 					// Add resources
@@ -341,8 +338,8 @@ namespace Confuser.Protections {
 						if (!type.IsVisibleOutside())
 							continue;
 						exTbl.Add(new RawExportedTypeRow((uint)type.Attributes, 0,
-						                                 writer.Metadata.StringsHeap.Add(type.Name),
-						                                 writer.Metadata.StringsHeap.Add(type.Namespace), impl));
+														 writer.Metadata.StringsHeap.Add(type.Name),
+														 writer.Metadata.StringsHeap.Add(type.Namespace), impl));
 					}
 				}
 			}

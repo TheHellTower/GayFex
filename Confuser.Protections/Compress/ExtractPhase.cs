@@ -24,7 +24,7 @@ namespace Confuser.Protections.Compress {
 				return;
 
 			bool isExe = context.CurrentModule.Kind == ModuleKind.Windows ||
-			             context.CurrentModule.Kind == ModuleKind.Console;
+						 context.CurrentModule.Kind == ModuleKind.Console;
 
 			if (context.Annotations.Get<CompressorContext>(context, Compressor.ContextKey) != null) {
 				if (isExe) {
@@ -70,12 +70,11 @@ namespace Confuser.Protections.Compress {
 					var writer = (ModuleWriterBase)sender;
 					ctx.ManifestResources = new List<Tuple<uint, uint, string>>();
 					Dictionary<uint, byte[]> stringDict = writer.Metadata.StringsHeap.GetAllRawData().ToDictionary(pair => pair.Key, pair => pair.Value);
-          MDTable<RawManifestResourceRow> manifestResourceTable = writer.Metadata.TablesHeap.ManifestResourceTable;
-          for (uint i = 1; i <= manifestResourceTable.Rows; i++)
-          {
-            RawManifestResourceRow resource = manifestResourceTable[i];
-            ctx.ManifestResources.Add(Tuple.Create(resource.Offset, resource.Flags, Encoding.UTF8.GetString(stringDict[resource.Name])));
-          }
+					MDTable<RawManifestResourceRow> manifestResourceTable = writer.Metadata.TablesHeap.ManifestResourceTable;
+					for (uint i = 1; i <= manifestResourceTable.Rows; i++) {
+						RawManifestResourceRow resource = manifestResourceTable[i];
+						ctx.ManifestResources.Add(Tuple.Create(resource.Offset, resource.Flags, Encoding.UTF8.GetString(stringDict[resource.Name])));
+					}
 					ctx.EntryPointToken = writer.Metadata.GetToken(ctx.EntryPoint).Raw;
 				}
 			}
