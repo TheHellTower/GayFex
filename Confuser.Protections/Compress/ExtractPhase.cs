@@ -53,19 +53,14 @@ namespace Confuser.Protections.Compress {
 					context.CurrentModule.Kind = ModuleKind.NetModule;
 				}
 
-				context.CurrentModuleWriterOptions.MetadataOptions.Flags |= MetadataFlags.PreserveStringsOffsets;
-				context.CurrentModuleWriterOptions.WriterEvent += new ResourceRecorder(ctx, context.CurrentModule).WriterEvent;
+				context.CurrentModuleWriterOptions.WriterEvent += new ResourceRecorder(ctx).WriterEvent;
 			}
 		}
 
-		class ResourceRecorder {
-			readonly CompressorContext ctx;
-			ModuleDef targetModule;
+		private sealed class ResourceRecorder {
+			private readonly CompressorContext ctx;
 
-			public ResourceRecorder(CompressorContext ctx, ModuleDef module) {
-				this.ctx = ctx;
-				targetModule = module;
-			}
+			public ResourceRecorder(CompressorContext ctx) => this.ctx = ctx;
 
 			public void WriterEvent(object sender, ModuleWriterEventArgs e) {
 				if (e.Event == ModuleWriterEvent.MDEndAddResources) {
