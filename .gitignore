@@ -1,3 +1,6 @@
+# Visual Studio Cache files (starting with VS 2015)
+.vs/
+
 
 #ignore thumbnails created by windows
 Thumbs.db
