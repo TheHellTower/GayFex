@@ -10,14 +10,33 @@ namespace Confuser.Core.Services {
 		/// <inheritdoc />
 		public TypeDef GetRuntimeType(string fullName) {
 			if (rtModule == null) {
-				Module module = typeof(RuntimeService).Assembly.ManifestModule;
-				string rtPath = "Confuser.Runtime.dll";
-				if (module.FullyQualifiedName[0] != '<')
-					rtPath = Path.Combine(Path.GetDirectoryName(module.FullyQualifiedName), rtPath);
-				rtModule = ModuleDefMD.Load(rtPath, new ModuleCreationOptions() { TryToLoadPdbFromDisk = true });
-				rtModule.EnableTypeDefFindCache = true;
+				LoadConfuserRuntimeModule();
 			}
 			return rtModule.Find(fullName, true);
+		}
+
+		private void LoadConfuserRuntimeModule() {
+			const string runtimeDllName = "Confuser.Runtime.dll";
+
+			var module = typeof(RuntimeService).Assembly.ManifestModule;
+			string rtPath = runtimeDllName;
+			var creationOptions = new ModuleCreationOptions() { TryToLoadPdbFromDisk = true };
+			if (module.FullyQualifiedName[0] != '<') {
+				rtPath = Path.Combine(Path.GetDirectoryName(module.FullyQualifiedName), rtPath);
+				if (File.Exists(rtPath)) {
+					try {
+						rtModule = ModuleDefMD.Load(rtPath, creationOptions);
+					}
+					catch (IOException) { }
+				}
+				if (rtModule == null) {
+					rtPath = runtimeDllName;
+				}
+			}
+			if (rtModule == null) {
+				rtModule = ModuleDefMD.Load(rtPath, creationOptions);
+			}
+			rtModule.EnableTypeDefFindCache = true;
 		}
 	}
 
