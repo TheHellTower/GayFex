@@ -72,17 +72,25 @@ namespace Confuser.Runtime {
 			len = *ptr++;
 
 			ver4 = Environment.Version.Major == 4;
+			ver5 = ver4 && Environment.Version.Revision > 17020;
 			ModuleHandle hnd = m.ModuleHandle;
-			if (ver4) {
-				ulong* str = stackalloc ulong[1];
-				str[0] = 0x0061746144705f6d; //m_pData.
-				moduleHnd = (IntPtr)m.GetType().GetField(new string((sbyte*)str), BindingFlags.NonPublic | BindingFlags.Instance).GetValue(m);
-				ver5 = Environment.Version.Revision > 17020;
+			var obj = GetFieldValue(hnd, "m_ptr");
+			if (obj is IntPtr) {
+				moduleHnd = (IntPtr)obj;
+			} else if (obj.GetType().ToString() == "System.Reflection.RuntimeModule") {
+				moduleHnd = (IntPtr)GetFieldValue(obj, "m_pData");
+			} else {
+				throw new ApplicationException($"Failed to get pointer for module handle: {hnd.ToString()}");
 			}
-			else
-				moduleHnd = *(IntPtr*)(&hnd);
 
 			Hook();
+		}
+
+		static object GetFieldValue(object obj, string fieldName) {
+			var field = obj.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			if (field == null)
+				throw new ApplicationException($"Could not get field {obj.GetType()}::{fieldName}");
+			return field.GetValue(obj);
 		}
 
 		[DllImport("kernel32.dll")]
@@ -429,8 +437,8 @@ namespace Confuser.Runtime {
 						bool isEh = true;
 						for (var func = (byte*)vfTbl[i]; *func != 0xe9; func++)
 							if (IntPtr.Size == 8 ?
-								    (*func == 0x48 && *(func + 1) == 0x81 && *(func + 2) == 0xe9) :
-								    (*func == 0x83 && *(func + 1) == 0xe9)) {
+								  (*func == 0x48 && *(func + 1) == 0x81 && *(func + 2) == 0xe9) :
+								  (*func == 0x83 && *(func + 1) == 0xe9)) {
 								isEh = false;
 								break;
 							}
