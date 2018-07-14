@@ -18,6 +18,7 @@
     <RestorePackages>true</RestorePackages>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+	<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -179,6 +180,10 @@
     <Resource Include="Resources\FontAwesome.otf" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj">
+      <Project>{1508b4cd-f272-4eef-ab49-21f1c3661e69}</Project>
+      <Name>Confuser.Core.Exports</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj">
       <Project>{BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92}</Project>
       <Name>Confuser.Core</Name>
@@ -187,9 +192,17 @@
       <Project>{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}</Project>
       <Name>Confuser.DynCipher</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Confuser.Protections.Exports\Confuser.Protections.Exports.csproj">
+      <Project>{03627089-a2ab-40e4-b22f-2262bed6753e}</Project>
+      <Name>Confuser.Protections.Exports</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Confuser.Protections\Confuser.Protections.csproj">
       <Project>{3EAB01B5-9B49-48D8-BFA1-5493B26CCB71}</Project>
       <Name>Confuser.Protections</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj">
+      <Project>{18759555-5a63-4826-ad37-51ddb12973a7}</Project>
+      <Name>Confuser.Renamer.Exports</Name>
     </ProjectReference>
     <ProjectReference Include="..\Confuser.Renamer\Confuser.Renamer.csproj">
       <Project>{862DA0DA-52E1-47CD-B9C2-46B106031B28}</Project>

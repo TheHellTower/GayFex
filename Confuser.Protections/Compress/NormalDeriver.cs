@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Core.Services;
 using dnlib.DotNet;
@@ -12,7 +11,7 @@ namespace Confuser.Protections.Compress {
 		uint k3;
 		uint seed;
 
-		public void Init(ConfuserContext ctx, RandomGenerator random) {
+		public void Init(IConfuserContext ctx, IRandomGenerator random) {
 			k1 = random.NextUInt32() | 1;
 			k2 = random.NextUInt32() | 1;
 			k3 = random.NextUInt32() | 1;
@@ -51,7 +50,7 @@ namespace Confuser.Protections.Compress {
 			return ret;
 		}
 
-		public IEnumerable<Instruction> EmitDerivation(MethodDef method, ConfuserContext ctx, Local dst, Local src) {
+		public IEnumerable<Instruction> EmitDerivation(MethodDef method, IConfuserContext ctx, Local dst, Local src) {
 			var state = seed;
 			for (int i = 0; i < 0x10; i++) {
 				yield return Instruction.Create(OpCodes.Ldloc, dst);

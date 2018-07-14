@@ -213,7 +213,7 @@ namespace Confuser.Core.Project {
 		/// <param name="xmlDoc">The root XML document.</param>
 		/// <returns>The setting module description.</returns>
 		internal XmlElement Save(XmlDocument xmlDoc) {
-			XmlElement elem = xmlDoc.CreateElement(typeof(T) == typeof(Packer) ? "packer" : "protection", ConfuserProject.Namespace);
+			XmlElement elem = xmlDoc.CreateElement(typeof(T) == typeof(IPacker) ? "packer" : "protection", ConfuserProject.Namespace);
 
 			XmlAttribute idAttr = xmlDoc.CreateAttribute("id");
 			idAttr.Value = Id;
@@ -274,7 +274,7 @@ namespace Confuser.Core.Project {
 	/// <summary>
 	///     A rule that control how <see cref="Protection" />s are applied to module
 	/// </summary>
-	public class Rule : List<SettingItem<Protection>> {
+	public class Rule : List<SettingItem<IProtection>> {
 		/// <summary>
 		/// Initialize this rule instance
 		/// </summary>
@@ -354,7 +354,7 @@ namespace Confuser.Core.Project {
 
 			Clear();
 			foreach (XmlElement i in elem.ChildNodes.OfType<XmlElement>()) {
-				var x = new SettingItem<Protection>();
+				var x = new SettingItem<IProtection>();
 				x.Load(i);
 				Add(x);
 			}
@@ -371,7 +371,7 @@ namespace Confuser.Core.Project {
 			ret.Pattern = Pattern;
 			ret.Inherit = Inherit;
 			foreach (var i in this) {
-				var item = new SettingItem<Protection>();
+				var item = new SettingItem<IProtection>();
 				item.Id = i.Id;
 				item.Action = i.Action;
 				foreach (string j in i.Keys)
@@ -459,7 +459,7 @@ namespace Confuser.Core.Project {
 		///     Gets or sets the packer used to pack up the output.
 		/// </summary>
 		/// <value>The packer.</value>
-		public SettingItem<Packer> Packer { get; set; }
+		public SettingItem<IPacker> Packer { get; set; }
 
 		/// <summary>
 		///     Gets a list of paths that used to resolve assemblies.
@@ -573,7 +573,7 @@ namespace Confuser.Core.Project {
 					Rules.Add(rule);
 				}
 				else if (i.Name == "packer") {
-					Packer = new SettingItem<Packer>();
+					Packer = new SettingItem<IPacker>();
 					Packer.Load(i);
 				}
 				else if (i.Name == "probePath") {

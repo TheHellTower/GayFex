@@ -2,42 +2,47 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
-using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Constants {
-	internal class InjectPhase : ProtectionPhase {
-		public InjectPhase(ConstantProtection parent)
-			: base(parent) { }
+	internal sealed class InjectPhase : IProtectionPhase {
+		public InjectPhase(ConstantProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets {
-			get { return ProtectionTargets.Methods; }
-		}
+		public ConstantProtection Parent { get; }
 
-		public override string Name {
-			get { return "Constant encryption helpers injection"; }
-		}
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+		public ProtectionTargets Targets => ProtectionTargets.Methods;
+
+		public bool ProcessAll => false;
+
+		public string Name => "Constant encryption helpers injection";
+
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			if (parameters.Targets.Any()) {
-				var compression = context.Registry.GetService<ICompressionService>();
+				var compression = context.Registry.GetRequiredService<ICompressionService>();
 				var name = context.Registry.GetService<INameService>();
-				var marker = context.Registry.GetService<IMarkerService>();
-				var rt = context.Registry.GetService<IRuntimeService>();
+				var marker = context.Registry.GetRequiredService<IMarkerService>();
+				var rt = context.Registry.GetRequiredService<IRuntimeService>();
 				var moduleCtx = new CEContext {
-					Protection = (ConstantProtection)Parent,
-					Random = context.Registry.GetService<IRandomService>().GetRandomGenerator(Parent.Id),
+					Protection = Parent,
+					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(Parent.Id),
 					Context = context,
 					Module = context.CurrentModule,
 					Marker = marker,
-					DynCipher = context.Registry.GetService<IDynCipherService>(),
-					Name = name
+					DynCipher = context.Registry.GetRequiredService<IDynCipherService>(),
+					Name = name,
+					Trace = context.Registry.GetRequiredService<ITraceService>()
 				};
 
 				// Extract parameters
@@ -61,10 +66,10 @@ namespace Confuser.Protections.Constants {
 				}
 
 				// Inject helpers
-				MethodDef decomp = compression.GetRuntimeDecompressor(context.CurrentModule, member => {
-					name.MarkHelper(member, marker, (Protection)Parent);
+				MethodDef decomp = compression.GetRuntimeDecompressor(context, context.CurrentModule, member => {
+					name?.MarkHelper(context, member, marker, Parent);
 					if (member is MethodDef)
-						ProtectionParameters.GetParameters(context, member).Remove(Parent);
+						context.GetParameters(member).RemoveParameters(Parent);
 				});
 				InjectHelpers(context, compression, rt, moduleCtx);
 
@@ -78,7 +83,7 @@ namespace Confuser.Protections.Constants {
 			}
 		}
 
-		void InjectHelpers(ConfuserContext context, ICompressionService compression, IRuntimeService rt, CEContext moduleCtx) {
+		void InjectHelpers(IConfuserContext context, ICompressionService compression, IRuntimeService rt, CEContext moduleCtx) {
 			IEnumerable<IDnlibDef> members = InjectHelper.Inject(rt.GetRuntimeType("Confuser.Runtime.Constant"), context.CurrentModule.GlobalType, context.CurrentModule);
 			foreach (IDnlibDef member in members) {
 				if (member.Name == "Get") {
@@ -89,9 +94,9 @@ namespace Confuser.Protections.Constants {
 					moduleCtx.BufferField = (FieldDef)member;
 				else if (member.Name == "Initialize")
 					moduleCtx.InitMethod = (MethodDef)member;
-				moduleCtx.Name.MarkHelper(member, moduleCtx.Marker, (Protection)Parent);
+				moduleCtx.Name?.MarkHelper(context, member, moduleCtx.Marker, Parent);
 			}
-			ProtectionParameters.GetParameters(context, moduleCtx.InitMethod).Remove(Parent);
+			context.GetParameters(moduleCtx.InitMethod).RemoveParameters(Parent);
 
 			var dataType = new TypeDefUser("", moduleCtx.Name.RandomName(), context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType"));
 			dataType.Layout = TypeAttributes.ExplicitLayout;
@@ -99,14 +104,14 @@ namespace Confuser.Protections.Constants {
 			dataType.IsSealed = true;
 			moduleCtx.DataType = dataType;
 			context.CurrentModule.GlobalType.NestedTypes.Add(dataType);
-			moduleCtx.Name.MarkHelper(dataType, moduleCtx.Marker, (Protection)Parent);
+			moduleCtx.Name?.MarkHelper(context, dataType, moduleCtx.Marker, Parent);
 
 			moduleCtx.DataField = new FieldDefUser(moduleCtx.Name.RandomName(), new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
 				Access = FieldAttributes.CompilerControlled
 			};
 			context.CurrentModule.GlobalType.Fields.Add(moduleCtx.DataField);
-			moduleCtx.Name.MarkHelper(moduleCtx.DataField, moduleCtx.Marker, (Protection)Parent);
+			moduleCtx.Name?.MarkHelper(context, moduleCtx.DataField, moduleCtx.Marker, Parent);
 
 			MethodDef decoder = rt.GetRuntimeType("Confuser.Runtime.Constant").FindMethod("Get");
 			moduleCtx.Decoders = new List<Tuple<MethodDef, DecoderDesc>>();
@@ -128,8 +133,8 @@ namespace Confuser.Protections.Constants {
 					}
 				}
 				context.CurrentModule.GlobalType.Methods.Add(decoderInst);
-				moduleCtx.Name.MarkHelper(decoderInst, moduleCtx.Marker, (Protection)Parent);
-				ProtectionParameters.GetParameters(context, decoderInst).Remove(Parent);
+				moduleCtx.Name?.MarkHelper(context, decoderInst, moduleCtx.Marker, Parent);
+				context.GetParameters(decoderInst).RemoveParameters(Parent);
 
 				var decoderDesc = new DecoderDesc();
 

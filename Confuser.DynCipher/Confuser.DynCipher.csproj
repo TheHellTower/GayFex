@@ -14,8 +14,13 @@
     <Description>Cipher generator of ConfuserEx</Description>
   </PropertyGroup>
 
+  <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
+  </ItemGroup>
+
   <ItemGroup Label="Project Dependencies">
-    <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
+    <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
   </ItemGroup>
 
   <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />

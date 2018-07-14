@@ -16,11 +16,13 @@
 
   <ItemGroup Label="Nuget Dependencies">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\Confuser.DynCipher\Confuser.DynCipher.csproj" />
-    <ProjectReference Include="..\Confuser.Renamer\Confuser.Renamer.csproj" />
+    <ProjectReference Include="..\Confuser.Protections.Exports\Confuser.Protections.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Runtime\Confuser.Runtime.csproj" Condition="'$(TargetFramework)' == 'net461'" />
   </ItemGroup>
 

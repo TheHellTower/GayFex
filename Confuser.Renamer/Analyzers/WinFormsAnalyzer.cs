@@ -2,14 +2,16 @@
 using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Core.Services;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer.Analyzers {
 	public class WinFormsAnalyzer : IRenamer {
 		Dictionary<string, List<PropertyDef>> properties = new Dictionary<string, List<PropertyDef>>();
 
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			if (def is ModuleDef) {
 				foreach (var type in ((ModuleDef)def).GetTypes())
 					foreach (var prop in type.Properties)
@@ -24,7 +26,7 @@ namespace Confuser.Renamer.Analyzers {
 			AnalyzeMethod(context, service, method);
 		}
 
-		void AnalyzeMethod(ConfuserContext context, INameService service, MethodDef method) {
+		void AnalyzeMethod(IConfuserContext context, INameService service, MethodDef method) {
 			var binding = new List<Tuple<bool, Instruction>>();
 			foreach (Instruction instr in method.Body.Instructions) {
 				if ((instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt)) {
@@ -45,15 +47,17 @@ namespace Confuser.Renamer.Analyzers {
 			if (binding.Count == 0)
 				return;
 
-			var traceSrv = context.Registry.GetService<ITraceService>();
-			MethodTrace trace = traceSrv.Trace(method);
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
+
+			var traceSrv = context.Registry.GetRequiredService<ITraceService>();
+			var trace = traceSrv.Trace(method);
 
 			bool erred = false;
 			foreach (var instrInfo in binding) {
 				int[] args = trace.TraceArguments(instrInfo.Item2);
 				if (args == null) {
 					if (!erred)
-						context.Logger.WarnFormat("Failed to extract binding property name in '{0}'.", method.FullName);
+						logger.WarnFormat("Failed to extract binding property name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
@@ -61,49 +65,49 @@ namespace Confuser.Renamer.Analyzers {
 				Instruction propertyName = method.Body.Instructions[args[0 + (instrInfo.Item1 ? 1 : 0)]];
 				if (propertyName.OpCode.Code != Code.Ldstr) {
 					if (!erred)
-						context.Logger.WarnFormat("Failed to extract binding property name in '{0}'.", method.FullName);
+						logger.WarnFormat("Failed to extract binding property name in '{0}'.", method.FullName);
 					erred = true;
 				}
 				else {
 					List<PropertyDef> props;
 					if (!properties.TryGetValue((string)propertyName.Operand, out props)) {
 						if (!erred)
-							context.Logger.WarnFormat("Failed to extract target property in '{0}'.", method.FullName);
+							logger.WarnFormat("Failed to extract target property in '{0}'.", method.FullName);
 						erred = true;
 					}
 					else {
 						foreach (var property in props)
-							service.SetCanRename(property, false);
+							service.SetCanRename(context, property, false);
 					}
 				}
 
 				Instruction dataMember = method.Body.Instructions[args[2 + (instrInfo.Item1 ? 1 : 0)]];
 				if (dataMember.OpCode.Code != Code.Ldstr) {
 					if (!erred)
-						context.Logger.WarnFormat("Failed to extract binding property name in '{0}'.", method.FullName);
+						logger.WarnFormat("Failed to extract binding property name in '{0}'.", method.FullName);
 					erred = true;
 				}
 				else {
 					List<PropertyDef> props;
 					if (!properties.TryGetValue((string)dataMember.Operand, out props)) {
 						if (!erred)
-							context.Logger.WarnFormat("Failed to extract target property in '{0}'.", method.FullName);
+							logger.WarnFormat("Failed to extract target property in '{0}'.", method.FullName);
 						erred = true;
 					}
 					else {
 						foreach (var property in props)
-							service.SetCanRename(property, false);
+							service.SetCanRename(context, property, false);
 					}
 				}
 			}
 		}
 
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 	}

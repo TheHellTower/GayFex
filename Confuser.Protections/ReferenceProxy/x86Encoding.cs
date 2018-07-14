@@ -6,10 +6,12 @@ using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
 namespace Confuser.Protections.ReferenceProxy {
@@ -37,12 +39,12 @@ namespace Confuser.Protections.ReferenceProxy {
 			var result = new Variable("{RESULT}");
 
 			CorLibTypeSig int32 = ctx.Module.CorLibTypes.Int32;
-			native = new MethodDefUser(ctx.Context.Registry.GetService<INameService>().RandomName(), MethodSig.CreateStatic(int32, int32), MethodAttributes.PinvokeImpl | MethodAttributes.PrivateScope | MethodAttributes.Static);
+			native = new MethodDefUser(ctx.Context.Registry.GetRequiredService<INameService>().RandomName(), MethodSig.CreateStatic(int32, int32), MethodAttributes.PinvokeImpl | MethodAttributes.PrivateScope | MethodAttributes.Static);
 			native.ImplAttributes = MethodImplAttributes.Native | MethodImplAttributes.Unmanaged | MethodImplAttributes.PreserveSig;
 			ctx.Module.GlobalType.Methods.Add(native);
 
-			ctx.Context.Registry.GetService<IMarkerService>().Mark(native, ctx.Protection);
-			ctx.Context.Registry.GetService<INameService>().SetCanRename(native, false);
+			ctx.Context.Registry.GetRequiredService<IMarkerService>().Mark(ctx.Context, native, ctx.Protection);
+			ctx.Context.Registry.GetService<INameService>()?.SetCanRename(ctx.Context, native, false);
 
 			x86Register? reg;
 			var codeGen = new x86CodeGen();
@@ -81,14 +83,14 @@ namespace Confuser.Protections.ReferenceProxy {
 			else if (e.Event == ModuleWriterEvent.EndCalculateRvasAndFileOffsets) {
 				foreach (var native in nativeCodes) {
 					uint rid = writer.Metadata.GetRid(native.Item1);
-          RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[rid];
-          writer.Metadata.TablesHeap.MethodTable[rid] = new RawMethodRow(
-            (uint)native.Item3.RVA,
-            methodRow.ImplFlags,
-            methodRow.Flags,
-            methodRow.Name,
-            methodRow.Signature,
-            methodRow.ParamList);
+					RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[rid];
+					writer.Metadata.TablesHeap.MethodTable[rid] = new RawMethodRow(
+					  (uint)native.Item3.RVA,
+					  methodRow.ImplFlags,
+					  methodRow.Flags,
+					  methodRow.Name,
+					  methodRow.Signature,
+					  methodRow.ParamList);
 				}
 			}
 		}

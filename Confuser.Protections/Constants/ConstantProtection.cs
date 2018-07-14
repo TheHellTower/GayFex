@@ -1,49 +1,37 @@
 ﻿using System;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.Constants;
+using Confuser.Protections.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
-	public interface IConstantService {
-		void ExcludeMethod(ConfuserContext context, MethodDef method);
-	}
-
+	[Export(typeof(IProtection))]
 	[BeforeProtection("Ki.ControlFlow"), AfterProtection("Ki.RefProxy")]
-	internal class ConstantProtection : Protection, IConstantService {
+	internal class ConstantProtection : IProtection, IConstantService {
 		public const string _Id = "constants";
 		public const string _FullId = "Ki.Constants";
 		public const string _ServiceId = "Ki.Constants";
 		internal static readonly object ContextKey = new object();
 
-		public override string Name {
-			get { return "Constants Protection"; }
-		}
+		public string Name => "Constants Protection";
 
-		public override string Description {
-			get { return "This protection encodes and compresses constants in the code."; }
-		}
+		public string Description => "This protection encodes and compresses constants in the code.";
 
-		public override string Id {
-			get { return _Id; }
-		}
+		public string Id => _Id;
 
-		public override string FullId {
-			get { return _FullId; }
-		}
+		public string FullId => _FullId;
 
-		public override ProtectionPreset Preset {
-			get { return ProtectionPreset.Normal; }
-		}
+		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
-		public void ExcludeMethod(ConfuserContext context, MethodDef method) {
-			ProtectionParameters.GetParameters(context, method).Remove(this);
-		}
+		void IConstantService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
+			context.GetParameters(method).RemoveParameters(this);
 
-		protected override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(_ServiceId, typeof(IConstantService), this);
-		}
+		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+			collection.AddSingleton(typeof(IConstantService), this);
 
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new InjectPhase(this));
 			pipeline.InsertPostStage(PipelineStage.ProcessModule, new EncodePhase(this));
 		}

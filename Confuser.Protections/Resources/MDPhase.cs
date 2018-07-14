@@ -3,32 +3,38 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Confuser.Core;
+using System.Threading;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.Renamer;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
+using ILogger = Confuser.Core.ILogger;
 
 namespace Confuser.Protections.Resources {
-	internal class MDPhase {
+	internal sealed class MDPhase {
 		readonly REContext ctx;
 		ByteArrayChunk encryptedResource;
+		CancellationToken token;
 
 		public MDPhase(REContext ctx) {
 			this.ctx = ctx;
+			token = CancellationToken.None;
 		}
 
-		public void Hook() {
+		public void Hook(CancellationToken newToken) {
 			ctx.Context.CurrentModuleWriterOptions.WriterEvent += OnWriterEvent;
+			token = newToken;
 		}
 
 		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
 			var writer = (ModuleWriterBase)sender;
 			if (e.Event == ModuleWriterEvent.MDBeginAddResources) {
-				ctx.Context.CheckCancellation();
-				ctx.Context.Logger.Debug("Encrypting resources...");
+				var logger = ctx.Context.Registry.GetRequiredService<ILoggingService>().GetLogger("resources");
+				token.ThrowIfCancellationRequested();
+				logger.Debug("Encrypting resources...");
 				bool hasPacker = ctx.Context.Packer != null;
 
 				List<EmbeddedResource> resources = ctx.Module.Resources.OfType<EmbeddedResource>().ToList();
@@ -59,11 +65,11 @@ namespace Confuser.Protections.Resources {
 				}
 
 				// compress
-				moduleBuff = ctx.Context.Registry.GetService<ICompressionService>().Compress(
+				moduleBuff = ctx.Context.Registry.GetRequiredService<ICompressionService>().Compress(
 					moduleBuff,
-					progress => ctx.Context.Logger.Progress((int)(progress * 10000), 10000));
-				ctx.Context.Logger.EndProgress();
-				ctx.Context.CheckCancellation();
+					progress => logger.Progress((int)(progress * 10000), 10000));
+				logger.EndProgress();
+				token.ThrowIfCancellationRequested();
 
 				uint compressedLen = (uint)(moduleBuff.Length + 3) / 4;
 				compressedLen = (compressedLen + 0xfu) & ~0xfu;

@@ -1,25 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Confuser.Core;
+using Confuser.Core.Services;
 using Confuser.Renamer.References;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class TypeBlobAnalyzer : IRenamer {
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
-			var module = def as ModuleDefMD;
-			if (module == null) return;
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+			if (!(def is ModuleDefMD module)) return;
 
-			MDTable table;
-			uint len;
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
 
 			// MemberRef
-			table = module.TablesStream.Get(Table.Method);
-			len = table.Rows;
+			var table = module.TablesStream.Get(Table.Method);
+			var len = table.Rows;
 			IEnumerable<MethodDef> methods = module.GetTypes().SelectMany(type => type.Methods);
 			foreach (MethodDef method in methods) {
 				foreach (MethodOverride methodImpl in method.Overrides) {
@@ -75,37 +75,37 @@ namespace Confuser.Renamer.Analyzers {
 				foreach (CANamedArgument fieldArg in attr.Fields) {
 					FieldDef field = attrType.FindField(fieldArg.Name, new FieldSig(fieldArg.Type));
 					if (field == null)
-						context.Logger.WarnFormat("Failed to resolve CA field '{0}::{1} : {2}'.", attrType, fieldArg.Name, fieldArg.Type);
+						logger.WarnFormat("Failed to resolve CA field '{0}::{1} : {2}'.", attrType, fieldArg.Name, fieldArg.Type);
 					else
-						service.AddReference(field, new CAMemberReference(fieldArg, field));
+						service.AddReference(context, field, new CAMemberReference(fieldArg, field));
 				}
 				foreach (CANamedArgument propertyArg in attr.Properties) {
 					PropertyDef property = attrType.FindProperty(propertyArg.Name, new PropertySig(true, propertyArg.Type));
 					if (property == null)
-						context.Logger.WarnFormat("Failed to resolve CA property '{0}::{1} : {2}'.", attrType, propertyArg.Name, propertyArg.Type);
+						logger.WarnFormat("Failed to resolve CA property '{0}::{1} : {2}'.", attrType, propertyArg.Name, propertyArg.Type);
 					else
-						service.AddReference(property, new CAMemberReference(propertyArg, property));
+						service.AddReference(context, property, new CAMemberReference(propertyArg, property));
 				}
 			}
 		}
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 
-		void AnalyzeCAArgument(ConfuserContext context, INameService service, CAArgument arg) {
+		void AnalyzeCAArgument(IConfuserContext context, INameService service, CAArgument arg) {
 			if (arg.Type.DefinitionAssembly.IsCorLib() && arg.Type.FullName == "System.Type") {
 				var typeSig = (TypeSig)arg.Value;
 				foreach (ITypeDefOrRef typeRef in typeSig.FindTypeRefs()) {
 					TypeDef typeDef = typeRef.ResolveTypeDefThrow();
 					if (context.Modules.Contains((ModuleDefMD)typeDef.Module)) {
 						if (typeRef is TypeRef)
-							service.AddReference(typeDef, new TypeRefReference((TypeRef)typeRef, typeDef));
-						service.ReduceRenameMode(typeDef, RenameMode.ASCII);
+							service.AddReference(context, typeDef, new TypeRefReference((TypeRef)typeRef, typeDef));
+						service.ReduceRenameMode(context, typeDef, RenameMode.ASCII);
 					}
 				}
 			}
@@ -115,7 +115,7 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		void AnalyzeMemberRef(ConfuserContext context, INameService service, MemberRef memberRef) {
+		void AnalyzeMemberRef(IConfuserContext context, INameService service, MemberRef memberRef) {
 			ITypeDefOrRef declType = memberRef.DeclaringType;
 			var typeSpec = declType as TypeSpec;
 			if (typeSpec == null || typeSpec.TypeSig.IsArray || typeSpec.TypeSig.IsSZArray)
@@ -140,7 +140,7 @@ namespace Confuser.Renamer.Analyzers {
 				else if (memberRef.IsMethodRef) member = memberRef.ResolveMethodThrow();
 				else throw new UnreachableException();
 
-				service.AddReference(member, new MemberRefReference(memberRef, member));
+				service.AddReference(context, member, new MemberRefReference(memberRef, member));
 			}
 		}
 	}

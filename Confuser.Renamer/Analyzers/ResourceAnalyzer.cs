@@ -1,17 +1,20 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Text.RegularExpressions;
 using Confuser.Core;
+using Confuser.Core.Services;
 using Confuser.Renamer.References;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class ResourceAnalyzer : IRenamer {
 		static readonly Regex ResourceNamePattern = new Regex("^(.*)\\.resources$");
 
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
-			var module = def as ModuleDef;
-			if (module == null) return;
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+			if (!(def is ModuleDef module)) return;
+
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
 
 			string asmName = module.Assembly.Name.String;
 			if (!string.IsNullOrEmpty(module.Assembly.Culture) &&
@@ -21,7 +24,7 @@ namespace Confuser.Renamer.Analyzers {
 				string nameAsmName = asmName.Substring(0, asmName.Length - ".resources".Length);
 				ModuleDef mainModule = context.Modules.SingleOrDefault(mod => mod.Assembly.Name == nameAsmName);
 				if (mainModule == null) {
-					context.Logger.ErrorFormat("Could not find main assembly of satellite assembly '{0}'.", module.Assembly.FullName);
+					logger.ErrorFormat("Could not find main assembly of satellite assembly '{0}'.", module.Assembly.FullName);
 					throw new ConfuserException(null);
 				}
 
@@ -33,11 +36,11 @@ namespace Confuser.Renamer.Analyzers {
 					string typeName = match.Groups[1].Value;
 					TypeDef type = mainModule.FindReflectionThrow(typeName);
 					if (type == null) {
-						context.Logger.WarnFormat("Could not find resource type '{0}'.", typeName);
+						logger.WarnFormat("Could not find resource type '{0}'.", typeName);
 						continue;
 					}
-					service.ReduceRenameMode(type, RenameMode.ASCII);
-					service.AddReference(type, new ResourceReference(res, type, format));
+					service.ReduceRenameMode(context, type, RenameMode.ASCII);
+					service.AddReference(context, type, new ResourceReference(res, type, format));
 				}
 			}
 			else {
@@ -60,20 +63,20 @@ namespace Confuser.Renamer.Analyzers {
 					}
 
 					if (type == null) {
-						context.Logger.WarnFormat("Could not find resource type '{0}'.", typeName);
+						logger.WarnFormat("Could not find resource type '{0}'.", typeName);
 						continue;
 					}
-					service.ReduceRenameMode(type, RenameMode.ASCII);
-					service.AddReference(type, new ResourceReference(res, type, format));
+					service.ReduceRenameMode(context, type, RenameMode.ASCII);
+					service.AddReference(context, type, new ResourceReference(res, type, format));
 				}
 			}
 		}
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 	}

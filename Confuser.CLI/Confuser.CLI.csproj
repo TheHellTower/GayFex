@@ -68,6 +68,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj">
+      <Project>{1508b4cd-f272-4eef-ab49-21f1c3661e69}</Project>
+      <Name>Confuser.Core.Exports</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj">
       <Project>{BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92}</Project>
       <Name>Confuser.Core</Name>

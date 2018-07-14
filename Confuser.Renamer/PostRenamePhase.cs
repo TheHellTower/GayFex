@@ -1,31 +1,31 @@
 ﻿using System;
+using System.Threading;
 using Confuser.Core;
-using dnlib.DotNet;
+using Confuser.Renamer.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer {
-	internal class PostRenamePhase : ProtectionPhase {
-		public PostRenamePhase(NameProtection parent)
-			: base(parent) { }
+	internal class PostRenamePhase : IProtectionPhase {
+		public PostRenamePhase(NameProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override bool ProcessAll {
-			get { return true; }
-		}
+		public NameProtection Parent { get; }
 
-		public override ProtectionTargets Targets {
-			get { return ProtectionTargets.AllDefinitions; }
-		}
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		public override string Name {
-			get { return "Post-renaming"; }
-		}
+		public bool ProcessAll => true;
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
-			var service = (NameService)context.Registry.GetService<INameService>();
+		public ProtectionTargets Targets => ProtectionTargets.AllDefinitions;
 
-			foreach (IRenamer renamer in service.Renamers) {
-				foreach (IDnlibDef def in parameters.Targets)
+		public string Name => "Post-renaming";
+
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+			var service = (NameService)context.Registry.GetRequiredService<INameService>();
+
+			foreach (var renamer in service.Renamers) {
+				foreach (var def in parameters.Targets)
 					renamer.PostRename(context, service, parameters, def);
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 			}
 		}
 	}

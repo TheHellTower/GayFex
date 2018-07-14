@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using Confuser.Core.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Core.API {
 	internal class APIStore : IAPIStore {
-		readonly ConfuserContext context;
-		readonly RandomGenerator random;
+		readonly IRandomGenerator random;
 		readonly SortedList<int, List<IDataStore>> dataStores;
 		readonly List<IOpaquePredicateDescriptor> predicates;
 
@@ -14,9 +14,8 @@ namespace Confuser.Core.API {
 		///     Initializes a new instance of the <see cref="APIStore" /> class.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		public APIStore(ConfuserContext context) {
-			this.context = context;
-			random = context.Registry.GetService<IRandomService>().GetRandomGenerator("APIStore");
+		public APIStore(IServiceProvider provider) {
+			random = provider.GetRequiredService<IRandomService>().GetRandomGenerator("APIStore");
 
 			dataStores = new SortedList<int, List<IDataStore>>();
 			predicates = new List<IOpaquePredicateDescriptor>();

@@ -7,7 +7,7 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.AntiTamper {
 	internal class NormalDeriver : IKeyDeriver {
-		public void Init(ConfuserContext ctx, RandomGenerator random) {
+		public void Init(IConfuserContext ctx, IRandomGenerator random) {
 			//
 		}
 
@@ -29,7 +29,7 @@ namespace Confuser.Protections.AntiTamper {
 			return ret;
 		}
 
-		public IEnumerable<Instruction> EmitDerivation(MethodDef method, ConfuserContext ctx, Local dst, Local src) {
+		public IEnumerable<Instruction> EmitDerivation(MethodDef method, IConfuserContext ctx, Local dst, Local src) {
 			for (int i = 0; i < 0x10; i++) {
 				yield return Instruction.Create(OpCodes.Ldloc, dst);
 				yield return Instruction.Create(OpCodes.Ldc_I4, i);

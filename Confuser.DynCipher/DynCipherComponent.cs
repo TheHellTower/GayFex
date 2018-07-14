@@ -1,31 +1,26 @@
-﻿using System;
+﻿using System.ComponentModel.Composition;
 using Confuser.Core;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.DynCipher {
-	internal class DynCipherComponent : ConfuserComponent {
+	[Export(typeof(IConfuserComponent))]
+	internal sealed class DynCipherComponent : IConfuserComponent {
 		public const string _ServiceId = "Confuser.DynCipher";
 
-		public override string Name {
-			get { return "Dynamic Cipher"; }
-		}
+		public string Name => "Dynamic Cipher";
 
-		public override string Description {
-			get { return "Provides dynamic cipher generation services."; }
-		}
+		public string Description => "Provides dynamic cipher generation services.";
 
-		public override string Id {
-			get { return _ServiceId; }
-		}
+		public string Id => _ServiceId;
 
-		public override string FullId {
-			get { return _ServiceId; }
-		}
+		public string FullId => _ServiceId;
 
-		protected override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(_ServiceId, typeof(IDynCipherService), new DynCipherService());
-		}
+		public IConfuserContext Context { get; set; }
 
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		public void Initialize(IServiceCollection collection) =>
+			collection.AddSingleton(typeof(IDynCipherService), new DynCipherService());
+
+		public void PopulatePipeline(IProtectionPipeline pipeline) {
 			//
 		}
 	}

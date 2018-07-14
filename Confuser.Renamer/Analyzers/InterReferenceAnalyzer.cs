@@ -1,7 +1,7 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Confuser.Core;
 using Confuser.Renamer.References;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
 
@@ -9,7 +9,7 @@ namespace Confuser.Renamer.Analyzers {
 	internal class InterReferenceAnalyzer : IRenamer {
 		// i.e. Inter-Assembly References, e.g. InternalVisibleToAttributes
 
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			var module = def as ModuleDefMD;
 			if (module == null) return;
 
@@ -37,12 +37,12 @@ namespace Confuser.Renamer.Analyzers {
 
 				TypeDef typeDef = typeRef.ResolveTypeDefThrow();
 				if (typeDef.Module != module && context.Modules.Contains((ModuleDefMD)typeDef.Module)) {
-					service.AddReference(typeDef, new TypeRefReference(typeRef, typeDef));
+					service.AddReference(context, typeDef, new TypeRefReference(typeRef, typeDef));
 				}
 			}
 		}
 
-		void ProcessMemberRef(ConfuserContext context, INameService service, ModuleDefMD module, IMemberRef r) {
+		void ProcessMemberRef(IConfuserContext context, INameService service, ModuleDefMD module, IMemberRef r) {
 			var memberRef = r as MemberRef;
 			if (r is MethodSpec)
 				memberRef = ((MethodSpec)r).Method as MemberRef;
@@ -54,16 +54,16 @@ namespace Confuser.Renamer.Analyzers {
 				TypeDef declType = memberRef.DeclaringType.ResolveTypeDefThrow();
 				if (declType.Module != module && context.Modules.Contains((ModuleDefMD)declType.Module)) {
 					var memberDef = (IDnlibDef)declType.ResolveThrow(memberRef);
-					service.AddReference(memberDef, new MemberRefReference(memberRef, memberDef));
+					service.AddReference(context, memberDef, new MemberRefReference(memberRef, memberDef));
 				}
 			}
 		}
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 	}

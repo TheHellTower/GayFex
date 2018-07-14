@@ -22,7 +22,7 @@ namespace CompressorWithResx.Test {
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = Path.Combine(baseDir, "testtmp"),
-				Packer = new SettingItem<Packer>("compressor")
+				Packer = new SettingItem<IPacker>("compressor")
 			};
 			proj.Add(new ProjectModule() { Path = Path.Combine(baseDir, "CompressorWithResx.exe") });
 

@@ -1,5 +1,5 @@
-﻿using System;
-using Confuser.Core;
+﻿using Confuser.Core;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -13,13 +13,11 @@ namespace Confuser.Renamer.References {
 			this.typeDef = typeDef;
 		}
 
-		public bool UpdateNameReference(ConfuserContext context, INameService service) {
+		public bool UpdateNameReference(IConfuserContext context, INameService service) {
 			reference.Operand = typeDef.ReflectionFullName;
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

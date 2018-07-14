@@ -19,7 +19,7 @@ namespace Confuser.DynCipher.Elements {
 		public uint InverseKey { get; private set; }
 		public CryptoNumOps Operation { get; private set; }
 
-		public override void Initialize(RandomGenerator random) {
+		public override void Initialize(IRandomGenerator random) {
 			Operation = (CryptoNumOps)(random.NextInt32(4));
 			switch (Operation) {
 				case CryptoNumOps.Add:

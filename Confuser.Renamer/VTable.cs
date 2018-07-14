@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Confuser.Core;
+using Confuser.Core.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 using ILogger = Confuser.Core.ILogger;
 
 namespace Confuser.Renamer {
@@ -311,10 +312,10 @@ namespace Confuser.Renamer {
 
 	public class VTableStorage {
 		Dictionary<TypeDef, VTable> storage = new Dictionary<TypeDef, VTable>();
-		ILogger logger;
+		readonly ILogger logger;
 
-		public VTableStorage(ILogger logger) {
-			this.logger = logger;
+		public VTableStorage(IServiceProvider provider) {
+			logger = provider.GetRequiredService<ILoggingService>().GetLogger("naming");
 		}
 
 		public ILogger GetLogger() {

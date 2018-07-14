@@ -16,17 +16,7 @@ namespace Confuser.DynCipher.Generation {
 		const int RATIO_SUM = MAT_RATIO + NUMOP_RATIO + SWAP_RATIO + BINOP_RATIO + ROTATE_RATIO;
 		const double VARIANCE = 0.2;
 
-
-		static void Shuffle<T>(RandomGenerator random, IList<T> arr) {
-			for (int i = 1; i < arr.Count; i++) {
-				int j = random.NextInt32(i + 1);
-				T tmp = arr[i];
-				arr[i] = arr[j];
-				arr[j] = tmp;
-			}
-		}
-
-		static void PostProcessStatements(StatementBlock block, RandomGenerator random) {
+		static void PostProcessStatements(StatementBlock block, IRandomGenerator random) {
 			MulToShiftTransform.Run(block);
 			NormalizeBinOpTransform.Run(block);
 			ExpansionTransform.Run(block);
@@ -34,7 +24,7 @@ namespace Confuser.DynCipher.Generation {
 			ConvertVariables.Run(block);
 		}
 
-		public static void GeneratePair(RandomGenerator random, out StatementBlock encrypt, out StatementBlock decrypt) {
+		public static void GeneratePair(IRandomGenerator random, out StatementBlock encrypt, out StatementBlock decrypt) {
 			double varPrecentage = 1 + ((random.NextDouble() * 2) - 1) * VARIANCE;
 			var totalElements = (int)(((random.NextDouble() + 1) * RATIO_SUM) * varPrecentage);
 
@@ -51,7 +41,7 @@ namespace Confuser.DynCipher.Generation {
 				elems.Add(new RotateBit());
 			for (int i = 0; i < 16; i++)
 				elems.Add(new AddKey(i));
-			Shuffle(random, elems);
+			random.Shuffle(elems);
 
 
 			int[] x = Enumerable.Range(0, 16).ToArray();
@@ -67,7 +57,7 @@ namespace Confuser.DynCipher.Generation {
 					elem.DataIndexes[i] = x[index++];
 				}
 				if (overdue) {
-					Shuffle(random, x);
+					random.Shuffle( x);
 					index = 0;
 					overdue = false;
 				}

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Confuser.Core.Project;
 using Confuser.Core.Project.Patterns;
 using dnlib.DotNet;
@@ -56,7 +58,7 @@ namespace Confuser.Core {
 				}
 			}
 
-			public ProtectionSettingsStack(ConfuserContext context, Dictionary<string, Protection> protections) {
+			public ProtectionSettingsStack(ConfuserContext context, Dictionary<string, IProtection> protections) {
 				this.context = context;
 				stack = new Stack<Tuple<ProtectionSettings, ProtectionSettingsInfo[]>>();
 				parser = new ObfAttrParser(protections);
@@ -273,14 +275,14 @@ namespace Confuser.Core {
 
 		ConfuserContext context;
 		ConfuserProject project;
-		Packer packer;
+		IPacker packer;
 		Dictionary<string, string> packerParams;
 		List<byte[]> extModules;
 
 		static readonly object ModuleSettingsKey = new object();
 
 		/// <inheritdoc />
-		protected internal override void MarkMember(IDnlibDef member, ConfuserContext context) {
+		protected internal override void MarkMember(IDnlibDef member, IConfuserContext context) {
 			ModuleDef module = ((IMemberRef)member).Module;
 			var stack = context.Annotations.Get<ProtectionSettingsStack>(module, ModuleSettingsKey);
 			using (stack.Apply(member, Enumerable.Empty<ProtectionSettingsInfo>()))
@@ -288,7 +290,7 @@ namespace Confuser.Core {
 		}
 
 		/// <inheritdoc />
-		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context) {
+		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
 			this.context = context;
 			project = proj;
 			extModules = new List<byte[]>();
@@ -311,7 +313,7 @@ namespace Confuser.Core {
 				}
 
 				ModuleDefMD modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 
 				context.Resolver.AddToCache(modDef);
 				modules.Add(Tuple.Create(module, modDef));
@@ -332,7 +334,7 @@ namespace Confuser.Core {
 			if (proj.Debug && proj.Packer != null)
 				context.Logger.Warn("Generated Debug symbols might not be usable with packers!");
 
-			return new MarkerResult(modules.Select(module => module.Item2).ToList(), packer, extModules);
+			return new MarkerResult(modules.Select(module => module.Item2).ToImmutableArray(), packer, extModules.ToImmutableArray());
 		}
 
 		ProtectionSettingsInfo AddRule(ObfuscationAttributeInfo attr, List<ProtectionSettingsInfo> infos) {

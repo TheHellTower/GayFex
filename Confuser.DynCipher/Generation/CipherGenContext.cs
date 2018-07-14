@@ -7,11 +7,11 @@ namespace Confuser.DynCipher.Generation {
 	internal class CipherGenContext {
 		readonly Variable[] dataVars;
 		readonly Variable keyVar = new Variable("{KEY}");
-		readonly RandomGenerator random;
+		readonly IRandomGenerator random;
 		readonly List<Variable> tempVars = new List<Variable>();
 		int tempVarCounter;
 
-		public CipherGenContext(RandomGenerator random, int dataVarCount) {
+		public CipherGenContext(IRandomGenerator random, int dataVarCount) {
 			this.random = random;
 			Block = new StatementBlock(); // new LoopStatement() { Begin = 0, Limit = 4 };
 			dataVars = new Variable[dataVarCount];

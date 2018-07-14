@@ -7,7 +7,7 @@ using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Generation {
 	internal class ExpressionGenerator {
-		static Expression GenerateExpression(RandomGenerator random, Expression current, int currentDepth, int targetDepth) {
+		static Expression GenerateExpression(IRandomGenerator random, Expression current, int currentDepth, int targetDepth) {
 			if (currentDepth == targetDepth || (currentDepth > targetDepth / 3 && random.NextInt32(100) > 85))
 				return current;
 
@@ -36,7 +36,7 @@ namespace Confuser.DynCipher.Generation {
 			throw new UnreachableException();
 		}
 
-		static void SwapOperands(RandomGenerator random, Expression exp) {
+		static void SwapOperands(IRandomGenerator random, Expression exp) {
 			if (exp is BinOpExpression) {
 				var binExp = (BinOpExpression)exp;
 				if (random.NextBoolean()) {
@@ -142,7 +142,7 @@ namespace Confuser.DynCipher.Generation {
 			return result;
 		}
 
-		public static void GeneratePair(RandomGenerator random, Expression var, Expression result, int depth, out Expression expression, out Expression inverse) {
+		public static void GeneratePair(IRandomGenerator random, Expression var, Expression result, int depth, out Expression expression, out Expression inverse) {
 			expression = GenerateExpression(random, var, 0, depth);
 			SwapOperands(random, expression);
 

@@ -8,9 +8,10 @@ using System.Text.RegularExpressions;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.BAML;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using dnlib.IO;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class WPFAnalyzer : IRenamer {
@@ -23,7 +24,7 @@ namespace Confuser.Renamer.Analyzers {
 		internal Dictionary<string, List<IBAMLReference>> bamlRefs = new Dictionary<string, List<IBAMLReference>>(StringComparer.OrdinalIgnoreCase);
 		public event Action<BAMLAnalyzer, BamlElement> AnalyzeBAMLElement;
 
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			var method = def as MethodDef;
 			if (method != null) {
 				if (!method.HasBody)
@@ -37,14 +38,15 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
-			var module = def as ModuleDefMD;
-			if (module == null || !parameters.GetParameter<bool>(context, def, "renXaml", true))
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+			if (!(def is ModuleDefMD module) || !parameters.GetParameter<bool>(context, def, "renXaml", true))
 				return;
 
 			var wpfResInfo = context.Annotations.Get<Dictionary<string, Dictionary<string, BamlDocument>>>(module, BAMLKey);
 			if (wpfResInfo == null)
 				return;
+
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
 
 			foreach (var res in wpfResInfo.Values)
 				foreach (var doc in res.Values) {
@@ -79,7 +81,7 @@ namespace Confuser.Renamer.Analyzers {
 						else if (newName.EndsWith(".XAML"))
 							newName = newShinyName + service.RandomName(RenameMode.Letters).ToLowerInvariant() + ".xaml";
 
-						context.Logger.Debug(String.Format("Preserving virtual paths. Replaced {0} with {1}", doc.DocumentName, newName));
+						logger.Debug(String.Format("Preserving virtual paths. Replaced {0} with {1}", doc.DocumentName, newName));
 
 						#endregion
 
@@ -99,7 +101,7 @@ namespace Confuser.Renamer.Analyzers {
 				}
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			var module = def as ModuleDefMD;
 			if (module == null)
 				return;
@@ -150,7 +152,9 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		void AnalyzeMethod(ConfuserContext context, INameService service, MethodDef method) {
+		void AnalyzeMethod(IConfuserContext context, INameService service, MethodDef method) {
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
+
 			var dpRegInstrs = new List<Tuple<bool, Instruction>>();
 			var routedEvtRegInstrs = new List<Instruction>();
 			for (int i = 0; i < method.Body.Instructions.Count; i++) {
@@ -173,7 +177,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (methodRef.DeclaringType.FullName == "System.Windows.Data.PropertyGroupDescription" &&
 						methodRef.Name == ".ctor" && i - 1 >= 0 && method.Body.Instructions[i - 1].OpCode.Code == Code.Ldstr) {
 						foreach (var property in analyzer.LookupProperty((string)method.Body.Instructions[i - 1].Operand))
-							service.SetCanRename(property, false);
+							service.SetCanRename(context, property, false);
 					}
 				}
 				else if (instr.OpCode == OpCodes.Ldstr) {
@@ -190,7 +194,7 @@ namespace Confuser.Renamer.Analyzers {
 							operand = match.Groups[2].Value;
 						}
 						else if (operand.Contains("/"))
-							context.Logger.WarnFormat("Fail to extract XAML name from '{0}'.", instr.Operand);
+							logger.WarnFormat("Fail to extract XAML name from '{0}'.", instr.Operand);
 
 						var reference = new BAMLStringReference(instr);
 						operand = operand.TrimStart('/');
@@ -206,21 +210,21 @@ namespace Confuser.Renamer.Analyzers {
 				return;
 
 			var traceSrv = context.Registry.GetService<ITraceService>();
-			MethodTrace trace = traceSrv.Trace(method);
+			var trace = traceSrv.Trace(method);
 
 			bool erred = false;
 			foreach (var instrInfo in dpRegInstrs) {
 				int[] args = trace.TraceArguments(instrInfo.Item2);
 				if (args == null) {
 					if (!erred)
-						context.Logger.WarnFormat("Failed to extract dependency property name in '{0}'.", method.FullName);
+						logger.WarnFormat("Failed to extract dependency property name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
 				Instruction ldstr = method.Body.Instructions[args[0]];
 				if (ldstr.OpCode.Code != Code.Ldstr) {
 					if (!erred)
-						context.Logger.WarnFormat("Failed to extract dependency property name in '{0}'.", method.FullName);
+						logger.WarnFormat("Failed to extract dependency property name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
@@ -232,11 +236,11 @@ namespace Confuser.Renamer.Analyzers {
 				{
 					MethodDef accessor;
 					if ((accessor = declType.FindMethod("Get" + name)) != null && accessor.IsStatic) {
-						service.SetCanRename(accessor, false);
+						service.SetCanRename(context, accessor, false);
 						found = true;
 					}
 					if ((accessor = declType.FindMethod("Set" + name)) != null && accessor.IsStatic) {
-						service.SetCanRename(accessor, false);
+						service.SetCanRename(context, accessor, false);
 						found = true;
 					}
 				}
@@ -245,26 +249,26 @@ namespace Confuser.Renamer.Analyzers {
 				// Find CLR property for attached DP as well, because it seems attached DP can be use as normal DP as well.
 				PropertyDef property = null;
 				if ((property = declType.FindProperty(name)) != null) {
-					service.SetCanRename(property, false);
+					service.SetCanRename(context, property, false);
 
 					found = true;
 					if (property.GetMethod != null)
-						service.SetCanRename(property.GetMethod, false);
+						service.SetCanRename(context, property.GetMethod, false);
 
 					if (property.SetMethod != null)
-						service.SetCanRename(property.SetMethod, false);
+						service.SetCanRename(context, property.SetMethod, false);
 
 					if (property.HasOtherMethods) {
 						foreach (MethodDef accessor in property.OtherMethods)
-							service.SetCanRename(accessor, false);
+							service.SetCanRename(context, accessor, false);
 					}
 				}
 				if (!found) {
 					if (instrInfo.Item1)
-						context.Logger.WarnFormat("Failed to find the accessors of attached dependency property '{0}' in type '{1}'.",
+						logger.WarnFormat("Failed to find the accessors of attached dependency property '{0}' in type '{1}'.",
 												  name, declType.FullName);
 					else
-						context.Logger.WarnFormat("Failed to find the CLR property of normal dependency property '{0}' in type '{1}'.",
+						logger.WarnFormat("Failed to find the CLR property of normal dependency property '{0}' in type '{1}'.",
 												  name, declType.FullName);
 				}
 			}
@@ -274,14 +278,14 @@ namespace Confuser.Renamer.Analyzers {
 				int[] args = trace.TraceArguments(instr);
 				if (args == null) {
 					if (!erred)
-						context.Logger.WarnFormat("Failed to extract routed event name in '{0}'.", method.FullName);
+						logger.WarnFormat("Failed to extract routed event name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
 				Instruction ldstr = method.Body.Instructions[args[0]];
 				if (ldstr.OpCode.Code != Code.Ldstr) {
 					if (!erred)
-						context.Logger.WarnFormat("Failed to extract routed event name in '{0}'.", method.FullName);
+						logger.WarnFormat("Failed to extract routed event name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
@@ -291,29 +295,29 @@ namespace Confuser.Renamer.Analyzers {
 
 				EventDef eventDef = null;
 				if ((eventDef = declType.FindEvent(name)) == null) {
-					context.Logger.WarnFormat("Failed to find the CLR event of routed event '{0}' in type '{1}'.",
+					logger.WarnFormat("Failed to find the CLR event of routed event '{0}' in type '{1}'.",
 											  name, declType.FullName);
 					continue;
 				}
-				service.SetCanRename(eventDef, false);
+				service.SetCanRename(context, eventDef, false);
 
 				if (eventDef.AddMethod != null)
-					service.SetCanRename(eventDef.AddMethod, false);
+					service.SetCanRename(context, eventDef.AddMethod, false);
 
 				if (eventDef.RemoveMethod != null)
-					service.SetCanRename(eventDef.RemoveMethod, false);
+					service.SetCanRename(context, eventDef.RemoveMethod, false);
 
 				if (eventDef.InvokeMethod != null)
-					service.SetCanRename(eventDef.InvokeMethod, false);
+					service.SetCanRename(context, eventDef.InvokeMethod, false);
 
 				if (eventDef.HasOtherMethods) {
 					foreach (MethodDef accessor in eventDef.OtherMethods)
-						service.SetCanRename(accessor, false);
+						service.SetCanRename(context, accessor, false);
 				}
 			}
 		}
 
-		void AnalyzeResources(ConfuserContext context, INameService service, ModuleDefMD module) {
+		void AnalyzeResources(IConfuserContext context, INameService service, ModuleDefMD module) {
 			if (analyzer == null) {
 				analyzer = new BAMLAnalyzer(context, service);
 				analyzer.AnalyzeElement += AnalyzeBAMLElement;

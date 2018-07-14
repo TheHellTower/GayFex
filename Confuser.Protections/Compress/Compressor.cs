@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
@@ -15,42 +17,37 @@ using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using dnlib.PE;
+using Microsoft.Extensions.DependencyInjection;
 using FileAttributes = dnlib.DotNet.FileAttributes;
+using ILogger = Confuser.Core.ILogger;
 using SR = System.Reflection;
 
 namespace Confuser.Protections {
-	internal class Compressor : Packer {
+	[Export(typeof(IPacker))]
+	internal sealed class Compressor : IPacker {
 		public const string _Id = "compressor";
 		public const string _FullId = "Ki.Compressor";
 		public const string _ServiceId = "Ki.Compressor";
 		public static readonly object ContextKey = new object();
 
-		public override string Name {
-			get { return "Compressing Packer"; }
-		}
+		public string Name => "Compressing Packer";
 
-		public override string Description {
-			get { return "This packer reduces the size of output."; }
-		}
+		public string Description => "This packer reduces the size of output.";
 
-		public override string Id {
-			get { return _Id; }
-		}
+		public string Id => _Id;
 
-		public override string FullId {
-			get { return _FullId; }
-		}
+		public string FullId => _FullId;
 
-		protected override void Initialize(ConfuserContext context) { }
+		void IConfuserComponent.Initialize(IServiceCollection collectin) { }
 
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.WriteModule, new ExtractPhase(this));
-		}
 
-		protected override void Pack(ConfuserContext context, ProtectionParameters parameters) {
+		void IPacker.Pack(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			var ctx = context.Annotations.Get<CompressorContext>(context, ContextKey);
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
 			if (ctx == null) {
-				context.Logger.Error("No executable module!");
+				logger.Error("No executable module!");
 				throw new ConfuserException(null);
 			}
 
@@ -80,9 +77,11 @@ namespace Confuser.Protections {
 			stubModule.TablesHeaderVersion = originModule.TablesHeaderVersion;
 			stubModule.Win32Resources = originModule.Win32Resources;
 
-			InjectStub(context, ctx, parameters, stubModule);
+			InjectStub(context, ctx, parameters, stubModule, token);
 
-			var snKey = context.Annotations.Get<StrongNameKey>(originModule, Marker.SNKey);
+			var markerService = context.Registry.GetRequiredService<IMarkerService>();
+
+			var snKey = markerService.GetStrongNameKey(context, originModule);
 			using (var ms = new MemoryStream()) {
 				var options = new ModuleWriterOptions(stubModule) {
 					StrongNameKey = snKey
@@ -91,8 +90,10 @@ namespace Confuser.Protections {
 				options.WriterEvent += injector.WriterEvent;
 
 				stubModule.Write(ms, options);
-				context.CheckCancellation();
-				ProtectStub(context, context.OutputPaths[ctx.ModuleIndex], ms.ToArray(), snKey, new StubProtection(ctx, originModule));
+				token.ThrowIfCancellationRequested();
+
+				var packerService = context.Registry.GetRequiredService<IPackerService>();
+				packerService.ProtectStub(context, context.OutputPaths[ctx.ModuleIndex], ms.ToArray(), snKey, new StubProtection(ctx, originModule), token);
 			}
 		}
 
@@ -114,7 +115,7 @@ namespace Confuser.Protections {
 			return new SR.AssemblyName(assembly.FullName).FullName.ToUpperInvariant();
 		}
 
-		void PackModules(ConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, RandomGenerator random) {
+		void PackModules(IConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, IRandomGenerator random, ILogger logger, CancellationToken token) {
 			int maxLen = 0;
 			var modules = new Dictionary<string, byte[]>();
 			for (int i = 0; i < context.OutputModules.Count; i++) {
@@ -157,18 +158,18 @@ namespace Confuser.Protections {
 					state = state * 0x5e3f1f + chr;
 				byte[] encrypted = compCtx.Encrypt(comp, entry.Value, state, progress => {
 					progress = (progress + moduleIndex) / modules.Count;
-					context.Logger.Progress((int)(progress * 10000), 10000);
+					logger.Progress((int)(progress * 10000), 10000);
 				});
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 
 				var resource = new EmbeddedResource(Convert.ToBase64String(name), encrypted, ManifestResourceAttributes.Private);
 				stubModule.Resources.Add(resource);
 				moduleIndex++;
 			}
-			context.Logger.EndProgress();
+			logger.EndProgress();
 		}
 
-		void InjectData(ModuleDef stubModule, MethodDef method, byte[] data) {
+		void InjectData(ITraceService traceService, ModuleDef stubModule, MethodDef method, byte[] data) {
 			var dataType = new TypeDefUser("", "DataType", stubModule.CorLibTypes.GetTypeRef("System", "ValueType"));
 			dataType.Layout = TypeAttributes.ExplicitLayout;
 			dataType.Visibility = TypeAttributes.NestedPrivate;
@@ -184,7 +185,7 @@ namespace Confuser.Protections {
 			};
 			stubModule.GlobalType.Fields.Add(dataField);
 
-			MutationHelper.ReplacePlaceholder(method, arg => {
+			MutationHelper.ReplacePlaceholder(traceService, method, arg => {
 				var repl = new List<Instruction>();
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Dup));
@@ -195,10 +196,12 @@ namespace Confuser.Protections {
 			});
 		}
 
-		void InjectStub(ConfuserContext context, CompressorContext compCtx, ProtectionParameters parameters, ModuleDef stubModule) {
-			var rt = context.Registry.GetService<IRuntimeService>();
-			RandomGenerator random = context.Registry.GetService<IRandomService>().GetRandomGenerator(Id);
-			var comp = context.Registry.GetService<ICompressionService>();
+		void InjectStub(IConfuserContext context, CompressorContext compCtx, IProtectionParameters parameters, ModuleDef stubModule, CancellationToken token) {
+			var rt = context.Registry.GetRequiredService<IRuntimeService>();
+			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(Id);
+			var comp = context.Registry.GetRequiredService<ICompressionService>();
+			var trace = context.Registry.GetRequiredService<ITraceService>();
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
 
 			var rtType = rt.GetRuntimeType(compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
 			IEnumerable<IDnlibDef> defs = InjectHelper.Inject(rtType, stubModule.GlobalType, stubModule);
@@ -215,7 +218,7 @@ namespace Confuser.Protections {
 			}
 			compCtx.Deriver.Init(context, random);
 
-			context.Logger.Debug("Encrypting modules...");
+			logger.Debug("Encrypting modules...");
 
 			// Main
 			MethodDef entryPoint = defs.OfType<MethodDef>().Single(method => method.Name == "Main");
@@ -238,16 +241,16 @@ namespace Confuser.Protections {
 			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
 
 			byte[] encryptedModule = compCtx.Encrypt(comp, compCtx.OriginModule, seed,
-													 progress => context.Logger.Progress((int)(progress * 10000), 10000));
-			context.Logger.EndProgress();
-			context.CheckCancellation();
+													 progress => logger.Progress((int)(progress * 10000), 10000));
+			logger.EndProgress();
+			token.ThrowIfCancellationRequested();
 
 			compCtx.EncryptedModule = encryptedModule;
 
 			MutationHelper.InjectKeys(entryPoint,
 									  new[] { 0, 1 },
 									  new[] { encryptedModule.Length >> 2, (int)seed });
-			InjectData(stubModule, entryPoint, encryptedModule);
+			InjectData(trace, stubModule, entryPoint, encryptedModule);
 
 			// Decrypt
 			MethodDef decrypter = defs.OfType<MethodDef>().Single(method => method.Name == "Decrypt");
@@ -269,7 +272,7 @@ namespace Confuser.Protections {
 					}
 					else if (method.DeclaringType.Name == "Lzma" &&
 							 method.Name == "Decompress") {
-						MethodDef decomp = comp.GetRuntimeDecompressor(stubModule, member => { });
+						MethodDef decomp = comp.GetRuntimeDecompressor(context, stubModule, member => { });
 						instr.Operand = decomp;
 					}
 				}
@@ -279,7 +282,7 @@ namespace Confuser.Protections {
 				decrypter.Body.Instructions.Add(instr);
 
 			// Pack modules
-			PackModules(context, compCtx, stubModule, comp, random);
+			PackModules(context, compCtx, stubModule, comp, random, logger, token);
 		}
 
 		void ImportAssemblyTypeReferences(ModuleDef originModule, ModuleDef stubModule) {

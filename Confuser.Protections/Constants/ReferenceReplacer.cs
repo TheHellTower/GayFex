@@ -7,10 +7,11 @@ using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Constants {
 	internal class ReferenceReplacer {
-		public static void ReplaceReference(CEContext ctx, ProtectionParameters parameters) {
+		public static void ReplaceReference(CEContext ctx, IProtectionParameters parameters) {
 			foreach (var entry in ctx.ReferenceRepl) {
 				if (parameters.GetParameter<bool>(ctx.Context, entry.Key, "cfg"))
 					ReplaceCFG(entry.Key, entry.Value, ctx);
@@ -32,7 +33,7 @@ namespace Confuser.Protections.Constants {
 			public CEContext Ctx;
 			public ControlFlowGraph Graph;
 			public BlockKey[] Keys;
-			public RandomGenerator Random;
+			public IRandomGenerator Random;
 			public Dictionary<uint, CFGState> StatesMap;
 			public Local StateVariable;
 		}
@@ -122,17 +123,17 @@ namespace Confuser.Protections.Constants {
 
 		static void InjectStateType(CEContext ctx) {
 			if (ctx.CfgCtxType == null) {
-				var type = ctx.Context.Registry.GetService<IRuntimeService>().GetRuntimeType("Confuser.Runtime.CFGCtx");
+				var type = ctx.Context.Registry.GetRequiredService<IRuntimeService>().GetRuntimeType("Confuser.Runtime.CFGCtx");
 				ctx.CfgCtxType = InjectHelper.Inject(type, ctx.Module);
 				ctx.Module.Types.Add(ctx.CfgCtxType);
 				ctx.CfgCtxCtor = ctx.CfgCtxType.FindMethod(".ctor");
 				ctx.CfgCtxNext = ctx.CfgCtxType.FindMethod("Next");
 
-				ctx.Name.MarkHelper(ctx.CfgCtxType, ctx.Marker, ctx.Protection);
+				ctx.Name?.MarkHelper(ctx.Context, ctx.CfgCtxType, ctx.Marker, ctx.Protection);
 				foreach (var def in ctx.CfgCtxType.Fields)
-					ctx.Name.MarkHelper(def, ctx.Marker, ctx.Protection);
+					ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
 				foreach (var def in ctx.CfgCtxType.Methods)
-					ctx.Name.MarkHelper(def, ctx.Marker, ctx.Protection);
+					ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
 			}
 		}
 

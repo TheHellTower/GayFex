@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
-using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.Constants {
 	internal class CEContext {
-		public ConfuserContext Context;
+		public IConfuserContext Context;
 		public ConstantProtection Protection;
 		public ModuleDef Module;
 
@@ -30,7 +30,8 @@ namespace Confuser.Protections.Constants {
 		public IDynCipherService DynCipher;
 		public IMarkerService Marker;
 		public INameService Name;
-		public RandomGenerator Random;
+		public IRandomGenerator Random;
+		public ITraceService Trace;
 
 		public TypeDef CfgCtxType;
 		public MethodDef CfgCtxCtor;

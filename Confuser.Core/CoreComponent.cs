@@ -1,12 +1,13 @@
 ﻿using System;
 using Confuser.Core.API;
 using Confuser.Core.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Core {
 	/// <summary>
 	///     Core component of Confuser.
 	/// </summary>
-	public class CoreComponent : ConfuserComponent {
+	internal sealed class CoreComponent : IConfuserComponent {
 		/// <summary>
 		///     The service ID of RNG
 		/// </summary>
@@ -51,38 +52,30 @@ namespace Confuser.Core {
 		}
 
 		/// <inheritdoc />
-		public override string Name {
-			get { return "Confuser Core"; }
+		public string Name => "Confuser Core";
+
+		/// <inheritdoc />
+		public string Description => "Initialization of Confuser core services.";
+
+		/// <inheritdoc />
+		public string Id => "Confuser.Core";
+
+		/// <inheritdoc />
+		public string FullId => "Confuser.Core";
+
+		/// <inheritdoc />
+		void IConfuserComponent.Initialize(IServiceCollection collection) {
+			collection.AddTransient(typeof(IPackerService), (p) => new PackerService(p));
+			collection.AddSingleton(typeof(ILoggingService), (p) => new LoggingService(parameters.Logger));
+			collection.AddSingleton(typeof(IRandomService), (p) => new RandomService(parameters.Project.Seed));
+			collection.AddSingleton(typeof(IMarkerService), (p) => new MarkerService(marker));
+			collection.AddSingleton(typeof(ITraceService), (p) => new TraceService());
+			collection.AddSingleton(typeof(IRuntimeService), (p) => new RuntimeService());
+			collection.AddSingleton(typeof(ICompressionService), (p) => new CompressionService(p));
+			collection.AddSingleton(typeof(IAPIStore), (p) => new APIStore(p));
 		}
 
 		/// <inheritdoc />
-		public override string Description {
-			get { return "Initialization of Confuser core services."; }
-		}
-
-		/// <inheritdoc />
-		public override string Id {
-			get { return "Confuser.Core"; }
-		}
-
-		/// <inheritdoc />
-		public override string FullId {
-			get { return "Confuser.Core"; }
-		}
-
-		/// <inheritdoc />
-		protected internal override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(_RandomServiceId, typeof(IRandomService), new RandomService(parameters.Project.Seed));
-			context.Registry.RegisterService(_MarkerServiceId, typeof(IMarkerService), new MarkerService(context, marker));
-			context.Registry.RegisterService(_TraceServiceId, typeof(ITraceService), new TraceService(context));
-			context.Registry.RegisterService(_RuntimeServiceId, typeof(IRuntimeService), new RuntimeService());
-			context.Registry.RegisterService(_CompressionServiceId, typeof(ICompressionService), new CompressionService(context));
-			context.Registry.RegisterService(_APIStoreId, typeof(IAPIStore), new APIStore(context));
-		}
-
-		/// <inheritdoc />
-		protected internal override void PopulatePipeline(ProtectionPipeline pipeline) {
-			//
-		}
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) { }
 	}
 }

@@ -70,7 +70,7 @@ namespace Confuser.DynCipher.Transforms {
 			return block.Statements.Count - 1;
 		}
 
-		public static void Run(StatementBlock block, RandomGenerator random) {
+		public static void Run(StatementBlock block, IRandomGenerator random) {
 			var context = new TransformContext {
 				Statements = block.Statements.ToArray(),
 				Usages = block.Statements.ToDictionary(s => s, s => GetVariableUsage(s).ToArray()),

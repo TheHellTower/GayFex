@@ -1,38 +1,29 @@
-﻿using System;
+﻿using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.Resources;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
+	[Export(typeof(IProtection))]
 	[BeforeProtection("Ki.ControlFlow"), AfterProtection("Ki.Constants")]
-	internal class ResourceProtection : Protection {
+	internal sealed class ResourceProtection : IProtection {
 		public const string _Id = "resources";
 		public const string _FullId = "Ki.Resources";
 		public const string _ServiceId = "Ki.Resources";
 
-		public override string Name {
-			get { return "Resources Protection"; }
-		}
+		public string Name => "Resources Protection";
 
-		public override string Description {
-			get { return "This protection encodes and compresses the embedded resources."; }
-		}
+		public string Description => "This protection encodes and compresses the embedded resources.";
 
-		public override string Id {
-			get { return _Id; }
-		}
+		public string Id => _Id;
 
-		public override string FullId {
-			get { return _FullId; }
-		}
+		public string FullId => _FullId;
 
-		public override ProtectionPreset Preset {
-			get { return ProtectionPreset.Normal; }
-		}
+		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
-		protected override void Initialize(ConfuserContext context) { }
+		void IConfuserComponent.Initialize(IServiceCollection collection) { }
 
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new InjectPhase(this));
-		}
 	}
 }

@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Confuser.Core.Services;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.ControlFlow {

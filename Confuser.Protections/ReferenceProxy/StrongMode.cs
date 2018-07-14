@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
@@ -11,6 +10,7 @@ using Confuser.DynCipher.Generation;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.ReferenceProxy {
 	internal class StrongMode : RPMode {
@@ -185,8 +185,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			delegateType.Methods.Add(method);
 
-			ctx.Context.Registry.GetService<IMarkerService>().Mark(method, ctx.Protection);
-			ctx.Name.SetCanRename(method, false);
+			ctx.Context.Registry.GetRequiredService<IMarkerService>().Mark(ctx.Context, method, ctx.Protection);
+			ctx.Name?.SetCanRename(ctx.Context, method, false);
 
 			return method;
 		}
@@ -204,8 +204,8 @@ namespace Confuser.Protections.ReferenceProxy {
 			field.CustomAttributes.Add(new CustomAttribute(GetKeyAttr(ctx).FindInstanceConstructors().First()));
 			delegateType.Fields.Add(field);
 
-			ctx.Marker.Mark(field, ctx.Protection);
-			ctx.Name.SetCanRename(field, false);
+			ctx.Marker.Mark(ctx.Context, field, ctx.Protection);
+			ctx.Name?.SetCanRename(ctx.Context, field, false);
 
 			return field;
 		}
@@ -235,7 +235,7 @@ namespace Confuser.Protections.ReferenceProxy {
 					.Compile<Func<int, int>>();
 
 				MethodDef ctor = injectedAttr.FindMethod(".ctor");
-				MutationHelper.ReplacePlaceholder(ctor, arg => {
+				MutationHelper.ReplacePlaceholder(ctx.Trace, ctor, arg => {
 					var invCompiled = new List<Instruction>();
 					new CodeGen(arg, ctor, invCompiled).GenerateCIL(inverse);
 					return invCompiled.ToArray();
@@ -246,11 +246,11 @@ namespace Confuser.Protections.ReferenceProxy {
 
 				foreach (IDnlibDef def in injectedAttr.FindDefinitions()) {
 					if (def.Name == "GetHashCode") {
-						ctx.Name.MarkHelper(def, ctx.Marker, ctx.Protection);
+						ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
 						((MethodDef)def).Access = MethodAttributes.Public;
 					}
 					else
-						ctx.Name.MarkHelper(def, ctx.Marker, ctx.Protection);
+						ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
 				}
 			}
 			return keyAttrs[index].Item1;
@@ -269,8 +269,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 				injectedMethod.Access = MethodAttributes.PrivateScope;
 				injectedMethod.Name = ctx.Name.RandomName();
-				ctx.Name.SetCanRename(injectedMethod, false);
-				ctx.Marker.Mark(injectedMethod, ctx.Protection);
+				ctx.Name?.SetCanRename(ctx.Context, injectedMethod, false);
+				ctx.Marker.Mark(ctx.Context, injectedMethod, ctx.Protection);
 
 				var desc = new InitMethodDesc { Method = injectedMethod };
 
@@ -291,7 +291,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				MutationHelper.InjectKeys(injectedMethod, Enumerable.Range(0, 9).ToArray(), keyInjection);
 
 				// Encoding
-				MutationHelper.ReplacePlaceholder(injectedMethod, arg => { return encoding.EmitDecode(injectedMethod, ctx, arg); });
+				MutationHelper.ReplacePlaceholder(ctx.Trace, injectedMethod, arg => { return encoding.EmitDecode(injectedMethod, ctx, arg); });
 				desc.Encoding = encoding;
 
 				initDescs[index] = desc;
@@ -326,8 +326,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			foreach (TypeDef delegateType in ctx.Delegates.Values) {
 				MethodDef cctor = delegateType.FindOrCreateStaticConstructor();
-				ctx.Marker.Mark(cctor, ctx.Protection);
-				ctx.Name.SetCanRename(cctor, false);
+				ctx.Marker.Mark(ctx.Context, cctor, ctx.Protection);
+				ctx.Name?.SetCanRename(ctx.Context, cctor, false);
 			}
 
 			ctx.Context.CurrentModuleWriterOptions.MetadataOptions.Flags |= MetadataFlags.PreserveExtraSignatureData;

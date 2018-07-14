@@ -1,9 +1,10 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Confuser.Core;
 using Confuser.Core.Services;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer {
 	// For my dearest Reflector devs, this is my Christmas present.
@@ -22,9 +23,9 @@ namespace Confuser.Renamer {
 		}
 
 
-		public static void CommenceRickroll(ConfuserContext context, ModuleDef module) {
-			var marker = context.Registry.GetService<IMarkerService>();
-			var nameService = context.Registry.GetService<INameService>();
+		public static void CommenceRickroll(IConfuserContext context, ModuleDef module) {
+			var marker = context.Registry.GetRequiredService<IMarkerService>();
+			var nameService = context.Registry.GetRequiredService<INameService>();
 			var injection = Injection.Replace("REPL", EscapeScript(JS));
 
 			var globalType = module.GlobalType;
@@ -40,9 +41,9 @@ namespace Confuser.Renamer {
 			trap.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 			newType.Methods.Add(trap);
 
-			marker.Mark(newType, null);
-			marker.Mark(trap, null);
-			nameService.SetCanRename(trap, false);
+			marker.Mark(context, newType, null);
+			marker.Mark(context, trap, null);
+			nameService.SetCanRename(context, trap, false);
 
 			foreach (var method in module.GetTypes().SelectMany(type => type.Methods)) {
 				if (method != trap && method.HasBody)
