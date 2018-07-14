@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 
 [assembly: AssemblyProduct("ConfuserEx")]
 [assembly: AssemblyCompany("Ki")]
@@ -11,7 +11,3 @@
 
 [assembly: AssemblyConfiguration("Release")]
 #endif
-
-[assembly: AssemblyVersion("{{VER}}")]
-[assembly: AssemblyFileVersion("{{VER}}")]
-[assembly: AssemblyInformationalVersion("{{TAG}}")]

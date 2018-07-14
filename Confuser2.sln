@@ -7,12 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core", "Confuser.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Protections", "Confuser.Protections\Confuser.Protections.csproj", "{3EAB01B5-9B49-48D8-BFA1-5493B26CCB71}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{2C631F61-84D5-4E49-8CD7-0876A07A3B21}"
-	ProjectSection(SolutionItems) = preProject
-		.nuget\NuGet.Config = .nuget\NuGet.Config
-		.nuget\NuGet.targets = .nuget\NuGet.targets
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.CLI", "Confuser.CLI\Confuser.CLI.csproj", "{CE61ADEE-C032-43EC-ACD8-E4A742F894A3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer", "Confuser.Renamer\Confuser.Renamer.csproj", "{862DA0DA-52E1-47CD-B9C2-46B106031B28}"
@@ -30,9 +24,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib.netstandard", "dnlib\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{356BDB31-853E-43BB-8F9A-D8AC08F69EBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompressorWithResx", "Tests\CompressorWithResx\CompressorWithResx.csproj", "{32223BE8-3E78-489C-92ED-7900B26DFF43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompressorWithResx", "Tests\CompressorWithResx\CompressorWithResx.csproj", "{32223BE8-3E78-489C-92ED-7900B26DFF43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompressorWithResx.Test", "Tests\CompressorWithResx.Test\CompressorWithResx.Test.csproj", "{32CE1CB1-B7D9-416F-8EFE-6A0055867537}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompressorWithResx.Test", "Tests\CompressorWithResx.Test\CompressorWithResx.Test.csproj", "{32CE1CB1-B7D9-416F-8EFE-6A0055867537}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

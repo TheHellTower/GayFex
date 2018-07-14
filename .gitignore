@@ -36,6 +36,3 @@ packages/
 /Confuser.Test
 *.sln.*
 gh-pages/
-GlobalAssemblyInfo.cs
-/Build/*.zip
-!Build/7z.exe
