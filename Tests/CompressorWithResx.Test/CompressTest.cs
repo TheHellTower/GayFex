@@ -12,18 +12,25 @@ namespace CompressorWithResx.Test {
 	public class CompressTest {
 		private readonly ITestOutputHelper outputHelper;
 
-		public CompressTest(ITestOutputHelper outputHelper) => 
+		public CompressTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		[Fact]
-		public async Task CompressAndExecuteTest() {
+		[Theory]
+		[InlineData("false", "normal")]
+		[InlineData("true", "normal")]
+		[InlineData("false", "dynamic")]
+		[InlineData("true", "dynamic")]
+		public async Task CompressAndExecuteTest(string compatKey, string deriverKey) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputFile = Path.Combine(baseDir, "testtmp", "CompressorWithResx.exe");
 			ClearOutput(outputFile);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = Path.Combine(baseDir, "testtmp"),
-				Packer = new SettingItem<Packer>("compressor")
+				Packer = new SettingItem<Packer>("compressor") {
+					{ "compat", compatKey},
+					{ "key", deriverKey }
+				}
 			};
 			proj.Add(new ProjectModule() { Path = Path.Combine(baseDir, "CompressorWithResx.exe") });
 
