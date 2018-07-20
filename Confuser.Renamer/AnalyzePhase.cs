@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Renamer.Analyzers;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer {
 	internal class AnalyzePhase : ProtectionPhase {
+
 		public AnalyzePhase(NameProtection parent)
 			: base(parent) { }
 
@@ -59,14 +59,14 @@ namespace Confuser.Renamer {
 
 		void RegisterRenamers(ConfuserContext context, NameService service) {
 			bool wpf = false,
-			     caliburn = false,
-			     winforms = false,
-			     json = false;
+				 caliburn = false,
+				 winforms = false,
+				 json = false;
 
 			foreach (var module in context.Modules)
 				foreach (var asmRef in module.GetAssemblyRefs()) {
 					if (asmRef.Name == "WindowsBase" || asmRef.Name == "PresentationCore" ||
-					    asmRef.Name == "PresentationFramework" || asmRef.Name == "System.Xaml") {
+						asmRef.Name == "PresentationFramework" || asmRef.Name == "System.Xaml") {
 						wpf = true;
 					}
 					else if (asmRef.Name == "Caliburn.Micro") {
@@ -118,11 +118,6 @@ namespace Confuser.Renamer {
 				var pass = parameters.GetParameter<string>(context, def, "password", null);
 				if (pass != null)
 					service.reversibleRenamer = new ReversibleRenamer(pass);
-
-				var idOffset = parameters.GetParameter<uint>(context, def, "idOffset", 0);
-				if (idOffset != 0)
-					service.SetNameId(idOffset);
-
 				service.SetCanRename(def, false);
 			}
 
@@ -171,8 +166,8 @@ namespace Confuser.Renamer {
 
 		void Analyze(NameService service, ConfuserContext context, ProtectionParameters parameters, MethodDef method) {
 			if (IsVisibleOutside(context, parameters, method.DeclaringType) &&
-			    (method.IsFamily || method.IsFamilyOrAssembly || method.IsPublic) &&
-			    IsVisibleOutside(context, parameters, method))
+				(method.IsFamily || method.IsFamilyOrAssembly || method.IsPublic) &&
+				IsVisibleOutside(context, parameters, method))
 				service.SetCanRename(method, false);
 
 			else if (method.IsRuntimeSpecialName)
@@ -193,8 +188,8 @@ namespace Confuser.Renamer {
 
 		void Analyze(NameService service, ConfuserContext context, ProtectionParameters parameters, FieldDef field) {
 			if (IsVisibleOutside(context, parameters, field.DeclaringType) &&
-			    (field.IsFamily || field.IsFamilyOrAssembly || field.IsPublic) &&
-			    IsVisibleOutside(context, parameters, field))
+				(field.IsFamily || field.IsFamilyOrAssembly || field.IsPublic) &&
+				IsVisibleOutside(context, parameters, field))
 				service.SetCanRename(field, false);
 
 			else if (field.IsRuntimeSpecialName)
@@ -213,7 +208,8 @@ namespace Confuser.Renamer {
 
 		void Analyze(NameService service, ConfuserContext context, ProtectionParameters parameters, PropertyDef property) {
 			if (IsVisibleOutside(context, parameters, property.DeclaringType) &&
-			    IsVisibleOutside(context, parameters, property))
+				property.IsPublic() &&
+				IsVisibleOutside(context, parameters, property))
 				service.SetCanRename(property, false);
 
 			else if (property.IsRuntimeSpecialName)
@@ -234,14 +230,15 @@ namespace Confuser.Renamer {
 
 		void Analyze(NameService service, ConfuserContext context, ProtectionParameters parameters, EventDef evt) {
 			if (IsVisibleOutside(context, parameters, evt.DeclaringType) &&
-			    IsVisibleOutside(context, parameters, evt))
+				evt.IsPublic() &&
+				IsVisibleOutside(context, parameters, evt))
 				service.SetCanRename(evt, false);
 
 			else if (evt.IsRuntimeSpecialName)
 				service.SetCanRename(evt, false);
 
 			else if (evt.IsExplicitlyImplementedInterfaceMember())
-				service.SetCanRename (evt, false);
+				service.SetCanRename(evt, false);
 		}
 	}
 }

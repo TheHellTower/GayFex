@@ -71,6 +71,9 @@ namespace Confuser.Protections {
 					case Mode.Normal:
 						modeHandler = new NormalMode();
 						break;
+					case Mode.Anti:
+						modeHandler = new AntiMode();
+						break;
 					case Mode.JIT:
 						modeHandler = new JITMode();
 						break;
@@ -105,6 +108,7 @@ namespace Confuser.Protections {
 
 		enum Mode {
 			Normal,
+			Anti,
 			JIT
 		}
 	}

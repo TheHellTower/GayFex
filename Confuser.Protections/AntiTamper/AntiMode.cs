@@ -14,7 +14,7 @@ using dnlib.DotNet.Writer;
 using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
 namespace Confuser.Protections.AntiTamper {
-	internal class NormalMode : IModeHandler {
+	internal class AntiMode : IModeHandler {
 		uint c;
 		IKeyDeriver deriver;
 
@@ -47,7 +47,7 @@ namespace Confuser.Protections.AntiTamper {
 			deriver.Init(context, random);
 
 			var rt = context.Registry.GetService<IRuntimeService>();
-			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperNormal");
+			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperAnti");
 			IEnumerable<IDnlibDef> members = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
 			var initMethod = (MethodDef)members.Single(m => m.Name == "Initialize");
 
@@ -96,11 +96,11 @@ namespace Confuser.Protections.AntiTamper {
 
 		public void HandleMD(AntiTamperProtection parent, ConfuserContext context, ProtectionParameters parameters) {
 			methods = parameters.Targets.OfType<MethodDef>().ToList();
-			context.CurrentModuleWriterOptions.WriterEvent += WriterEvent;
+			context.CurrentModuleWriterOptions.WriterEvent += OnWriterEvent;
 		}
 
-		void WriterEvent(object sender, ModuleWriterEventArgs e) {
-			var writer = (ModuleWriterBase)sender;
+		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
+			var writer = e.Writer;
 			if (e.Event == ModuleWriterEvent.MDEndCreateTables) {
 				CreateSections(writer);
 			}

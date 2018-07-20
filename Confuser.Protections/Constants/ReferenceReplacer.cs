@@ -25,6 +25,8 @@ namespace Confuser.Protections.Constants {
 				instr.Item1.OpCode = OpCodes.Ldc_I4;
 				instr.Item1.Operand = (int)instr.Item2;
 				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Call, instr.Item3));
+				Instruction instr1 = method.Body.Instructions[i + 1];
+				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Br_S, instr1));
 			}
 		}
 
@@ -263,7 +265,7 @@ namespace Confuser.Protections.Constants {
 				foreach (var stateId in stateIds) {
 					// There must be at least one update&get
 					if (currentState.Get(stateId) == targetState.Value.Get(stateId) &&
-					    i != stateIds.Length - 1) {
+						i != stateIds.Length - 1) {
 						i++;
 						continue;
 					}
