@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
     <ProjectReference Include="..\CompressorWithResx\CompressorWithResx.csproj" />
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
 
 </Project>

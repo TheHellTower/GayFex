@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
+using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
 

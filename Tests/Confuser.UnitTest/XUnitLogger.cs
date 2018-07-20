@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Confuser.Core;
 using Xunit.Abstractions;
 
-namespace CompressorWithResx.Test {
-	internal sealed class XunitLogger : ILogger {
+namespace Confuser.UnitTest {
+	public sealed class XunitLogger : ILogger {
 		private readonly ITestOutputHelper outputHelper;
 
-		internal XunitLogger(ITestOutputHelper outputHelper) => 
+		public XunitLogger(ITestOutputHelper outputHelper) => 
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		void ILogger.Debug(string msg) => 
