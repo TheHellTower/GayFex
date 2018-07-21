@@ -20,6 +20,8 @@ namespace CompressorWithResx.Test {
 		[InlineData("true", "normal")]
 		[InlineData("false", "dynamic")]
 		[InlineData("true", "dynamic")]
+		[Trait("Category", "Packer")]
+		[Trait("Packer", "compressor")]
 		public async Task CompressAndExecuteTest(string compatKey, string deriverKey) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
