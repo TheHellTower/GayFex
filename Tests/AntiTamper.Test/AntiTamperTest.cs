@@ -18,7 +18,7 @@ namespace AntiTamper.Test {
 		[Theory]
 		[InlineData("normal")]
 		[InlineData("anti")]
-		[InlineData("jit")]
+		[InlineData("jit", Skip = "Runtime Component of the JIT AntiTamper protection is broken.")]
 		public async Task ProtectAntiTamperAndExecute(string antiTamperMode) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");

@@ -84,7 +84,7 @@ namespace Confuser.Protections.AntiTamper {
 				else if (instr.OpCode == OpCodes.Call) {
 					var method = (IMethod)instr.Operand;
 					if (method.DeclaringType.Name == "Mutation" &&
-					    method.Name == "Crypt") {
+						method.Name == "Crypt") {
 						Instruction ldDst = instrs[i - 2];
 						Instruction ldSrc = instrs[i - 1];
 						Debug.Assert(ldDst.OpCode == OpCodes.Ldloc && ldSrc.OpCode == OpCodes.Ldloc);
@@ -100,8 +100,8 @@ namespace Confuser.Protections.AntiTamper {
 				initMethod.Body.Instructions.Add(instr);
 
 			MutationHelper.InjectKeys(initMethod,
-			                          new[] { 0, 1, 2, 3, 4 },
-			                          new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
+									  new[] { 0, 1, 2, 3, 4 },
+									  new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
 
 			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetService<IMarkerService>();
@@ -117,7 +117,7 @@ namespace Confuser.Protections.AntiTamper {
 			name.MarkHelper(cctorRepl, marker, parent);
 
 			MutationHelper.InjectKeys(defs.OfType<MethodDef>().Single(method => method.Name == "HookHandler"),
-			                          new[] { 0 }, new[] { (int)key });
+									  new[] { 0 }, new[] { (int)key });
 			foreach (IDnlibDef def in defs) {
 				if (def.Name == "MethodData") {
 					var dataType = (TypeDef)def;
@@ -187,7 +187,7 @@ namespace Confuser.Protections.AntiTamper {
 				}
 			}
 			if (moved)
-				writer.Sections.Add(peSection);
+				writer.Sections.AddBeforeReloc(peSection);
 
 			// create section
 			var nameBuffer = new byte[8];
@@ -200,7 +200,7 @@ namespace Confuser.Protections.AntiTamper {
 			nameBuffer[6] = (byte)(name2 >> 16);
 			nameBuffer[7] = (byte)(name2 >> 24);
 			var newSection = new PESection(Encoding.ASCII.GetString(nameBuffer), 0xE0000040);
-			writer.Sections.Insert(random.NextInt32(writer.Sections.Count), newSection);
+			writer.Sections.InsertBeforeReloc(random.NextInt32(writer.Sections.Count), newSection);
 
 			// random padding at beginning to prevent revealing hash key
 			newSection.Add(new ByteArrayChunk(random.NextBytes(0x10)), 0x10);
@@ -223,15 +223,15 @@ namespace Confuser.Protections.AntiTamper {
 				bodyIndex.Add(token.Raw, jitBody);
 
 				method.Body = NopBody;
-        RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[token.Rid];
-        writer.Metadata.TablesHeap.MethodTable[token.Rid] = new RawMethodRow(
-          methodRow.RVA, 
-          (ushort)(methodRow.ImplFlags | (ushort)MethodImplAttributes.NoInlining), 
-          methodRow.Flags, 
-          methodRow.Name, 
-          methodRow.Signature,
-          methodRow.ParamList);
-   
+				RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[token.Rid];
+				writer.Metadata.TablesHeap.MethodTable[token.Rid] = new RawMethodRow(
+					methodRow.RVA,
+					(ushort)(methodRow.ImplFlags | (ushort)MethodImplAttributes.NoInlining),
+					methodRow.Flags,
+					methodRow.Name,
+					methodRow.Signature,
+					methodRow.ParamList);
+
 				context.CheckCancellation();
 			}
 			bodyIndex.PopulateSection(newSection);
