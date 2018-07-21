@@ -26,7 +26,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		public GenericMVar GetGeneric(TypeSig t) {
 			GenericParam gp = null;
-			if (Generics.TryGetValue(t.ScopeType.MDToken.Raw, out gp)) {
+			if (t.ScopeType != null && Generics.TryGetValue(t.ScopeType.MDToken.Raw, out gp)) {
 				return new GenericMVar(gp.Number);
 			}
 			else {
