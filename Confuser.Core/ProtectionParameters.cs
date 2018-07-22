@@ -94,9 +94,13 @@ namespace Confuser.Core {
 		/// <param name="context">The context.</param>
 		/// <param name="target">The protection target.</param>
 		/// <returns>The parameters.</returns>
-		public static ProtectionSettings GetParameters(
-			IConfuserContext context, IDnlibDef target) {
-			return context.Annotations.Get<ProtectionSettings>(target, ParametersKey);
+		public static ProtectionSettings GetParameters(IConfuserContext context, IDnlibDef target) {
+			var result = context.Annotations.Get<ProtectionSettings>(target, ParametersKey);
+			if (result == null) {
+				result = new ProtectionSettings();
+				SetParameters(context, target, result);
+			}
+			return result;
 		}
 	}
 }
