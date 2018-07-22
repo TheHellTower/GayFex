@@ -1,9 +1,11 @@
-﻿using Confuser.Core;
+﻿using System.ComponentModel.Composition;
+using Confuser.Core;
 using Confuser.Protections.AntiTamper;
 using Confuser.Protections.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
+	[Export(typeof(IProtection))]
 	[BeforeProtection("Ki.ControlFlow"), AfterProtection("Ki.Constants")]
 	internal class AntiTamperProtection : IProtection {
 		public const string _Id = "anti tamper";
