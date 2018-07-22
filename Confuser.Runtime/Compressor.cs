@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -56,6 +55,7 @@ namespace Confuser.Runtime {
 			GCHandle h = Decrypt(q, (uint)Mutation.KeyI1);
 			var b = (byte[])h.Target;
 			Module m = a.LoadModule("koi", b);
+
 			Array.Clear(b, 0, b.Length);
 			h.Free();
 			Array.Clear(q, 0, q.Length);

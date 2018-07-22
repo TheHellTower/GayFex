@@ -26,15 +26,21 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		public GenericMVar GetGeneric(TypeSig t) {
 			GenericParam gp = null;
-			if (t.ScopeType != null && Generics.TryGetValue(t.ScopeType.MDToken.Raw, out gp)) {
+
+			if (t.ContainsGenericParameter) return null;
+			if (t.ScopeType == null) return null;
+
+			if (Generics.TryGetValue(t.ScopeType.MDToken.Raw, out gp)) {
 				return new GenericMVar(gp.Number);
 			}
 			else {
 				return null;
 			}
+
 		}
 
 		public TypeSig ConvertToGenericIfAvalible(TypeSig t) {
+
 			TypeSig newSig = GetGeneric(t);
 			if (newSig != null && t.IsSingleOrMultiDimensionalArray) {
 				var tarr = t as SZArraySig;
@@ -61,8 +67,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		public GenericInstSig CreateGenericTypeSig(ScannedItem from) {
 			return new GenericInstSig(GetTarget(), TrueTypes.Count);
-			// TODO: Potential error: The code following this is never executed, but it looks like it is the correct version. Needs to be verified.
-			/*
 			if (from == null) {
 				return new GenericInstSig(GetTarget(), TrueTypes.ToArray());
 			}
@@ -70,7 +74,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				TypeSig[] types = TrueTypes.Select(t => from.ConvertToGenericIfAvalible(t)).ToArray();
 				return new GenericInstSig(GetTarget(), types);
 			}
-			*/
+
 		}
 
 		public abstract void PrepairGenerics();
