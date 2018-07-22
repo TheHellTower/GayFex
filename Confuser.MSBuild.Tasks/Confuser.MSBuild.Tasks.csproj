@@ -1,15 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
+
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.7.179" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.7.*" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
   </ItemGroup>
+
+  <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
 
 </Project>

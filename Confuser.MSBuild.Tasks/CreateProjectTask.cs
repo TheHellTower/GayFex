@@ -37,7 +37,6 @@ namespace Confuser.MSBuild.Tasks {
 			}
 
 			project.BaseDirectory = Path.GetDirectoryName(SourceAssembly.ItemSpec);
-			project.OutputDirectory = Path.Combine(IntermediateOutputPath.ItemSpec, "Comfused");
 			if (!project.Any(m => m.Path.Equals(Path.GetFileName(SourceAssembly.ItemSpec)))) {
 				project.Add(new ProjectModule() {
 					Path = SourceAssembly.ItemSpec,
