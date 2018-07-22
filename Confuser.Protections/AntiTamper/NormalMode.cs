@@ -64,7 +64,7 @@ namespace Confuser.Protections.AntiTamper {
 				else if (instr.OpCode == OpCodes.Call) {
 					var method = (IMethod)instr.Operand;
 					if (method.DeclaringType.Name == "Mutation" &&
-					    method.Name == "Crypt") {
+						method.Name == "Crypt") {
 						Instruction ldDst = instrs[i - 2];
 						Instruction ldSrc = instrs[i - 1];
 						Debug.Assert(ldDst.OpCode == OpCodes.Ldloc && ldSrc.OpCode == OpCodes.Ldloc);
@@ -80,8 +80,8 @@ namespace Confuser.Protections.AntiTamper {
 				initMethod.Body.Instructions.Add(instr);
 
 			MutationHelper.InjectKeys(initMethod,
-			                          new[] { 0, 1, 2, 3, 4 },
-			                          new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
+									  new[] { 0, 1, 2, 3, 4 },
+									  new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
 
 			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
@@ -159,7 +159,7 @@ namespace Confuser.Protections.AntiTamper {
 				}
 			}
 			if (moved)
-				writer.Sections.Add(peSection);
+				writer.Sections.AddBeforeReloc(peSection);
 
 			// move encrypted methods
 			var encryptedChunk = new MethodBodyChunks(writer.TheOptions.ShareMethodBodies);

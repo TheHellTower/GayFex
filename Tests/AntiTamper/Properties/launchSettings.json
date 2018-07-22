@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AntiTamper": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Users\\karin\\source\\repos\\ConfuserEx\\Tests\\AntiTamper.Test\\bin\\Debug\\net461\\testtmp\\AntiTamper.exe"
+    }
+  }
+}

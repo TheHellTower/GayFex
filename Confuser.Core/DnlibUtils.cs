@@ -269,8 +269,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="property">The property.</param>
 		/// <returns><c>true</c> if the specified property is public; otherwise, <c>false</c>.</returns>
-		public static bool IsPublic(this PropertyDef property)
-		{
+		public static bool IsPublic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsPublic);
 		}
 
@@ -279,8 +278,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="property">The property.</param>
 		/// <returns><c>true</c> if the specified property is static; otherwise, <c>false</c>.</returns>
-		public static bool IsStatic(this PropertyDef property)
-		{
+		public static bool IsStatic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsStatic);
 		}
 
@@ -289,8 +287,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified event is public; otherwise, <c>false</c>.</returns>
-		public static bool IsPublic(this EventDef evt)
-		{
+		public static bool IsPublic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsPublic);
 		}
 
@@ -299,8 +296,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified event is static; otherwise, <c>false</c>.</returns>
-		public static bool IsStatic(this EventDef evt)
-		{
+		public static bool IsStatic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsStatic);
 		}
 
@@ -309,8 +305,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="method">The method.</param>
 		/// <returns><c>true</c> if the specified method is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this MethodDef method)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this MethodDef method) {
 			return method.IsFinal && method.IsPrivate;
 		}
 
@@ -319,8 +314,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="property">The method.</param>
 		/// <returns><c>true</c> if the specified property is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this PropertyDef property)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this PropertyDef property) {
 			return property.AllMethods().Any(IsExplicitlyImplementedInterfaceMember);
 		}
 
@@ -329,21 +323,18 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified eve is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this EventDef evt)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this EventDef evt) {
 			return evt.AllMethods().Any(IsExplicitlyImplementedInterfaceMember);
 		}
 
-		private static IEnumerable<MethodDef> AllMethods(this EventDef evt)
-		{
-			return new [] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
+		private static IEnumerable<MethodDef> AllMethods(this EventDef evt) {
+			return new[] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
 				.Concat(evt.OtherMethods)
 				.Where(m => m != null);
 		}
 
-		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property)
-		{
-			return new [] { property.GetMethod, property.SetMethod }
+		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property) {
+			return new[] { property.GetMethod, property.SetMethod }
 				.Concat(property.OtherMethods)
 				.Where(m => m != null);
 		}

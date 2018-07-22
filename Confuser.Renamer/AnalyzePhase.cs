@@ -65,14 +65,14 @@ namespace Confuser.Renamer {
 
 		void RegisterRenamers(IConfuserContext context, NameService service, ILogger logger) {
 			bool wpf = false,
-			     caliburn = false,
-			     winforms = false,
-			     json = false;
+				 caliburn = false,
+				 winforms = false,
+				 json = false;
 
 			foreach (var module in context.Modules)
 				foreach (var asmRef in module.GetAssemblyRefs()) {
 					if (asmRef.Name == "WindowsBase" || asmRef.Name == "PresentationCore" ||
-					    asmRef.Name == "PresentationFramework" || asmRef.Name == "System.Xaml") {
+						asmRef.Name == "PresentationFramework" || asmRef.Name == "System.Xaml") {
 						wpf = true;
 					}
 					else if (asmRef.Name == "Caliburn.Micro") {
@@ -219,7 +219,8 @@ namespace Confuser.Renamer {
 
 		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters, PropertyDef property) {
 			if (IsVisibleOutside(context, parameters, property.DeclaringType) &&
-			    IsVisibleOutside(context, parameters, property))
+				property.IsPublic() &&
+				IsVisibleOutside(context, parameters, property))
 				service.SetCanRename(context, property, false);
 
 			else if (property.IsRuntimeSpecialName)
@@ -240,7 +241,8 @@ namespace Confuser.Renamer {
 
 		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters, EventDef evt) {
 			if (IsVisibleOutside(context, parameters, evt.DeclaringType) &&
-			    IsVisibleOutside(context, parameters, evt))
+				evt.IsPublic() &&
+				IsVisibleOutside(context, parameters, evt))
 				service.SetCanRename(context, evt, false);
 
 			else if (evt.IsRuntimeSpecialName)

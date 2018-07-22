@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
+
+  <PropertyGroup Label="Assembly Settings">
+    <TargetFrameworks>net461</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Project Dependencies">
+    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
+
+</Project>

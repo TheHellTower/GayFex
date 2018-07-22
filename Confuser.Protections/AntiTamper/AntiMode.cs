@@ -8,31 +8,19 @@ using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.Protections.Services;
+using Confuser.Renamer;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
+using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
 namespace Confuser.Protections.AntiTamper {
-	internal class JITMode : IModeHandler {
-		static readonly CilBody NopBody = new CilBody {
-			Instructions = {
-				Instruction.Create(OpCodes.Ldnull),
-				Instruction.Create(OpCodes.Throw)
-			}
-		};
-
+	internal class AntiMode : IModeHandler {
 		uint c;
-		MethodDef cctor;
-		MethodDef cctorRepl;
-		IConfuserContext context;
 		IKeyDeriver deriver;
-		byte[] fieldLayout;
 
-		MethodDef initMethod;
-		uint key;
 		List<MethodDef> methods;
 		uint name1, name2;
 		IRandomGenerator random;
@@ -41,40 +29,30 @@ namespace Confuser.Protections.AntiTamper {
 		uint z;
 
 		public void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
-			this.context = context;
-			random = context.Registry.GetService<IRandomService>().GetRandomGenerator(parent.FullId);
+			random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(parent.FullId);
 			z = random.NextUInt32();
 			x = random.NextUInt32();
 			c = random.NextUInt32();
 			v = random.NextUInt32();
 			name1 = random.NextUInt32() & 0x7f7f7f7f;
 			name2 = random.NextUInt32() & 0x7f7f7f7f;
-			key = random.NextUInt32();
-
-			fieldLayout = new byte[6];
-			for (int i = 0; i < 6; i++) {
-				int index = random.NextInt32(0, 6);
-				while (fieldLayout[index] != 0)
-					index = random.NextInt32(0, 6);
-				fieldLayout[index] = (byte)i;
-			}
 
 			switch (parameters.GetParameter(context, context.CurrentModule, "key", Mode.Normal)) {
-			case Mode.Normal:
-				deriver = new NormalDeriver();
-				break;
-			case Mode.Dynamic:
-				deriver = new DynamicDeriver();
-				break;
-			default:
-				throw new UnreachableException();
+				case Mode.Normal:
+					deriver = new NormalDeriver();
+					break;
+				case Mode.Dynamic:
+					deriver = new DynamicDeriver();
+					break;
+				default:
+					throw new UnreachableException();
 			}
 			deriver.Init(context, random);
 
-			var rt = context.Registry.GetRequiredService<IRuntimeService>();
-			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperJIT");
-			IEnumerable<IDnlibDef> defs = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
-			initMethod = defs.OfType<MethodDef>().Single(method => method.Name == "Initialize");
+			var rt = context.Registry.GetService<IRuntimeService>();
+			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperAnti");
+			IEnumerable<IDnlibDef> members = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
+			var initMethod = (MethodDef)members.Single(m => m.Name == "Initialize");
 
 			initMethod.Body.SimplifyMacros(initMethod.Parameters);
 			List<Instruction> instrs = initMethod.Body.Instructions.ToList();
@@ -106,74 +84,62 @@ namespace Confuser.Protections.AntiTamper {
 									  new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
 
 			var name = context.Registry.GetService<INameService>();
-			var marker = context.Registry.GetService<IMarkerService>();
-
-			cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
-
-			cctorRepl = new MethodDefUser(name.RandomName(), MethodSig.CreateStatic(context.CurrentModule.CorLibTypes.Void));
-			cctorRepl.IsStatic = true;
-			cctorRepl.Access = MethodAttributes.CompilerControlled;
-			cctorRepl.Body = new CilBody();
-			cctorRepl.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-			context.CurrentModule.GlobalType.Methods.Add(cctorRepl);
-			name?.MarkHelper(context, cctorRepl, marker, parent);
-
-			MutationHelper.InjectKeys(defs.OfType<MethodDef>().Single(method => method.Name == "HookHandler"),
-									  new[] { 0 }, new[] { (int)key });
-
-			var antiTamperService = context.Registry.GetRequiredService<IAntiTamperService>();
-
-			foreach (IDnlibDef def in defs) {
-				if (def.Name == "MethodData") {
-					var dataType = (TypeDef)def;
-					FieldDef[] fields = dataType.Fields.ToArray();
-					var layout = fieldLayout.Clone() as byte[];
-					Array.Sort(layout, fields);
-					for (byte j = 0; j < 6; j++)
-						layout[j] = j;
-					Array.Sort(fieldLayout, layout);
-					fieldLayout = layout;
-					dataType.Fields.Clear();
-					foreach (FieldDef f in fields)
-						dataType.Fields.Add(f);
-				}
+			var marker = context.Registry.GetRequiredService<IMarkerService>();
+			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
+			foreach (IDnlibDef def in members) {
 				name?.MarkHelper(context, def, marker, parent);
 				if (def is MethodDef)
-					antiTamperService.ExcludeMethod(context, (MethodDef)def);
+					antiTamper.ExcludeMethod(context, (MethodDef)def);
 			}
-			antiTamperService.ExcludeMethod(context, cctor);
+
+			MethodDef cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
+			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, initMethod));
+
+			antiTamper.ExcludeMethod(context, cctor);
 		}
 
 		public void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
-			// move initialization away from module initializer
-			cctorRepl.Body = cctor.Body;
-			cctor.Body = new CilBody();
-			cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Call, initMethod));
-			cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Call, cctorRepl));
-			cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-
-			methods = parameters.Targets.OfType<MethodDef>().Where(method => method.HasBody).ToList();
+			methods = parameters.Targets.OfType<MethodDef>().ToList();
 			context.CurrentModuleWriterOptions.WriterEvent += OnWriterEvent;
 		}
 
 		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("anti tamper");
 			var writer = e.Writer;
-			if (e.Event == ModuleWriterEvent.MDBeginWriteMethodBodies) {
-				logger.Debug("Extracting method bodies...");
-				CreateSection(writer);
+			if (e.Event == ModuleWriterEvent.MDEndCreateTables) {
+				CreateSections(writer);
 			}
 			else if (e.Event == ModuleWriterEvent.BeginStrongNameSign) {
-				logger.Debug("Encrypting method section...");
 				EncryptSection(writer);
 			}
 		}
 
-		void CreateSection(ModuleWriterBase writer) {
+		void CreateSections(ModuleWriterBase writer) {
+			var nameBuffer = new byte[8];
+			nameBuffer[0] = (byte)(name1 >> 0);
+			nameBuffer[1] = (byte)(name1 >> 8);
+			nameBuffer[2] = (byte)(name1 >> 16);
+			nameBuffer[3] = (byte)(name1 >> 24);
+			nameBuffer[4] = (byte)(name2 >> 0);
+			nameBuffer[5] = (byte)(name2 >> 8);
+			nameBuffer[6] = (byte)(name2 >> 16);
+			nameBuffer[7] = (byte)(name2 >> 24);
+			var newSection = new PESection(Encoding.ASCII.GetString(nameBuffer), 0xE0000040);
+			writer.Sections.Insert(0, newSection); // insert first to ensure proper RVA
+
+			uint alignment;
+
+			alignment = writer.TextSection.Remove(writer.Metadata).Value;
+			writer.TextSection.Add(writer.Metadata, alignment);
+
+			alignment = writer.TextSection.Remove(writer.NetResources).Value;
+			writer.TextSection.Add(writer.NetResources, alignment);
+
+			alignment = writer.TextSection.Remove(writer.Constants).Value;
+			newSection.Add(writer.Constants, alignment);
+
 			// move some PE parts to separate section to prevent it from being hashed
 			var peSection = new PESection("", 0x60000020);
 			bool moved = false;
-			uint alignment;
 			if (writer.StrongNameSignature != null) {
 				alignment = writer.TextSection.Remove(writer.StrongNameSignature).Value;
 				peSection.Add(writer.StrongNameSignature, alignment);
@@ -195,52 +161,16 @@ namespace Confuser.Protections.AntiTamper {
 			if (moved)
 				writer.Sections.AddBeforeReloc(peSection);
 
-			// create section
-			var nameBuffer = new byte[8];
-			nameBuffer[0] = (byte)(name1 >> 0);
-			nameBuffer[1] = (byte)(name1 >> 8);
-			nameBuffer[2] = (byte)(name1 >> 16);
-			nameBuffer[3] = (byte)(name1 >> 24);
-			nameBuffer[4] = (byte)(name2 >> 0);
-			nameBuffer[5] = (byte)(name2 >> 8);
-			nameBuffer[6] = (byte)(name2 >> 16);
-			nameBuffer[7] = (byte)(name2 >> 24);
-			var newSection = new PESection(Encoding.ASCII.GetString(nameBuffer), 0xE0000040);
-			writer.Sections.InsertBeforeReloc(random.NextInt32(writer.Sections.Count), newSection);
-
-			// random padding at beginning to prevent revealing hash key
-			newSection.Add(new ByteArrayChunk(random.NextBytes(0x10)), 0x10);
-
-			// create index
-			var bodyIndex = new JITBodyIndex(methods.Select(method => writer.Metadata.GetToken(method).Raw));
-			newSection.Add(bodyIndex, 0x10);
-
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("anti tamper");
-
-			// save methods
-			foreach (MethodDef method in methods.WithProgress(logger)) {
+			// move encrypted methods
+			var encryptedChunk = new MethodBodyChunks(writer.TheOptions.ShareMethodBodies);
+			newSection.Add(encryptedChunk, 4);
+			foreach (MethodDef method in methods) {
 				if (!method.HasBody)
 					continue;
-
-				MDToken token = writer.Metadata.GetToken(method);
-
-				var jitBody = new JITMethodBody();
-				var bodyWriter = new JITMethodBodyWriter(writer.Metadata, method.Body, jitBody, random.NextUInt32(), writer.Metadata.KeepOldMaxStack || method.Body.KeepOldMaxStack);
-				bodyWriter.Write();
-				jitBody.Serialize(token.Raw, key, fieldLayout);
-				bodyIndex.Add(token.Raw, jitBody);
-
-				method.Body = NopBody;
-				RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[token.Rid];
-				writer.Metadata.TablesHeap.MethodTable[token.Rid] = new RawMethodRow(
-					methodRow.RVA,
-					(ushort)(methodRow.ImplFlags | (ushort)MethodImplAttributes.NoInlining),
-					methodRow.Flags,
-					methodRow.Name,
-					methodRow.Signature,
-					methodRow.ParamList);
+				MethodBody body = writer.Metadata.GetMethodBody(method);
+				bool ok = writer.MethodBodies.Remove(body);
+				encryptedChunk.Add(body);
 			}
-			bodyIndex.PopulateSection(newSection);
 
 			// padding to prevent bad size due to shift division
 			newSection.Add(new ByteArrayChunk(new byte[4]), 4);
