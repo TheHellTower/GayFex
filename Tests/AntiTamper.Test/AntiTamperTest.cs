@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -8,34 +8,34 @@ using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CompressorWithResx.Test {
-	public sealed class CompressTest {
+namespace AntiTamper.Test {
+	public sealed class AntiTamperTest {
 		private readonly ITestOutputHelper outputHelper;
 
-		public CompressTest(ITestOutputHelper outputHelper) =>
+		public AntiTamperTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		[Theory]
-		[InlineData("false", "normal")]
-		[InlineData("true", "normal")]
-		[InlineData("false", "dynamic")]
-		[InlineData("true", "dynamic")]
-		[Trait("Category", "Packer")]
-		[Trait("Packer", "compressor")]
-		public async Task CompressAndExecuteTest(string compatKey, string deriverKey) {
+		[InlineData("normal")]
+		[InlineData("anti")]
+		[InlineData("jit", Skip = "Runtime Component of the JIT AntiTamper protection is broken.")]
+		[Trait("Category", "Protection")]
+		[Trait("Protection", "anti tamper")]
+		public async Task ProtectAntiTamperAndExecute(string antiTamperMode) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
-			var inputFile = Path.Combine(baseDir, "CompressorWithResx.exe");
-			var outputFile = Path.Combine(outputDir, "CompressorWithResx.exe");
+			var inputFile = Path.Combine(baseDir, "AntiTamper.exe");
+			var outputFile = Path.Combine(outputDir, "AntiTamper.exe");
 			FileUtilities.ClearOutput(outputFile);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
-				OutputDirectory = outputDir,
-				Packer = new SettingItem<Packer>("compressor") {
-					{ "compat", compatKey},
-					{ "key", deriverKey }
-				}
+				OutputDirectory = outputDir
 			};
+			proj.Rules.Add(new Rule() {
+				new SettingItem<Protection>("anti tamper") {
+					{ "mode", antiTamperMode }
+				}
+			});
 			proj.Add(new ProjectModule() { Path = inputFile });
 
 
@@ -56,7 +56,7 @@ namespace CompressorWithResx.Test {
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
 				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("Test", await stdout.ReadLineAsync());
+				Assert.Equal("This is a test.", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);
