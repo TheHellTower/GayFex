@@ -10,10 +10,13 @@
 
   <PropertyGroup Label="Nuget Package Settings">
     <PackageId>Confuser.MSBuild</PackageId>
+    <PackageLicenseUrl>https://github.com/mkaring/ConfuserEx/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/mkaring/ConfuserEx</PackageProjectUrl>
+    <PackageTags>Obfuscation Confuser ConfuserEx</PackageTags>
+    <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoPackageAnalysis>true</NoPackageAnalysis>
-    <DevelopmentDependency>true</DevelopmentDependency>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeConfuserDependencyFiles</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
