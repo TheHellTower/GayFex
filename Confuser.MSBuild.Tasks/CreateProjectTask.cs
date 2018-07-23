@@ -10,51 +10,56 @@ namespace Confuser.MSBuild.Tasks {
 		public ITaskItem SourceProject { get; set; }
 
 		[Required]
-		public ITaskItem[] ReferenceAssemblies { get; set; }
+		public ITaskItem[] References { get; set; }
 
 		[Required]
-		public ITaskItem SourceAssembly { get; set; }
+		public ITaskItem AssemblyPath { get; set; }
 
-		public ITaskItem AssemblyKeyFile { get; set; }
-
-		[Required]
-		public ITaskItem OutputAssembly { get; set; }
-
-		[Required]
-		public ITaskItem IntermediateOutputPath { get; set; }
+		public ITaskItem KeyFilePath { get; set; }
 
 		[Required, Output]
 		public ITaskItem ResultProject { get; set; }
 
 		public override bool Execute() {
 			var project = new ConfuserProject();
-			if (SourceProject != null) {
+			if (!string.IsNullOrWhiteSpace(SourceProject?.ItemSpec)) {
 				var xmlDoc = new XmlDocument();
 				xmlDoc.Load(SourceProject.ItemSpec);
+				project.Load(xmlDoc);
 
 				// Probe Paths are not required, because all dependent assemblies are added as external modules.
 				project.ProbePaths.Clear();
 			}
 
-			project.BaseDirectory = Path.GetDirectoryName(SourceAssembly.ItemSpec);
-			if (!project.Any(m => m.Path.Equals(Path.GetFileName(SourceAssembly.ItemSpec)))) {
-				project.Add(new ProjectModule() {
-					Path = SourceAssembly.ItemSpec,
-					SNKeyPath = AssemblyKeyFile.ItemSpec,
-					IsExternal = false
-				});
+			project.BaseDirectory = Path.GetDirectoryName(AssemblyPath.ItemSpec);
+			var mainModule = GetOrCreateProjectModule(project, AssemblyPath.ItemSpec);
+			if (!string.IsNullOrWhiteSpace(KeyFilePath?.ItemSpec)) {
+				mainModule.SNKeyPath = KeyFilePath.ItemSpec;
 			}
 
-			foreach (var refAssembly in ReferenceAssemblies) {
-				project.Add(new ProjectModule() {
-					Path = refAssembly.ItemSpec,
-					IsExternal = true
-				});
+			foreach (var probePath in References.Select(r => Path.GetDirectoryName(r.ItemSpec)).Distinct()) {
+				project.ProbePaths.Add(probePath);
 			}
 
 			project.Save().Save(ResultProject.ItemSpec);
 
 			return true;
+		}
+
+		private static ProjectModule GetOrCreateProjectModule(ConfuserProject project, string assemblyPath, bool isExternal = false) {
+			var assemblyFileName = Path.GetFileName(assemblyPath);
+			var assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+			foreach (var module in project) {
+				if (string.Equals(module.Path, assemblyFileName) || string.Equals(module.Path, assemblyName)) {
+					return module;
+				}
+			}
+			var result = new ProjectModule {
+				Path = assemblyPath,
+				IsExternal = isExternal
+			};
+			project.Add(result);
+			return result;
 		}
 	}
 }

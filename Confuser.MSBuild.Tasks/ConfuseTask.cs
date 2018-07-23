@@ -10,9 +10,6 @@ namespace Confuser.MSBuild.Tasks {
 		[Required]
 		public ITaskItem Project { get; set; }
 
-		[Required]
-		public ITaskItem IntermediateOutputPath { get; set; }
-
 		[Required, Output]
 		public ITaskItem OutputAssembly { get; set; }
 
@@ -20,6 +17,7 @@ namespace Confuser.MSBuild.Tasks {
 			var project = new ConfuserProject();
 			var xmlDoc = new XmlDocument();
 			xmlDoc.Load(Project.ItemSpec);
+			project.Load(xmlDoc);
 			project.OutputDirectory = Path.GetDirectoryName(OutputAssembly.ItemSpec);
 
 			var parameters = new ConfuserParameters {
