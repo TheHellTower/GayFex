@@ -98,6 +98,8 @@ namespace Confuser.Renamer.Analyzers {
 		}
 
 		void AnalyzeCAArgument(ConfuserContext context, INameService service, CAArgument arg) {
+			if (arg.Value == null) return; // null was passed to the custom attribute. We'll ignore that.
+
 			if (arg.Type.DefinitionAssembly.IsCorLib() && arg.Type.FullName == "System.Type") {
 				var typeSig = (TypeSig)arg.Value;
 				foreach (ITypeDefOrRef typeRef in typeSig.FindTypeRefs()) {
