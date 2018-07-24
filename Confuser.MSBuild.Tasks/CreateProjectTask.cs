@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Xml;
 using Confuser.Core.Project;
@@ -14,6 +15,8 @@ namespace Confuser.MSBuild.Tasks {
 
 		[Required]
 		public ITaskItem AssemblyPath { get; set; }
+
+		public ITaskItem[] SatelliteAssemblyPaths { get; set; }
 
 		public ITaskItem KeyFilePath { get; set; }
 
@@ -37,6 +40,17 @@ namespace Confuser.MSBuild.Tasks {
 				mainModule.SNKeyPath = KeyFilePath.ItemSpec;
 			}
 
+			if (SatelliteAssemblyPaths != null) {
+				foreach (var satelliteAssembly in SatelliteAssemblyPaths) {
+					if (!string.IsNullOrWhiteSpace(satelliteAssembly?.ItemSpec)) {
+						var satelliteModule = GetOrCreateProjectModule(project, satelliteAssembly.ItemSpec);
+						if (!string.IsNullOrWhiteSpace(KeyFilePath?.ItemSpec)) {
+							satelliteModule.SNKeyPath = KeyFilePath.ItemSpec;
+						}
+					}
+				}
+			}
+
 			foreach (var probePath in References.Select(r => Path.GetDirectoryName(r.ItemSpec)).Distinct()) {
 				project.ProbePaths.Add(probePath);
 			}
@@ -54,6 +68,11 @@ namespace Confuser.MSBuild.Tasks {
 					return module;
 				}
 			}
+
+			if (assemblyPath.StartsWith(project.BaseDirectory)) {
+				assemblyPath = assemblyPath.Substring(project.BaseDirectory.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+			}
+
 			var result = new ProjectModule {
 				Path = assemblyPath,
 				IsExternal = isExternal

@@ -20,13 +20,14 @@ namespace Confuser.MSBuild.Tasks {
 			project.Load(xmlDoc);
 			project.OutputDirectory = Path.GetDirectoryName(OutputAssembly.ItemSpec);
 
+			var logger = new MSBuildLogger(Log);
 			var parameters = new ConfuserParameters {
 				Project = project,
-				Logger = new MSBuildLogger(Log)
+				Logger = logger
 			};
 
 			ConfuserEngine.Run(parameters).Wait();
-			return true;
+			return !logger.HasError;
 		}
 	}
 }
