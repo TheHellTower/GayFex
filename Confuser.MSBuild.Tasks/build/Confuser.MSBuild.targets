@@ -57,6 +57,21 @@
       <Output TaskParameter="Include" ItemName="IntermediateAssembly" />
     </CreateItem>
   </Target>
+  
+  <Target Name="_ReplaceDebugOutputWithConfusedAssemblies"
+          AfterTargets="ConfuseAssembly"
+          Condition="$(DesignTimeBuild) != true And $(Obfuscate) == true and '$(ConfuserReplaceOutput)' == 'true' and '@(_DebugSymbolsIntermediatePath') != ''"
+          DependsOnTargets="ConfuseAssembly">
+    <CreateItem Include="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename).pdb')">
+      <Output TaskParameter="Include" ItemName="_ConfusedDebugSymbolsIntermediatePath" />
+    </CreateItem>
+    <ItemGroup>
+      <_DebugSymbolsIntermediatePath Remove="@(_DebugSymbolsIntermediatePath)" />
+    </ItemGroup>
+    <CreateItem Include="@(_ConfusedDebugSymbolsIntermediatePath)">
+      <Output TaskParameter="Include" ItemName="_DebugSymbolsIntermediatePath" />
+    </CreateItem>
+  </Target>
 
   <Target Name="CopyConfusedFilesToOutputDirectory"
           Condition="$(DesignTimeBuild) != true And $(Obfuscate) == true and '$(ConfuserReplaceOutput)' != 'true'"
@@ -72,6 +87,7 @@
       <CopyOutputSymbolsToOutputDirectory Condition="'$(CopyOutputSymbolsToOutputDirectory)'==''">true</CopyOutputSymbolsToOutputDirectory>
     </PropertyGroup>
 
+    <!-- Copy the confused build product (.dll or .exe). -->
     <Copy
       SourceFiles="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename)%(Extension)')"
       DestinationFolder="$(ConfuserOutDir)"
@@ -82,8 +98,26 @@
       UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
       UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
       Condition="'$(CopyBuildOutputToOutputDirectory)' == 'true' and '$(SkipCopyBuildProduct)' != 'true'">
+      
       <Output TaskParameter="DestinationFiles" ItemName="MainAssembly"/>
       <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
+      
+    </Copy>
+    
+    <!-- Copy the debug information file (.pdb), if any -->
+    <Copy
+        SourceFiles="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename).pdb')"
+        DestinationFolder="$(ConfuserOutDir)"
+        SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+        OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+        Retries="$(CopyRetryCount)"
+        RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+        UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
+        UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
+        Condition="'$(_DebugSymbolsProduced)'=='true' and '$(SkipCopyingSymbolsToOutputDirectory)' != 'true' and '$(CopyOutputSymbolsToOutputDirectory)'=='true'">
+        
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
+      
     </Copy>
   </Target>
 </Project>
