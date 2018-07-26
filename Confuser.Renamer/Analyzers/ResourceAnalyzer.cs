@@ -31,7 +31,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (!match.Success)
 						continue;
 					string typeName = match.Groups[1].Value;
-					TypeDef type = mainModule.FindReflectionThrow(typeName);
+					TypeDef type = mainModule.FindReflection(typeName);
 					if (type == null) {
 						context.Logger.WarnFormat("Could not find resource type '{0}'.", typeName);
 						continue;

@@ -89,7 +89,7 @@ namespace Confuser.Core.Project {
 
 			if (IsExternal) {
 				XmlAttribute extAttr = xmlDoc.CreateAttribute("external");
-				extAttr.Value = IsExternal.ToString();
+				extAttr.Value = IsExternal ? "true" : "false";
 				elem.Attributes.Append(extAttr);
 			}
 			if (SNKeyPath != null) {
