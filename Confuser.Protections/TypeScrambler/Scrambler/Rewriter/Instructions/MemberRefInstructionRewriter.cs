@@ -7,6 +7,7 @@ using dnlib.DotNet.Emit;
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 	class MemberRefInstructionRewriter : InstructionRewriter<MemberRef> {
 
+
 		MethodInfo[] CreationFactoryMethods;
 		public MemberRefInstructionRewriter() {
 			ModuleDefMD md = ModuleDefMD.Load(typeof(EmbeddedCode.ObjectCreationFactory).Module);
@@ -24,6 +25,10 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 		public override void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, MemberRef operand) {
 
 			ScannedMethod current = service.GetItem(method.MDToken) as ScannedMethod;
+
+			if (operand.MethodSig == null)
+				return;
+
 			if (operand.MethodSig.Params.Count > 0 || current == null || body[index].OpCode != OpCodes.Newobj) {
 				return;
 			}
@@ -68,10 +73,10 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 				/*
 				var genericCallSig =  new GenericInstMethodSig( new TypeSig[] { current.ConvertToGenericIfAvalible(sig) });
 				foreach(var param in operand.MethodSig.Params.Select(x => current.ConvertToGenericIfAvalible(x))) {
-					genericCallSig.GenericArguments.Add(param);
+				    genericCallSig.GenericArguments.Add(param);
 				}
 				
-				/ tgtMethod.GenericInstMethodSig = genericCallSig;
+				// tgtMethod.GenericInstMethodSig = genericCallSig;
 				var spec = new MethodSpecUser(tgtMethod, genericCallSig);
 				
 				body[index].OpCode = OpCodes.Call;
