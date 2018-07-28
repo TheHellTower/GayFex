@@ -8,8 +8,34 @@ namespace Confuser.Renamer.Services
 {	public interface INameService {
 		void Analyze(IConfuserContext context, IDnlibDef def);
 
-		bool CanRename(IConfuserContext context, object obj);
-		void SetCanRename(IConfuserContext context, object obj, bool val);
+		/// <summary>
+		///   Check if a specified definition is allowed to be renamed.
+		/// </summary>
+		/// <param name="context">The context to use</param>
+		/// <param name="def">The definition that is allowed to be renamed, or not.</param>
+		/// <exception cref="ArgumentNullException">
+		///   <paramref name="context"/> is <see langword="null" />
+		/// </exception>
+		/// <returns>
+		///   <see langword="true"/> in case <paramref name="def"/> is allowed to be renamed, or 
+		///   <see langword="false"/> in case renaming the definition was forbidden using
+		///   <see cref="SetCanRename(IConfuserContext, IDnlibDef, bool)"/>
+		///   or in case <paramref name="def"/> is <see langword="null"/>.
+		/// </returns>
+		bool CanRename(IConfuserContext context, IDnlibDef def);
+
+		/// <summary>
+		///   Set if a specified definition is allowed to be renamed or not.
+		/// </summary>
+		/// <param name="context">The context to use</param>
+		/// <param name="def">The definition that is allowed to be renamed, or not.</param>
+		/// <param name="val"><see langword="true" /> in case the definition is allowed to be renamed.</param>
+		/// <exception cref="ArgumentNullException">
+		///   <paramref name="context"/> is <see langword="null" />
+		///   <br/>- or -<br/>
+		///   <paramref name="def"/> is <see langword="null" />
+		/// </exception>
+		void SetCanRename(IConfuserContext context, IDnlibDef def, bool val);
 
 		void SetParam(IConfuserContext context, IDnlibDef def, string name, string value);
 		string GetParam(IConfuserContext context, IDnlibDef def, string name);

@@ -48,23 +48,27 @@ namespace Confuser.Renamer.Services {
 			return storage;
 		}
 
-		public bool CanRename(IConfuserContext context, object obj) {
-			var libDef = (obj as IDnlibDef);
-			if (libDef != null) {
+		public bool CanRename(IConfuserContext context, IDnlibDef def) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+
+			if (def != null) {
 				if (analyze == null)
 					analyze = context.Pipeline.FindPhase<AnalyzePhase>();
 
 				var prot = analyze.Parent;
-				if (!context.GetParameters(libDef).HasParameters(prot))
+				if (!context.GetParameters(def).HasParameters(prot))
 					return false;
 
-				return context.Annotations.Get(obj, CanRenameKey, true);
+				return context.Annotations.Get(def, CanRenameKey, true);
 			}
 			return false;
 		}
 
-		public void SetCanRename(IConfuserContext context, object obj, bool val) {
-			context.Annotations.Set(obj, CanRenameKey, val);
+		public void SetCanRename(IConfuserContext context, IDnlibDef def, bool val) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (def == null) throw new ArgumentNullException(nameof(def));
+
+			context.Annotations.Set(def, CanRenameKey, val);
 		}
 
 		public void SetParam(IConfuserContext context, IDnlibDef def, string name, string value) {
