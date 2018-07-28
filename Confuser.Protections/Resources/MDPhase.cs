@@ -30,7 +30,7 @@ namespace Confuser.Protections.Resources {
 		}
 
 		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
-			var writer = (ModuleWriterBase)sender;
+			var writer = e.Writer;
 			if (e.Event == ModuleWriterEvent.MDBeginAddResources) {
 				var logger = ctx.Context.Registry.GetRequiredService<ILoggingService>().GetLogger("resources");
 				token.ThrowIfCancellationRequested();
@@ -42,7 +42,7 @@ namespace Confuser.Protections.Resources {
 					ctx.Module.Resources.RemoveWhere(res => res is EmbeddedResource);
 
 				// move resources
-				string asmName = ctx.Name.RandomName(RenameMode.Letters);
+				string asmName = ctx.Name?.RandomName(RenameMode.Letters) ?? writer.Module.Name.String + ".ConfuserResources";
 				PublicKey pubKey = null;
 				if (writer.TheOptions.StrongNameKey != null)
 					pubKey = PublicKeyBase.CreatePublicKey(writer.TheOptions.StrongNameKey.PublicKey);
@@ -60,7 +60,7 @@ namespace Confuser.Protections.Resources {
 				}
 				byte[] moduleBuff;
 				using (var ms = new MemoryStream()) {
-					module.Write(ms, new ModuleWriterOptions(e.Writer.Module) { StrongNameKey = writer.TheOptions.StrongNameKey });
+					module.Write(ms, new ModuleWriterOptions(writer.Module) { StrongNameKey = writer.TheOptions.StrongNameKey });
 					moduleBuff = ms.ToArray();
 				}
 

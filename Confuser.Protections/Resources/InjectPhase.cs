@@ -67,7 +67,7 @@ namespace Confuser.Protections.Resources {
 
 				// Inject helpers
 				MethodDef decomp = compression.GetRuntimeDecompressor(context, context.CurrentModule, member => {
-					name.MarkHelper(context, member, marker, Parent);
+					name?.MarkHelper(context, member, marker, Parent);
 					if (member is MethodDef)
 						context.GetParameters(member).RemoveParameters(Parent);
 				});
@@ -92,16 +92,19 @@ namespace Confuser.Protections.Resources {
 				moduleCtx.Name?.MarkHelper(context, member, moduleCtx.Marker, Parent);
 			}
 
-			var dataType = new TypeDefUser("", moduleCtx.Name.RandomName(), context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType"));
-			dataType.Layout = TypeAttributes.ExplicitLayout;
-			dataType.Visibility = TypeAttributes.NestedPrivate;
-			dataType.IsSealed = true;
-			dataType.ClassLayout = new ClassLayoutUser(1, 0);
+			var dataTypeName = moduleCtx.Name?.RandomName() ?? "ConfuserResourceData";
+			var dataType = new TypeDefUser("", dataTypeName, context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
+				Layout = TypeAttributes.ExplicitLayout,
+				Visibility = TypeAttributes.NestedPrivate,
+				IsSealed = true,
+				ClassLayout = new ClassLayoutUser(1, 0)
+			};
 			moduleCtx.DataType = dataType;
 			context.CurrentModule.GlobalType.NestedTypes.Add(dataType);
 			moduleCtx.Name?.MarkHelper(context, dataType, moduleCtx.Marker, Parent);
 
-			moduleCtx.DataField = new FieldDefUser(moduleCtx.Name.RandomName(), new FieldSig(dataType.ToTypeSig())) {
+			var dataFieldName = moduleCtx.Name?.RandomName() ?? "_ConfuserResourceData";
+			moduleCtx.DataField = new FieldDefUser(dataFieldName, new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
 				HasFieldRVA = true,
 				InitialValue = new byte[0],
