@@ -25,6 +25,13 @@ artifacts:
 - path: Release/bin
   name: ConfuserEx
   type: zip
+  
+for:
+-
+  branches:
+    only:
+      - master
 
-- path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
-  name: ConfuserEx.MSBuild
+  artifacts:
+  - path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
+    name: ConfuserEx.MSBuild
