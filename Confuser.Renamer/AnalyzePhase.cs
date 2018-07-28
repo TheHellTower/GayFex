@@ -64,12 +64,13 @@ namespace Confuser.Renamer {
 		}
 
 		void RegisterRenamers(IConfuserContext context, NameService service, ILogger logger) {
-			bool wpf = false,
-				 caliburn = false,
-				 winforms = false,
-				 json = false;
+			bool wpf = false;
+			bool caliburn = false;
+			bool winforms = false;
+			bool json = false;
+			bool visualBasic = false;
 
-			foreach (var module in context.Modules)
+			foreach (var module in context.Modules) {
 				foreach (var asmRef in module.GetAssemblyRefs()) {
 					if (asmRef.Name == "WindowsBase" || asmRef.Name == "PresentationCore" ||
 						asmRef.Name == "PresentationFramework" || asmRef.Name == "System.Xaml") {
@@ -85,6 +86,12 @@ namespace Confuser.Renamer {
 						json = true;
 					}
 				}
+
+				var vbEmbeddedAttribute = module.FindNormal("Microsoft.VisualBasic.Embedded");
+				if (vbEmbeddedAttribute != null && vbEmbeddedAttribute.BaseType.FullName.Equals("System.Attribute")) {
+					visualBasic = true;
+				}
+			}
 
 			if (wpf) {
 				var wpfAnalyzer = new WPFAnalyzer();
@@ -106,6 +113,12 @@ namespace Confuser.Renamer {
 				var jsonAnalyzer = new JsonAnalyzer();
 				logger.Debug("Newtonsoft.Json found, enabling compatibility.");
 				service.Renamers.Add(jsonAnalyzer);
+			}
+
+			if (visualBasic) {
+				var vbAnalyzer = new VisualBasicRuntimeAnalyzer();
+				logger.Debug("Visual Basic Embedded Runtime found, enabling compatibility.");
+				service.Renamers.Add(vbAnalyzer);
 			}
 		}
 

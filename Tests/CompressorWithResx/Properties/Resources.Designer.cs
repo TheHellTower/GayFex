@@ -61,7 +61,7 @@ namespace CompressorWithResx.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Test ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Test (fallback) ähnelt.
         /// </summary>
         internal static string TestString {
             get {

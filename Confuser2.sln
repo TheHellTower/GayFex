@@ -48,7 +48,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.UnitTest", "Tests\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiTamper", "Tests\AntiTamper\AntiTamper.csproj", "{6A2BA6F7-3399-4890-9453-2D5BE8EEBBA9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntiTamper.Test", "Tests\AntiTamper.Test\AntiTamper.Test.csproj", "{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiTamper.Test", "Tests\AntiTamper.Test\AntiTamper.Test.csproj", "{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.MSBuild.Tasks", "Confuser.MSBuild.Tasks\Confuser.MSBuild.Tasks.csproj", "{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -124,6 +126,10 @@ Global
 		{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

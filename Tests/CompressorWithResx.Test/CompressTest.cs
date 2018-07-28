@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -16,16 +17,14 @@ namespace CompressorWithResx.Test {
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		[Theory]
-		[InlineData("false", "normal")]
-		[InlineData("true", "normal")]
-		[InlineData("false", "dynamic")]
-		[InlineData("true", "dynamic")]
+		[MemberData(nameof(CompressAndExecuteTestData))]
 		[Trait("Category", "Packer")]
 		[Trait("Packer", "compressor")]
-		public async Task CompressAndExecuteTest(string compatKey, string deriverKey) {
+		public async Task CompressAndExecuteTest(string compatKey, string deriverKey, string resourceProtectionMode) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
 			var inputFile = Path.Combine(baseDir, "CompressorWithResx.exe");
+			var inputSatelliteFile = Path.Combine(baseDir, "de", "CompressorWithResx.resources.dll");
 			var outputFile = Path.Combine(outputDir, "CompressorWithResx.exe");
 			FileUtilities.ClearOutput(outputFile);
 			var proj = new ConfuserProject {
@@ -36,7 +35,17 @@ namespace CompressorWithResx.Test {
 					{ "key", deriverKey }
 				}
 			};
+
+			if (resourceProtectionMode != "none") {
+				proj.Rules.Add(new Rule() {
+					new SettingItem<IProtection>("resources") {
+						{ "mode", resourceProtectionMode }
+					}
+				});
+			}
+
 			proj.Add(new ProjectModule() { Path = inputFile });
+			proj.Add(new ProjectModule() { Path = inputSatelliteFile });
 
 
 			var parameters = new ConfuserParameters {
@@ -56,7 +65,8 @@ namespace CompressorWithResx.Test {
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
 				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("Test", await stdout.ReadLineAsync());
+				Assert.Equal("Test (fallback)", await stdout.ReadLineAsync());
+				Assert.Equal("Test (deutsch)", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);
@@ -64,6 +74,13 @@ namespace CompressorWithResx.Test {
 			}
 
 			FileUtilities.ClearOutput(outputFile);
+		}
+
+		public static IEnumerable<object[]> CompressAndExecuteTestData() {
+			foreach (var compressorCompatKey in new string[] { "true", "false" })
+				foreach (var compressorDeriveKey in new string[] { "normal", "dynamic" })
+					foreach (var resourceProtectionMode in new string[] { "none", "normal", "dynamic" })
+						yield return new object[] { compressorCompatKey, compressorDeriveKey, resourceProtectionMode };
 		}
 	}
 }
