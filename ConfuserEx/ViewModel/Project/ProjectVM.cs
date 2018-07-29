@@ -31,8 +31,8 @@ namespace ConfuserEx.ViewModel {
 			rules.CollectionChanged += (sender, e) => IsModified = true;
 			Rules = rules;
 
-			Protections = new ObservableCollection<IConfuserComponent>();
-			Packers = new ObservableCollection<IConfuserComponent>();
+			Protections = new ObservableCollection<ConfuserUiComponent>();
+			Packers = new ObservableCollection<ConfuserUiComponent>();
 			ComponentDiscovery.LoadComponents(Protections, Packers, Assembly.Load("Confuser.Protections").Location);
 			ComponentDiscovery.LoadComponents(Protections, Packers, Assembly.Load("Confuser.Renamer").Location);
 		}
@@ -85,8 +85,8 @@ namespace ConfuserEx.ViewModel {
 		public IList<StringItem> Plugins { get; private set; }
 		public IList<StringItem> ProbePaths { get; private set; }
 
-		public ObservableCollection<IConfuserComponent> Protections { get; private set; }
-		public ObservableCollection<IConfuserComponent> Packers { get; private set; }
+		public ObservableCollection<ConfuserUiComponent> Protections { get; private set; }
+		public ObservableCollection<ConfuserUiComponent> Packers { get; private set; }
 		public IList<ProjectRuleVM> Rules { get; private set; }
 
 		public string FileName { get; set; }

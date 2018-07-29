@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Core {
 	/// <summary>
@@ -16,18 +17,6 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <value>The description of component.</value>
 		string Description { get; }
-
-		/// <summary>
-		///     Gets the identifier of component used by users.
-		/// </summary>
-		/// <value>The identifier of component.</value>
-		string Id { get; }
-
-		/// <summary>
-		///     Gets the full identifier of component used in Confuser.
-		/// </summary>
-		/// <value>The full identifier of component.</value>
-		string FullId { get; }
 
 		/// <summary>
 		///     Initializes the component.

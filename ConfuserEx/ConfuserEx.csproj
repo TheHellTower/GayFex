@@ -18,7 +18,7 @@
     <RestorePackages>true</RestorePackages>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <TargetFrameworkProfile />
-	<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -75,6 +75,7 @@
     <Compile Include="ComponentConverter.cs" />
     <Compile Include="ComponentDiscovery.cs" />
     <Compile Include="BoolToVisibilityConverter.cs" />
+    <Compile Include="ConfuserUiComponent.cs" />
     <Compile Include="EnumValuesExtension.cs" />
     <Compile Include="FileDragDrop.cs" />
     <Compile Include="InvertBoolConverter.cs" />

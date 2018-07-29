@@ -6,20 +6,18 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
 	[Export(typeof(IProtection))]
-	[BeforeProtection("Ki.ControlFlow"), AfterProtection("Ki.Constants")]
-	internal class AntiTamperProtection : IProtection {
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	[BeforeProtection(ControlFlowProtection._FullId)]
+	[AfterProtection(ConstantProtection._FullId)]
+	internal sealed class AntiTamperProtection : IProtection {
 		public const string _Id = "anti tamper";
 		public const string _FullId = "Ki.AntiTamper";
-		public const string _ServiceId = "Ki.AntiTamper";
 		internal static readonly object HandlerKey = new object();
 
 		public string Name => "Anti Tamper Protection";
 
 		public string Description => "This protection ensures the integrity of application.";
-
-		public string Id => _Id;
-
-		public string FullId => _FullId;
 
 		public ProtectionPreset Preset => ProtectionPreset.Maximum;
 

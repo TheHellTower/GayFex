@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.ComponentModel.Composition.Primitives;
 using System.IO;
@@ -49,17 +50,24 @@ namespace Confuser.Core.Services {
 
 			PluginDiscovery discovery = null;
 			if (prot != null) {
+
+				var protectionId = prot
+					.GetType()
+					.GetCustomAttributes(typeof(ExportMetadataAttribute), false)
+					.OfType<ExportMetadataAttribute>().Where(a => a.Name == "Id")
+					.Single().Value as string;
+
 				var rule = new Rule {
 					Preset = ProtectionPreset.None,
 					Inherit = true,
 					Pattern = "true"
 				};
 				rule.Add(new SettingItem<IProtection> {
-					Id = prot.Id,
+					Id = protectionId,
 					Action = SettingItemAction.Add
 				});
 				proj.Rules.Add(rule);
-				discovery = new PackerDiscovery(prot);
+				discovery = new PackerDiscovery(protectionId, prot);
 			}
 
 			var logger = loggingService.GetLogger("packer");
@@ -134,26 +142,29 @@ namespace Confuser.Core.Services {
 		}
 
 		internal class PackerDiscovery : PluginDiscovery {
-			private readonly IProtection prot;
+			private readonly string protectionId;
+			private readonly IProtection protection;
 
-			public PackerDiscovery(IProtection prot) {
-				this.prot = prot;
+			public PackerDiscovery(string protectionId, IProtection protection) {
+				this.protectionId = protectionId;
+				this.protection = protection;
 			}
 
 			protected override AggregateCatalog GetAdditionalPlugIns(ConfuserProject project, ILogger logger) {
 				var catalog = base.GetAdditionalPlugIns(project, logger);
-				if (prot == null) return catalog;
+				if (protection == null) return catalog;
 
 				return new AggregateCatalog(
 					catalog,
-					new PackerCompositionCatalog(prot));
+					new PackerCompositionCatalog(protectionId, protection));
 			}
 		}
 
 		private sealed class PackerCompositionCatalog : ComposablePartCatalog {
 			private readonly ComposablePartDefinition partDef;
 
-			public PackerCompositionCatalog(IProtection prot) => partDef = new PackerComposablePartDefinition(prot);
+			public PackerCompositionCatalog(string protectionId, IProtection protection) => 
+				partDef = new PackerComposablePartDefinition(protectionId, protection);
 
 			public override IEnumerable<Tuple<ComposablePartDefinition, ExportDefinition>> GetExports(ImportDefinition definition) {
 				if (definition == null) throw new ArgumentNullException(nameof(definition));
@@ -167,7 +178,8 @@ namespace Confuser.Core.Services {
 		private sealed class PackerComposablePartDefinition : ComposablePartDefinition {
 			private readonly ComposablePart part;
 
-			public PackerComposablePartDefinition(IProtection prot) => part = new PackerComposablePart(prot);
+			public PackerComposablePartDefinition(string protectionId, IProtection protection) => 
+				part = new PackerComposablePart(protectionId, protection);
 
 			public override IEnumerable<ExportDefinition> ExportDefinitions => part.ExportDefinitions;
 
@@ -180,10 +192,12 @@ namespace Confuser.Core.Services {
 			private readonly IProtection prot;
 			private readonly ExportDefinition exportDef;
 
-			public PackerComposablePart(IProtection prot) {
+			public PackerComposablePart(string protectionId, IProtection prot) {
 				this.prot = prot ?? throw new ArgumentNullException(nameof(prot));
 				exportDef = new ExportDefinition(typeof(IProtection).FullName,
-					ImmutableDictionary.Create<string, object>().Add("ExportTypeIdentity", typeof(IProtection).FullName));
+					ImmutableDictionary.Create<string, object>()
+					.Add("ExportTypeIdentity", typeof(IProtection).FullName)
+					.Add(nameof(IProtectionMetadata.Id), protectionId));
 			}
 
 			public override IEnumerable<ExportDefinition> ExportDefinitions => ImmutableArray.Create(exportDef);

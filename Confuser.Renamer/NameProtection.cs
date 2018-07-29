@@ -5,19 +5,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer {
 	[Export(typeof(IProtection))]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
 	internal sealed class NameProtection : IProtection {
 		public const string _Id = "rename";
 		public const string _FullId = "Ki.Rename";
-		public const string _ServiceId = "Ki.Rename";
 
 		public string Name => "Name Protection";
 
 		public string Description => 
 			"This protection obfuscate the symbols' name so the decompiled source code can neither be compiled nor read.";
-
-		public string Id => _Id;
-
-		public string FullId => _FullId;
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
 

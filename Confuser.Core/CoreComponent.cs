@@ -8,35 +8,6 @@ namespace Confuser.Core {
 	///     Core component of Confuser.
 	/// </summary>
 	internal sealed class CoreComponent : IConfuserComponent {
-		/// <summary>
-		///     The service ID of RNG
-		/// </summary>
-		public const string _RandomServiceId = "Confuser.Random";
-
-		/// <summary>
-		///     The service ID of Marker
-		/// </summary>
-		public const string _MarkerServiceId = "Confuser.Marker";
-
-		/// <summary>
-		///     The service ID of Trace
-		/// </summary>
-		public const string _TraceServiceId = "Confuser.Trace";
-
-		/// <summary>
-		///     The service ID of Runtime
-		/// </summary>
-		public const string _RuntimeServiceId = "Confuser.Runtime";
-
-		/// <summary>
-		///     The service ID of Compression
-		/// </summary>
-		public const string _CompressionServiceId = "Confuser.Compression";
-
-		/// <summary>
-		///     The service ID of API Store
-		/// </summary>
-		public const string _APIStoreId = "Confuser.APIStore";
 
 		readonly Marker marker;
 		readonly ConfuserParameters parameters;
@@ -56,12 +27,6 @@ namespace Confuser.Core {
 
 		/// <inheritdoc />
 		public string Description => "Initialization of Confuser core services.";
-
-		/// <inheritdoc />
-		public string Id => "Confuser.Core";
-
-		/// <inheritdoc />
-		public string FullId => "Confuser.Core";
 
 		/// <inheritdoc />
 		void IConfuserComponent.Initialize(IServiceCollection collection) {

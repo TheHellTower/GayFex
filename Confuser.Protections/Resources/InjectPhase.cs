@@ -42,7 +42,7 @@ namespace Confuser.Protections.Resources {
 				var marker = context.Registry.GetRequiredService<IMarkerService>();
 				var rt = context.Registry.GetRequiredService<IRuntimeService>();
 				var moduleCtx = new REContext {
-					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(Parent.Id),
+					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ResourceProtection._FullId),
 					Context = context,
 					Module = context.CurrentModule,
 					Marker = marker,

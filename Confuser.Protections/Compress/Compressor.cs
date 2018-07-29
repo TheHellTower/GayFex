@@ -24,19 +24,16 @@ using SR = System.Reflection;
 
 namespace Confuser.Protections {
 	[Export(typeof(IPacker))]
+	[ExportMetadata(nameof(IPackerMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IPackerMetadata.MarkerId), _Id)]
 	internal sealed class Compressor : IPacker {
 		public const string _Id = "compressor";
 		public const string _FullId = "Ki.Compressor";
-		public const string _ServiceId = "Ki.Compressor";
 		public static readonly object ContextKey = new object();
 
 		public string Name => "Compressing Packer";
 
 		public string Description => "This packer reduces the size of output.";
-
-		public string Id => _Id;
-
-		public string FullId => _FullId;
 
 		void IConfuserComponent.Initialize(IServiceCollection collectin) { }
 
@@ -198,7 +195,7 @@ namespace Confuser.Protections {
 
 		void InjectStub(IConfuserContext context, CompressorContext compCtx, IProtectionParameters parameters, ModuleDef stubModule, CancellationToken token) {
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
-			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(Id);
+			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(_FullId);
 			var comp = context.Registry.GetRequiredService<ICompressionService>();
 			var trace = context.Registry.GetRequiredService<ITraceService>();
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");

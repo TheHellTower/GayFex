@@ -7,18 +7,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
 	[Export(typeof(IProtection))]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
 	internal sealed class ControlFlowProtection : IProtection, IControlFlowService {
 		public const string _Id = "ctrl flow";
 		public const string _FullId = "Ki.ControlFlow";
-		public const string _ServiceId = "Ki.ControlFlow";
 
 		public string Name => "Control Flow Protection";
 
 		public string Description => "This protection mangles the code in the methods so that decompilers cannot decompile the methods.";
-
-		public string Id => _Id;
-
-		public string FullId => _FullId;
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 

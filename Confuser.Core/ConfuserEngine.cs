@@ -87,8 +87,8 @@ namespace Confuser.Core {
 				logger.Debug("Discovering plugins...");
 
 				var plugInContainer = parameters.GetPluginDiscovery().GetPlugins(parameters.Project, logger);
-				var prots = plugInContainer.GetExports<IProtection>();
-				var packers = plugInContainer.GetExports<IPacker>();
+				var prots = plugInContainer.GetExports<IProtection, IProtectionMetadata>().ToArray();
+				var packers = plugInContainer.GetExports<IPacker, IPackerMetadata>().ToArray();
 				var components = plugInContainer.GetExports<IConfuserComponent>();
 
 				logger.InfoFormat("Discovered {0} protections, {1} packers.", prots.Count(), packers.Count());
@@ -102,7 +102,7 @@ namespace Confuser.Core {
 				// 3. Resolve dependency
 				logger.Debug("Resolving component dependency...");
 				try {
-					var resolver = new DependencyResolver(prots.Select(l => l.Value));
+					var resolver = new DependencyResolver(prots);
 					sortedComponents.AddRange(resolver.SortDependency());
 				}
 				catch (CircularDependencyException ex) {
@@ -149,7 +149,7 @@ namespace Confuser.Core {
 
 					// 5. Load modules
 					logger.Info("Loading input modules...");
-					marker.Initalize(prots.Select(l => l.Value), packers.Select(l => l.Value));
+					marker.Initalize(prots, packers);
 					MarkerResult markings = marker.MarkProject(parameters.Project, context, token);
 					context.Modules = new ModuleSorter(markings.Modules).Sort().ToImmutableArray();
 					foreach (var module in context.Modules)

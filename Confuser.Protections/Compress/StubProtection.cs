@@ -1,9 +1,9 @@
 ﻿using System;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Renamer;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
@@ -11,7 +11,11 @@ using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Compress {
-	internal class StubProtection : IProtection {
+	[Export(typeof(IProtection)), PartNotDiscoverable]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	internal sealed class StubProtection : IProtection {
+		public const string _FullId = "Ki.Compressor.Protection";
+
 		readonly CompressorContext ctx;
 		readonly ModuleDef originModule;
 
@@ -23,10 +27,6 @@ namespace Confuser.Protections.Compress {
 		public string Name => "Compressor Stub Protection";
 
 		public string Description => "Do some extra works on the protected stub.";
-
-		public string Id => "Ki.Compressor.Protection";
-
-		public string FullId => "Ki.Compressor.Protection";
 
 		public ProtectionPreset Preset => ProtectionPreset.None;
 

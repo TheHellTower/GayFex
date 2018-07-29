@@ -6,21 +6,21 @@ using Confuser.Core;
 
 namespace ConfuserEx {
 	public partial class CompComboBox : UserControl {
-		public static readonly DependencyProperty ComponentsProperty = DependencyProperty.Register("Components", typeof(IEnumerable<IConfuserComponent>), typeof(CompComboBox), new UIPropertyMetadata(null));
-		public static readonly DependencyProperty SelectedComponentProperty = DependencyProperty.Register("SelectedComponent", typeof(IConfuserComponent), typeof(CompComboBox), new UIPropertyMetadata(null));
+		public static readonly DependencyProperty ComponentsProperty = DependencyProperty.Register("Components", typeof(IEnumerable<ConfuserUiComponent>), typeof(CompComboBox), new UIPropertyMetadata(null));
+		public static readonly DependencyProperty SelectedComponentProperty = DependencyProperty.Register("SelectedComponent", typeof(ConfuserUiComponent), typeof(CompComboBox), new UIPropertyMetadata(null));
 		public static readonly DependencyProperty ArgumentsProperty = DependencyProperty.Register("Arguments", typeof(Dictionary<string, string>), typeof(CompComboBox), new UIPropertyMetadata(null));
 
 		public CompComboBox() {
 			InitializeComponent();
 		}
 
-		public IEnumerable<IConfuserComponent> Components {
-			get { return (IEnumerable<IConfuserComponent>)GetValue(ComponentsProperty); }
+		public IEnumerable<ConfuserUiComponent> Components {
+			get { return (IEnumerable<ConfuserUiComponent>)GetValue(ComponentsProperty); }
 			set { SetValue(ComponentsProperty, value); }
 		}
 
-		public IConfuserComponent SelectedComponent {
-			get { return (IConfuserComponent)GetValue(SelectedComponentProperty); }
+		public ConfuserUiComponent SelectedComponent {
+			get { return (ConfuserUiComponent)GetValue(SelectedComponentProperty); }
 			set { SetValue(SelectedComponentProperty, value); }
 		}
 

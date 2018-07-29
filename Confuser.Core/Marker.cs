@@ -44,9 +44,9 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="protections">The protections.</param>
 		/// <param name="packers">The packers.</param>
-		public virtual void Initalize(IEnumerable<IProtection> protections, IEnumerable<IPacker> packers) {
-			this.protections = protections.ToDictionary(prot => prot.Id, prot => prot, StringComparer.OrdinalIgnoreCase);
-			this.packers = packers.ToDictionary(packer => packer.Id, packer => packer, StringComparer.OrdinalIgnoreCase);
+		public virtual void Initalize(IEnumerable<Lazy<IProtection, IProtectionMetadata>> protections, IEnumerable<Lazy<IPacker, IPackerMetadata>> packers) {
+			this.protections = protections.ToDictionary(prot => prot.Metadata.MarkerId ?? prot.Metadata.Id, prot => prot.Value, StringComparer.OrdinalIgnoreCase);
+			this.packers = packers.ToDictionary(packer => packer.Metadata.MarkerId ?? packer.Metadata.Id, packer => packer.Value, StringComparer.OrdinalIgnoreCase);
 		}
 
 		/// <summary>

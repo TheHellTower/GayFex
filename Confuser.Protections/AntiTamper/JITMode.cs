@@ -42,7 +42,7 @@ namespace Confuser.Protections.AntiTamper {
 
 		public void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
 			this.context = context;
-			random = context.Registry.GetService<IRandomService>().GetRandomGenerator(parent.FullId);
+			random = context.Registry.GetService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
 			z = random.NextUInt32();
 			x = random.NextUInt32();
 			c = random.NextUInt32();

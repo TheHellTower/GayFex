@@ -36,7 +36,7 @@ namespace Confuser.Protections.Constants {
 				var rt = context.Registry.GetRequiredService<IRuntimeService>();
 				var moduleCtx = new CEContext {
 					Protection = Parent,
-					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(Parent.Id),
+					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ConstantProtection._FullId),
 					Context = context,
 					Module = context.CurrentModule,
 					Marker = marker,

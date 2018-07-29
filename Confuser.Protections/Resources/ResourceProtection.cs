@@ -5,19 +5,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
 	[Export(typeof(IProtection))]
-	[BeforeProtection("Ki.ControlFlow"), AfterProtection("Ki.Constants")]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	[BeforeProtection(ControlFlowProtection._FullId)]
+	[AfterProtection(ConstantProtection._FullId)]
 	internal sealed class ResourceProtection : IProtection {
 		public const string _Id = "resources";
 		public const string _FullId = "Ki.Resources";
-		public const string _ServiceId = "Ki.Resources";
 
 		public string Name => "Resources Protection";
 
 		public string Description => "This protection encodes and compresses the embedded resources.";
-
-		public string Id => _Id;
-
-		public string FullId => _FullId;
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 

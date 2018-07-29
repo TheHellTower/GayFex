@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
 	[Export(typeof(IProtection))]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
 	internal sealed class InvalidMetadataProtection : IProtection {
 		public const string _Id = "invalid metadata";
 		public const string _FullId = "Ki.InvalidMD";

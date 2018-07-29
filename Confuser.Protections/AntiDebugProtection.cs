@@ -3,8 +3,10 @@ using Confuser.Core;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
-	[BeforeProtection("Ki.ControlFlow")]
 	[Export(typeof(IProtection))]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	[BeforeProtection(ControlFlowProtection._FullId)]
 	internal sealed class AntiDebugProtection : IProtection {
 		public const string _Id = "anti debug";
 		public const string _FullId = "Ki.AntiDebug";
@@ -12,10 +14,6 @@ namespace Confuser.Protections {
 		public string Name => "Anti Debug Protection";
 
 		public string Description => "This protection prevents the assembly from being debugged or profiled.";
-
-		public string Id => _Id;
-
-		public string FullId => _FullId;
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
 

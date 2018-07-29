@@ -8,12 +8,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
 	[Export(typeof(IProtection))]
-	[AfterProtection("Ki.AntiDebug", "Ki.AntiDump")]
-	[BeforeProtection("Ki.ControlFlow")]
-	internal class ReferenceProxyProtection : IProtection, IReferenceProxyService {
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	[AfterProtection(AntiDebugProtection._FullId, AntiDumpProtection._FullId)]
+	[BeforeProtection(ControlFlowProtection._FullId)]
+	internal sealed class ReferenceProxyProtection : IProtection, IReferenceProxyService {
 		public const string _Id = "ref proxy";
 		public const string _FullId = "Ki.RefProxy";
-		public const string _ServiceId = "Ki.RefProxy";
 
 		internal static object TargetExcluded = new object();
 		internal static object Targeted = new object();
@@ -21,10 +22,6 @@ namespace Confuser.Protections {
 		public string Name => "Reference Proxy Protection";
 
 		public string Description => "This protection encodes and hides references to type/method/fields.";
-
-		public string Id => _Id;
-
-		public string FullId => _FullId;
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
