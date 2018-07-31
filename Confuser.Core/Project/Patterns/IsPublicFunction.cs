@@ -32,15 +32,15 @@ namespace Confuser.Core.Project.Patterns {
 			}
 
 			if (member is MethodDef)
-				return ((MethodDef)member).IsPublic;
+				return ((MethodDef)member).IsVisibleOutside();
 			if (member is FieldDef)
-				return ((FieldDef)member).IsPublic;
+				return ((FieldDef)member).IsVisibleOutside();
 			if (member is PropertyDef)
-				return ((PropertyDef)member).IsPublic();
+				return ((PropertyDef)member).IsVisibleOutside();
 			if (member is EventDef)
-				return ((EventDef)member).IsPublic();
+				return ((EventDef)member).IsVisibleOutside();
 			if (member is TypeDef)
-				return ((TypeDef)member).IsPublic || ((TypeDef)member).IsNestedPublic;
+				return ((TypeDef)member).IsVisibleOutside();
 
 			throw new NotSupportedException();
 		}
