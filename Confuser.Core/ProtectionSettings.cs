@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Confuser.Core {
 	/// <summary>
 	///     Protection settings for a certain component
 	/// </summary>
-	public class ProtectionSettings : Dictionary<ConfuserComponent, Dictionary<string, string>> {
+	public class ProtectionSettings : Dictionary<IConfuserComponent, Dictionary<string, string>>, IProtectionSettings {
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ProtectionSettings" /> class.
 		/// </summary>
@@ -24,12 +25,49 @@ namespace Confuser.Core {
 				Add(i.Key, new Dictionary<string, string>(i.Value));
 		}
 
+		public string GetParameter(IConfuserComponent component, string name) {
+			if (component == null) throw new ArgumentNullException(nameof(component));
+			if (name == null) throw new ArgumentNullException(nameof(name));
+
+			if (TryGetValue(component, out var p)) {
+				if (p.TryGetValue(name, out var result)) {
+					return result;
+				}
+				throw new ArgumentException($"{name} is not set for {component.Name}", nameof(name));
+			}
+			throw new ArgumentException($"{component.Name} has no parameters", nameof(component));
+		}
+
+		public bool HasParameters(IConfuserComponent component) {
+			if (component == null) return false;
+			if (TryGetValue(component, out var p)) {
+				return p.Any();
+			}
+			return false;
+		}
+
 		/// <summary>
 		///     Determines whether the settings is empty.
 		/// </summary>
 		/// <returns><c>true</c> if the settings is empty; otherwise, <c>false</c>.</returns>
 		public bool IsEmpty() {
 			return Count == 0;
+		}
+
+		public void RemoveParameters(IConfuserComponent component) {
+			if (component == null) return;
+			Remove(component);
+		}
+
+		public void SetParameter(IConfuserComponent component, string name, string value) {
+			if (component == null) throw new ArgumentNullException(nameof(component));
+			if (name == null) throw new ArgumentNullException(nameof(name));
+
+			if (!TryGetValue(component, out var p)) {
+				p = new Dictionary<string, string>();
+				Add(component, p);
+			}
+			p[name] = value;
 		}
 	}
 }

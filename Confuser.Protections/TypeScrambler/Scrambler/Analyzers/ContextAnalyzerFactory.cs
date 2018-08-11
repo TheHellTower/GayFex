@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
-	public class ContextAnalyzerFactory : IEnumerable {
+	internal sealed class ContextAnalyzerFactory : IEnumerable {
 		public Dictionary<Type, ContextAnalyzer> Analyzers = new Dictionary<Type, ContextAnalyzer>();
 		private ScannedMethod targetMethod;
 		public ContextAnalyzerFactory(ScannedMethod m) {

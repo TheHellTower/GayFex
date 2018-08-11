@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using dnlib.DotNet;
 
 namespace Confuser.Core {
@@ -8,22 +9,22 @@ namespace Confuser.Core {
 	/// <summary>
 	///     Parameters of <see cref="ConfuserComponent" />.
 	/// </summary>
-	public class ProtectionParameters {
+	public class ProtectionParameters : IProtectionParameters {
 		static readonly object ParametersKey = new object();
 
 		/// <summary>
 		///     A empty instance of <see cref="ProtectionParameters" />.
 		/// </summary>
-		public static readonly ProtectionParameters Empty = new ProtectionParameters(null, new IDnlibDef[0]);
+		public static readonly ProtectionParameters Empty = new ProtectionParameters(null, ImmutableArray.Create<IDnlibDef>());
 
-		readonly ConfuserComponent comp;
+		readonly IConfuserComponent comp;
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ProtectionParameters" /> class.
 		/// </summary>
 		/// <param name="component">The component that this parameters applied to.</param>
 		/// <param name="targets">The protection targets.</param>
-		internal ProtectionParameters(ConfuserComponent component, IList<IDnlibDef> targets) {
+		internal ProtectionParameters(IConfuserComponent component, IImmutableList<IDnlibDef> targets) {
 			comp = component;
 			Targets = targets;
 		}
@@ -33,7 +34,7 @@ namespace Confuser.Core {
 		///     Possible targets are module, types, methods, fields, events, properties.
 		/// </summary>
 		/// <value>A list of protection targets.</value>
-		public IList<IDnlibDef> Targets { get; private set; }
+		public IImmutableList<IDnlibDef> Targets { get; private set; }
 
 
 		/// <summary>
@@ -45,13 +46,13 @@ namespace Confuser.Core {
 		/// <param name="name">The name of the parameter.</param>
 		/// <param name="defValue">Default value if the parameter does not exist.</param>
 		/// <returns>The value of the parameter.</returns>
-		public T GetParameter<T>(ConfuserContext context, IDnlibDef target, string name, T defValue = default(T)) {
+		public T GetParameter<T>(IConfuserContext context, IDnlibDef target, string name, T defValue = default) {
 			Dictionary<string, string> parameters;
 
 			if (comp == null)
 				return defValue;
 
-			if (comp is Packer && target == null) {
+			if (comp is IPacker && target == null) {
 				// Packer parameters are stored in modules
 				target = context.Modules[0];
 			}
@@ -83,7 +84,7 @@ namespace Confuser.Core {
 		/// <param name="target">The protection target.</param>
 		/// <param name="parameters">The parameters.</param>
 		public static void SetParameters(
-			ConfuserContext context, IDnlibDef target, ProtectionSettings parameters) {
+			IConfuserContext context, IDnlibDef target, ProtectionSettings parameters) {
 			context.Annotations.Set(target, ParametersKey, parameters);
 		}
 
@@ -93,9 +94,13 @@ namespace Confuser.Core {
 		/// <param name="context">The context.</param>
 		/// <param name="target">The protection target.</param>
 		/// <returns>The parameters.</returns>
-		public static ProtectionSettings GetParameters(
-			ConfuserContext context, IDnlibDef target) {
-			return context.Annotations.Get<ProtectionSettings>(target, ParametersKey);
+		public static ProtectionSettings GetParameters(IConfuserContext context, IDnlibDef target) {
+			var result = context.Annotations.Get<ProtectionSettings>(target, ParametersKey);
+			if (result == null) {
+				result = new ProtectionSettings();
+				SetParameters(context, target, result);
+			}
+			return result;
 		}
 	}
 }

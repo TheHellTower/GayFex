@@ -29,7 +29,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			return value * key.Item2;
 		}
 
-		Tuple<int, int> GetKey(RandomGenerator random, MethodDef init) {
+		Tuple<int, int> GetKey(IRandomGenerator random, MethodDef init) {
 			Tuple<int, int> ret;
 			if (!keys.TryGetValue(init, out ret)) {
 				int key = random.NextInt32() | 1;

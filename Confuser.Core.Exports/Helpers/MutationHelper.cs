@@ -78,8 +78,8 @@ namespace Confuser.Core.Helpers {
 		/// </summary>
 		/// <param name="method">The methodto process.</param>
 		/// <param name="repl">The function replacing the argument of placeholder call with actual instruction sequence.</param>
-		public static void ReplacePlaceholder(MethodDef method, Func<Instruction[], Instruction[]> repl) {
-			MethodTrace trace = new MethodTrace(method).Trace();
+		public static void ReplacePlaceholder(ITraceService traceService, MethodDef method, Func<Instruction[], Instruction[]> repl) {			
+			var trace = traceService.Trace(method);
 			for (int i = 0; i < method.Body.Instructions.Count; i++) {
 				Instruction instr = method.Body.Instructions[i];
 				if (instr.OpCode == OpCodes.Call) {

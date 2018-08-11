@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Core.Services;
 using dnlib.DotNet;
@@ -12,8 +11,8 @@ namespace Confuser.Protections.AntiTamper {
 	}
 
 	internal interface IKeyDeriver {
-		void Init(ConfuserContext ctx, RandomGenerator random);
+		void Init(IConfuserContext ctx, IRandomGenerator random);
 		uint[] DeriveKey(uint[] a, uint[] b);
-		IEnumerable<Instruction> EmitDerivation(MethodDef method, ConfuserContext ctx, Local dst, Local src);
+		IEnumerable<Instruction> EmitDerivation(MethodDef method, IConfuserContext ctx, Local dst, Local src);
 	}
 }

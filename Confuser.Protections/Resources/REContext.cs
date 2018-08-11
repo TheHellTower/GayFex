@@ -3,11 +3,12 @@ using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.Resources {
 	internal class REContext {
-		public ConfuserContext Context;
+		public IConfuserContext Context;
 
 		public FieldDef DataField;
 		public TypeDef DataType;
@@ -20,6 +21,7 @@ namespace Confuser.Protections.Resources {
 		public IEncodeMode ModeHandler;
 		public ModuleDef Module;
 		public INameService Name;
-		public RandomGenerator Random;
+		public IRandomGenerator Random;
+		public ITraceService Trace;
 	}
 }

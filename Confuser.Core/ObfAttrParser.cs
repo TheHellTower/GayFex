@@ -83,7 +83,7 @@ namespace Confuser.Core {
 			return index == str.Length;
 		}
 
-		public void ParseProtectionString(IDictionary<ConfuserComponent, Dictionary<string, string>> settings, string str) {
+		public void ParseProtectionString(IDictionary<IConfuserComponent, Dictionary<string, string>> settings, string str) {
 			if (str == null)
 				return;
 
@@ -125,7 +125,7 @@ namespace Confuser.Core {
 						Expect(')');
 
 						var preset = (ProtectionPreset)Enum.Parse(typeof(ProtectionPreset), buffer.ToString(), true);
-						foreach (var item in items.Values.OfType<Protection>().Where(prot => prot.Preset <= preset)) {
+						foreach (var item in items.Values.OfType<IProtection>().Where(prot => prot.Preset <= preset)) {
 							if (item.Preset != ProtectionPreset.None && settings != null && !settings.ContainsKey(item))
 								settings.Add(item, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
 						}
@@ -206,16 +206,16 @@ namespace Confuser.Core {
 								throw new KeyNotFoundException("Cannot find protection with id '" + protId + "'.");
 
 							if (protAct) {
-								if (settings.ContainsKey((Protection)items[protId])) {
-									var p = settings[(Protection)items[protId]];
+								if (settings.ContainsKey((IProtection)items[protId])) {
+									var p = settings[(IProtection)items[protId]];
 									foreach (var kvp in protParams)
 										p[kvp.Key] = kvp.Value;
 								}
 								else
-									settings[(Protection)items[protId]] = protParams;
+									settings[(IProtection)items[protId]] = protParams;
 							}
 							else
-								settings.Remove((Protection)items[protId]);
+								settings.Remove((IProtection)items[protId]);
 						}
 						protParams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -233,7 +233,7 @@ namespace Confuser.Core {
 			}
 		}
 
-		public void ParsePackerString(string str, out Packer packer, out Dictionary<string, string> packerParams) {
+		public void ParsePackerString(string str, out IPacker packer, out Dictionary<string, string> packerParams) {
 			packer = null;
 			packerParams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -256,7 +256,7 @@ namespace Confuser.Core {
 						if (!items.Contains(packerId))
 							throw new KeyNotFoundException("Cannot find packer with id '" + packerId + "'.");
 
-						packer = (Packer)items[packerId];
+						packer = (IPacker)items[packerId];
 						buffer.Length = 0;
 
 						if (IsEnd() || Peek() == ';')

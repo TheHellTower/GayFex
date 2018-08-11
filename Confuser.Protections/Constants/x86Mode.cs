@@ -44,7 +44,7 @@ namespace Confuser.Protections.Constants {
 		public object CreateDecoder(MethodDef decoder, CEContext ctx) {
 			var encoding = new x86Encoding();
 			encoding.Compile(ctx);
-			MutationHelper.ReplacePlaceholder(decoder, arg => {
+			MutationHelper.ReplacePlaceholder(ctx.Trace, decoder, arg => {
 				var repl = new List<Instruction>();
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Call, encoding.native));
@@ -99,7 +99,7 @@ namespace Confuser.Protections.Constants {
 				//native.HasSecurity = true;
 				ctx.Module.GlobalType.Methods.Add(native);
 
-				ctx.Name.MarkHelper(native, ctx.Marker, ctx.Protection);
+				ctx.Name?.MarkHelper(ctx.Context, native, ctx.Marker, ctx.Protection);
 
 				x86Register? reg;
 				var codeGen = new x86CodeGen();

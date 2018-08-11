@@ -12,7 +12,7 @@ namespace Confuser.DynCipher.Elements {
 
 		public int Index { get; private set; }
 
-		public override void Initialize(RandomGenerator random) { }
+		public override void Initialize(IRandomGenerator random) { }
 
 		void EmitCore(CipherGenContext context) {
 			Expression val = context.GetDataExpression(Index);

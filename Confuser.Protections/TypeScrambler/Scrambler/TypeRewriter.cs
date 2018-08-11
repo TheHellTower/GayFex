@@ -1,24 +1,26 @@
 ﻿using Confuser.Core;
+using Confuser.Protections.Services;
 using Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
-	class TypeRewriter {
+	internal sealed class TypeRewriter {
 
-		private ConfuserContext context;
+		private IConfuserContext context;
 		private TypeService Service;
 
 		private InstructionRewriterFactory RewriteFactory;
 
 
-		public TypeRewriter(ConfuserContext _context) {
+		public TypeRewriter(IConfuserContext _context) {
 			context = _context;
-			Service = context.Registry.GetService<TypeService>();
+			Service = (TypeService)context.Registry.GetRequiredService<ITypeScrambleService>();
 
 			RewriteFactory = new InstructionRewriterFactory() {
 				new MethodSpecInstructionRewriter(),
 				new MethodDefInstructionRewriter(),
-				new MemberRefInstructionRewriter(),
+				new MemberRefInstructionRewriter(_context),
 				new TypeRefInstructionRewriter(),
 				new TypeDefInstructionRewriter()
 			};

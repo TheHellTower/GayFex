@@ -7,10 +7,13 @@ using System.Text;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Protections.Services;
 using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
 namespace Confuser.Protections.AntiTamper {
@@ -20,13 +23,13 @@ namespace Confuser.Protections.AntiTamper {
 
 		List<MethodDef> methods;
 		uint name1, name2;
-		RandomGenerator random;
+		IRandomGenerator random;
 		uint v;
 		uint x;
 		uint z;
 
-		public void HandleInject(AntiTamperProtection parent, ConfuserContext context, ProtectionParameters parameters) {
-			random = context.Registry.GetService<IRandomService>().GetRandomGenerator(parent.FullId);
+		public void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+			random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
 			z = random.NextUInt32();
 			x = random.NextUInt32();
 			c = random.NextUInt32();
@@ -46,7 +49,7 @@ namespace Confuser.Protections.AntiTamper {
 			}
 			deriver.Init(context, random);
 
-			var rt = context.Registry.GetService<IRuntimeService>();
+			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperNormal");
 			IEnumerable<IDnlibDef> members = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
 			var initMethod = (MethodDef)members.Single(m => m.Name == "Initialize");
@@ -81,20 +84,21 @@ namespace Confuser.Protections.AntiTamper {
 									  new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
 
 			var name = context.Registry.GetService<INameService>();
-			var marker = context.Registry.GetService<IMarkerService>();
+			var marker = context.Registry.GetRequiredService<IMarkerService>();
+			var tamper = context.Registry.GetRequiredService<IAntiTamperService>();
 			foreach (IDnlibDef def in members) {
-				name.MarkHelper(def, marker, parent);
+				name?.MarkHelper(context, def, marker, parent);
 				if (def is MethodDef)
-					parent.ExcludeMethod(context, (MethodDef)def);
+					tamper.ExcludeMethod(context, (MethodDef)def);
 			}
 
 			MethodDef cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
 			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, initMethod));
 
-			parent.ExcludeMethod(context, cctor);
+			tamper.ExcludeMethod(context, cctor);
 		}
 
-		public void HandleMD(AntiTamperProtection parent, ConfuserContext context, ProtectionParameters parameters) {
+		public void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
 			methods = parameters.Targets.OfType<MethodDef>().ToList();
 			context.CurrentModuleWriterOptions.WriterEvent += WriterEvent;
 		}

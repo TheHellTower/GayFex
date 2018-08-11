@@ -1,24 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading;
 using Confuser.Core.Project;
+using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Core {
 	/// <summary>
 	///     Context providing information on the current protection process.
 	/// </summary>
-	public class ConfuserContext {
+	public class ConfuserContext : IConfuserContext {
 		readonly Annotations annotations = new Annotations();
-		readonly ServiceRegistry registry = new ServiceRegistry();
-		internal CancellationToken token;
-
-		/// <summary>
-		///     Gets the logger used for logging events.
-		/// </summary>
-		/// <value>The logger.</value>
-		public ILogger Logger { get; internal set; }
 
 		/// <summary>
 		///     Gets the project being processed.
@@ -36,13 +31,13 @@ namespace Confuser.Core {
 			get { return annotations; }
 		}
 
+		IAnnotations IConfuserContext.Annotations => Annotations;
+
 		/// <summary>
 		///     Gets the service registry.
 		/// </summary>
 		/// <value>The service registry.</value>
-		public ServiceRegistry Registry {
-			get { return registry; }
-		}
+		public IServiceProvider Registry { get; }
 
 		/// <summary>
 		///     Gets the assembly resolver.
@@ -50,17 +45,19 @@ namespace Confuser.Core {
 		/// <value>The assembly resolver.</value>
 		public AssemblyResolver Resolver { get; internal set; }
 
+		IAssemblyResolver IConfuserContext.Resolver => Resolver;
+
 		/// <summary>
 		///     Gets the modules being protected.
 		/// </summary>
 		/// <value>The modules being protected.</value>
-		public IList<ModuleDefMD> Modules { get; internal set; }
+		public IImmutableList<ModuleDefMD> Modules { get; internal set; }
 
 		/// <summary>
 		///     Gets the external modules.
 		/// </summary>
 		/// <value>The external modules.</value>
-		public IList<byte[]> ExternalModules { get; internal set; }
+		public IImmutableList<byte[]> ExternalModules { get; internal set; }
 
 		/// <summary>
 		///     Gets the base directory.
@@ -78,7 +75,7 @@ namespace Confuser.Core {
 		///     Gets the packer.
 		/// </summary>
 		/// <value>The packer.</value>
-		public Packer Packer { get; internal set; }
+		public IPacker Packer { get; internal set; }
 
 		/// <summary>
 		///     Gets the current processing pipeline.
@@ -86,23 +83,25 @@ namespace Confuser.Core {
 		/// <value>The processing pipeline.</value>
 		public ProtectionPipeline Pipeline { get; internal set; }
 
+		IProtectionPipeline IConfuserContext.Pipeline => Pipeline;
+
 		/// <summary>
 		///     Gets the <c>byte[]</c> of modules after protected, or null if module is not protected yet.
 		/// </summary>
 		/// <value>The list of <c>byte[]</c> of protected modules.</value>
-		public IList<byte[]> OutputModules { get; internal set; }
+		public IImmutableList<byte[]> OutputModules { get; internal set; }
 
 		/// <summary>
 		///     Gets the <c>byte[]</c> of module debug symbols after protected, or null if module is not protected yet.
 		/// </summary>
 		/// <value>The list of <c>byte[]</c> of module debug symbols.</value>
-		public IList<byte[]> OutputSymbols { get; internal set; }
+		public IImmutableList<byte[]> OutputSymbols { get; internal set; }
 
 		/// <summary>
 		///     Gets the relative output paths of module, or null if module is not protected yet.
 		/// </summary>
 		/// <value>The relative output paths of protected modules.</value>
-		public IList<string> OutputPaths { get; internal set; }
+		public IImmutableList<string> OutputPaths { get; internal set; }
 
 		/// <summary>
 		///     Gets the current module index.
@@ -136,19 +135,14 @@ namespace Confuser.Core {
 		/// <value>The output <c>byte[]</c> debug symbol.</value>
 		public byte[] CurrentModuleSymbol { get; internal set; }
 
-		/// <summary>
-		///		Gets the token used to indicate cancellation
-		/// </summary>
-		public CancellationToken CancellationToken { get { return token; } }
+		internal ConfuserContext(IServiceProvider serviceProvider) {
+			Registry = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+		}
 
-		/// <summary>
-		///     Throws a System.OperationCanceledException if protection process has been canceled.
-		/// </summary>
-		/// <exception cref="OperationCanceledException">
-		///     The protection process is canceled.
-		/// </exception>
-		public void CheckCancellation() {
-			token.ThrowIfCancellationRequested();
+		internal ILogger Logger {
+			get {
+				return Registry.GetRequiredService<ILoggingService>().GetLogger();
+			}
 		}
 
 		/// <summary>
@@ -179,5 +173,8 @@ namespace Confuser.Core {
 			CurrentModuleWriterOptions = newOptions;
 			return newOptions;
 		}
+
+		public IProtectionSettings GetParameters(IDnlibDef target) =>
+			ProtectionParameters.GetParameters(this, target);
 	}
 }

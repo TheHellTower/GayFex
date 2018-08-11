@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using Confuser.Core;
 using Confuser.Renamer;
-using Confuser.Renamer.References;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.ReferenceProxy {
@@ -15,7 +15,7 @@ namespace Confuser.Protections.ReferenceProxy {
 		static ITypeDefOrRef Import(RPContext ctx, TypeDef typeDef) {
 			ITypeDefOrRef retTypeRef = new Importer(ctx.Module, ImporterOptions.TryToUseTypeDefs).Import(typeDef);
 			if (typeDef.Module != ctx.Module && ctx.Context.Modules.Contains((ModuleDefMD)typeDef.Module))
-				ctx.Name.AddReference(typeDef, new TypeRefReference((TypeRef)retTypeRef, typeDef));
+				ctx.Name?.AddReference(ctx.Context, typeDef, new TypeRefReference((TypeRef)retTypeRef, typeDef));
 			return retTypeRef;
 		}
 
@@ -81,12 +81,29 @@ namespace Confuser.Protections.ReferenceProxy {
 			ctx.Module.Types.Add(ret);
 
 			foreach (IDnlibDef def in ret.FindDefinitions()) {
-				ctx.Marker.Mark(def, ctx.Protection);
-				ctx.Name.SetCanRename(def, false);
+				ctx.Marker.Mark(ctx.Context, def, ctx.Protection);
+				ctx.Name?.SetCanRename(ctx.Context, def, false);
 			}
 
 			ctx.Delegates[sig] = ret;
 			return ret;
+		}
+		private sealed class TypeRefReference : INameReference<TypeDef> {
+			readonly TypeDef typeDef;
+			readonly TypeRef typeRef;
+
+			public TypeRefReference(TypeRef typeRef, TypeDef typeDef) {
+				this.typeRef = typeRef;
+				this.typeDef = typeDef;
+			}
+
+			public bool UpdateNameReference(IConfuserContext context, INameService service) {
+				typeRef.Namespace = typeDef.Namespace;
+				typeRef.Name = typeDef.Name;
+				return true;
+			}
+
+			public bool ShouldCancelRename() => false;
 		}
 	}
 }

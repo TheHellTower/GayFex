@@ -8,43 +8,20 @@ using dnlib.DotNet.Emit;
 namespace Confuser.Core.Services {
 	internal class TraceService : ITraceService {
 		readonly Dictionary<MethodDef, MethodTrace> cache = new Dictionary<MethodDef, MethodTrace>();
-		ConfuserContext context;
-
-		/// <summary>
-		///     Initializes a new instance of the <see cref="TraceService" /> class.
-		/// </summary>
-		/// <param name="context">The working context.</param>
-		public TraceService(ConfuserContext context) {
-			this.context = context;
-		}
-
 
 		/// <inheritdoc />
-		public MethodTrace Trace(MethodDef method) {
+		public IMethodTrace Trace(MethodDef method) {
 			if (method == null)
 				throw new ArgumentNullException("method");
 			return cache.GetValueOrDefaultLazy(method, m => cache[m] = new MethodTrace(m)).Trace();
 		}
 	}
 
-	/// <summary>
-	///     Provides methods to trace stack of method body.
-	/// </summary>
-	public interface ITraceService {
-		/// <summary>
-		///     Trace the stack of the specified method.
-		/// </summary>
-		/// <param name="method">The method to trace.</param>
-		/// <exception cref="InvalidMethodException"><paramref name="method" /> has invalid body.</exception>
-		/// <exception cref="System.ArgumentNullException"><paramref name="method" /> is <c>null</c>.</exception>
-		MethodTrace Trace(MethodDef method);
-	}
-
 
 	/// <summary>
 	///     The trace result of a method.
 	/// </summary>
-	public class MethodTrace {
+	internal sealed class MethodTrace : IMethodTrace {
 		readonly MethodDef method;
 		Dictionary<int, List<Instruction>> fromInstrs;
 		Dictionary<uint, int> offset2index;

@@ -31,7 +31,7 @@ namespace ConfuserEx.Views {
 			base.OnApplyTemplate();
 
 			AddBtn.Command = new RelayCommand(() => {
-				var prot = new ProjectSettingVM<Protection>(proj, new SettingItem<Protection>());
+				var prot = new ProjectSettingVM<IProtection>(proj, new SettingItem<IProtection>());
 				prot.Id = proj.Protections[0].Id;
 				rule.Protections.Add(prot);
 			});

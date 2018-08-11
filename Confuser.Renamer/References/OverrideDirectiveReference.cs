@@ -1,6 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Confuser.Core;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
@@ -13,32 +13,30 @@ namespace Confuser.Renamer.References {
 			this.baseSlot = baseSlot;
 		}
 
-		void AddImportReference(ConfuserContext context, INameService service, ModuleDef module, MethodDef method, MemberRef methodRef) {
+		void AddImportReference(IConfuserContext context, INameService service, ModuleDef module, MethodDef method, MemberRef methodRef) {
 			if (method.Module != module && context.Modules.Contains((ModuleDefMD)method.Module)) {
 				var declType = (TypeRef)methodRef.DeclaringType.ScopeType;
-				service.AddReference(method.DeclaringType, new TypeRefReference(declType, method.DeclaringType));
-				service.AddReference(method, new MemberRefReference(methodRef, method));
+				service.AddReference(context, method.DeclaringType, new TypeRefReference(declType, method.DeclaringType));
+				service.AddReference(context, method, new MemberRefReference(methodRef, method));
 
 				var typeRefs = methodRef.MethodSig.Params.SelectMany(param => param.FindTypeRefs()).ToList();
 				typeRefs.AddRange(methodRef.MethodSig.RetType.FindTypeRefs());
 				foreach (var typeRef in typeRefs) {
 					var def = typeRef.ResolveTypeDefThrow();
 					if (def.Module != module && context.Modules.Contains((ModuleDefMD)def.Module))
-						service.AddReference(def, new TypeRefReference((TypeRef)typeRef, def));
+						service.AddReference(context, def, new TypeRefReference((TypeRef)typeRef, def));
 				}
 			}
 		}
 
-		public bool UpdateNameReference(ConfuserContext context, INameService service) {
-			MethodDef method = thisSlot.MethodDef;
+		public bool UpdateNameReference(IConfuserContext context, INameService service) {
+			var method = thisSlot.MethodDef;
 
 			IMethod target;
-			if (baseSlot.MethodDefDeclType is GenericInstSig) {
-				var declType = (GenericInstSig)baseSlot.MethodDefDeclType;
-
+			if (baseSlot.MethodDefDeclType is GenericInstSig declType) {
 				MemberRef targetRef = new MemberRefUser(method.Module, baseSlot.MethodDef.Name, baseSlot.MethodDef.MethodSig, declType.ToTypeDefOrRef());
 				targetRef = new Importer(method.Module, ImporterOptions.TryToUseTypeDefs).Import(targetRef);
-				service.AddReference(baseSlot.MethodDef, new MemberRefReference(targetRef, baseSlot.MethodDef));
+				service.AddReference(context, baseSlot.MethodDef, new MemberRefReference(targetRef, baseSlot.MethodDef));
 
 				target = targetRef;
 			}
@@ -47,7 +45,7 @@ namespace Confuser.Renamer.References {
 				if (target.Module != method.Module) {
 					target = (IMethod)new Importer(method.Module, ImporterOptions.TryToUseTypeDefs).Import(baseSlot.MethodDef);
 					if (target is MemberRef)
-						service.AddReference(baseSlot.MethodDef, new MemberRefReference((MemberRef)target, baseSlot.MethodDef));
+						service.AddReference(context, baseSlot.MethodDef, new MemberRefReference((MemberRef)target, baseSlot.MethodDef));
 				}
 			}
 
@@ -65,8 +63,7 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return baseSlot.MethodDefDeclType is GenericInstSig && thisSlot.MethodDef.Module.IsClr20;
-		}
+		public bool ShouldCancelRename() =>
+			baseSlot.MethodDefDeclType is GenericInstSig && thisSlot.MethodDef.Module.IsClr20;
 	}
 }

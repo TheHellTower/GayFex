@@ -5,45 +5,52 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
+using ILogger = Confuser.Core.ILogger;
 
 namespace Confuser.Protections.Constants {
-	internal class EncodePhase : ProtectionPhase {
-		public EncodePhase(ConstantProtection parent)
-			: base(parent) { }
+	internal class EncodePhase : IProtectionPhase {
+		public EncodePhase(ConstantProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets {
-			get { return ProtectionTargets.Methods; }
-		}
+		public ConstantProtection Parent { get; }
 
-		public override string Name {
-			get { return "Constants encoding"; }
-		}
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+		public ProtectionTargets Targets => ProtectionTargets.Methods;
+
+		public bool ProcessAll => false;
+
+		public string Name => "Constants encoding";
+
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			var moduleCtx = context.Annotations.Get<CEContext>(context.CurrentModule, ConstantProtection.ContextKey);
 			if (!parameters.Targets.Any() || moduleCtx == null)
 				return;
 
 			var ldc = new Dictionary<object, List<Tuple<MethodDef, Instruction>>>();
 			var ldInit = new Dictionary<byte[], List<Tuple<MethodDef, Instruction>>>(new ByteArrayComparer());
+			
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("constants");
 
 			// Extract constants
-			ExtractConstants(context, parameters, moduleCtx, ldc, ldInit);
+			ExtractConstants(context, parameters, moduleCtx, ldc, ldInit, logger, token);
 
 			// Encode constants
 			moduleCtx.ReferenceRepl = new Dictionary<MethodDef, List<Tuple<Instruction, uint, IMethod>>>();
 			moduleCtx.EncodedBuffer = new List<uint>();
-			foreach (var entry in ldInit.WithProgress(context.Logger)) // Ensure the array length haven't been encoded yet
+			foreach (var entry in ldInit.WithProgress(logger)) // Ensure the array length haven't been encoded yet
 			{
 				EncodeInitializer(moduleCtx, entry.Key, entry.Value);
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 			}
-			foreach (var entry in ldc.WithProgress(context.Logger)) {
+			foreach (var entry in ldc.WithProgress(logger)) {
 				if (entry.Key is string) {
 					EncodeString(moduleCtx, (string)entry.Key, entry.Value);
 				}
@@ -65,7 +72,7 @@ namespace Confuser.Protections.Constants {
 				}
 				else
 					throw new UnreachableException();
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 			}
 			ReferenceReplacer.ReplaceReference(moduleCtx, parameters);
 
@@ -80,7 +87,7 @@ namespace Confuser.Protections.Constants {
 			}
 			Debug.Assert(buffIndex == encodedBuff.Length);
 			encodedBuff = context.Registry.GetService<ICompressionService>().Compress(encodedBuff);
-			context.CheckCancellation();
+			token.ThrowIfCancellationRequested();
 
 			uint compressedLen = (uint)(encodedBuff.Length + 3) / 4;
 			compressedLen = (compressedLen + 0xfu) & ~0xfu;
@@ -116,7 +123,9 @@ namespace Confuser.Protections.Constants {
 			MutationHelper.InjectKeys(moduleCtx.InitMethod,
 			                          new[] { 0, 1 },
 			                          new[] { encryptedBuffer.Length / 4, (int)keySeed });
-			MutationHelper.ReplacePlaceholder(moduleCtx.InitMethod, arg => {
+
+			var trace = context.Registry.GetRequiredService<ITraceService>();
+			MutationHelper.ReplacePlaceholder(trace, moduleCtx.InitMethod, arg => {
 				var repl = new List<Instruction>();
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Dup));
@@ -215,7 +224,7 @@ namespace Confuser.Protections.Constants {
 			}
 		}
 
-		void RemoveDataFieldRefs(ConfuserContext context, HashSet<FieldDef> dataFields, HashSet<Instruction> fieldRefs) {
+		void RemoveDataFieldRefs(IConfuserContext context, HashSet<FieldDef> dataFields, HashSet<Instruction> fieldRefs) {
 			foreach (var type in context.CurrentModule.GetTypes())
 				foreach (var method in type.Methods.Where(m => m.HasBody)) {
 					foreach (var instr in method.Body.Instructions)
@@ -229,12 +238,13 @@ namespace Confuser.Protections.Constants {
 		}
 
 		void ExtractConstants(
-			ConfuserContext context, ProtectionParameters parameters, CEContext moduleCtx,
+			IConfuserContext context, IProtectionParameters parameters, CEContext moduleCtx,
 			Dictionary<object, List<Tuple<MethodDef, Instruction>>> ldc,
-			Dictionary<byte[], List<Tuple<MethodDef, Instruction>>> ldInit) {
+			Dictionary<byte[], List<Tuple<MethodDef, Instruction>>> ldInit,
+			ILogger logger, CancellationToken token) {
 			var dataFields = new HashSet<FieldDef>();
 			var fieldRefs = new HashSet<Instruction>();
-			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(context.Logger)) {
+			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(logger)) {
 				if (!method.HasBody)
 					continue;
 
@@ -342,7 +352,7 @@ namespace Confuser.Protections.Constants {
 						ldc.AddListEntry(instr.Operand, Tuple.Create(method, instr));
 				}
 
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 			}
 			RemoveDataFieldRefs(context, dataFields, fieldRefs);
 		}

@@ -6,11 +6,11 @@ using dnlib.DotNet;
 namespace Confuser.Renamer.BAML {
 	internal class KnownThingsv3 : IKnownThings {
 		readonly Dictionary<int, AssemblyDef> assemblies;
-		readonly ConfuserContext context;
+		readonly IConfuserContext context;
 		readonly Dictionary<KnownProperties, Tuple<KnownTypes, PropertyDef, TypeDef>> properties;
 		readonly Dictionary<KnownTypes, TypeDef> types;
 
-		public KnownThingsv3(ConfuserContext context, ModuleDefMD initMod) {
+		public KnownThingsv3(IConfuserContext context, ModuleDefMD initMod) {
 			this.context = context;
 
 			assemblies = new Dictionary<int, AssemblyDef>();

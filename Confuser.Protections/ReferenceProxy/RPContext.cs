@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
-using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -24,7 +23,7 @@ namespace Confuser.Protections.ReferenceProxy {
 		public ReferenceProxyProtection Protection;
 		public CilBody Body;
 		public HashSet<Instruction> BranchTargets;
-		public ConfuserContext Context;
+		public IConfuserContext Context;
 		public Dictionary<MethodSig, TypeDef> Delegates;
 		public int Depth;
 		public IDynCipherService DynCipher;
@@ -39,7 +38,8 @@ namespace Confuser.Protections.ReferenceProxy {
 		public RPMode ModeHandler;
 		public ModuleDef Module;
 		public INameService Name;
-		public RandomGenerator Random;
+		public IRandomGenerator Random;
+		public ITraceService Trace;
 		public bool TypeErasure;
 	}
 }

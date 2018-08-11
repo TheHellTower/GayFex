@@ -1,63 +1,44 @@
 ﻿using System;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.ReferenceProxy;
+using Confuser.Protections.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
-	public interface IReferenceProxyService {
-		void ExcludeMethod(ConfuserContext context, MethodDef method);
-		void ExcludeTarget(ConfuserContext context, MethodDef method);
-		bool IsTargeted(ConfuserContext context, MethodDef method);
-	}
-
-	[AfterProtection("Ki.AntiDebug", "Ki.AntiDump")]
-	[BeforeProtection("Ki.ControlFlow")]
-	internal class ReferenceProxyProtection : Protection, IReferenceProxyService {
+	[Export(typeof(IProtection))]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	[AfterProtection(AntiDebugProtection._FullId, AntiDumpProtection._FullId)]
+	[BeforeProtection(ControlFlowProtection._FullId)]
+	internal sealed class ReferenceProxyProtection : IProtection, IReferenceProxyService {
 		public const string _Id = "ref proxy";
 		public const string _FullId = "Ki.RefProxy";
-		public const string _ServiceId = "Ki.RefProxy";
 
 		internal static object TargetExcluded = new object();
 		internal static object Targeted = new object();
 
-		public override string Name {
-			get { return "Reference Proxy Protection"; }
-		}
+		public string Name => "Reference Proxy Protection";
 
-		public override string Description {
-			get { return "This protection encodes and hides references to type/method/fields."; }
-		}
+		public string Description => "This protection encodes and hides references to type/method/fields.";
 
-		public override string Id {
-			get { return _Id; }
-		}
+		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
-		public override string FullId {
-			get { return _FullId; }
-		}
+		void IReferenceProxyService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
+			context.GetParameters(method).RemoveParameters(this);
 
-		public override ProtectionPreset Preset {
-			get { return ProtectionPreset.Normal; }
-		}
-
-		public void ExcludeMethod(ConfuserContext context, MethodDef method) {
-			ProtectionParameters.GetParameters(context, method).Remove(this);
-		}
-
-		public void ExcludeTarget(ConfuserContext context, MethodDef method) {
+		void IReferenceProxyService.ExcludeTarget(IConfuserContext context, MethodDef method) => 
 			context.Annotations.Set(method, TargetExcluded, TargetExcluded);
+
+		bool IReferenceProxyService.IsTargeted(IConfuserContext context, MethodDef method) =>
+			context.Annotations.Get<object>(method, Targeted) != null;
+
+		void IConfuserComponent.Initialize(IServiceCollection collection) {
+			collection.AddSingleton(typeof(IReferenceProxyService), this);
 		}
 
-		public bool IsTargeted(ConfuserContext context, MethodDef method) {
-			return context.Annotations.Get<object>(method, Targeted) != null;
-		}
-
-		protected override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(_ServiceId, typeof(IReferenceProxyService), this);
-		}
-
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new ReferenceProxyPhase(this));
-		}
 	}
 }

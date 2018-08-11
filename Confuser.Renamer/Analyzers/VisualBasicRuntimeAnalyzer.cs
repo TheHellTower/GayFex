@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Linq;
 using Confuser.Core;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.Analyzers {
 	internal sealed class VisualBasicRuntimeAnalyzer : IRenamer {
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			var typeDef = (def as TypeDef);
 			if (typeDef != null) {
 				AnalyzeType(context, service, parameters, typeDef);
 			}
 		}
 
-		private static void AnalyzeType(ConfuserContext context, INameService service, ProtectionParameters parameters, TypeDef def) {
+		private static void AnalyzeType(IConfuserContext context, INameService service, IProtectionParameters parameters, TypeDef def) {
 			if (IsEmbeddedAttribute(def) &&
 				def.BaseType != null &&
 				def.BaseType.FullName.Equals("System.Attribute", StringComparison.Ordinal)) {
-				service.SetCanRename(def, false);
+				service.SetCanRename(context, def, false);
 			} else if (def.HasCustomAttributes && def.CustomAttributes.Any(a => IsEmbeddedAttribute(a.AttributeType))) {
-				service.SetCanRename(def, false);
+				service.SetCanRename(context, def, false);
 			}
 		}
 
@@ -34,10 +35,10 @@ namespace Confuser.Renamer.Analyzers {
 			return false;
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 		}
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 		}
 	}
 }

@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using Confuser.Core.Project;
 using Confuser.Core.Project.Patterns;
+using Confuser.Core.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Core {
 	using Rules = Dictionary<Rule, PatternExpression>;
@@ -28,21 +32,21 @@ namespace Confuser.Core {
 		/// <summary>
 		///     The packers available to use.
 		/// </summary>
-		protected Dictionary<string, Packer> packers;
+		protected Dictionary<string, IPacker> packers;
 
 		/// <summary>
 		///     The protections available to use.
 		/// </summary>
-		protected Dictionary<string, Protection> protections;
+		protected Dictionary<string, IProtection> protections;
 
 		/// <summary>
 		///     Initalizes the Marker with specified protections and packers.
 		/// </summary>
 		/// <param name="protections">The protections.</param>
 		/// <param name="packers">The packers.</param>
-		public virtual void Initalize(IList<Protection> protections, IList<Packer> packers) {
-			this.protections = protections.ToDictionary(prot => prot.Id, prot => prot, StringComparer.OrdinalIgnoreCase);
-			this.packers = packers.ToDictionary(packer => packer.Id, packer => packer, StringComparer.OrdinalIgnoreCase);
+		public virtual void Initalize(IEnumerable<Lazy<IProtection, IProtectionMetadata>> protections, IEnumerable<Lazy<IPacker, IPackerMetadata>> packers) {
+			this.protections = protections.ToDictionary(prot => prot.Metadata.MarkerId ?? prot.Metadata.Id, prot => prot.Value, StringComparer.OrdinalIgnoreCase);
+			this.packers = packers.ToDictionary(packer => packer.Metadata.MarkerId ?? packer.Metadata.Id, packer => packer.Value, StringComparer.OrdinalIgnoreCase);
 		}
 
 		/// <summary>
@@ -51,7 +55,7 @@ namespace Confuser.Core {
 		/// <param name="preset">The preset.</param>
 		/// <param name="settings">The settings.</param>
 		void FillPreset(ProtectionPreset preset, ProtectionSettings settings) {
-			foreach (Protection prot in protections.Values)
+			foreach (var prot in protections.Values)
 				if (prot.Preset != ProtectionPreset.None && prot.Preset <= preset && !settings.ContainsKey(prot))
 					settings.Add(prot, new Dictionary<string, string>());
 		}
@@ -85,7 +89,8 @@ namespace Confuser.Core {
 				return new StrongNameKey(path);
 			}
 			catch (Exception ex) {
-				context.Logger.ErrorException("Cannot load the Strong Name Key located at: " + path, ex);
+				var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(Marker));
+				logger.ErrorException("Cannot load the Strong Name Key located at: " + path, ex);
 				throw new ConfuserException(ex);
 			}
 		}
@@ -96,24 +101,25 @@ namespace Confuser.Core {
 		/// <param name="proj">The project.</param>
 		/// <param name="context">The working context.</param>
 		/// <returns><see cref="MarkerResult" /> storing the marked modules and packer information.</returns>
-		protected internal virtual MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context) {
-			Packer packer = null;
+		protected internal virtual MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(Marker));
+			IPacker packer = null;
 			Dictionary<string, string> packerParams = null;
 
 			if (proj.Packer != null) {
 				if (!packers.ContainsKey(proj.Packer.Id)) {
-					context.Logger.ErrorFormat("Cannot find packer with ID '{0}'.", proj.Packer.Id);
+					logger.ErrorFormat("Cannot find packer with ID '{0}'.", proj.Packer.Id);
 					throw new ConfuserException(null);
 				}
 				if (proj.Debug)
-					context.Logger.Warn("Generated Debug symbols might not be usable with packers!");
+					logger.Warn("Generated Debug symbols might not be usable with packers!");
 
 				packer = packers[proj.Packer.Id];
 				packerParams = new Dictionary<string, string>(proj.Packer, StringComparer.OrdinalIgnoreCase);
 			}
 
 			var modules = new List<Tuple<ProjectModule, ModuleDefMD>>();
-			var extModules = new List<byte[]>();
+			var extModules = ImmutableArray.CreateBuilder<byte[]>();
 			foreach (ProjectModule module in proj) {
 				if (module.IsExternal) {
 					extModules.Add(module.LoadRaw(proj.BaseDirectory));
@@ -121,7 +127,7 @@ namespace Confuser.Core {
 				}
 
 				ModuleDefMD modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 
 				if (proj.Debug)
 					modDef.LoadPdb();
@@ -131,7 +137,7 @@ namespace Confuser.Core {
 			}
 
 			foreach (var module in modules) {
-				context.Logger.InfoFormat("Loading '{0}'...", module.Item1.Path);
+				logger.InfoFormat("Loading '{0}'...", module.Item1.Path);
 				Rules rules = ParseRules(proj, module.Item1, context);
 
 				context.Annotations.Set(module.Item2, SNKey, LoadSNKey(context, module.Item1.SNKeyPath == null ? null : Path.Combine(proj.BaseDirectory, module.Item1.SNKeyPath), module.Item1.SNKeyPassword));
@@ -139,14 +145,14 @@ namespace Confuser.Core {
 
 				foreach (IDnlibDef def in module.Item2.FindDefinitions()) {
 					ApplyRules(context, def, rules);
-					context.CheckCancellation();
+					token.ThrowIfCancellationRequested();
 				}
 
 				// Packer parameters are stored in modules
 				if (packerParams != null)
 					ProtectionParameters.GetParameters(context, module.Item2)[packer] = packerParams;
 			}
-			return new MarkerResult(modules.Select(module => module.Item2).ToList(), packer, extModules);
+			return new MarkerResult(modules.Select(module => module.Item2).ToImmutableArray(), packer, extModules.ToImmutable());
 		}
 
 		/// <summary>
@@ -154,7 +160,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="member">The member definition.</param>
 		/// <param name="context">The working context.</param>
-		protected internal virtual void MarkMember(IDnlibDef member, ConfuserContext context) {
+		protected internal virtual void MarkMember(IDnlibDef member, IConfuserContext context) {
 			ModuleDef module = ((IMemberRef)member).Module;
 			var rules = context.Annotations.Get<Rules>(module, RulesKey);
 			ApplyRules(context, member, rules);
@@ -171,6 +177,7 @@ namespace Confuser.Core {
 		///     One of the rules has invalid pattern.
 		/// </exception>
 		protected Rules ParseRules(ConfuserProject proj, ProjectModule module, ConfuserContext context) {
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(Marker));
 			var ret = new Rules();
 			var parser = new PatternParser();
 			foreach (Rule rule in proj.Rules.Concat(module.Rules)) {
@@ -178,12 +185,12 @@ namespace Confuser.Core {
 					ret.Add(rule, parser.Parse(rule.Pattern));
 				}
 				catch (InvalidPatternException ex) {
-					context.Logger.ErrorFormat("Invalid rule pattern: " + rule.Pattern + ".", ex);
+					logger.ErrorFormat("Invalid rule pattern: " + rule.Pattern + ".", ex);
 					throw new ConfuserException(ex);
 				}
 				foreach (var setting in rule) {
 					if (!protections.ContainsKey(setting.Id)) {
-						context.Logger.ErrorFormat("Cannot find protection with ID '{0}'.", setting.Id);
+						logger.ErrorFormat("Cannot find protection with ID '{0}'.", setting.Id);
 						throw new ConfuserException(null);
 					}
 				}
@@ -198,7 +205,7 @@ namespace Confuser.Core {
 		/// <param name="target">The target definition.</param>
 		/// <param name="rules">The rules.</param>
 		/// <param name="baseSettings">The base settings.</param>
-		protected void ApplyRules(ConfuserContext context, IDnlibDef target, Rules rules, ProtectionSettings baseSettings = null) {
+		protected void ApplyRules(IConfuserContext context, IDnlibDef target, Rules rules, ProtectionSettings baseSettings = null) {
 			var ret = baseSettings == null ? new ProtectionSettings() : new ProtectionSettings(baseSettings);
 			foreach (var i in rules) {
 				if (!(bool)i.Value.Evaluate(target)) continue;

@@ -10,7 +10,7 @@ namespace Confuser.Core {
 	/// <remarks>
 	///     The annotations are stored using <see cref="WeakReference" />
 	/// </remarks>
-	public class Annotations {
+	public sealed class Annotations : IAnnotations {
 		readonly Dictionary<object, ListDictionary> annotations = new Dictionary<object, ListDictionary>(WeakReferenceComparer.Instance);
 
 		/// <summary>

@@ -3,66 +3,73 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
-using Confuser.Renamer;
+using Confuser.Protections.Services;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Resources {
-	internal class InjectPhase : ProtectionPhase {
-		public InjectPhase(ResourceProtection parent)
-			: base(parent) { }
+	internal class InjectPhase : IProtectionPhase {
+		public InjectPhase(ResourceProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets {
-			get { return ProtectionTargets.Methods; }
-		}
+		public ResourceProtection Parent { get; }
 
-		public override string Name {
-			get { return "Resource encryption helpers injection"; }
-		}
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+		public ProtectionTargets Targets => ProtectionTargets.Methods;
+
+		public string Name => "Resource encryption helpers injection";
+
+		public bool ProcessAll => false;
+
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			if (parameters.Targets.Any()) {
+				var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("resources");
 				if (!UTF8String.IsNullOrEmpty(context.CurrentModule.Assembly.Culture)) {
-					context.Logger.DebugFormat("Skipping resource encryption for satellite assembly '{0}'.",
-					                           context.CurrentModule.Assembly.FullName);
+					logger.DebugFormat("Skipping resource encryption for satellite assembly '{0}'.",
+									   context.CurrentModule.Assembly.FullName);
 					return;
 				}
-				var compression = context.Registry.GetService<ICompressionService>();
+				var compression = context.Registry.GetRequiredService<ICompressionService>();
 				var name = context.Registry.GetService<INameService>();
-				var marker = context.Registry.GetService<IMarkerService>();
-				var rt = context.Registry.GetService<IRuntimeService>();
+				var marker = context.Registry.GetRequiredService<IMarkerService>();
+				var rt = context.Registry.GetRequiredService<IRuntimeService>();
 				var moduleCtx = new REContext {
-					Random = context.Registry.GetService<IRandomService>().GetRandomGenerator(Parent.Id),
+					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ResourceProtection._FullId),
 					Context = context,
 					Module = context.CurrentModule,
 					Marker = marker,
-					DynCipher = context.Registry.GetService<IDynCipherService>(),
-					Name = name
+					DynCipher = context.Registry.GetRequiredService<IDynCipherService>(),
+					Name = name,
+					Trace = context.Registry.GetRequiredService<ITraceService>()
 				};
 
 				// Extract parameters
 				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, "mode", Mode.Normal);
 
 				switch (moduleCtx.Mode) {
-					case Mode.Normal:
-						moduleCtx.ModeHandler = new NormalMode();
-						break;
-					case Mode.Dynamic:
-						moduleCtx.ModeHandler = new DynamicMode();
-						break;
-					default:
-						throw new UnreachableException();
+				case Mode.Normal:
+					moduleCtx.ModeHandler = new NormalMode();
+					break;
+				case Mode.Dynamic:
+					moduleCtx.ModeHandler = new DynamicMode();
+					break;
+				default:
+					throw new UnreachableException();
 				}
 
 				// Inject helpers
-				MethodDef decomp = compression.GetRuntimeDecompressor(context.CurrentModule, member => {
-					name.MarkHelper(member, marker, (Protection)Parent);
+				MethodDef decomp = compression.GetRuntimeDecompressor(context, context.CurrentModule, member => {
+					name?.MarkHelper(context, member, marker, Parent);
 					if (member is MethodDef)
-						ProtectionParameters.GetParameters(context, member).Remove(Parent);
+						context.GetParameters(member).RemoveParameters(Parent);
 				});
 				InjectHelpers(context, compression, rt, moduleCtx);
 
@@ -72,36 +79,39 @@ namespace Confuser.Protections.Resources {
 				MethodDef cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, moduleCtx.InitMethod));
 
-				new MDPhase(moduleCtx).Hook();
+				new MDPhase(moduleCtx).Hook(token);
 			}
 		}
 
-		void InjectHelpers(ConfuserContext context, ICompressionService compression, IRuntimeService rt, REContext moduleCtx) {
+		void InjectHelpers(IConfuserContext context, ICompressionService compression, IRuntimeService rt, REContext moduleCtx) {
 			var rtName = context.Packer != null ? "Confuser.Runtime.Resource_Packer" : "Confuser.Runtime.Resource";
 			IEnumerable<IDnlibDef> members = InjectHelper.Inject(rt.GetRuntimeType(rtName), context.CurrentModule.GlobalType, context.CurrentModule);
 			foreach (IDnlibDef member in members) {
 				if (member.Name == "Initialize")
 					moduleCtx.InitMethod = (MethodDef)member;
-				moduleCtx.Name.MarkHelper(member, moduleCtx.Marker, (Protection)Parent);
+				moduleCtx.Name?.MarkHelper(context, member, moduleCtx.Marker, Parent);
 			}
 
-			var dataType = new TypeDefUser("", moduleCtx.Name.RandomName(), context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType"));
-			dataType.Layout = TypeAttributes.ExplicitLayout;
-			dataType.Visibility = TypeAttributes.NestedPrivate;
-			dataType.IsSealed = true;
-			dataType.ClassLayout = new ClassLayoutUser(1, 0);
+			var dataTypeName = moduleCtx.Name?.RandomName() ?? "ConfuserResourceData";
+			var dataType = new TypeDefUser("", dataTypeName, context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
+				Layout = TypeAttributes.ExplicitLayout,
+				Visibility = TypeAttributes.NestedPrivate,
+				IsSealed = true,
+				ClassLayout = new ClassLayoutUser(1, 0)
+			};
 			moduleCtx.DataType = dataType;
 			context.CurrentModule.GlobalType.NestedTypes.Add(dataType);
-			moduleCtx.Name.MarkHelper(dataType, moduleCtx.Marker, (Protection)Parent);
+			moduleCtx.Name?.MarkHelper(context, dataType, moduleCtx.Marker, Parent);
 
-			moduleCtx.DataField = new FieldDefUser(moduleCtx.Name.RandomName(), new FieldSig(dataType.ToTypeSig())) {
+			var dataFieldName = moduleCtx.Name?.RandomName() ?? "_ConfuserResourceData";
+			moduleCtx.DataField = new FieldDefUser(dataFieldName, new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
 				HasFieldRVA = true,
 				InitialValue = new byte[0],
 				Access = FieldAttributes.CompilerControlled
 			};
 			context.CurrentModule.GlobalType.Fields.Add(moduleCtx.DataField);
-			moduleCtx.Name.MarkHelper(moduleCtx.DataField, moduleCtx.Marker, (Protection)Parent);
+			moduleCtx.Name?.MarkHelper(context, moduleCtx.DataField, moduleCtx.Marker, Parent);
 		}
 
 		void MutateInitializer(REContext moduleCtx, MethodDef decomp) {
@@ -112,7 +122,7 @@ namespace Confuser.Protections.Resources {
 				var method = instr.Operand as IMethod;
 				if (instr.OpCode == OpCodes.Call) {
 					if (method.DeclaringType.Name == "Mutation" &&
-					    method.Name == "Crypt") {
+						method.Name == "Crypt") {
 						Instruction ldBlock = instrs[i - 2];
 						Instruction ldKey = instrs[i - 1];
 						Debug.Assert(ldBlock.OpCode == OpCodes.Ldloc && ldKey.OpCode == OpCodes.Ldloc);
@@ -122,7 +132,7 @@ namespace Confuser.Protections.Resources {
 						instrs.InsertRange(i - 2, moduleCtx.ModeHandler.EmitDecrypt(moduleCtx.InitMethod, moduleCtx, (Local)ldBlock.Operand, (Local)ldKey.Operand));
 					}
 					else if (method.DeclaringType.Name == "Lzma" &&
-					         method.Name == "Decompress") {
+							 method.Name == "Decompress") {
 						instr.Operand = decomp;
 					}
 				}
@@ -131,7 +141,7 @@ namespace Confuser.Protections.Resources {
 			foreach (Instruction instr in instrs)
 				moduleCtx.InitMethod.Body.Instructions.Add(instr);
 
-			MutationHelper.ReplacePlaceholder(moduleCtx.InitMethod, arg => {
+			MutationHelper.ReplacePlaceholder(moduleCtx.Trace, moduleCtx.InitMethod, arg => {
 				var repl = new List<Instruction>();
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Dup));

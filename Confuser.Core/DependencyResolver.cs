@@ -7,15 +7,17 @@ namespace Confuser.Core {
 	/// <summary>
 	///     Resolves dependency between protections.
 	/// </summary>
-	internal class DependencyResolver {
-		readonly List<Protection> protections;
+	internal sealed class DependencyResolver {
+		private readonly List<Lazy<IProtection, IProtectionMetadata>> protections;
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="DependencyResolver" /> class.
 		/// </summary>
 		/// <param name="protections">The protections for resolution.</param>
-		public DependencyResolver(IEnumerable<Protection> protections) {
-			this.protections = protections.OrderBy(prot => prot.FullId).ToList();
+		public DependencyResolver(IEnumerable<Lazy<IProtection, IProtectionMetadata>> protections) {
+			if (protections == null) throw new ArgumentNullException(nameof(protections));
+
+			this.protections = protections.ToList();
 		}
 
 		/// <summary>
@@ -25,18 +27,18 @@ namespace Confuser.Core {
 		/// <exception cref="T:CircularDependencyException">
 		///     The protections contain circular dependencies.
 		/// </exception>
-		public IList<Protection> SortDependency() {
+		public IList<IProtection> SortDependency() {
 			/* Here we do a topological sort of the protections.
-             * First we construct a dependency graph of the protections.
-             * The edges in the graph is recorded in a list.
-             * Then the graph is sorted starting from the null root node.
-             */
+			 * First we construct a dependency graph of the protections.
+			 * The edges in the graph is recorded in a list.
+			 * Then the graph is sorted starting from the null root node.
+			 */
 
 			var edges = new List<DependencyGraphEdge>();
-			var roots = new HashSet<Protection>(protections);
-			Dictionary<string, Protection> id2prot = protections.ToDictionary(prot => prot.FullId, prot => prot);
+			var roots = new HashSet<IProtection>(protections.Select(lazy => lazy.Value));
+			var id2prot = protections.ToDictionary(lazy => lazy.Metadata.Id, lazy => lazy.Value, StringComparer.Ordinal);
 
-			foreach (Protection prot in protections) {
+			foreach (var prot in protections) {
 				Type protType = prot.GetType();
 
 				BeforeProtectionAttribute before = protType
@@ -45,9 +47,9 @@ namespace Confuser.Core {
 					.SingleOrDefault();
 				if (before != null) {
 					// current -> target
-					IEnumerable<Protection> targets = before.Ids.Select(id => id2prot[id]);
-					foreach (Protection target in targets) {
-						edges.Add(new DependencyGraphEdge(prot, target));
+					var targets = before.Ids.Select(id => id2prot[id]);
+					foreach (var target in targets) {
+						edges.Add(new DependencyGraphEdge(prot.Value, target));
 						roots.Remove(target);
 					}
 				}
@@ -58,15 +60,15 @@ namespace Confuser.Core {
 					.SingleOrDefault();
 				if (after != null) {
 					// target -> current
-					IEnumerable<Protection> targets = after.Ids.Select(id => id2prot[id]);
-					foreach (Protection target in targets) {
-						edges.Add(new DependencyGraphEdge(target, prot));
-						roots.Remove(prot);
+					var targets = after.Ids.Select(id => id2prot[id]);
+					foreach (var target in targets) {
+						edges.Add(new DependencyGraphEdge(target, prot.Value));
+						roots.Remove(prot.Value);
 					}
 				}
 			}
 
-			IEnumerable<Protection> sorted = SortGraph(roots, edges);
+			var sorted = SortGraph(roots, edges);
 			return sorted.ToList();
 		}
 
@@ -76,10 +78,10 @@ namespace Confuser.Core {
 		/// <param name="roots">The root protections.</param>
 		/// <param name="edges">The dependency graph edges.</param>
 		/// <returns>Topological sorted protections.</returns>
-		IEnumerable<Protection> SortGraph(IEnumerable<Protection> roots, IList<DependencyGraphEdge> edges) {
-			var queue = new Queue<Protection>(roots.OrderBy(prot => prot.FullId));
+		IEnumerable<IProtection> SortGraph(IEnumerable<IProtection> roots, IList<DependencyGraphEdge> edges) {
+			var queue = new Queue<IProtection>(roots);
 			while (queue.Count > 0) {
-				Protection root = queue.Dequeue(); // Find a node with no incoming edges
+				var root = queue.Dequeue(); // Find a node with no incoming edges
 				Debug.Assert(!edges.Where(edge => edge.To == root).Any());
 				yield return root;
 
@@ -102,7 +104,7 @@ namespace Confuser.Core {
 			/// </summary>
 			/// <param name="from">The source protection node.</param>
 			/// <param name="to">The destination protection node.</param>
-			public DependencyGraphEdge(Protection from, Protection to) {
+			public DependencyGraphEdge(IProtection from, IProtection to) {
 				From = from;
 				To = to;
 			}
@@ -110,12 +112,12 @@ namespace Confuser.Core {
 			/// <summary>
 			///     The source protection node.
 			/// </summary>
-			public Protection From { get; private set; }
+			public IProtection From { get; private set; }
 
 			/// <summary>
 			///     The destination protection node.
 			/// </summary>
-			public Protection To { get; private set; }
+			public IProtection To { get; private set; }
 		}
 	}
 
@@ -128,7 +130,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="a">The first protection.</param>
 		/// <param name="b">The second protection.</param>
-		internal CircularDependencyException(Protection a, Protection b)
+		internal CircularDependencyException(IProtection a, IProtection b)
 			: base(string.Format("The protections '{0}' and '{1}' has a circular dependency between them.", a, b)) {
 			Debug.Assert(a != null);
 			Debug.Assert(b != null);
@@ -139,11 +141,11 @@ namespace Confuser.Core {
 		/// <summary>
 		///     First protection that involved in circular dependency.
 		/// </summary>
-		public Protection ProtectionA { get; private set; }
+		public IProtection ProtectionA { get; private set; }
 
 		/// <summary>
 		///     Second protection that involved in circular dependency.
 		/// </summary>
-		public Protection ProtectionB { get; private set; }
+		public IProtection ProtectionB { get; private set; }
 	}
 }

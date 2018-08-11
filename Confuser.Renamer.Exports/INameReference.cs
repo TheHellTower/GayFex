@@ -1,9 +1,9 @@
-﻿using System;
-using Confuser.Core;
+﻿using Confuser.Core;
+using Confuser.Renamer.Services;
 
 namespace Confuser.Renamer {
 	public interface INameReference {
-		bool UpdateNameReference(ConfuserContext context, INameService service);
+		bool UpdateNameReference(IConfuserContext context, INameService service);
 
 		bool ShouldCancelRename();
 	}

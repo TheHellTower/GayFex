@@ -11,7 +11,7 @@ namespace Confuser.DynCipher.Elements {
 		public uint Mask { get; private set; }
 		public uint Key { get; private set; }
 
-		public override void Initialize(RandomGenerator random) {
+		public override void Initialize(IRandomGenerator random) {
 			if (random.NextInt32(3) == 0)
 				Mask = 0xffffffff;
 			else
@@ -26,9 +26,9 @@ namespace Confuser.DynCipher.Elements {
 
 			if (Mask == 0xffffffff) {
 				/*  t = a * k;
-                    a = b;
-                    b = t * k^-1;
-                 */
+					a = b;
+					b = t * k^-1;
+				 */
 				using (context.AcquireTempVar(out tmp)) {
 					context.Emit(new AssignmentStatement {
 						Value = a * (LiteralExpression)Key,
@@ -46,9 +46,9 @@ namespace Confuser.DynCipher.Elements {
 				var mask = (LiteralExpression)Mask;
 				var notMask = (LiteralExpression)~Mask;
 				/*  t = (a & mask) * k;
-                    a = a & (~mask) | (b & mask);
-                    b = b & (~mask) | (t * k^-1);
-                 */
+					a = a & (~mask) | (b & mask);
+					b = b & (~mask) | (t * k^-1);
+				 */
 				using (context.AcquireTempVar(out tmp)) {
 					context.Emit(new AssignmentStatement {
 						Value = (a & mask) * (LiteralExpression)Key,

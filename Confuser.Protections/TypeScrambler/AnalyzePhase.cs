@@ -1,47 +1,57 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Confuser.Core;
+using Confuser.Core.Services;
+using Confuser.Protections.Services;
 using Confuser.Protections.TypeScramble.Scrambler;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.TypeScramble {
-	class AnalyzePhase : ProtectionPhase {
+	internal sealed class AnalyzePhase : IProtectionPhase {
 
-		public AnalyzePhase(TypeScrambleProtection parent) : base(parent) {
-		}
+		public AnalyzePhase(TypeScrambleProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods;
+		public TypeScrambleProtection Parent { get; }
 
-		public override string Name => "Type scanner";
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+		public ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods;
 
-			//CreateGenericsForTypes(context, parameters.Targets.OfType<TypeDef>().WithProgress(context.Logger));
+		public bool ProcessAll => false;
+
+		public string Name => "Type scanner";
+
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("typescramble");
+			//CreateGenericsForTypes(context, parameters.Targets.OfType<TypeDef>().WithProgress(context.Logger), token);
 
 			CreateGenericsForMethods(context, parameters.Targets.OfType<MethodDef>()
 				.OrderBy(x =>
 				x?.Parameters?.Count ?? 0 +
 				x.Body?.Variables?.Count ?? 0)
-				.WithProgress(context.Logger));
+				.WithProgress(logger), token);
 		}
 
 
-		private void CreateGenericsForTypes(ConfuserContext context, IEnumerable<TypeDef> types) {
-			TypeService service = context.Registry.GetService<TypeService>();
+		private void CreateGenericsForTypes(IConfuserContext context, IEnumerable<TypeDef> types, CancellationToken token) {
+			var service = (TypeService)context.Registry.GetRequiredService<ITypeScrambleService>();
 
-			foreach (TypeDef type in types) {
+			foreach (var type in types) {
 				if (type.Module.EntryPoint.DeclaringType != type) {
 					service.AddScannedItem(new ScannedType(type));
-					context.CheckCancellation();
 				}
-
+				token.ThrowIfCancellationRequested();
 			}
 		}
 
-		private void CreateGenericsForMethods(ConfuserContext context, IEnumerable<MethodDef> methods) {
-			TypeService service = context.Registry.GetService<TypeService>();
+		private void CreateGenericsForMethods(IConfuserContext context, IEnumerable<MethodDef> methods, CancellationToken token) {
+			var service = (TypeService)context.Registry.GetRequiredService<ITypeScrambleService>();
 
-			foreach (MethodDef method in methods) {
+			foreach (var method in methods) {
 
 				/*
 				context.Logger.DebugFormat("[{0}]", method.Name);
@@ -54,8 +64,8 @@ namespace Confuser.Protections.TypeScramble {
 
 				if (method.Module.EntryPoint != method && !(method.HasOverrides || method.IsAbstract || method.IsConstructor || method.IsGetter)) {
 					service.AddScannedItem(new ScannedMethod(service, method));
-					context.CheckCancellation();
 				}
+				token.ThrowIfCancellationRequested();
 			}
 		}
 

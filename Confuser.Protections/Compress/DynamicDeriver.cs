@@ -7,15 +7,16 @@ using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Compress {
 	internal class DynamicDeriver : IKeyDeriver {
 		StatementBlock derivation;
 		Action<uint[], uint[]> encryptFunc;
 
-		public void Init(ConfuserContext ctx, RandomGenerator random) {
+		public void Init(IConfuserContext ctx, IRandomGenerator random) {
 			StatementBlock dummy;
-			ctx.Registry.GetService<IDynCipherService>().GenerateCipherPair(random, out derivation, out dummy);
+			ctx.Registry.GetRequiredService<IDynCipherService>().GenerateCipherPair(random, out derivation, out dummy);
 
 			var dmCodeGen = new DMCodeGen(typeof(void), new[] {
 				Tuple.Create("{BUFFER}", typeof(uint[])),
@@ -32,7 +33,7 @@ namespace Confuser.Protections.Compress {
 			return ret;
 		}
 
-		public IEnumerable<Instruction> EmitDerivation(MethodDef method, ConfuserContext ctx, Local dst, Local src) {
+		public IEnumerable<Instruction> EmitDerivation(MethodDef method, IConfuserContext ctx, Local dst, Local src) {
 			var ret = new List<Instruction>();
 			var codeGen = new CodeGen(dst, src, method, ret);
 			codeGen.GenerateCIL(derivation);

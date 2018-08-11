@@ -1,26 +1,35 @@
-﻿using Confuser.Core;
+﻿using System;
+using System.Threading;
+using Confuser.Core;
+using Confuser.Core.Services;
 using Confuser.Protections.TypeScramble.Scrambler;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.TypeScramble {
-	class ScramblePhase : ProtectionPhase {
+	internal sealed class ScramblePhase : IProtectionPhase {
 
-		public ScramblePhase(TypeScrambleProtection parent) : base(parent) {
-		}
+		public ScramblePhase(TypeScrambleProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods | ProtectionTargets.Modules;
+		public TypeScrambleProtection Parent { get; }
 
-		public override string Name => "Type scrambler";
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+		public ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods | ProtectionTargets.Modules;
 
+		public bool ProcessAll => false;
+
+		public string Name => "Type scrambler";
+
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			var rewriter = new TypeRewriter(context);
 			rewriter.ApplyGeterics();
 
-			foreach (IDnlibDef def in parameters.Targets.WithProgress(context.Logger)) {
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("typescramble");
 
+			foreach (var def in parameters.Targets.WithProgress(logger)) {
 				switch (def) {
-
 					case MethodDef md:
 						if (md.HasBody) {
 							rewriter.Process(md);
@@ -31,7 +40,7 @@ namespace Confuser.Protections.TypeScramble {
 						break;
 				}
 
-				context.CheckCancellation();
+				token.ThrowIfCancellationRequested();
 			}
 
 

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
 using Confuser.Core;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ConfuserEx {
 	internal class ComponentDiscovery {
@@ -11,23 +13,17 @@ namespace ConfuserEx {
 			ConfuserEngine.Version.ToString();
 
 			Assembly assembly = Assembly.LoadFile(ctx.PluginPath);
-			foreach (var module in assembly.GetLoadedModules())
-				foreach (var i in module.GetTypes()) {
-					if (i.IsAbstract || !PluginDiscovery.HasAccessibleDefConstructor(i))
-						continue;
-
-					if (typeof(Protection).IsAssignableFrom(i)) {
-						var prot = (Protection)Activator.CreateInstance(i);
-						ctx.AddProtection(Info.FromComponent(prot, ctx.PluginPath));
-					}
-					else if (typeof(Packer).IsAssignableFrom(i)) {
-						var packer = (Packer)Activator.CreateInstance(i);
-						ctx.AddPacker(Info.FromComponent(packer, ctx.PluginPath));
-					}
-				}
+			var catalog = new AssemblyCatalog(assembly);
+			var container = new CompositionContainer(catalog);
+			foreach (var prot in container.GetExports<IProtection, IProtectionMetadata>()) {
+				ctx.AddProtection(new ConfuserUiComponent(prot, ctx.PluginPath));
+			}
+			foreach (var packer in container.GetExports<IPacker, IPackerMetadata>()) {
+				ctx.AddPacker(new ConfuserUiComponent(packer, ctx.PluginPath));
+			}
 		}
 
-		public static void LoadComponents(IList<ConfuserComponent> protections, IList<ConfuserComponent> packers, string pluginPath) {
+		public static void LoadComponents(IList<ConfuserUiComponent> protections, IList<ConfuserUiComponent> packers, string pluginPath) {
 			var ctx = new CrossDomainContext(protections, packers, pluginPath);
 			AppDomain appDomain = AppDomain.CreateDomain("");
 			appDomain.SetData("ctx", ctx);
@@ -35,17 +31,17 @@ namespace ConfuserEx {
 			AppDomain.Unload(appDomain);
 		}
 
-		public static void RemoveComponents(IList<ConfuserComponent> protections, IList<ConfuserComponent> packers, string pluginPath) {
-			protections.RemoveWhere(comp => comp is InfoComponent && ((InfoComponent)comp).info.path == pluginPath);
-			packers.RemoveWhere(comp => comp is InfoComponent && ((InfoComponent)comp).info.path == pluginPath);
+		public static void RemoveComponents(IList<ConfuserUiComponent> protections, IList<ConfuserUiComponent> packers, string pluginPath) {
+			protections.RemoveWhere(comp => String.Equals(comp.PlugInPath, pluginPath, StringComparison.OrdinalIgnoreCase));
+			packers.RemoveWhere(comp => String.Equals(comp.PlugInPath, pluginPath, StringComparison.OrdinalIgnoreCase));
 		}
 
 		class CrossDomainContext : MarshalByRefObject {
-			readonly IList<ConfuserComponent> packers;
+			readonly IList<ConfuserUiComponent> packers;
 			readonly string pluginPath;
-			readonly IList<ConfuserComponent> protections;
+			readonly IList<ConfuserUiComponent> protections;
 
-			public CrossDomainContext(IList<ConfuserComponent> protections, IList<ConfuserComponent> packers, string pluginPath) {
+			public CrossDomainContext(IList<ConfuserUiComponent> protections, IList<ConfuserUiComponent> packers, string pluginPath) {
 				this.protections = protections;
 				this.packers = packers;
 				this.pluginPath = pluginPath;
@@ -55,71 +51,16 @@ namespace ConfuserEx {
 				get { return pluginPath; }
 			}
 
-			public void AddProtection(Info info) {
-				foreach (var comp in protections) {
-					if (comp.Id == info.id)
-						return;
-				}
-				protections.Add(new InfoComponent(info));
+			public void AddProtection(ConfuserUiComponent uiComponent) {
+				if (protections.Contains(uiComponent)) return;
+
+				protections.Add(uiComponent);
 			}
 
-			public void AddPacker(Info info) {
-				foreach (var comp in packers) {
-					if (comp.Id == info.id)
-						return;
-				}
-				packers.Add(new InfoComponent(info));
-			}
-		}
+			public void AddPacker(ConfuserUiComponent uiComponent) {
+				if (packers.Contains(uiComponent)) return;
 
-		[Serializable]
-		class Info {
-			public string desc;
-			public string fullId;
-			public string id;
-			public string name;
-			public string path;
-
-			public static Info FromComponent(ConfuserComponent component, string pluginPath) {
-				var ret = new Info();
-				ret.name = component.Name;
-				ret.desc = component.Description;
-				ret.id = component.Id;
-				ret.fullId = component.FullId;
-				ret.path = pluginPath;
-				return ret;
-			}
-		}
-
-		class InfoComponent : ConfuserComponent {
-			public readonly Info info;
-
-			public InfoComponent(Info info) {
-				this.info = info;
-			}
-
-			public override string Name {
-				get { return info.name; }
-			}
-
-			public override string Description {
-				get { return info.desc; }
-			}
-
-			public override string Id {
-				get { return info.id; }
-			}
-
-			public override string FullId {
-				get { return info.fullId; }
-			}
-
-			protected override void Initialize(ConfuserContext context) {
-				throw new NotSupportedException();
-			}
-
-			protected override void PopulatePipeline(ProtectionPipeline pipeline) {
-				throw new NotSupportedException();
+				packers.Add(uiComponent);
 			}
 		}
 	}

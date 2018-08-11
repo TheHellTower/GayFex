@@ -1,14 +1,21 @@
 ﻿using System;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Threading;
 using Confuser.Core;
-using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Compress {
-	internal class StubProtection : Protection {
+	[Export(typeof(IProtection)), PartNotDiscoverable]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	internal sealed class StubProtection : IProtection {
+		public const string _FullId = "Ki.Compressor.Protection";
+
 		readonly CompressorContext ctx;
 		readonly ModuleDef originModule;
 
@@ -17,53 +24,37 @@ namespace Confuser.Protections.Compress {
 			this.originModule = originModule;
 		}
 
-		public override string Name {
-			get { return "Compressor Stub Protection"; }
-		}
+		public string Name => "Compressor Stub Protection";
 
-		public override string Description {
-			get { return "Do some extra works on the protected stub."; }
-		}
+		public string Description => "Do some extra works on the protected stub.";
 
-		public override string Id {
-			get { return "Ki.Compressor.Protection"; }
-		}
+		public ProtectionPreset Preset => ProtectionPreset.None;
 
-		public override string FullId {
-			get { return "Ki.Compressor.Protection"; }
-		}
-
-		public override ProtectionPreset Preset {
-			get { return ProtectionPreset.None; }
-		}
-
-		protected override void Initialize(ConfuserContext context) {
+		void IConfuserComponent.Initialize(IServiceCollection collection) {
 			//
 		}
 
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {
 			if (!ctx.CompatMode)
 				pipeline.InsertPreStage(PipelineStage.Inspection, new InjPhase(this));
 			pipeline.InsertPostStage(PipelineStage.BeginModule, new SigPhase(this));
 		}
 
-		class InjPhase : ProtectionPhase {
-			public InjPhase(StubProtection parent)
-				: base(parent) { }
+		private sealed class InjPhase : IProtectionPhase {
+			public InjPhase(StubProtection parent) =>
+				Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-			public override ProtectionTargets Targets {
-				get { return ProtectionTargets.Modules; }
-			}
+			public StubProtection Parent { get; }
 
-			public override bool ProcessAll {
-				get { return true; }
-			}
+			IConfuserComponent IProtectionPhase.Parent => Parent;
 
-			public override string Name {
-				get { return "Module injection"; }
-			}
+			public ProtectionTargets Targets => ProtectionTargets.Modules;
 
-			protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+			public bool ProcessAll => true;
+
+			public string Name => "Module injection";
+
+			void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 				// Hack the origin module into the assembly to make sure correct type resolution
 				var originModule = ((StubProtection)Parent).originModule;
 				originModule.Assembly.Modules.Remove(originModule);
@@ -71,22 +62,24 @@ namespace Confuser.Protections.Compress {
 			}
 		}
 
-		class SigPhase : ProtectionPhase {
-			public SigPhase(StubProtection parent)
-				: base(parent) { }
+		private sealed class SigPhase : IProtectionPhase {
+			public SigPhase(StubProtection parent) =>
+				Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-			public override ProtectionTargets Targets {
-				get { return ProtectionTargets.Modules; }
-			}
+			public StubProtection Parent { get; }
 
-			public override string Name {
-				get { return "Packer info encoding"; }
-			}
+			IConfuserComponent IProtectionPhase.Parent => Parent;
 
-			protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+			public ProtectionTargets Targets => ProtectionTargets.Modules;
+
+			public bool ProcessAll => false;
+
+			public string Name => "Packer info encoding";
+
+			void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 				var field = context.CurrentModule.Types[0].FindField("DataField");
 				Debug.Assert(field != null);
-				context.Registry.GetService<INameService>().SetCanRename(field, true);
+				context.Registry.GetService<INameService>()?.SetCanRename(context, field, true);
 
 				context.CurrentModuleWriterOptions.WriterEvent += (sender, e) => {
 					if (e.Event == ModuleWriterEvent.MDBeginCreateTables) {

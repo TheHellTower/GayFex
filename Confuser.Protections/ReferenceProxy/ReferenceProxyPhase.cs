@@ -1,28 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
-using Confuser.Renamer;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.ReferenceProxy {
-	internal class ReferenceProxyPhase : ProtectionPhase {
-		public ReferenceProxyPhase(ReferenceProxyProtection parent)
-			: base(parent) { }
+	internal sealed class ReferenceProxyPhase : IProtectionPhase {
+		public ReferenceProxyPhase(ReferenceProxyProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets {
-			get { return ProtectionTargets.Methods; }
-		}
+		public ReferenceProxyProtection Parent { get; }
 
-		public override string Name {
-			get { return "Encoding reference proxies"; }
-		}
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		RPContext ParseParameters(MethodDef method, ConfuserContext context, ProtectionParameters parameters, RPStore store) {
+		public ProtectionTargets Targets => ProtectionTargets.Methods;
+
+		public bool ProcessAll => false;
+
+		public string Name => "Encoding reference proxies";
+
+		RPContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
 			var ret = new RPContext();
 			ret.Mode = parameters.GetParameter(context, method, "mode", Mode.Mild);
 			ret.Encoding = parameters.GetParameter(context, method, "encoding", EncodingType.Normal);
@@ -44,9 +48,10 @@ namespace Confuser.Protections.ReferenceProxy {
 			ret.Protection = (ReferenceProxyProtection)Parent;
 			ret.Random = store.random;
 			ret.Context = context;
-			ret.Marker = context.Registry.GetService<IMarkerService>();
-			ret.DynCipher = context.Registry.GetService<IDynCipherService>();
+			ret.Marker = context.Registry.GetRequiredService<IMarkerService>();
+			ret.DynCipher = context.Registry.GetRequiredService<IDynCipherService>();
 			ret.Name = context.Registry.GetService<INameService>();
+			ret.Trace = context.Registry.GetRequiredService<ITraceService>();
 
 			ret.Delegates = store.delegates;
 
@@ -81,7 +86,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			return ret;
 		}
 
-		static RPContext ParseParameters(ModuleDef module, ConfuserContext context, ProtectionParameters parameters, RPStore store) {
+		static RPContext ParseParameters(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
 			var ret = new RPContext();
 			ret.Depth = parameters.GetParameter(context, module, "depth", 3);
 			ret.InitCount = parameters.GetParameter(context, module, "initCount", 0x10);
@@ -89,8 +94,8 @@ namespace Confuser.Protections.ReferenceProxy {
 			ret.Random = store.random;
 			ret.Module = module;
 			ret.Context = context;
-			ret.Marker = context.Registry.GetService<IMarkerService>();
-			ret.DynCipher = context.Registry.GetService<IDynCipherService>();
+			ret.Marker = context.Registry.GetRequiredService<IMarkerService>();
+			ret.DynCipher = context.Registry.GetRequiredService<IDynCipherService>();
 			ret.Name = context.Registry.GetService<INameService>();
 
 			ret.Delegates = store.delegates;
@@ -98,15 +103,16 @@ namespace Confuser.Protections.ReferenceProxy {
 			return ret;
 		}
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
-			RandomGenerator random = context.Registry.GetService<IRandomService>().GetRandomGenerator(ReferenceProxyProtection._FullId);
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ReferenceProxyProtection._FullId);
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("proxy");
 
 			var store = new RPStore { random = random };
 
-			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(context.Logger))
+			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
 					ProcessMethod(ParseParameters(method, context, parameters, store));
-					context.CheckCancellation();
+					token.ThrowIfCancellationRequested();
 				}
 
 			RPContext ctx = ParseParameters(context.CurrentModule, context, parameters, store);
@@ -166,7 +172,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			public MildMode mild;
 
 			public NormalEncoding normal;
-			public RandomGenerator random;
+			public IRandomGenerator random;
 			public StrongMode strong;
 			public x86Encoding x86;
 

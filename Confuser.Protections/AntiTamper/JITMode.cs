@@ -7,11 +7,13 @@ using System.Text;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
-using Confuser.Renamer;
+using Confuser.Protections.Services;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.AntiTamper {
 	internal class JITMode : IModeHandler {
@@ -25,7 +27,7 @@ namespace Confuser.Protections.AntiTamper {
 		uint c;
 		MethodDef cctor;
 		MethodDef cctorRepl;
-		ConfuserContext context;
+		IConfuserContext context;
 		IKeyDeriver deriver;
 		byte[] fieldLayout;
 
@@ -33,14 +35,14 @@ namespace Confuser.Protections.AntiTamper {
 		uint key;
 		List<MethodDef> methods;
 		uint name1, name2;
-		RandomGenerator random;
+		IRandomGenerator random;
 		uint v;
 		uint x;
 		uint z;
 
-		public void HandleInject(AntiTamperProtection parent, ConfuserContext context, ProtectionParameters parameters) {
+		public void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
 			this.context = context;
-			random = context.Registry.GetService<IRandomService>().GetRandomGenerator(parent.FullId);
+			random = context.Registry.GetService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
 			z = random.NextUInt32();
 			x = random.NextUInt32();
 			c = random.NextUInt32();
@@ -58,18 +60,18 @@ namespace Confuser.Protections.AntiTamper {
 			}
 
 			switch (parameters.GetParameter(context, context.CurrentModule, "key", Mode.Normal)) {
-				case Mode.Normal:
-					deriver = new NormalDeriver();
-					break;
-				case Mode.Dynamic:
-					deriver = new DynamicDeriver();
-					break;
-				default:
-					throw new UnreachableException();
+			case Mode.Normal:
+				deriver = new NormalDeriver();
+				break;
+			case Mode.Dynamic:
+				deriver = new DynamicDeriver();
+				break;
+			default:
+				throw new UnreachableException();
 			}
 			deriver.Init(context, random);
 
-			var rt = context.Registry.GetService<IRuntimeService>();
+			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperJIT");
 			IEnumerable<IDnlibDef> defs = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
 			initMethod = defs.OfType<MethodDef>().Single(method => method.Name == "Initialize");
@@ -114,10 +116,13 @@ namespace Confuser.Protections.AntiTamper {
 			cctorRepl.Body = new CilBody();
 			cctorRepl.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 			context.CurrentModule.GlobalType.Methods.Add(cctorRepl);
-			name.MarkHelper(cctorRepl, marker, parent);
+			name?.MarkHelper(context, cctorRepl, marker, parent);
 
 			MutationHelper.InjectKeys(defs.OfType<MethodDef>().Single(method => method.Name == "HookHandler"),
 									  new[] { 0 }, new[] { (int)key });
+
+			var antiTamperService = context.Registry.GetRequiredService<IAntiTamperService>();
+
 			foreach (IDnlibDef def in defs) {
 				if (def.Name == "MethodData") {
 					var dataType = (TypeDef)def;
@@ -132,14 +137,14 @@ namespace Confuser.Protections.AntiTamper {
 					foreach (FieldDef f in fields)
 						dataType.Fields.Add(f);
 				}
-				name.MarkHelper(def, marker, parent);
+				name?.MarkHelper(context, def, marker, parent);
 				if (def is MethodDef)
-					parent.ExcludeMethod(context, (MethodDef)def);
+					antiTamperService.ExcludeMethod(context, (MethodDef)def);
 			}
-			parent.ExcludeMethod(context, cctor);
+			antiTamperService.ExcludeMethod(context, cctor);
 		}
 
-		public void HandleMD(AntiTamperProtection parent, ConfuserContext context, ProtectionParameters parameters) {
+		public void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
 			// move initialization away from module initializer
 			cctorRepl.Body = cctor.Body;
 			cctor.Body = new CilBody();
@@ -152,13 +157,14 @@ namespace Confuser.Protections.AntiTamper {
 		}
 
 		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
-			var writer = (ModuleWriterBase)sender;
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("anti tamper");
+			var writer = e.Writer;
 			if (e.Event == ModuleWriterEvent.MDBeginWriteMethodBodies) {
-				context.Logger.Debug("Extracting method bodies...");
+				logger.Debug("Extracting method bodies...");
 				CreateSection(writer);
 			}
 			else if (e.Event == ModuleWriterEvent.BeginStrongNameSign) {
-				context.Logger.Debug("Encrypting method section...");
+				logger.Debug("Encrypting method section...");
 				EncryptSection(writer);
 			}
 		}
@@ -209,8 +215,10 @@ namespace Confuser.Protections.AntiTamper {
 			var bodyIndex = new JITBodyIndex(methods.Select(method => writer.Metadata.GetToken(method).Raw));
 			newSection.Add(bodyIndex, 0x10);
 
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("anti tamper");
+
 			// save methods
-			foreach (MethodDef method in methods.WithProgress(context.Logger)) {
+			foreach (MethodDef method in methods.WithProgress(logger)) {
 				if (!method.HasBody)
 					continue;
 
@@ -231,8 +239,6 @@ namespace Confuser.Protections.AntiTamper {
 					methodRow.Name,
 					methodRow.Signature,
 					methodRow.ParamList);
-
-				context.CheckCancellation();
 			}
 			bodyIndex.PopulateSection(newSection);
 

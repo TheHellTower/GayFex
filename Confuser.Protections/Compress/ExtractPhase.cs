@@ -1,35 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using Confuser.Core;
+using Confuser.Core.Services;
 using dnlib.DotNet;
-using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Compress {
-	internal class ExtractPhase : ProtectionPhase {
-		public ExtractPhase(Compressor parent) : base(parent) { }
+	internal sealed class ExtractPhase : IProtectionPhase {
+		public ExtractPhase(Compressor parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets {
-			get { return ProtectionTargets.Modules; }
-		}
+		public Compressor Parent { get; }
 
-		public override string Name {
-			get { return "Packer info extraction"; }
-		}
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+		public ProtectionTargets Targets => ProtectionTargets.Modules;
+
+		public string Name => "Packer info extraction";
+
+		public bool ProcessAll => false;
+
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			if (context.Packer == null)
 				return;
+
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
 
 			bool isExe = context.CurrentModule.Kind == ModuleKind.Windows ||
 						 context.CurrentModule.Kind == ModuleKind.Console;
 
 			if (context.Annotations.Get<CompressorContext>(context, Compressor.ContextKey) != null) {
 				if (isExe) {
-					context.Logger.Error("Too many executable modules!");
+					logger.Error("Too many executable modules!");
 					throw new ConfuserException(null);
 				}
 				return;

@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Confuser.Core;
+using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 	class MemberRefInstructionRewriter : InstructionRewriter<MemberRef> {
 
 		MethodInfo[] CreationFactoryMethods;
-		public MemberRefInstructionRewriter() {
+		public MemberRefInstructionRewriter(IConfuserContext context) {
 			ModuleDefMD md = ModuleDefMD.Load(typeof(EmbeddedCode.ObjectCreationFactory).Module);
-
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("typescrambler");
 
 			MethodInfo[] tMethods = typeof(EmbeddedCode.ObjectCreationFactory).GetMethods(BindingFlags.Static | BindingFlags.Public);
 			CreationFactoryMethods = new MethodInfo[tMethods.Length];
 			foreach (var m in tMethods) {
 				CreationFactoryMethods[m.GetParameters().Length] = m;
-				TypeService.DebugContext.Logger.DebugFormat("{0}] {1}", m.GetParameters().Length, m.Name);
+				logger.DebugFormat("{0}] {1}", m.GetParameters().Length, m.Name);
 			}
 		}
 

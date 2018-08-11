@@ -19,7 +19,7 @@ namespace Confuser.Protections.ControlFlow {
 	}
 
 	internal class CFContext {
-		public ConfuserContext Context;
+		public IConfuserContext Context;
 		public ControlFlowProtection Protection;
 		public int Depth;
 		public IDynCipherService DynCipher;
@@ -28,7 +28,7 @@ namespace Confuser.Protections.ControlFlow {
 		public bool JunkCode;
 		public MethodDef Method;
 		public PredicateType Predicate;
-		public RandomGenerator Random;
+		public IRandomGenerator Random;
 		public CFType Type;
 
 		public void AddJump(IList<Instruction> instrs, Instruction target) {

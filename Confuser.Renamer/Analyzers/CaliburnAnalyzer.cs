@@ -1,15 +1,19 @@
 ﻿using System;
 using Confuser.Core;
 using Confuser.Renamer.BAML;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class CaliburnAnalyzer : IRenamer {
-		public CaliburnAnalyzer(WPFAnalyzer wpfAnalyzer) {
+		private readonly IConfuserContext context;
+
+		public CaliburnAnalyzer(IConfuserContext context, WPFAnalyzer wpfAnalyzer) {
 			wpfAnalyzer.AnalyzeBAMLElement += AnalyzeBAMLElement;
+			this.context = context;
 		}
 
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			var type = def as TypeDef;
 			if (type == null || type.DeclaringType != null)
 				return;
@@ -18,16 +22,16 @@ namespace Confuser.Renamer.Analyzers {
 				string viewName = type.Name.Replace("PageViewModel", "Page").Replace("ViewModel", "View");
 				TypeDef view = type.Module.Find(viewNs + "." + viewName, true);
 				if (view != null) {
-					service.SetCanRename(type, false);
-					service.SetCanRename(view, false);
+					service.SetCanRename(context, type, false);
+					service.SetCanRename(context, view, false);
 				}
 
 				// Test for Multi-view
 				string multiViewNs = type.Namespace + "." + type.Name.Replace("ViewModel", "");
 				foreach (var t in type.Module.Types)
 					if (t.Namespace == multiViewNs) {
-						service.SetCanRename(type, false);
-						service.SetCanRename(t, false);
+						service.SetCanRename(context, type, false);
+						service.SetCanRename(context, t, false);
 					}
 			}
 		}
@@ -79,7 +83,7 @@ namespace Confuser.Renamer.Analyzers {
 
 				string actName = msgStr.Trim();
 				foreach (var method in analyzer.LookupMethod(actName))
-					analyzer.NameService.SetCanRename(method, false);
+					analyzer.NameService.SetCanRename(context, method, false);
 			}
 		}
 
@@ -88,9 +92,9 @@ namespace Confuser.Renamer.Analyzers {
 				return;
 
 			foreach (var method in analyzer.LookupMethod(value))
-				analyzer.NameService.SetCanRename(method, false);
+				analyzer.NameService.SetCanRename(context, method, false);
 			foreach (var method in analyzer.LookupProperty(value))
-				analyzer.NameService.SetCanRename(method, false);
+				analyzer.NameService.SetCanRename(context, method, false);
 		}
 
 		void AnalyzeActionMessage(BAMLAnalyzer analyzer, Tuple<IDnlibDef, AttributeInfoRecord, TypeDef> attr, string value) {
@@ -101,15 +105,15 @@ namespace Confuser.Renamer.Analyzers {
 				return;
 
 			foreach (var method in analyzer.LookupMethod(value))
-				analyzer.NameService.SetCanRename(method, false);
+				analyzer.NameService.SetCanRename(context, method, false);
 		}
 
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 	}

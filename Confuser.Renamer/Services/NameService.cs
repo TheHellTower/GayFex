@@ -1,52 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Confuser.Renamer {
-	public interface INameService {
-		VTableStorage GetVTables();
-
-		void Analyze(IDnlibDef def);
-
-		bool CanRename(object obj);
-		void SetCanRename(object obj, bool val);
-
-		void SetParam(IDnlibDef def, string name, string value);
-		string GetParam(IDnlibDef def, string name);
-
-		RenameMode GetRenameMode(object obj);
-		void SetRenameMode(object obj, RenameMode val);
-		void ReduceRenameMode(object obj, RenameMode val);
-
-		string ObfuscateName(string name, RenameMode mode);
-		string RandomName();
-		string RandomName(RenameMode mode);
-
-		void RegisterRenamer(IRenamer renamer);
-		T FindRenamer<T>();
-		void AddReference<T>(T obj, INameReference<T> reference);
-
-		void SetOriginalName(object obj, string name);
-		void SetOriginalNamespace(object obj, string ns);
-
-		void MarkHelper(IDnlibDef def, IMarkerService marker, ConfuserComponent parentComp);
-	}
-
+namespace Confuser.Renamer.Services {
 	internal class NameService : INameService {
 		static readonly object CanRenameKey = new object();
 		static readonly object RenameModeKey = new object();
 		static readonly object ReferencesKey = new object();
 		static readonly object OriginalNameKey = new object();
 		static readonly object OriginalNamespaceKey = new object();
-
-		readonly ConfuserContext context;
+		
 		readonly byte[] nameSeed;
-		readonly RandomGenerator random;
+		readonly IRandomGenerator random;
 		readonly VTableStorage storage;
 		AnalyzePhase analyze;
 
@@ -56,93 +28,85 @@ namespace Confuser.Renamer {
 		readonly Dictionary<string, string> nameMap2 = new Dictionary<string, string>();
 		internal ReversibleRenamer reversibleRenamer;
 
-		public NameService(ConfuserContext context) {
-			this.context = context;
-			storage = new VTableStorage(context.Logger);
-			random = context.Registry.GetService<IRandomService>().GetRandomGenerator(NameProtection._FullId);
+		internal NameService(IServiceProvider provider) {
+			storage = new VTableStorage(provider);
+			random = provider.GetRequiredService<IRandomService>().GetRandomGenerator(NameProtection._FullId);
 			nameSeed = random.NextBytes(20);
 
-			Renamers = new List<IRenamer> {
+			Renamers = ImmutableArray.Create<IRenamer>(
 				new InterReferenceAnalyzer(),
 				new VTableAnalyzer(),
 				new TypeBlobAnalyzer(),
 				new ResourceAnalyzer(),
 				new LdtokenEnumAnalyzer()
-			};
+			);
 		}
 
-		public IList<IRenamer> Renamers { get; private set; }
+		public IImmutableList<IRenamer> Renamers { get; }
 
 		public VTableStorage GetVTables() {
 			return storage;
 		}
 
-		public bool CanRename(object obj) {
-			if (obj is IDnlibDef) {
+		public bool CanRename(IConfuserContext context, IDnlibDef def) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+
+			if (def != null) {
 				if (analyze == null)
 					analyze = context.Pipeline.FindPhase<AnalyzePhase>();
 
-				var prot = (NameProtection)analyze.Parent;
-				ProtectionSettings parameters = ProtectionParameters.GetParameters(context, (IDnlibDef)obj);
-				if (parameters == null || !parameters.ContainsKey(prot))
+				var prot = analyze.Parent;
+				if (!context.GetParameters(def).HasParameters(prot))
 					return false;
-				return context.Annotations.Get(obj, CanRenameKey, true);
+
+				return context.Annotations.Get(def, CanRenameKey, true);
 			}
 			return false;
 		}
 
-		public void SetCanRename(object obj, bool val) {
-			context.Annotations.Set(obj, CanRenameKey, val);
+		public void SetCanRename(IConfuserContext context, IDnlibDef def, bool val) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (def == null) throw new ArgumentNullException(nameof(def));
+
+			context.Annotations.Set(def, CanRenameKey, val);
 		}
 
-		public void SetParam(IDnlibDef def, string name, string value) {
-			var param = ProtectionParameters.GetParameters(context, def);
-			if (param == null)
-				ProtectionParameters.SetParameters(context, def, param = new ProtectionSettings());
-			Dictionary<string, string> nameParam;
-			if (!param.TryGetValue(analyze.Parent, out nameParam))
-				param[analyze.Parent] = nameParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			nameParam[name] = value;
+		public void SetParam(IConfuserContext context, IDnlibDef def, string name, string value) {
+			context.GetParameters(def).SetParameter(analyze.Parent, name, value);
 		}
 
-		public string GetParam(IDnlibDef def, string name) {
-			var param = ProtectionParameters.GetParameters(context, def);
-			if (param == null)
-				return null;
-			Dictionary<string, string> nameParam;
-			if (!param.TryGetValue(analyze.Parent, out nameParam))
-				return null;
-			return nameParam.GetValueOrDefault(name);
+		public string GetParam(IConfuserContext context, IDnlibDef def, string name) {
+			return context.GetParameters(def).GetParameter(analyze.Parent, name);
 		}
 
-		public RenameMode GetRenameMode(object obj) {
+		public RenameMode GetRenameMode(IConfuserContext context, object obj) {
 			return context.Annotations.Get(obj, RenameModeKey, RenameMode.Unicode);
 		}
 
-		public void SetRenameMode(object obj, RenameMode val) {
+		public void SetRenameMode(IConfuserContext context, object obj, RenameMode val) {
 			context.Annotations.Set(obj, RenameModeKey, val);
 		}
 
-		public void ReduceRenameMode(object obj, RenameMode val) {
-			RenameMode original = GetRenameMode(obj);
+		public void ReduceRenameMode(IConfuserContext context, object obj, RenameMode val) {
+			RenameMode original = GetRenameMode(context, obj);
 			if (original < val)
 				context.Annotations.Set(obj, RenameModeKey, val);
 		}
 
-		public void AddReference<T>(T obj, INameReference<T> reference) {
+		public void AddReference<T>(IConfuserContext context, T obj, INameReference<T> reference) {
 			context.Annotations.GetOrCreate(obj, ReferencesKey, key => new List<INameReference>()).Add(reference);
 		}
 
-		public void Analyze(IDnlibDef def) {
+		public void Analyze(IConfuserContext context, IDnlibDef def) {
 			if (analyze == null)
 				analyze = context.Pipeline.FindPhase<AnalyzePhase>();
 
-			SetOriginalName(def, def.Name);
+			SetOriginalName(context, def, def.Name);
 			if (def is TypeDef) {
 				GetVTables().GetVTable((TypeDef)def);
-				SetOriginalNamespace(def, ((TypeDef)def).Namespace);
+				SetOriginalNamespace(context, def, ((TypeDef)def).Namespace);
 			}
-			analyze.Analyze(this, context, ProtectionParameters.Empty, def, true);
+			analyze.Analyze(this, context, new EmptyProtectionParameters(), def, true);
 		}
 
 		public void SetNameId(uint id) {
@@ -248,12 +212,12 @@ namespace Confuser.Renamer {
 			return ObfuscateName(Utils.ToHexString(random.NextBytes(16)), mode);
 		}
 
-		public void SetOriginalName(object obj, string name) {
+		public void SetOriginalName(IConfuserContext context, object obj, string name) {
 			identifiers.Add(name);
 			context.Annotations.Set(obj, OriginalNameKey, name);
 		}
 
-		public void SetOriginalNamespace(object obj, string ns) {
+		public void SetOriginalNamespace(IConfuserContext context, object obj, string ns) {
 			identifiers.Add(ns);
 			context.Annotations.Set(obj, OriginalNamespaceKey, ns);
 		}
@@ -266,8 +230,8 @@ namespace Confuser.Renamer {
 			return Renamers.OfType<T>().Single();
 		}
 
-		public void MarkHelper(IDnlibDef def, IMarkerService marker, ConfuserComponent parentComp) {
-			if (marker.IsMarked(def))
+		public void MarkHelper(IConfuserContext context, IDnlibDef def, IMarkerService marker, IConfuserComponent parentComp) {
+			if (marker.IsMarked(context, def))
 				return;
 			if (def is MethodDef) {
 				var method = (MethodDef)def;
@@ -288,9 +252,9 @@ namespace Confuser.Renamer {
 				if (!type.IsSpecialName && !type.IsRuntimeSpecialName)
 					type.Name = RandomName();
 			}
-			SetCanRename(def, false);
-			Analyze(def);
-			marker.Mark(def, parentComp);
+			SetCanRename(context, def, false);
+			Analyze(context, def);
+			marker.Mark(context, def, parentComp);
 		}
 
 		#region Charsets
@@ -320,24 +284,22 @@ namespace Confuser.Renamer {
 
 		#endregion
 
-		public RandomGenerator GetRandom() {
+		public IRandomGenerator GetRandom() {
 			return random;
 		}
 
-		public IList<INameReference> GetReferences(object obj) {
+		public IList<INameReference> GetReferences(IConfuserContext context, object obj) {
 			return context.Annotations.GetLazy(obj, ReferencesKey, key => new List<INameReference>());
 		}
 
-		public string GetOriginalName(object obj) {
+		public string GetOriginalName(IConfuserContext context, object obj) {
 			return context.Annotations.Get(obj, OriginalNameKey, "");
 		}
 
-		public string GetOriginalNamespace(object obj) {
+		public string GetOriginalNamespace(IConfuserContext context, object obj) {
 			return context.Annotations.Get(obj, OriginalNamespaceKey, "");
 		}
 
-		public ICollection<KeyValuePair<string, string>> GetNameMap() {
-			return nameMap2;
-		}
+		public IReadOnlyCollection<KeyValuePair<string, string>> GetNameMap() => nameMap2;
 	}
 }

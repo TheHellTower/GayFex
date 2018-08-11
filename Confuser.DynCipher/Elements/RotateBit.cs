@@ -11,7 +11,7 @@ namespace Confuser.DynCipher.Elements {
 		public int Bits { get; private set; }
 		public bool IsAlternate { get; private set; }
 
-		public override void Initialize(RandomGenerator random) {
+		public override void Initialize(IRandomGenerator random) {
 			Bits = random.NextInt32(1, 32);
 			IsAlternate = (random.NextInt32() % 2 == 0);
 		}

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
@@ -9,24 +10,27 @@ using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Pdb;
 using dnlib.DotNet.Writer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.ControlFlow {
-	internal class ControlFlowPhase : ProtectionPhase {
+	internal class ControlFlowPhase : IProtectionPhase {
 		static readonly JumpMangler Jump = new JumpMangler();
 		static readonly SwitchMangler Switch = new SwitchMangler();
 
-		public ControlFlowPhase(ControlFlowProtection parent)
-			: base(parent) { }
+		public ControlFlowPhase(ControlFlowProtection parent) =>
+			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		public override ProtectionTargets Targets {
-			get { return ProtectionTargets.Methods; }
-		}
+		public ControlFlowProtection Parent { get; }
 
-		public override string Name {
-			get { return "Control flow mangling"; }
-		}
+		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		CFContext ParseParameters(MethodDef method, ConfuserContext context, ProtectionParameters parameters, RandomGenerator random, bool disableOpti) {
+		public ProtectionTargets Targets => ProtectionTargets.Methods;
+
+		public bool ProcessAll => false;
+
+		public string Name => "Control flow mangling";
+
+		CFContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, IRandomGenerator random, bool disableOpti) {
 			var ret = new CFContext();
 			ret.Type = parameters.GetParameter(context, method, "type", CFType.Switch);
 			ret.Predicate = parameters.GetParameter(context, method, "predicate", PredicateType.Normal);
@@ -41,7 +45,7 @@ namespace Confuser.Protections.ControlFlow {
 			ret.Random = random;
 			ret.Method = method;
 			ret.Context = context;
-			ret.DynCipher = context.Registry.GetService<IDynCipherService>();
+			ret.DynCipher = context.Registry.GetRequiredService<IDynCipherService>();
 
 			if (ret.Predicate == PredicateType.x86) {
 				if ((context.CurrentModule.Cor20HeaderFlags & ComImageFlags.ILOnly) != 0)
@@ -70,14 +74,15 @@ namespace Confuser.Protections.ControlFlow {
 			return disableOpti;
 		}
 
-		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			bool disabledOpti = DisabledOptimization(context.CurrentModule);
-			RandomGenerator random = context.Registry.GetService<IRandomService>().GetRandomGenerator(ControlFlowProtection._FullId);
+			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ControlFlowProtection._FullId);
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("control flow");
 
-			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(context.Logger))
+			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
 					ProcessMethod(method.Body, ParseParameters(method, context, parameters, random, disabledOpti));
-					context.CheckCancellation();
+					token.ThrowIfCancellationRequested();
 				}
 		}
 
@@ -90,7 +95,8 @@ namespace Confuser.Protections.ControlFlow {
 		void ProcessMethod(CilBody body, CFContext ctx) {
 			uint maxStack;
 			if (!MaxStackCalculator.GetMaxStack(body.Instructions, body.ExceptionHandlers, out maxStack)) {
-				ctx.Context.Logger.Error("Failed to calcuate maxstack.");
+				var logger = ctx.Context.Registry.GetRequiredService<ILoggingService>().GetLogger("control flow");
+				logger.Error("Failed to calcuate maxstack.");
 				throw new ConfuserException(null);
 			}
 			body.MaxStack = (ushort)maxStack;

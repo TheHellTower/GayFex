@@ -1,6 +1,6 @@
-﻿using System;
-using Confuser.Core;
+﻿using Confuser.Core;
 using Confuser.Renamer.BAML;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
@@ -22,7 +22,7 @@ namespace Confuser.Renamer.References {
 			textRec = rec;
 		}
 
-		public bool UpdateNameReference(ConfuserContext context, INameService service) {
+		public bool UpdateNameReference(IConfuserContext context, INameService service) {
 			string name = sig.ReflectionName;
 			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
 			if (!string.IsNullOrEmpty(prefix))
@@ -34,8 +34,6 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

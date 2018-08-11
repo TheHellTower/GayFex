@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Confuser.Core;
-using Confuser.Renamer.BAML;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.Analyzers {
@@ -65,7 +64,7 @@ namespace Confuser.Renamer.Analyzers {
 				return false;
 		}
 
-		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			if (def is TypeDef)
 				Analyze(context, service, (TypeDef)def, parameters);
 			else if (def is MethodDef)
@@ -76,7 +75,7 @@ namespace Confuser.Renamer.Analyzers {
 				Analyze(context, service, (FieldDef)def, parameters);
 		}
 
-		void Analyze(ConfuserContext context, INameService service, TypeDef type, ProtectionParameters parameters) {
+		void Analyze(IConfuserContext context, INameService service, TypeDef type, IProtectionParameters parameters) {
 			var attr = GetJsonContainerAttribute(type);
 			if (attr == null)
 				return;
@@ -91,32 +90,32 @@ namespace Confuser.Renamer.Analyzers {
 				}
 			}
 			if (!hasId)
-				service.SetCanRename(type, false);
+				service.SetCanRename(context, type, false);
 		}
 
-		void Analyze(ConfuserContext context, INameService service, MethodDef method, ProtectionParameters parameters) {
+		void Analyze(IConfuserContext context, INameService service, MethodDef method, IProtectionParameters parameters) {
 			if (GetJsonContainerAttribute(method.DeclaringType) != null && method.IsConstructor) {
-				service.SetParam(method, "renameArgs", "false");
+				service.SetParam(context, method, "renameArgs", "false");
 			}
 		}
 
-		void Analyze(ConfuserContext context, INameService service, PropertyDef property, ProtectionParameters parameters) {
+		void Analyze(IConfuserContext context, INameService service, PropertyDef property, IProtectionParameters parameters) {
 			if (ShouldExclude(property.DeclaringType, property)) {
-				service.SetCanRename(property, false);
+				service.SetCanRename(context, property, false);
 			}
 		}
 
-		void Analyze(ConfuserContext context, INameService service, FieldDef field, ProtectionParameters parameters) {
+		void Analyze(IConfuserContext context, INameService service, FieldDef field, IProtectionParameters parameters) {
 			if (ShouldExclude(field.DeclaringType, field)) {
-				service.SetCanRename(field, false);
+				service.SetCanRename(context, field, false);
 			}
 		}
 
-		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			//
 		}
 	}

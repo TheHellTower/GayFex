@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Confuser.Core.Helpers;
+using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Constants {
 	internal class DynamicMode : IEncodeMode {
@@ -41,7 +43,8 @@ namespace Confuser.Protections.Constants {
 		public object CreateDecoder(MethodDef decoder, CEContext ctx) {
 			uint k1 = ctx.Random.NextUInt32() | 1;
 			uint k2 = ctx.Random.NextUInt32();
-			MutationHelper.ReplacePlaceholder(decoder, arg => {
+
+			MutationHelper.ReplacePlaceholder(ctx.Trace, decoder, arg => {
 				var repl = new List<Instruction>();
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Ldc_I4, (int)MathsUtils.modInv(k1)));

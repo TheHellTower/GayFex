@@ -3,7 +3,7 @@ using Confuser.Protections.TypeScramble.Scrambler.Analyzers;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
-	public class ScannedMethod : ScannedItem {
+	internal class ScannedMethod : ScannedItem {
 
 		public MethodDef TargetMethod { get; private set; }
 

@@ -8,7 +8,7 @@ namespace Confuser.Core.Services {
 	/// <summary>
 	///     A seeded SHA256 PRNG.
 	/// </summary>
-	public class RandomGenerator {
+	internal sealed class RandomGenerator : IRandomGenerator {
 		/// <summary>
 		///     The prime numbers used for generation
 		/// </summary>
@@ -120,57 +120,6 @@ namespace Confuser.Core.Services {
 		}
 
 		/// <summary>
-		///     Returns a random signed integer.
-		/// </summary>
-		/// <returns>Requested random number.</returns>
-		public int NextInt32() {
-			return BitConverter.ToInt32(NextBytes(4), 0);
-		}
-
-		/// <summary>
-		///     Returns a nonnegative random integer that is less than the specified maximum.
-		/// </summary>
-		/// <param name="max">The exclusive upper bound.</param>
-		/// <returns>Requested random number.</returns>
-		public int NextInt32(int max) {
-			return (int)(NextUInt32() % max);
-		}
-
-		/// <summary>
-		///     Returns a random integer that is within a specified range.
-		/// </summary>
-		/// <param name="min">The inclusive lower bound.</param>
-		/// <param name="max">The exclusive upper bound.</param>
-		/// <returns>Requested random number.</returns>
-		public int NextInt32(int min, int max) {
-			if (max <= min) return min;
-			return min + (int)(NextUInt32() % (max - min));
-		}
-
-		/// <summary>
-		///     Returns a random unsigned integer.
-		/// </summary>
-		/// <returns>Requested random number.</returns>
-		public uint NextUInt32() {
-			return BitConverter.ToUInt32(NextBytes(4), 0);
-		}
-
-		/// <summary>
-		///     Returns a nonnegative random integer that is less than the specified maximum.
-		/// </summary>
-		/// <param name="max">The exclusive upper bound.</param>
-		/// <returns>Requested random number.</returns>
-		public uint NextUInt32(uint max) => NextUInt32() % max;
-
-		/// <summary>
-		///     Returns a random double floating pointer number from 0 (inclusive) to 1 (exclusive).
-		/// </summary>
-		/// <returns>Requested random number.</returns>
-		public double NextDouble() {
-			return NextUInt32() / ((double)uint.MaxValue + 1);
-		}
-
-		/// <summary>
 		///     Returns a random boolean value.
 		/// </summary>
 		/// <returns>Requested random boolean value.</returns>
@@ -180,36 +129,6 @@ namespace Confuser.Core.Services {
 			if (stateFilled == 0)
 				NextState();
 			return s % 2 == 0;
-		}
-
-		/// <summary>
-		///     Shuffles the element in the specified list.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="list">The list to shuffle.</param>
-		public void Shuffle<T>(IList<T> list) {
-			for (int i = list.Count - 1; i > 1; i--) {
-				int k = NextInt32(i + 1);
-				T tmp = list[k];
-				list[k] = list[i];
-				list[i] = tmp;
-			}
-		}
-
-		/// <summary>
-		///     Shuffles the element in the specified metadata table.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="table">The metadata table to shuffle.</param>
-		public void Shuffle<T>(MDTable<T> table) where T : struct {
-			if (table.IsEmpty) return;
-
-			for (uint i = (uint)(table.Rows - 1); i > 1; i--) {
-				uint k = NextUInt32(i + 1);
-				var tmp = table[k];
-				table[k] = table[i];
-				table[i] = tmp;
-			}
 		}
 	}
 
@@ -228,7 +147,7 @@ namespace Confuser.Core.Services {
 		}
 
 		/// <inheritdoc />
-		public RandomGenerator GetRandomGenerator(string id) {
+		public IRandomGenerator GetRandomGenerator(string id) {
 			if (string.IsNullOrEmpty(id))
 				throw new ArgumentNullException("id");
 			byte[] newSeed = seed;
@@ -237,18 +156,5 @@ namespace Confuser.Core.Services {
 				newSeed[i] ^= idHash[i];
 			return new RandomGenerator(Utils.SHA256(newSeed));
 		}
-	}
-
-	/// <summary>
-	///     Provides methods to obtain a unique stable PRNG for any given ID.
-	/// </summary>
-	public interface IRandomService {
-		/// <summary>
-		///     Gets a RNG with the specified identifier.
-		/// </summary>
-		/// <param name="id">The identifier.</param>
-		/// <returns>The requested RNG.</returns>
-		/// <exception cref="System.ArgumentNullException"><paramref name="id" /> is <c>null</c>.</exception>
-		RandomGenerator GetRandomGenerator(string id);
 	}
 }

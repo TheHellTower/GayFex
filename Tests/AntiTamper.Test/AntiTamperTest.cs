@@ -32,7 +32,7 @@ namespace AntiTamper.Test {
 				OutputDirectory = outputDir
 			};
 			proj.Rules.Add(new Rule() {
-				new SettingItem<Protection>("anti tamper") {
+				new SettingItem<IProtection>("anti tamper") {
 					{ "mode", antiTamperMode }
 				}
 			});

@@ -9,7 +9,7 @@ namespace ConfuserEx.ViewModel {
 	public class ProjectVM : ViewModelBase, IViewModel<ConfuserProject>, IRuleContainer {
 		readonly ConfuserProject proj;
 		bool modified;
-		ProjectSettingVM<Packer> packer;
+		ProjectSettingVM<IPacker> packer;
 
 		public ProjectVM(ConfuserProject proj, string fileName) {
 			this.proj = proj;
@@ -31,8 +31,8 @@ namespace ConfuserEx.ViewModel {
 			rules.CollectionChanged += (sender, e) => IsModified = true;
 			Rules = rules;
 
-			Protections = new ObservableCollection<ConfuserComponent>();
-			Packers = new ObservableCollection<ConfuserComponent>();
+			Protections = new ObservableCollection<ConfuserUiComponent>();
+			Packers = new ObservableCollection<ConfuserUiComponent>();
 			ComponentDiscovery.LoadComponents(Protections, Packers, Assembly.Load("Confuser.Protections").Location);
 			ComponentDiscovery.LoadComponents(Protections, Packers, Assembly.Load("Confuser.Renamer").Location);
 		}
@@ -66,16 +66,16 @@ namespace ConfuserEx.ViewModel {
 			set { SetProperty(proj.OutputDirectory != value, val => proj.OutputDirectory = val, value, "OutputDirectory"); }
 		}
 
-		public ProjectSettingVM<Packer> Packer {
+		public ProjectSettingVM<IPacker> Packer {
 			get {
 				if (proj.Packer == null)
 					packer = null;
 				else
-					packer = new ProjectSettingVM<Packer>(this, proj.Packer);
+					packer = new ProjectSettingVM<IPacker>(this, proj.Packer);
 				return packer;
 			}
 			set {
-				var vm = (IViewModel<SettingItem<Packer>>)value;
+				var vm = (IViewModel<SettingItem<IPacker>>)value;
 				bool changed = (vm == null && proj.Packer != null) || (vm != null && proj.Packer != vm.Model);
 				SetProperty(changed, val => proj.Packer = val == null ? null : val.Model, vm, "Packer");
 			}
@@ -85,8 +85,8 @@ namespace ConfuserEx.ViewModel {
 		public IList<StringItem> Plugins { get; private set; }
 		public IList<StringItem> ProbePaths { get; private set; }
 
-		public ObservableCollection<ConfuserComponent> Protections { get; private set; }
-		public ObservableCollection<ConfuserComponent> Packers { get; private set; }
+		public ObservableCollection<ConfuserUiComponent> Protections { get; private set; }
+		public ObservableCollection<ConfuserUiComponent> Packers { get; private set; }
 		public IList<ProjectRuleVM> Rules { get; private set; }
 
 		public string FileName { get; set; }

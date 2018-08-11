@@ -1,31 +1,21 @@
 ﻿using System.Collections.Generic;
 using Confuser.Core;
+using Confuser.Protections.Services;
 using Confuser.Protections.TypeScramble.Scrambler;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble {
-	public class TypeService {
-
-		private ConfuserContext content;
+	internal sealed class TypeService : ITypeScrambleService {
 		private Dictionary<MDToken, ScannedItem> GenericsMapper = new Dictionary<MDToken, ScannedItem>();
-		public static ConfuserContext DebugContext { get; private set; }
-
-		public TypeService(ConfuserContext _context) {
-			content = _context;
-			DebugContext = content;
-		}
-
 
 		public void AddScannedItem(ScannedMethod m) {
-
 			ScannedItem typescan;
 			if (GenericsMapper.TryGetValue(m.TargetMethod.DeclaringType.MDToken, out typescan)) {
 				m.GenericCount += typescan.GenericCount;
 			}
 			AddScannedItemGeneral(m);
 		}
-
-
+		
 		public void AddScannedItem(ScannedType m) {
 			//AddScannedItemGeneral(m);
 		}

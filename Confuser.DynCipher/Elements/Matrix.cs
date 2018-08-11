@@ -11,7 +11,7 @@ namespace Confuser.DynCipher.Elements {
 		public uint[,] Key { get; private set; }
 		public uint[,] InverseKey { get; private set; }
 
-		static uint[,] GenerateUnimodularMatrix(RandomGenerator random) {
+		static uint[,] GenerateUnimodularMatrix(IRandomGenerator random) {
 			Func<uint> next = () => (uint)random.NextInt32(4);
 
 			uint[,] l = {
@@ -82,7 +82,7 @@ namespace Confuser.DynCipher.Elements {
 			return ret;
 		}
 
-		public override void Initialize(RandomGenerator random) {
+		public override void Initialize(IRandomGenerator random) {
 			InverseKey = mul(transpose4(GenerateUnimodularMatrix(random)), GenerateUnimodularMatrix(random));
 
 			var cof = new uint[4, 4];

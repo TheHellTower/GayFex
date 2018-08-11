@@ -30,7 +30,7 @@ namespace CompressorWithResx.Test {
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir,
-				Packer = new SettingItem<Packer>("compressor") {
+				Packer = new SettingItem<IPacker>("compressor") {
 					{ "compat", compatKey},
 					{ "key", deriverKey }
 				}
@@ -38,7 +38,7 @@ namespace CompressorWithResx.Test {
 
 			if (resourceProtectionMode != "none") {
 				proj.Rules.Add(new Rule() {
-					new SettingItem<Protection>("resources") {
+					new SettingItem<IProtection>("resources") {
 						{ "mode", resourceProtectionMode }
 					}
 				});

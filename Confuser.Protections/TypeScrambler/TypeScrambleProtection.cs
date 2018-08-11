@@ -1,22 +1,26 @@
-﻿using Confuser.Core;
+﻿using System.ComponentModel.Composition;
+using Confuser.Core;
+using Confuser.Protections.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.TypeScramble {
-	class TypeScrambleProtection : Protection {
-		public override ProtectionPreset Preset => ProtectionPreset.None;
+	[Export(typeof(IProtection))]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	internal sealed class TypeScrambleProtection : IProtection {
+		public const string _Id = "typescramble";
+		public const string _FullId = "BahNahNah.typescramble";
 
-		public override string Name => "Type Scrambler";
+		public ProtectionPreset Preset => ProtectionPreset.None;
 
-		public override string Description => "Replaces types with generics";
+		public string Name => "Type Scrambler";
 
-		public override string Id => "typescramble";
+		public string Description => "Replaces types with generics";
 
-		public override string FullId => "BahNahNah.typescramble";
+		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+			collection.AddSingleton(typeof(ITypeScrambleService), (p) => new TypeService());
 
-		protected override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(FullId, typeof(TypeService), new TypeService(context));
-		}
-
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {
 			pipeline.InsertPreStage(PipelineStage.Inspection, new AnalyzePhase(this));
 			pipeline.InsertPostStage(PipelineStage.Inspection, new ScramblePhase(this));
 		}

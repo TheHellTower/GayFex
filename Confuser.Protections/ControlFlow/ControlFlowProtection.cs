@@ -1,48 +1,31 @@
-﻿using System;
+﻿using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.ControlFlow;
+using Confuser.Protections.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
-	public interface IControlFlowService {
-		void ExcludeMethod(ConfuserContext context, MethodDef method);
-	}
-
-	internal class ControlFlowProtection : Protection, IControlFlowService {
+	[Export(typeof(IProtection))]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	internal sealed class ControlFlowProtection : IProtection, IControlFlowService {
 		public const string _Id = "ctrl flow";
 		public const string _FullId = "Ki.ControlFlow";
-		public const string _ServiceId = "Ki.ControlFlow";
 
-		public override string Name {
-			get { return "Control Flow Protection"; }
-		}
+		public string Name => "Control Flow Protection";
 
-		public override string Description {
-			get { return "This protection mangles the code in the methods so that decompilers cannot decompile the methods."; }
-		}
+		public string Description => "This protection mangles the code in the methods so that decompilers cannot decompile the methods.";
 
-		public override string Id {
-			get { return _Id; }
-		}
+		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
-		public override string FullId {
-			get { return _FullId; }
-		}
+		void IControlFlowService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
+			context.GetParameters(method).RemoveParameters(this);
 
-		public override ProtectionPreset Preset {
-			get { return ProtectionPreset.Normal; }
-		}
+		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+			collection.AddSingleton(typeof(IControlFlowService), this);
 
-		public void ExcludeMethod(ConfuserContext context, MethodDef method) {
-			ProtectionParameters.GetParameters(context, method).Remove(this);
-		}
-
-		protected override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(_ServiceId, typeof(IControlFlowService), this);
-		}
-
-		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
 			pipeline.InsertPreStage(PipelineStage.OptimizeMethods, new ControlFlowPhase(this));
-		}
 	}
 }
