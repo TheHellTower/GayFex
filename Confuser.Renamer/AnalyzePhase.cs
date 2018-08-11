@@ -34,8 +34,8 @@ namespace Confuser.Renamer {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
-			var service = (NameService)context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
-			var logger = context.Registry.GetRequiredService<ILogger>();
+			var service = (NameService)context.Registry.GetRequiredService<INameService>();
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
 			logger.Debug("Building VTables & identifier list...");
 			foreach (IDnlibDef def in parameters.Targets.WithProgress(logger)) {
 				ParseParameters(context, def, service, parameters);
