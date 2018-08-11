@@ -77,7 +77,7 @@ namespace Confuser.Renamer.BAML {
 			const int STATE_DONE = 3;
 			int state = STATE_WAIT;
 
-			while (state != STATE_DONE) {
+			while (state != STATE_DONE && index < path.Length) {
 				char c = path[index];
 				switch (state) {
 					case STATE_WAIT:
