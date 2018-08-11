@@ -19,6 +19,8 @@ namespace Confuser.Protections {
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
+		internal ResourceProtectionParameters Parameters { get; } = new ResourceProtectionParameters();
+
 		void IConfuserComponent.Initialize(IServiceCollection collection) { }
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 

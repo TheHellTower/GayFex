@@ -18,9 +18,10 @@ namespace Confuser.Renamer {
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) {
+		internal NameProtectionParameters Parameters { get; } = new NameProtectionParameters();
+
+		void IConfuserComponent.Initialize(IServiceCollection collection) => 
 			collection.AddSingleton(typeof(INameService), p => new NameService(p));
-		}
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {
 			pipeline.InsertPostStage(PipelineStage.Inspection, new AnalyzePhase(this));

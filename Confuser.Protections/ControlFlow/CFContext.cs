@@ -21,7 +21,7 @@ namespace Confuser.Protections.ControlFlow {
 	internal class CFContext {
 		public IConfuserContext Context;
 		public ControlFlowProtection Protection;
-		public int Depth;
+		public uint Depth;
 		public IDynCipherService DynCipher;
 
 		public double Intensity;

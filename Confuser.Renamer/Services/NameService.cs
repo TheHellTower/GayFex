@@ -16,7 +16,7 @@ namespace Confuser.Renamer.Services {
 		static readonly object ReferencesKey = new object();
 		static readonly object OriginalNameKey = new object();
 		static readonly object OriginalNamespaceKey = new object();
-		
+
 		readonly byte[] nameSeed;
 		readonly IRandomGenerator random;
 		readonly VTableStorage storage;
@@ -166,7 +166,16 @@ namespace Confuser.Renamer.Services {
 				return string.Format("{0}`{1}", name, count.Value);
 		}
 
+		string INameService.ObfuscateName(ModuleDef module, string name, RenameMode mode) {
+			if (module == null) throw new ArgumentNullException(nameof(module));
+
+			return ObfuscateName(name, mode);
+		}
 		public string ObfuscateName(string name, RenameMode mode) {
+			return ObfuscateName(null, name, mode);
+		}
+
+		public string ObfuscateName(ModuleDef module, string name, RenameMode mode) {
 			string newName = null;
 			int? count;
 			name = ParseGenericName(name, out count);
@@ -233,20 +242,17 @@ namespace Confuser.Renamer.Services {
 		public void MarkHelper(IConfuserContext context, IDnlibDef def, IMarkerService marker, IConfuserComponent parentComp) {
 			if (marker.IsMarked(context, def))
 				return;
-			if (def is MethodDef) {
-				var method = (MethodDef)def;
+			if (def is MethodDef method) {
 				method.Access = MethodAttributes.Assembly;
 				if (!method.IsSpecialName && !method.IsRuntimeSpecialName && !method.DeclaringType.IsDelegate())
 					method.Name = RandomName();
 			}
-			else if (def is FieldDef) {
-				var field = (FieldDef)def;
+			else if (def is FieldDef field) {
 				field.Access = FieldAttributes.Assembly;
 				if (!field.IsSpecialName && !field.IsRuntimeSpecialName)
 					field.Name = RandomName();
 			}
-			else if (def is TypeDef) {
-				var type = (TypeDef)def;
+			else if (def is TypeDef type) {
 				type.Visibility = type.DeclaringType == null ? TypeAttributes.NotPublic : TypeAttributes.NestedAssembly;
 				type.Namespace = "";
 				if (!type.IsSpecialName && !type.IsRuntimeSpecialName)
@@ -260,18 +266,18 @@ namespace Confuser.Renamer.Services {
 		#region Charsets
 
 		static readonly char[] asciiCharset = Enumerable.Range(32, 95)
-		                                                .Select(ord => (char)ord)
-		                                                .Except(new[] { '.' })
-		                                                .ToArray();
+														.Select(ord => (char)ord)
+														.Except(new[] { '.' })
+														.ToArray();
 
 		static readonly char[] letterCharset = Enumerable.Range(0, 26)
-		                                                 .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
-		                                                 .ToArray();
+														 .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
+														 .ToArray();
 
 		static readonly char[] alphaNumCharset = Enumerable.Range(0, 26)
-		                                                   .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
-		                                                   .Concat(Enumerable.Range(0, 10).Select(ord => (char)('0' + ord)))
-		                                                   .ToArray();
+														   .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
+														   .Concat(Enumerable.Range(0, 10).Select(ord => (char)('0' + ord)))
+														   .ToArray();
 
 		// Especially chosen, just to mess with people.
 		// Inspired by: http://xkcd.com/1137/ :D
@@ -300,6 +306,6 @@ namespace Confuser.Renamer.Services {
 			return context.Annotations.Get(obj, OriginalNamespaceKey, "");
 		}
 
-		public IReadOnlyCollection<KeyValuePair<string, string>> GetNameMap() => nameMap2;
+		public IReadOnlyCollection<KeyValuePair<string, string>> GetNameMap(ModuleDef module) => nameMap2;
 	}
 }

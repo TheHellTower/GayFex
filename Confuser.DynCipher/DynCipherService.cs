@@ -6,7 +6,7 @@ using Confuser.DynCipher.Generation;
 namespace Confuser.DynCipher {
 	public interface IDynCipherService {
 		void GenerateCipherPair(IRandomGenerator random, out StatementBlock encrypt, out StatementBlock decrypt);
-		void GenerateExpressionPair(IRandomGenerator random, Expression var, Expression result, int depth, out Expression expression, out Expression inverse);
+		void GenerateExpressionPair(IRandomGenerator random, Expression var, Expression result, uint depth, out Expression expression, out Expression inverse);
 	}
 
 	internal class DynCipherService : IDynCipherService {
@@ -14,7 +14,7 @@ namespace Confuser.DynCipher {
 			CipherGenerator.GeneratePair(random, out encrypt, out decrypt);
 		}
 
-		public void GenerateExpressionPair(IRandomGenerator random, Expression var, Expression result, int depth, out Expression expression, out Expression inverse) {
+		public void GenerateExpressionPair(IRandomGenerator random, Expression var, Expression result, uint depth, out Expression expression, out Expression inverse) {
 			ExpressionGenerator.GeneratePair(random, var, result, depth, out expression, out inverse);
 		}
 	}

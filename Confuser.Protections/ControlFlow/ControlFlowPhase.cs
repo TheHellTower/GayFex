@@ -32,14 +32,12 @@ namespace Confuser.Protections.ControlFlow {
 
 		CFContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, IRandomGenerator random, bool disableOpti) {
 			var ret = new CFContext();
-			ret.Type = parameters.GetParameter(context, method, "type", CFType.Switch);
-			ret.Predicate = parameters.GetParameter(context, method, "predicate", PredicateType.Normal);
+			ret.Type = parameters.GetParameter(context, method, Parent.Parameters.ControlFlowType);
+			ret.Predicate = parameters.GetParameter(context, method, Parent.Parameters.PredicateType);
+			ret.Intensity = parameters.GetParameter(context, method, Parent.Parameters.Intensity);
+			ret.Depth = parameters.GetParameter(context, method, Parent.Parameters.Depth);
 
-			int rawIntensity = parameters.GetParameter(context, method, "intensity", 60);
-			ret.Intensity = rawIntensity / 100.0;
-			ret.Depth = parameters.GetParameter(context, method, "depth", 4);
-
-			ret.JunkCode = parameters.GetParameter(context, method, "junk", false) && !disableOpti;
+			ret.JunkCode = parameters.GetParameter(context, method, Parent.Parameters.AddJunkCode) && !disableOpti;
 
 			ret.Protection = (ControlFlowProtection)Parent;
 			ret.Random = random;

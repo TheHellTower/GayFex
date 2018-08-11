@@ -19,6 +19,8 @@ namespace Confuser.Protections {
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
+		internal ControlFlowProtectionParameters Parameters { get; } = new ControlFlowProtectionParameters();
+
 		void IControlFlowService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
 			context.GetParameters(method).RemoveParameters(this);
 

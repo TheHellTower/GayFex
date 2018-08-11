@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Generation {
 	internal class ExpressionGenerator {
-		static Expression GenerateExpression(IRandomGenerator random, Expression current, int currentDepth, int targetDepth) {
-			if (currentDepth == targetDepth || (currentDepth > targetDepth / 3 && random.NextInt32(100) > 85))
+		static Expression GenerateExpression(IRandomGenerator random, Expression current, uint currentDepth, uint targetDepth) {
+			if (currentDepth == targetDepth || (currentDepth > targetDepth / 3 && random.NextUInt32(100) > 85))
 				return current;
 
 			switch ((ExpressionOps)random.NextInt32(6)) {
@@ -142,7 +140,7 @@ namespace Confuser.DynCipher.Generation {
 			return result;
 		}
 
-		public static void GeneratePair(IRandomGenerator random, Expression var, Expression result, int depth, out Expression expression, out Expression inverse) {
+		public static void GeneratePair(IRandomGenerator random, Expression var, Expression result, uint depth, out Expression expression, out Expression inverse) {
 			expression = GenerateExpression(random, var, 0, depth);
 			SwapOperands(random, expression);
 

@@ -35,6 +35,8 @@ namespace Confuser.Protections {
 
 		public string Description => "This packer reduces the size of output.";
 
+		internal CompressorParameters Parameters { get; } = new CompressorParameters();
+
 		void IConfuserComponent.Initialize(IServiceCollection collectin) { }
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
@@ -203,11 +205,11 @@ namespace Confuser.Protections {
 			var rtType = rt.GetRuntimeType(compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
 			IEnumerable<IDnlibDef> defs = InjectHelper.Inject(rtType, stubModule.GlobalType, stubModule);
 
-			switch (parameters.GetParameter(context, context.CurrentModule, "key", Mode.Normal)) {
-			case Mode.Normal:
+			switch (parameters.GetParameter(context, context.CurrentModule, Parameters.Key)) {
+			case KeyDeriverMode.Normal:
 				compCtx.Deriver = new NormalDeriver();
 				break;
-			case Mode.Dynamic:
+			case KeyDeriverMode.Dynamic:
 				compCtx.Deriver = new DynamicDeriver();
 				break;
 			default:

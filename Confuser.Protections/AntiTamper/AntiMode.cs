@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
 namespace Confuser.Protections.AntiTamper {
-	internal class AntiMode : IModeHandler {
+	internal sealed class AntiMode : IModeHandler {
 		uint c;
 		IKeyDeriver deriver;
 
@@ -37,11 +37,11 @@ namespace Confuser.Protections.AntiTamper {
 			name1 = random.NextUInt32() & 0x7f7f7f7f;
 			name2 = random.NextUInt32() & 0x7f7f7f7f;
 
-			switch (parameters.GetParameter(context, context.CurrentModule, "key", Mode.Normal)) {
-				case Mode.Normal:
+			switch (parameters.GetParameter(context, context.CurrentModule, parent.Parameters.Key)) {
+				case KeyDeriverMode.Normal:
 					deriver = new NormalDeriver();
 					break;
-				case Mode.Dynamic:
+				case KeyDeriverMode.Dynamic:
 					deriver = new DynamicDeriver();
 					break;
 				default:

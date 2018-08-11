@@ -21,6 +21,8 @@ namespace Confuser.Protections {
 
 		public ProtectionPreset Preset => ProtectionPreset.Maximum;
 
+		internal AntiTamperProtectionParameters Parameters { get; } = new AntiTamperProtectionParameters();
+
 		void IConfuserComponent.Initialize(IServiceCollection collection) => 
 			collection.AddTransient(typeof(IAntiTamperService), (p) => new AntiTamperService(this));
 

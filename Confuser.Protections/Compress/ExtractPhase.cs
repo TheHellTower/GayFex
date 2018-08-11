@@ -44,7 +44,7 @@ namespace Confuser.Protections.Compress {
 				var ctx = new CompressorContext {
 					ModuleIndex = context.CurrentModuleIndex,
 					Assembly = context.CurrentModule.Assembly,
-					CompatMode = parameters.GetParameter(context, null, "compat", false)
+					CompatMode = parameters.GetParameter(context, null, Parent.Parameters.CompatMode)
 				};
 				context.Annotations.Set(context, Compressor.ContextKey, ctx);
 

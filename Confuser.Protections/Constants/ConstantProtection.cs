@@ -23,6 +23,8 @@ namespace Confuser.Protections {
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
+		internal ConstantProtectionParameters Parameters { get; } = new ConstantProtectionParameters();
+
 		void IConstantService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
 			context.GetParameters(method).RemoveParameters(this);
 

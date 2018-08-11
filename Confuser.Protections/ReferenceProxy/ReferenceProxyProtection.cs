@@ -25,6 +25,8 @@ namespace Confuser.Protections {
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
+		internal ReferenceProxyProtectionParameters Parameters { get; } = new ReferenceProxyProtectionParameters();
+
 		void IReferenceProxyService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
 			context.GetParameters(method).RemoveParameters(this);
 

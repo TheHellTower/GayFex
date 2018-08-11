@@ -11,7 +11,7 @@ using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
-	class AntiDebugProtectionPhase : IProtectionPhase {
+	internal sealed class AntiDebugProtectionPhase : IProtectionPhase {
 		public AntiDebugProtectionPhase(AntiDebugProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
@@ -31,7 +31,7 @@ namespace Confuser.Protections {
 			var name = context.Registry.GetService<INameService>();
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
-				var mode = parameters.GetParameter(context, module, "mode", AntiDebugMode.Safe);
+				var mode = parameters.GetParameter(context, module, Parent.Parameters.Mode);
 
 				TypeDef rtType;
 				TypeDef attr = null;
@@ -90,7 +90,7 @@ namespace Confuser.Protections {
 						}
 					}
 					if (ren && name != null) {
-						member.Name = name.ObfuscateName(member.Name, RenameMode.Unicode);
+						member.Name = name.ObfuscateName(module, member.Name, RenameMode.Unicode);
 						name.SetCanRename(context, member, false);
 					}
 				}

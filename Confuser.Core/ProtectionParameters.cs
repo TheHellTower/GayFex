@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.Serialization;
 using dnlib.DotNet;
 
 namespace Confuser.Core {
-	using ProtectionParams = Dictionary<string, object>;
-
 	/// <summary>
 	///     Parameters of <see cref="ConfuserComponent" />.
 	/// </summary>
-	public class ProtectionParameters : IProtectionParameters {
+	public sealed class ProtectionParameters : IProtectionParameters {
 		static readonly object ParametersKey = new object();
 
 		/// <summary>
@@ -36,45 +35,36 @@ namespace Confuser.Core {
 		/// <value>A list of protection targets.</value>
 		public IImmutableList<IDnlibDef> Targets { get; private set; }
 
-
 		/// <summary>
 		///     Obtains the value of a parameter of the specified target.
 		/// </summary>
 		/// <typeparam name="T">The type of the parameter value.</typeparam>
 		/// <param name="context">The working context.</param>
 		/// <param name="target">The protection target.</param>
-		/// <param name="name">The name of the parameter.</param>
-		/// <param name="defValue">Default value if the parameter does not exist.</param>
+		/// <param name="name">The parameter definition to query.</param>
 		/// <returns>The value of the parameter.</returns>
-		public T GetParameter<T>(IConfuserContext context, IDnlibDef target, string name, T defValue = default) {
-			Dictionary<string, string> parameters;
+		public T GetParameter<T>(IConfuserContext context, IDnlibDef target, IProtectionParameter<T> parameter) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (parameter == null) throw new ArgumentNullException(nameof(parameter));
 
-			if (comp == null)
-				return defValue;
-
+			if (comp == null) return parameter.DefaultValue;
 			if (comp is IPacker && target == null) {
 				// Packer parameters are stored in modules
 				target = context.Modules[0];
 			}
+			if (target == null) throw new ArgumentNullException(nameof(target));
 
 			var objParams = context.Annotations.Get<ProtectionSettings>(target, ParametersKey);
-			if (objParams == null)
-				return defValue;
-			if (!objParams.TryGetValue(comp, out parameters))
-				return defValue;
+			if (objParams == null) return parameter.DefaultValue;
+			if (!objParams.TryGetValue(comp, out var parameters)) return parameter.DefaultValue;
 
-			string ret;
-			if (parameters.TryGetValue(name, out ret)) {
-				Type paramType = typeof(T);
-				Type nullable = Nullable.GetUnderlyingType(paramType);
-				if (nullable != null)
-					paramType = nullable;
-
-				if (paramType.IsEnum)
-					return (T)Enum.Parse(paramType, ret, true);
-				return (T)Convert.ChangeType(ret, paramType);
+			if (parameters.TryGetValue(parameter.Name, out string ret)) {
+				try {
+					return parameter.Deserialize(ret);
+				}
+				catch (SerializationException) { }
 			}
-			return defValue;
+			return parameter.DefaultValue;
 		}
 
 		/// <summary>

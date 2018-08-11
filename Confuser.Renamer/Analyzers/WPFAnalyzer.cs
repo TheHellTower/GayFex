@@ -14,15 +14,22 @@ using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Renamer.Analyzers {
-	internal class WPFAnalyzer : IRenamer {
+	internal sealed class WPFAnalyzer : IRenamer {
 		static readonly object BAMLKey = new object();
 
-		static readonly Regex ResourceNamePattern = new Regex("^.*\\.g\\.resources$");
+		internal static readonly Regex ResourceNamePattern = new Regex("^.*\\.g\\.resources$");
 		internal static readonly Regex UriPattern = new Regex("^(?:PACK\\://(?:COMPONENT|APPLICATION)\\:,,,)*(?:/(.+?)(?:;V\\d+\\.\\d+\\.\\d+\\.\\d+)?;COMPONENT)*(/.+\\.[BX]AML)$");
 		BAMLAnalyzer analyzer;
 
-		internal Dictionary<string, List<IBAMLReference>> bamlRefs = new Dictionary<string, List<IBAMLReference>>(StringComparer.OrdinalIgnoreCase);
+		internal Dictionary<string, List<IBAMLReference>> bamlRefs;
 		public event Action<BAMLAnalyzer, BamlElement> AnalyzeBAMLElement;
+
+		private NameProtection Protection { get; }
+
+	    internal WPFAnalyzer(NameProtection protection) {
+			Protection = protection ?? throw new ArgumentNullException(nameof(protection));
+			bamlRefs = new Dictionary<string, List<IBAMLReference>>(StringComparer.OrdinalIgnoreCase);
+		}
 
 		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			var method = def as MethodDef;
@@ -39,7 +46,7 @@ namespace Confuser.Renamer.Analyzers {
 		}
 
 		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
-			if (!(def is ModuleDefMD module) || !parameters.GetParameter<bool>(context, def, "renXaml", true))
+			if (!(def is ModuleDefMD module) || !parameters.GetParameter(context, def, Protection.Parameters.RenameXaml))
 				return;
 
 			var wpfResInfo = context.Annotations.Get<Dictionary<string, Dictionary<string, BamlDocument>>>(module, BAMLKey);
