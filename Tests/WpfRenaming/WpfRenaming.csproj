@@ -1,0 +1,9 @@
+﻿<Project Sdk="MSBuild.Sdk.Extras">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <ExtrasEnableWpfProjectSetup>true</ExtrasEnableWpfProjectSetup>
+    <MyType>Custom</MyType>
+  </PropertyGroup>
+
+</Project>

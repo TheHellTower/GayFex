@@ -412,6 +412,12 @@ namespace Confuser.Renamer.BAML {
 					if (txt is TextWithIdRecord)
 						value = strings[((TextWithIdRecord)txt).ValueId].Value;
 
+					// At this point the text entry to analyzed for matching a type or a property reference.
+					// Not sure why this is done and in what instances a reference to a property would be stored in a
+					// TextRecord.
+					// The only instance I know of that creates a text record, is the content of a Tag. For example
+					// <TextBlock>abc</TextBlock> where "abc" is the text block.
+
 					string prefix;
 					TypeSig sig = ResolveType(value.Trim(), out prefix);
 					if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
