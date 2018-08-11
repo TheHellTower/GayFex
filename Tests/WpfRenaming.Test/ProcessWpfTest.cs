@@ -39,6 +39,7 @@ namespace WpfRenaming.Test {
 			await ConfuserEngine.Run(parameters);
 
 			Assert.True(File.Exists(outputFile));
+			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 		}
 	}
 }
