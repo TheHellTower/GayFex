@@ -6,4 +6,12 @@
     <MyType>Custom</MyType>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="TestData.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="TestData.xml" />
+  </ItemGroup>
+
 </Project>

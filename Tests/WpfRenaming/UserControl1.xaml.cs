@@ -13,16 +13,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WpfRenaming
-{
-    /// <summary>
-    /// Interaktionslogik für UserControl1.xaml
-    /// </summary>
-    public partial class UserControl1 : UserControl
-    {
-        public UserControl1()
-        {
-            InitializeComponent();
-        }
-    }
+namespace WpfRenaming {
+	/// <summary>
+	/// Interaktionslogik für UserControl1.xaml
+	/// </summary>
+	public partial class UserControl1 : UserControl {
+		public UserControl1() {
+			InitializeComponent();
+		}
+	}
 }
