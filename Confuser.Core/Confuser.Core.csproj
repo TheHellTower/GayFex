@@ -32,6 +32,13 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup Label="LZMA">
+    <Compile Remove="LZMA\Compress\LzmaAlone\**\*.cs" />
+    <Compile Remove="LZMA\Common\CommandLineParser.cs" />
+    <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.csproj" />
+    <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.sln" />
+  </ItemGroup>
+
   <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
 
 </Project>

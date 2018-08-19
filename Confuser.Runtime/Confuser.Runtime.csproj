@@ -17,4 +17,12 @@
 
   <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
 
+  <ItemGroup>
+    <Compile Include="..\Confuser.Core\LZMA\**\*.cs">
+      <Link>LZMA\%(RecursiveDir)\%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Remove="..\Confuser.Core\LZMA\Common\CommandLineParser.cs" />
+    <Compile Remove="..\Confuser.Core\LZMA\Compress\LzmaAlone\**\*.cs" />
+  </ItemGroup>
+
 </Project>

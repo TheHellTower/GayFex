@@ -1,0 +1,15 @@
+[*.cs]
+end_of_line = crlf
+indent_style = tab
+insert_final_newline = true
+charset = utf-8
+
+csharp_new_line_before_open_brace = all
+csharp_style_expression_bodied_accessors = false:none
+csharp_style_expression_bodied_constructors = false:none
+csharp_style_expression_bodied_indexers = false:none
+csharp_style_expression_bodied_methods = false:none
+csharp_style_expression_bodied_operators = false:none
+csharp_style_expression_bodied_properties = false:none
+csharp_style_var_when_type_is_apparent = false:none
+dotnet_style_readonly_field = false:none
