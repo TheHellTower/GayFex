@@ -24,6 +24,7 @@
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\dnlib\src\dnlib.netstandard.csproj" />
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
   </ItemGroup>
 
   <ItemGroup>

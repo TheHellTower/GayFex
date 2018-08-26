@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Confuser.Core.Helpers;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
 using SevenZip;
@@ -13,10 +14,10 @@ namespace Confuser.Core.Services {
 	internal class CompressionService : ICompressionService {
 		static readonly object Decompressor = new object();
 
-		private readonly IRuntimeService runtimeService;
+		private readonly IServiceProvider serviceProvider;
 
-		internal CompressionService(IServiceProvider provider) => 
-			runtimeService = provider.GetRequiredService<IRuntimeService>();
+		internal CompressionService(IServiceProvider provider) =>
+			serviceProvider = provider ?? throw new ArgumentNullException(nameof(provider));
 
 
 		/// <inheritdoc />
@@ -32,39 +33,19 @@ namespace Confuser.Core.Services {
 
 		/// <inheritdoc />
 		public MethodDef GetRuntimeDecompressor(IConfuserContext context, ModuleDef module, Action<IDnlibDef> init) {
-			Tuple<MethodDef, List<IDnlibDef>> decompressor = context.Annotations.GetOrCreate(module, Decompressor, m => {
-				var rt = runtimeService;
+			var injectResult = context.Annotations.GetOrCreate(module, Decompressor, m => {
+				var rt = serviceProvider.GetRequiredService<IRuntimeService>();
+				var marker = context.Registry.GetRequiredService<IMarkerService>();
+				var name = context.Registry.GetService<INameService>();
 
-				List<IDnlibDef> members = InjectHelper.Inject(rt.GetRuntimeType("Confuser.Runtime.Lzma"), module.GlobalType, module).ToList();
-				MethodDef decomp = null;
-				foreach (IDnlibDef member in members) {
-					if (member is MethodDef) {
-						var method = (MethodDef)member;
-						if (method.Access == MethodAttributes.Public)
-							method.Access = MethodAttributes.Assembly;
-						if (!method.IsConstructor)
-							method.IsSpecialName = false;
-
-						if (method.Name == "Decompress")
-							decomp = method;
-					}
-					else if (member is FieldDef) {
-						var field = (FieldDef)member;
-						if (field.Access == FieldAttributes.Public)
-							field.Access = FieldAttributes.Assembly;
-						if (field.IsLiteral) {
-							field.DeclaringType.Fields.Remove(field);
-						}
-					}
-				}
-				members.RemoveWhere(def => def is FieldDef && ((FieldDef)def).IsLiteral);
-
-				Debug.Assert(decomp != null);
-				return Tuple.Create(decomp, members);
+				var decompressMethod = rt.GetRuntimeType("Confuser.Runtime.Lzma").Methods.Where(method => method.Name == "Decompress").Single();
+				return Confuser.Helpers.InjectHelper.Inject(decompressMethod, module, Confuser.Helpers.InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType, name));
 			});
-			foreach (IDnlibDef member in decompressor.Item2)
-				init(member);
-			return decompressor.Item1;
+			init(injectResult.Requested.Mapped);
+			foreach (var injectedDependency in injectResult.InjectedDependencies) {
+				init(injectedDependency.Mapped);
+			}
+			return injectResult.Requested.Mapped;
 		}
 
 		/// <inheritdoc />
