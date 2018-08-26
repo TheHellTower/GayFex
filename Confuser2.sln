@@ -41,9 +41,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core.Exports", "Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Utilities", "Confuser.Utilities\Confuser.Utilities.csproj", "{DEA3D825-38DA-4FBB-9CAF-D58316854D7E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Renamer.Exports", "Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj", "{18759555-5A63-4826-AD37-51DDB12973A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer.Exports", "Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj", "{18759555-5A63-4826-AD37-51DDB12973A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Protections.Exports", "Confuser.Protections.Exports\Confuser.Protections.Exports.csproj", "{03627089-A2AB-40E4-B22F-2262BED6753E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Protections.Exports", "Confuser.Protections.Exports\Confuser.Protections.Exports.csproj", "{03627089-A2AB-40E4-B22F-2262BED6753E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.UnitTest", "Tests\Confuser.UnitTest\Confuser.UnitTest.csproj", "{73226E13-1701-424E-A4F2-3E4D575A1DD0}"
 EndProject
@@ -56,6 +56,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming", "Tests\WpfRenaming\WpfRenaming.csproj", "{BA9D2748-1342-41A3-87F2-343E82D99813}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming.Test", "Tests\WpfRenaming.Test\WpfRenaming.Test.csproj", "{30B8883F-A0A2-4256-ADCF-A790525D3696}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Helpers", "Confuser.Helpers\Confuser.Helpers.csproj", "{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,8 +85,8 @@ Global
 		{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A45C184F-F98F-4258-A928-BFF437034791}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A45C184F-F98F-4258-A928-BFF437034791}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -143,6 +145,10 @@ Global
 		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
