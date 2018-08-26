@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Packaging;
 using System.Linq;
+using System.Net;
 using Confuser.Core;
 using Confuser.Renamer.Analyzers;
 using Confuser.Renamer.References;
@@ -529,7 +530,7 @@ namespace Confuser.Renamer.BAML {
 							src = rel.LocalPath;
 						}
 						var reference = new BAMLPropertyReference(rec);
-						src = src.TrimStart('/');
+						src = WebUtility.UrlDecode(src.TrimStart('/'));
 						var baml = src.Substring(0, src.Length - 5) + ".BAML";
 						var xaml = src.Substring(0, src.Length - 5) + ".XAML";
 						var bamlRefs = service.FindRenamer<WPFAnalyzer>().bamlRefs;
@@ -592,11 +593,11 @@ namespace Confuser.Renamer.BAML {
 							}
 						}
 
-						// Reaching this point means that the type reference was either not present or failed to 
+						// Reaching this point means that the type reference was either not present or failed to
 						// resolve. In this case every property with the matching name will be flagged so it does not
 						// get renamed.
 						if (properties.TryGetValue(propertyName, out var candidates))
-							foreach (var property in candidates) 
+							foreach (var property in candidates)
 								service.SetCanRename(property, false);
 
 						break;
