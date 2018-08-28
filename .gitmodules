@@ -1,3 +1,6 @@
 [submodule "dnlib"]
 	path = dnlib
-url=../dnlib.git
+	url = ../dnlib.git
+[submodule "antinet"]
+	path = antinet
+	url = ../antinet.git
