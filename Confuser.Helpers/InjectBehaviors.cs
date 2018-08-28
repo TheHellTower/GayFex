@@ -39,7 +39,7 @@ namespace Confuser.Helpers {
 			void IInjectBehavior.Process(TypeDef source, TypeDefUser injected) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
-				
+
 				_nameService.SetOriginalNamespace(_context, injected, injected.Namespace);
 				_nameService.SetOriginalName(_context, injected, injected.Name);
 
@@ -52,6 +52,9 @@ namespace Confuser.Helpers {
 					injected.DeclaringType = _targetType;
 					injected.Visibility = TypeAttributes.NestedPrivate;
 				}
+
+				// There is no need for this to be renamed again.
+				_nameService.SetCanRename(_context, injected, false);
 			}
 
 			void IInjectBehavior.Process(MethodDef source, MethodDefUser injected) {
@@ -64,6 +67,9 @@ namespace Confuser.Helpers {
 					injected.Access = MethodAttributes.Assembly;
 				if (!injected.IsSpecialName)
 					injected.Name = GetName(injected.Name);
+
+				// There is no need for this to be renamed again.
+				_nameService.SetCanRename(_context, injected, false);
 			}
 
 			void IInjectBehavior.Process(FieldDef source, FieldDefUser injected) {
@@ -76,6 +82,9 @@ namespace Confuser.Helpers {
 					injected.Access = FieldAttributes.Assembly;
 				if (!injected.IsSpecialName)
 					injected.Name = GetName(injected.Name);
+
+				// There is no need for this to be renamed again.
+				_nameService.SetCanRename(_context, injected, false);
 			}
 
 			private string GetName(TypeDef type) {
