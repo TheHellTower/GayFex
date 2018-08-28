@@ -133,14 +133,22 @@ namespace Confuser.Helpers {
 
 				foreach (var iface in typeDef.Interfaces)
 					newTypeDef.Interfaces.Add(InjectInterfaceImpl(iface, importer));
-				
+
 				InjectBehavior.Process(typeDef, newTypeDef);
 
 				if (!newTypeDef.IsNested)
 					InjectContext.TargetModule.Types.Add(newTypeDef);
-				
+
 				InjectContext.TargetModule.UpdateRowId(newTypeDef);
 				InjectContext.ApplyMapping(typeDef, newTypeDef);
+
+				var defaultConstructor = typeDef.FindDefaultConstructor();
+				if (defaultConstructor != null)
+					PendingForInject.Enqueue(defaultConstructor);
+
+				var staticConstructor = typeDef.FindStaticConstructor();
+				if (staticConstructor != null)
+					PendingForInject.Enqueue(staticConstructor);
 
 				return newTypeDef;
 			}
