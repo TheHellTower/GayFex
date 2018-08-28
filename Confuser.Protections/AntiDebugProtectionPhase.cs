@@ -2,9 +2,8 @@
 using System.Linq;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
-using Confuser.Renamer;
+using Confuser.Helpers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -55,7 +54,7 @@ namespace Confuser.Protections {
 					continue;
 				}
 
-				var injectResult = Helpers.InjectHelper.Inject(initMethod, module, Helpers.InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType, name));
+				var injectResult = InjectHelper.Inject(initMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType, name));
 				var cctor = module.GlobalType.FindStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
 

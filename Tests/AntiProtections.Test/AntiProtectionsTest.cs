@@ -21,7 +21,7 @@ namespace AntiProtections.Test {
 
 		protected ConfuserProject CreateProject() {
 			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp");
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			return new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir

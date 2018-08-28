@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -25,22 +25,21 @@ namespace Confuser.Protections {
 		public bool ProcessAll => false;
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
-			var rtType = context.Registry.GetRequiredService<IRuntimeService>().GetRuntimeType("Confuser.Runtime.AntiDump");
-
+			var runtime = context.Registry.GetRequiredService<IRuntimeService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
-			var name = context.Registry.GetService<INameService>();
+			var name = context.Registry.GetRequiredService<INameService>();
+
+			var rtType = runtime.GetRuntimeType("Confuser.Runtime.AntiDump");
+			var initMethod = rtType.FindMethod("Initialize");
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
-				var members = InjectHelper.Inject(rtType, module.GlobalType, module);
+				var injectResult = InjectHelper.Inject(initMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType, name));
 
 				var cctor = module.GlobalType.FindStaticConstructor();
-				var init = (MethodDef)members.Single(method => method.Name == "Initialize");
-				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, init));
+				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
 
-				if (name != null) {
-					foreach (var member in members)
-						name.MarkHelper(context, member, marker, Parent);
-				}
+				foreach (var dependencies in injectResult.InjectedDependencies)
+					marker.Mark(context, dependencies.Mapped, Parent);
 			}
 		}
 	}
