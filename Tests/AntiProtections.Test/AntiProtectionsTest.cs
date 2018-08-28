@@ -8,44 +8,27 @@ using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace AntiTamper.Test {
-	public sealed class AntiTamperTest {
+namespace AntiProtections.Test {
+	public class AntiProtectionsTest {
 		private readonly ITestOutputHelper outputHelper;
 
-		public AntiTamperTest(ITestOutputHelper outputHelper) =>
+		protected const string ExecutableFile = "AntiProtections.exe";
+
+		protected AntiProtectionsTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		[Theory]
-		[InlineData("normal")]
-		[InlineData("anti")]
-		[InlineData("jit", Skip = "Runtime Component of the JIT AntiTamper protection is broken.")]
-		[Trait("Category", "Protection")]
-		[Trait("Protection", "anti tamper")]
-		public async Task ProtectAntiTamperAndExecute(string antiTamperMode) {
+		protected ILogger GetLogger() => new XunitLogger(outputHelper);
+
+		protected ConfuserProject CreateProject() {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
-			var inputFile = Path.Combine(baseDir, "AntiTamper.exe");
-			var outputFile = Path.Combine(outputDir, "AntiTamper.exe");
-			FileUtilities.ClearOutput(outputFile);
-			var proj = new ConfuserProject {
+			return new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir
 			};
-			proj.Rules.Add(new Rule() {
-				new SettingItem<IProtection>("anti tamper") {
-					{ "mode", antiTamperMode }
-				}
-			});
-			proj.Add(new ProjectModule() { Path = inputFile });
+		}
 
-
-			var parameters = new ConfuserParameters {
-				Project = proj,
-				Logger = new XunitLogger(outputHelper)
-			};
-
-			await ConfuserEngine.Run(parameters);
-
+		protected async Task VerifyTestApplication(string inputFile, string outputFile) {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
