@@ -1,19 +1,19 @@
 ﻿using System;
+using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
-	public abstract class ContextAnalyzer {
-		public abstract Type TargetType();
+	internal abstract class ContextAnalyzer {
+		internal abstract Type TargetType();
 
-		public abstract void ProcessOperand(ScannedMethod m, object o);
+		internal abstract void ProcessOperand(ScannedMethod method, Instruction instruction, object operand);
 	}
 
 
-	public abstract class ContextAnalyzer<T> : ContextAnalyzer {
-		public override Type TargetType() => typeof(T);
-		public abstract void Process(ScannedMethod m, T o);
-		public override void ProcessOperand(ScannedMethod m, object o) {
-			Process(m, (T)o);
-		}
+	internal abstract class ContextAnalyzer<T> : ContextAnalyzer {
+		internal override Type TargetType() => typeof(T);
+		internal abstract void Process(ScannedMethod method, Instruction instruction, T operand);
+		internal override void ProcessOperand(ScannedMethod method, Instruction instruction, object operand) => 
+			Process(method, instruction, (T)operand);
 
 	}
 }

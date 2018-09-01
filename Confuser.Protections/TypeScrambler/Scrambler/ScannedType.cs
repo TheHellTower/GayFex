@@ -1,34 +1,37 @@
-﻿using dnlib.DotNet;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using Confuser.Renamer;
+using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
-	public class ScannedType : ScannedItem {
-		public TypeDef TargetType { get; private set; }
+	internal sealed class ScannedType : ScannedItem {
+		internal TypeDef TargetType { get; private set; }
 
-		public ScannedType(TypeDef _t) {
-			TargetType = _t;
+		public ScannedType(TypeDef target, INameService nameService) : base(target, nameService) {
+			Debug.Assert(target != null, $"{nameof(target)} != null");
+
+			TargetType = target;
 		}
 
-		public override void Scan() {
-			foreach (var field in TargetType.Fields) {
+		internal override void Scan() {
+			foreach (var field in TargetType.Fields)
 				RegisterGeneric(field.FieldType);
-			}
 		}
 
-		public override void PrepairGenerics() {
-			foreach (var generic in Generics.Values) {
+		protected override void PrepareGenerics(IEnumerable<GenericParam> scrambleParams) {
+			Debug.Assert(scrambleParams != null, $"{nameof(scrambleParams)} != null");
+
+			foreach (var generic in scrambleParams)
 				TargetType.GenericParameters.Add(generic);
-			}
 
-
-			foreach (var field in TargetType.Fields) {
+			foreach (var field in TargetType.Fields)
 				field.FieldType = ConvertToGenericIfAvalible(field.FieldType);
-			}
 		}
 
-		public override MDToken GetToken() => TargetType.MDToken;
+		internal GenericInstSig CreateGenericTypeSig(ScannedType from) => new GenericInstSig(GetTarget(), TrueTypes.Count);
 
-		public override ClassOrValueTypeSig GetTarget() {
-			return TargetType.TryGetClassOrValueTypeSig();
-		}
+		internal override IMemberDef GetMemberDef() => TargetType;
+
+		internal override ClassOrValueTypeSig GetTarget() => TargetType.TryGetClassOrValueTypeSig();
 	}
 }

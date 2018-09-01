@@ -14,7 +14,7 @@ namespace TypeScrambler {
 			Console.WriteLine(instance.GetTextFromGeneric("Text from generic method".AsEnumerable()));
 
 			var genericInstance = new GenericClass<string>();
-			Console.WriteLine(genericInstance.GetReverse("ssalc cireneg morf tseT").ToString());
+			Console.WriteLine(new String(genericInstance.GetReverse("ssalc cireneg morf txeT").ToArray()));
 
 			Console.WriteLine(Properties.Resources.Test);
 			Console.WriteLine("END");

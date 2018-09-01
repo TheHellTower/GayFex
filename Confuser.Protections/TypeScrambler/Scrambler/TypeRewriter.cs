@@ -1,19 +1,18 @@
-﻿using Confuser.Core;
+﻿using System.Diagnostics;
+using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
-	class TypeRewriter {
+	internal sealed class TypeRewriter {
+		private TypeService Service { get; }
+		private InstructionRewriterFactory RewriteFactory { get; }
 
-		private ConfuserContext context;
-		private TypeService Service;
+		internal TypeRewriter(ConfuserContext context) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
 
-		private InstructionRewriterFactory RewriteFactory;
-
-
-		public TypeRewriter(ConfuserContext _context) {
-			context = _context;
 			Service = context.Registry.GetService<TypeService>();
+			Debug.Assert(Service != null, $"{nameof(Service)} != null");
 
 			RewriteFactory = new InstructionRewriterFactory() {
 				new MethodSpecInstructionRewriter(),
@@ -24,22 +23,14 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			};
 		}
 
-		public void ApplyGeterics() => Service.PrepairItems(); // Apply generics to sigs
+		internal void ApplyGenerics() => Service.PrepareItems();
 
-		public void ImportCode(ModuleDef md) {
-			//  ObjectCreationFactory.Import(md);
-		}
-
-		public void Process(MethodDef method) {
-
-			var service = context.Registry.GetService<TypeService>();
+		internal void Process(MethodDef method) {
+			Debug.Assert(method != null, $"{nameof(method)} != null");
 
 			var il = method.Body.Instructions;
-
-			for (int i = 0; i < il.Count; i++) {
-				RewriteFactory.Process(service, method, il, i);
-			}
-
+			for (int i = 0; i < il.Count; i++)
+				RewriteFactory.Process(Service, method, il, ref i);
 		}
 
 	}

@@ -1,33 +1,39 @@
-﻿using Confuser.Core;
+﻿using System;
+using System.Diagnostics;
+using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble {
-	class ScramblePhase : ProtectionPhase {
+	internal sealed class ScramblePhase : ProtectionPhase {
 
-		public ScramblePhase(TypeScrambleProtection parent) : base(parent) {
-		}
+		public ScramblePhase(TypeScrambleProtection parent) : base(parent) { }
 
-		public override ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods | ProtectionTargets.Modules;
+		public override ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods;
 
 		public override string Name => "Type scrambler";
 
 		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
+
+			// First check if the type scrambler did anything that needs rewriting.
+			// If that is not the case, we can skip this whole thing.
+			var service = context.Registry.GetService<TypeService>();
+			Debug.Assert(service != null, $"{nameof(service)} != null");
+			if (!service.ScrambledAnything) return;
 
 			var rewriter = new TypeRewriter(context);
-			rewriter.ApplyGeterics();
+			rewriter.ApplyGenerics();
 
-			foreach (IDnlibDef def in parameters.Targets.WithProgress(context.Logger)) {
-
+			// In this stage the references to the scrambled types need to be fixed. This needs to be done for all
+			// methods in the assembly, because all methods may contain references to the scrambled types and methods.
+			foreach (var def in context.CurrentModule.FindDefinitions().WithProgress(context.Logger)) {
 				switch (def) {
-
 					case MethodDef md:
 						if (md.HasBody) {
 							rewriter.Process(md);
 						}
-						break;
-					case ModuleDef mod:
-						rewriter.ImportCode(mod);
 						break;
 				}
 

@@ -16,6 +16,8 @@ namespace TypeScrambler.Test {
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		[Fact]
+		[Trait("Category", "Protection")]
+		[Trait("Protection", "typescramble")]
 		public async Task ScrambleAndExecuteTest() {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
@@ -52,8 +54,8 @@ namespace TypeScrambler.Test {
 				Assert.Equal("Text from WriteTextToConsole", await stdout.ReadLineAsync());
 				Assert.Equal("Static Text", await stdout.ReadLineAsync());
 				Assert.Equal("Non-Static Text", await stdout.ReadLineAsync());
-				Assert.Equal("Test from generic method", await stdout.ReadLineAsync());
-				Assert.Equal("Test from generic class", await stdout.ReadLineAsync());
+				Assert.Equal("Text from generic method", await stdout.ReadLineAsync());
+				Assert.Equal("Text from generic class", await stdout.ReadLineAsync());
 				Assert.Equal("Text from Resources", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());

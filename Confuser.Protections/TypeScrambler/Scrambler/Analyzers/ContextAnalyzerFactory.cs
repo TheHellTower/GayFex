@@ -1,27 +1,36 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
-	public class ContextAnalyzerFactory : IEnumerable {
-		public Dictionary<Type, ContextAnalyzer> Analyzers = new Dictionary<Type, ContextAnalyzer>();
-		private ScannedMethod targetMethod;
-		public ContextAnalyzerFactory(ScannedMethod m) {
-			targetMethod = m;
+	internal sealed class ContextAnalyzerFactory : IEnumerable<ContextAnalyzer> {
+		private IDictionary<Type, ContextAnalyzer> Analyzers { get; } = new Dictionary<Type, ContextAnalyzer>();
+		private ScannedMethod TargetMethod { get; }
+		internal ContextAnalyzerFactory(ScannedMethod method) {
+			Debug.Assert(method != null, $"{nameof(method)} != null");
+
+			TargetMethod = method;
 		}
 
-		public void Add(ContextAnalyzer a) {
+		internal void Add(ContextAnalyzer a) {
 			Analyzers.Add(a.TargetType(), a);
 		}
 
-		public void Analyze(object o) {
-			ContextAnalyzer a;
-			Analyzers.TryGetValue(o.GetType().BaseType, out a);
-			a?.ProcessOperand(targetMethod, o);
+		internal void Analyze(Instruction inst) {
+			Debug.Assert(inst != null, $"{nameof(inst)} != null");
+			Debug.Assert(inst.Operand != null, $"{nameof(inst)}.Operand != null");
+
+			var operand = inst.Operand;
+			var analyzerRefType = operand.GetType().BaseType;
+			
+			if (Analyzers.TryGetValue(analyzerRefType, out var analyzer))
+				analyzer.ProcessOperand(TargetMethod, inst, operand);
 		}
 
-		public IEnumerator GetEnumerator() {
-			return Analyzers.Values.GetEnumerator();
-		}
+		public IEnumerator<ContextAnalyzer> GetEnumerator() => Analyzers.Values.GetEnumerator();
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 }

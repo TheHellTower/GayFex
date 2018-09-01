@@ -1,4 +1,5 @@
-﻿using Confuser.Core;
+﻿using System;
+using Confuser.Core;
 
 namespace Confuser.Protections.TypeScramble {
 	class TypeScrambleProtection : Protection {
@@ -13,12 +14,16 @@ namespace Confuser.Protections.TypeScramble {
 		public override string FullId => "BahNahNah.typescramble";
 
 		protected override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(FullId, typeof(TypeService), new TypeService(context));
+			if (context == null) throw new ArgumentNullException(nameof(context));
+
+			context.Registry.RegisterService(FullId, typeof(TypeService), new TypeService());
 		}
 
 		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+			if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
+
 			pipeline.InsertPreStage(PipelineStage.Inspection, new AnalyzePhase(this));
-			pipeline.InsertPostStage(PipelineStage.Inspection, new ScramblePhase(this));
+			pipeline.InsertPostStage(PipelineStage.ProcessModule, new ScramblePhase(this));
 		}
 	}
 }

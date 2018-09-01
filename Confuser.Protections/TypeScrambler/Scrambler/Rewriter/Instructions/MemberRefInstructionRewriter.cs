@@ -1,53 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
+using System.Diagnostics;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
-	class MemberRefInstructionRewriter : InstructionRewriter<MemberRef> {
+	internal sealed class MemberRefInstructionRewriter : InstructionRewriter<MemberRef> {
 
+		internal override void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, MemberRef operand) {
+			Debug.Assert(service != null, $"{nameof(service)} != null");
+			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(body != null, $"{nameof(body)} != null");
+			Debug.Assert(operand != null, $"{nameof(operand)} != null");
+			Debug.Assert(index >= 0, $"{nameof(index)} >= 0");
+			Debug.Assert(index < body.Count, $"{nameof(index)} < {nameof(body)}.Count");
 
-		MethodInfo[] CreationFactoryMethods;
-		public MemberRefInstructionRewriter() {
-			ModuleDefMD md = ModuleDefMD.Load(typeof(EmbeddedCode.ObjectCreationFactory).Module);
-
-
-			MethodInfo[] tMethods = typeof(EmbeddedCode.ObjectCreationFactory).GetMethods(BindingFlags.Static | BindingFlags.Public);
-			CreationFactoryMethods = new MethodInfo[tMethods.Length];
-			foreach (var m in tMethods) {
-				CreationFactoryMethods[m.GetParameters().Length] = m;
-				TypeService.DebugContext.Logger.DebugFormat("{0}] {1}", m.GetParameters().Length, m.Name);
-			}
-		}
-
-
-		public override void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, MemberRef operand) {
-
-			ScannedMethod current = service.GetItem(method.MDToken) as ScannedMethod;
+			var current = service.GetItem(method);
 
 			if (operand.MethodSig == null)
 				return;
 
-			if (operand.MethodSig.Params.Count > 0 || current == null || body[index].OpCode != OpCodes.Newobj) {
+			if (operand.MethodSig.Params.Count > 0 || body[index].OpCode != OpCodes.Newobj)
 				return;
-			}
 
 			ModuleDef mod = method.Module;
-
-
+			
 			var gettype = typeof(Type).GetMethod("GetTypeFromHandle");
 			var createInstance = typeof(Activator).GetMethod("CreateInstance", new Type[] { typeof(Type) });
-			var createInstanceArgs = typeof(Activator).GetMethod("CreateInstance", new Type[] { typeof(Type), typeof(object[]) });
 
 			TypeSig sig = null;
 
-			if (operand.Class is TypeRef) {
-				sig = (operand.Class as TypeRef)?.ToTypeSig();
-			}
-			if (operand.Class is TypeSpec) {
-				sig = (operand.Class as TypeSpec)?.ToTypeSig();
-			}
+			if (operand.Class is TypeRef typeRef)
+				sig = typeRef.ToTypeSig();
+
+			if (operand.Class is TypeSpec typeSpec)
+				sig = typeSpec.ToTypeSig();
 
 			if (sig != null) {
 
@@ -57,10 +44,9 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 				// }
 				var paramCount = operand.MethodSig.Params.Count;
 
-				var gen = current.GetGeneric(sig);
 				body[index].OpCode = OpCodes.Ldtoken;
 
-
+				var gen = current?.GetGeneric(sig);
 				TypeSpecUser newTypeSpec = null;
 				if (gen != null) {
 					newTypeSpec = new TypeSpecUser(new GenericMVar(gen.Number));
@@ -85,7 +71,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 
 				body.Insert(++index, Instruction.Create(OpCodes.Call, mod.Import(gettype)));
 				body.Insert(++index, Instruction.Create(OpCodes.Call, mod.Import(createInstance)));
-
 			}
 		}
 	}

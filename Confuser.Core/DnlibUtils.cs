@@ -461,5 +461,17 @@ namespace Confuser.Core {
 			}
 			return false;
 		}
+
+		public static bool IsEntryPoint(this MethodDef methodDef) {
+			if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
+
+			return methodDef == methodDef.Module.EntryPoint;
+		}
+
+		public static bool IsEntryPoint(this TypeDef typeDef) {
+			if (typeDef == null) throw new ArgumentNullException(nameof(typeDef));
+
+			return typeDef == typeDef.Module.EntryPoint?.DeclaringType;
+		}
 	}
 }

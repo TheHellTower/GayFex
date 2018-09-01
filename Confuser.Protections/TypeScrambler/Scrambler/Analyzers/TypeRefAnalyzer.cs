@@ -1,9 +1,15 @@
-﻿using dnlib.DotNet;
+﻿using System.Diagnostics;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
-	class TypeRefAnalyzer : ContextAnalyzer<TypeRef> {
-		public override void Process(ScannedMethod m, TypeRef o) {
-			m.RegisterGeneric(o.ToTypeSig());
+	internal sealed class TypeRefAnalyzer : ContextAnalyzer<TypeRef> {
+		internal override void Process(ScannedMethod method, Instruction instruction, TypeRef operand) {
+			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(instruction != null, $"{nameof(instruction)} != null");
+			Debug.Assert(operand != null, $"{nameof(operand)} != null");
+
+			method.RegisterGeneric(operand.ToTypeSig());
 		}
 	}
 }

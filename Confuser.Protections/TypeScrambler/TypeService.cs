@@ -1,53 +1,46 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble {
-	public class TypeService {
+	internal sealed class TypeService {
+		private Dictionary<IMemberDef, ScannedItem> GenericsMapper = new Dictionary<IMemberDef, ScannedItem>();
 
-		private ConfuserContext content;
-		private Dictionary<MDToken, ScannedItem> GenericsMapper = new Dictionary<MDToken, ScannedItem>();
-		public static ConfuserContext DebugContext { get; private set; }
+		internal bool ScrambledAnything => GenericsMapper.Any();
 
-		public TypeService(ConfuserContext _context) {
-			content = _context;
-			DebugContext = content;
-		}
+		internal void AddScannedItem(ScannedMethod m) => AddScannedItemGeneral(m);
 
 
-		public void AddScannedItem(ScannedMethod m) {
-
-			ScannedItem typescan;
-			if (GenericsMapper.TryGetValue(m.TargetMethod.DeclaringType.MDToken, out typescan)) {
-				m.GenericCount += typescan.GenericCount;
-			}
-			AddScannedItemGeneral(m);
-		}
-
-
-		public void AddScannedItem(ScannedType m) {
+		internal void AddScannedItem(ScannedType m) {
 			//AddScannedItemGeneral(m);
 		}
 
 		private void AddScannedItemGeneral(ScannedItem m) {
 			m.Scan();
-			if (!GenericsMapper.ContainsKey(m.GetToken())) {
-				GenericsMapper.Add(m.GetToken(), m);
+			if (!GenericsMapper.ContainsKey(m.GetMemberDef())) {
+				GenericsMapper.Add(m.GetMemberDef(), m);
 			}
 		}
 
-		public void PrepairItems() {
+		internal void PrepareItems() {
 			foreach (var item in GenericsMapper.Values) {
-				item.PrepairGenerics();
+				item.PrepareGenerics();
 			}
 		}
 
-		public ScannedItem GetItem(MDToken token) {
-			ScannedItem i = null;
-			GenericsMapper.TryGetValue(token, out i);
-			return i;
+		private ScannedItem GetItemInternal(IMemberDef memberDef) {
+			Debug.Assert(memberDef != null, $"{nameof(memberDef)} != null");
+
+			if (GenericsMapper.TryGetValue(memberDef, out var item)) return item;
+			return null;
 		}
+
+		internal ScannedMethod GetItem(MethodDef methodDef) => GetItemInternal(methodDef) as ScannedMethod;
+
+		internal ScannedType GetItem(TypeDef typeDef) => GetItemInternal(typeDef) as ScannedType;
 
 	}
 }

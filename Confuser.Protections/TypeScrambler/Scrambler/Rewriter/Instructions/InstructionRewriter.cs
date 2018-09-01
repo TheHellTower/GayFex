@@ -4,18 +4,18 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
-	abstract class InstructionRewriter {
-		public abstract void ProcessInstruction(TypeService service, MethodDef method, IList<Instruction> body, ref int index, Instruction i);
-		public abstract Type TargetType();
+	internal abstract class InstructionRewriter {
+		internal abstract void ProcessInstruction(TypeService service, MethodDef method, IList<Instruction> body, ref int index, Instruction i);
+		internal abstract Type TargetType();
 	}
 
-	abstract class InstructionRewriter<T> : InstructionRewriter {
+	internal abstract class InstructionRewriter<T> : InstructionRewriter {
 
-		public override void ProcessInstruction(TypeService service, MethodDef method, IList<Instruction> body, ref int index, Instruction i) {
+		internal override void ProcessInstruction(TypeService service, MethodDef method, IList<Instruction> body, ref int index, Instruction i) {
 			ProcessOperand(service, method, body, ref index, (T)i.Operand);
 		}
-		public override Type TargetType() => typeof(T);
+		internal override Type TargetType() => typeof(T);
 
-		public abstract void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, T operand);
+		internal abstract void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, T operand);
 	}
 }

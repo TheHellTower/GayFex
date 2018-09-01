@@ -1,63 +1,40 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Diagnostics;
 using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler;
+using Confuser.Renamer;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble {
-	class AnalyzePhase : ProtectionPhase {
+	internal sealed class AnalyzePhase : ProtectionPhase {
 
-		public AnalyzePhase(TypeScrambleProtection parent) : base(parent) {
-		}
+		public AnalyzePhase(TypeScrambleProtection parent) : base(parent) {}
 
 		public override ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods;
 
 		public override string Name => "Type scanner";
 
 		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
-			//CreateGenericsForTypes(context, parameters.Targets.OfType<TypeDef>().WithProgress(context.Logger));
+			var typeService = context.Registry.GetService<TypeService>();
+			Debug.Assert(typeService != null, $"{nameof(typeService)} != null");
+			var nameService = context.Registry.GetService<INameService>();
 
-			CreateGenericsForMethods(context, parameters.Targets.OfType<MethodDef>()
-				.OrderBy(x =>
-				x?.Parameters?.Count ?? 0 +
-				x.Body?.Variables?.Count ?? 0)
-				.WithProgress(context.Logger));
-		}
+			foreach (var target in parameters.Targets.WithProgress(context.Logger)) {
+				switch (target) {
+					case TypeDef typeDef:
+						typeService.AddScannedItem(new ScannedType(typeDef, nameService));
+						break;
+					case MethodDef methodDef:
+						var scramblePublic = parameters.GetParameter(context, methodDef, "scramblePublic", false);
+						typeService.AddScannedItem(new ScannedMethod(typeService, nameService, methodDef, scramblePublic));
+						break;
 
-
-		private void CreateGenericsForTypes(ConfuserContext context, IEnumerable<TypeDef> types) {
-			TypeService service = context.Registry.GetService<TypeService>();
-
-			foreach (TypeDef type in types) {
-				if (type.Module.EntryPoint.DeclaringType != type) {
-					service.AddScannedItem(new ScannedType(type));
-					context.CheckCancellation();
 				}
-
+				context.CheckCancellation();
 			}
 		}
-
-		private void CreateGenericsForMethods(ConfuserContext context, IEnumerable<MethodDef> methods) {
-			TypeService service = context.Registry.GetService<TypeService>();
-
-			foreach (MethodDef method in methods) {
-
-				/*
-				context.Logger.DebugFormat("[{0}]", method.Name);
-				if (method.HasBody) {
-					foreach(var i in method.Body.Instructions) {
-						context.Logger.DebugFormat("{0} - {1} : {2}", i.OpCode, i?.Operand?.GetType().ToString() ?? "NULL", i.Operand);
-					}
-				}*/
-
-
-				if (method.Module.EntryPoint != method && !(method.HasOverrides || method.IsAbstract || method.IsConstructor || method.IsGetter)) {
-					service.AddScannedItem(new ScannedMethod(service, method));
-					context.CheckCancellation();
-				}
-			}
-		}
-
 	}
 }

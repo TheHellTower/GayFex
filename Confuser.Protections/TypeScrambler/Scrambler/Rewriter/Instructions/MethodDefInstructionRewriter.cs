@@ -1,22 +1,25 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
-	class MethodDefInstructionRewriter : InstructionRewriter<MethodDef> {
-		public override void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, MethodDef operand) {
+	internal sealed class MethodDefInstructionRewriter : InstructionRewriter<MethodDef> {
+		internal override void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, MethodDef operand) {
+			Debug.Assert(service != null, $"{nameof(service)} != null");
+			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(body != null, $"{nameof(body)} != null");
+			Debug.Assert(operand != null, $"{nameof(operand)} != null");
+			Debug.Assert(index >= 0, $"{nameof(index)} >= 0");
+			Debug.Assert(index < body.Count, $"{nameof(index)} < {nameof(body)}.Count");
 
-			ScannedMethod tMethod = service.GetItem(operand.MDToken) as ScannedMethod;
-			ScannedItem currentMethod = service.GetItem(method.MDToken) as ScannedMethod;
-
-			if (tMethod != null) {
-
-				var newspec = new MethodSpecUser(tMethod.TargetMethod, tMethod.CreateGenericMethodSig(currentMethod));
+			var targetMethod = service.GetItem(operand);
+			if (targetMethod?.IsScambled == true) {
+				var currentItem = service.GetItem(method);
+				var newspec = new MethodSpecUser(targetMethod.TargetMethod, targetMethod.CreateGenericMethodSig(currentItem));
 
 				body[index].Operand = newspec;
 			}
-
-
 		}
 	}
 }

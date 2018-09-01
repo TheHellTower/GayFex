@@ -1,31 +1,39 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
-	class InstructionRewriterFactory : IEnumerable {
+	internal sealed class InstructionRewriterFactory : IEnumerable<InstructionRewriter> {
 
-		private Dictionary<Type, InstructionRewriter> RewriterDefinitions = new Dictionary<Type, InstructionRewriter>();
+		private IDictionary<Type, InstructionRewriter> RewriterDefinitions { get; } 
+			= new Dictionary<Type, InstructionRewriter>();
 
-		public void Add(InstructionRewriter i) {
+		internal void Add(InstructionRewriter i) {
+			Debug.Assert(i != null, $"{nameof(i)} != null");
+
 			RewriterDefinitions.Add(i.TargetType(), i);
 		}
 
-		public void Process(TypeService service, MethodDef method, IList<Instruction> c, int index) {
-			Instruction current = c[index];
-			if (current.Operand == null) {
-				return;
-			}
-			InstructionRewriter rw;
-			if (RewriterDefinitions.TryGetValue(current.Operand.GetType().BaseType, out rw)) {
-				rw.ProcessInstruction(service, method, c, ref index, current);
-			}
+		internal void Process(TypeService service, MethodDef method, IList<Instruction> instructions, ref int index) {
+			Debug.Assert(service != null, $"{nameof(service)} != null");
+			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(instructions != null, $"{nameof(instructions)} != null");
+			Debug.Assert(index >= 0, $"{nameof(index)} >= 0");
+			Debug.Assert(index < instructions.Count, $"{nameof(index)} < {nameof(instructions)}.Count");
+
+			Instruction current = instructions[index];
+			if (current.Operand == null) return;
+
+			var rewriterRefType = current.Operand.GetType().BaseType;
+			if (RewriterDefinitions.TryGetValue(rewriterRefType, out var rw))
+				rw.ProcessInstruction(service, method, instructions, ref index, current);
 		}
 
-		public IEnumerator GetEnumerator() {
-			return RewriterDefinitions.Values.GetEnumerator();
-		}
+		public IEnumerator<InstructionRewriter> GetEnumerator() => RewriterDefinitions.Values.GetEnumerator();
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 }
