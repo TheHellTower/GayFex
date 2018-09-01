@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Packaging;
 using System.Linq;
+using System.Net;
 using Confuser.Core;
 using Confuser.Renamer.Analyzers;
 using Confuser.Renamer.References;
@@ -24,6 +25,8 @@ namespace Confuser.Renamer.BAML {
 		readonly Dictionary<ushort, StringInfoRecord> strings = new Dictionary<ushort, StringInfoRecord>();
 		readonly Dictionary<ushort, TypeSig> typeRefs = new Dictionary<ushort, TypeSig>();
 		readonly Dictionary<string, List<Tuple<AssemblyDef, string>>> xmlns = new Dictionary<string, List<Tuple<AssemblyDef, string>>>();
+
+		private PropertyPathParser PathParser { get; } = new PropertyPathParser();
 
 		readonly string packScheme = PackUriHelper.UriSchemePack + "://";
 
@@ -412,6 +415,12 @@ namespace Confuser.Renamer.BAML {
 					if (txt is TextWithIdRecord)
 						value = strings[((TextWithIdRecord)txt).ValueId].Value;
 
+					// At this point the text entry to analyzed for matching a type or a property reference.
+					// Not sure why this is done and in what instances a reference to a property would be stored in a
+					// TextRecord.
+					// The only instance I know of that creates a text record, is the content of a Tag. For example
+					// <TextBlock>abc</TextBlock> where "abc" is the text block.
+
 					string prefix;
 					TypeSig sig = ResolveType(value.Trim(), out prefix);
 					if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
@@ -521,7 +530,7 @@ namespace Confuser.Renamer.BAML {
 							src = rel.LocalPath;
 						}
 						var reference = new BAMLPropertyReference(rec);
-						src = src.TrimStart('/');
+						src = WebUtility.UrlDecode(src.TrimStart('/'));
 						var baml = src.Substring(0, src.Length - 5) + ".BAML";
 						var xaml = src.Substring(0, src.Length - 5) + ".XAML";
 						var bamlRefs = service.FindRenamer<WPFAnalyzer>().bamlRefs;
@@ -564,38 +573,47 @@ namespace Confuser.Renamer.BAML {
 		}
 
 		void AnalyzePropertyPath(string path) {
-			var propertyPath = new PropertyPath(path);
-			foreach (PropertyPathPart part in propertyPath.Parts) {
-				if (part.IsAttachedDP()) {
-					string type, property;
-					part.ExtractAttachedDP(out type, out property);
-					if (type != null) {
-						string prefix;
-						TypeSig sig = ResolveType(type, out prefix);
-						if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-							var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
-							AddTypeSigReference(sig, reference);
-						}
-					}
-				}
-				else {
-					List<PropertyDef> candidates;
-					if (properties.TryGetValue(part.Name, out candidates))
-						foreach (PropertyDef property in candidates) {
-							service.SetCanRename(property, false);
-						}
-				}
+			var parsedPath = PathParser.Parse(path);
+			foreach (var part in parsedPath) {
+				switch (part.type) {
+					case SourceValueType.Property:
+						// This is a property reference. This may be directly the name of a property or a reference by
+						// with the type to the property
+						// Simple Property:    "TestProperty"
+						// Property with Type: "(local:DataClass.TestProperty)"
 
-				if (part.IndexerArguments != null) {
-					foreach (PropertyPathIndexer indexer in part.IndexerArguments)
-						if (!string.IsNullOrEmpty(indexer.Type)) {
-							string prefix;
-							TypeSig sig = ResolveType(indexer.Type, out prefix);
+						var typeName = part.GetTypeName();
+						var propertyName = part.GetPropertyName();
+						if (!string.IsNullOrWhiteSpace(typeName)) {
+							var sig = ResolveType(typeName, out var prefix);
 							if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
 								var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
 								AddTypeSigReference(sig, reference);
+								break;
 							}
 						}
+
+						// Reaching this point means that the type reference was either not present or failed to
+						// resolve. In this case every property with the matching name will be flagged so it does not
+						// get renamed.
+						if (properties.TryGetValue(propertyName, out var candidates))
+							foreach (var property in candidates)
+								service.SetCanRename(property, false);
+
+						break;
+					case SourceValueType.Indexer:
+						// This is the indexer part of a property reference.
+						foreach (var indexerArg in part.paramList) {
+							if (!string.IsNullOrWhiteSpace(indexerArg.parenString)) {
+								var sig = ResolveType(indexerArg.parenString, out var prefix);
+								if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
+									var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
+									AddTypeSigReference(sig, reference);
+									break;
+								}
+							}
+						}
+						break;
 				}
 			}
 		}

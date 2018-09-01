@@ -32,6 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		appveyor.yml = appveyor.yml
+		global.json = global.json
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 	EndProjectSection
@@ -42,11 +43,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiTamper", "Tests\AntiTam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiTamper.Test", "Tests\AntiTamper.Test\AntiTamper.Test.csproj", "{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeScrambler", "Tests\TypeScrambler\TypeScrambler.csproj", "{E7F99164-F00F-4B2A-86A9-8EB5F659F34C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeScrambler", "Tests\TypeScrambler\TypeScrambler.csproj", "{E7F99164-F00F-4B2A-86A9-8EB5F659F34C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeScrambler.Test", "Tests\TypeScrambler.Test\TypeScrambler.Test.csproj", "{DEED6795-9EC9-4B2C-95E0-9E465DA61755}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeScrambler.Test", "Tests\TypeScrambler.Test\TypeScrambler.Test.csproj", "{DEED6795-9EC9-4B2C-95E0-9E465DA61755}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.MSBuild.Tasks", "Confuser.MSBuild.Tasks\Confuser.MSBuild.Tasks.csproj", "{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.MSBuild.Tasks", "Confuser.MSBuild.Tasks\Confuser.MSBuild.Tasks.csproj", "{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming", "Tests\WpfRenaming\WpfRenaming.csproj", "{BA9D2748-1342-41A3-87F2-343E82D99813}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming.Test", "Tests\WpfRenaming.Test\WpfRenaming.Test.csproj", "{30B8883F-A0A2-4256-ADCF-A790525D3696}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinFormsRenaming", "Tests\WinFormsRenaming\WinFormsRenaming.csproj", "{211A4598-B46E-4CD3-BA5A-1EC259D4DB5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinFormsRenaming.Test", "Tests\WinFormsRenaming.Test\WinFormsRenaming.Test.csproj", "{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -118,6 +127,22 @@ Global
 		{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA9D2748-1342-41A3-87F2-343E82D99813}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA9D2748-1342-41A3-87F2-343E82D99813}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA9D2748-1342-41A3-87F2-343E82D99813}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA9D2748-1342-41A3-87F2-343E82D99813}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Release|Any CPU.Build.0 = Release|Any CPU
+		{211A4598-B46E-4CD3-BA5A-1EC259D4DB5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{211A4598-B46E-4CD3-BA5A-1EC259D4DB5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{211A4598-B46E-4CD3-BA5A-1EC259D4DB5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{211A4598-B46E-4CD3-BA5A-1EC259D4DB5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -128,6 +153,10 @@ Global
 		{73226E13-1701-424E-A4F2-3E4D575A1DD0} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{6A2BA6F7-3399-4890-9453-2D5BE8EEBBA9} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{BA9D2748-1342-41A3-87F2-343E82D99813} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{30B8883F-A0A2-4256-ADCF-A790525D3696} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{211A4598-B46E-4CD3-BA5A-1EC259D4DB5A} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{E7F99164-F00F-4B2A-86A9-8EB5F659F34C} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{DEED6795-9EC9-4B2C-95E0-9E465DA61755} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection

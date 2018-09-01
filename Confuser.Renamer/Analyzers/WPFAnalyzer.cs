@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Resources;
 using System.Text.RegularExpressions;
 using Confuser.Core;
@@ -17,7 +18,7 @@ namespace Confuser.Renamer.Analyzers {
 		static readonly object BAMLKey = new object();
 
 		static readonly Regex ResourceNamePattern = new Regex("^.*\\.g\\.resources$");
-		internal static readonly Regex UriPattern = new Regex("^(?:PACK\\://(?:COMPONENT|APPLICATION)\\:,,,)*(?:/(.+);COMPONENT)*(/.+\\.[BX]AML)$");
+		internal static readonly Regex UriPattern = new Regex("^(?:PACK\\://(?:COMPONENT|APPLICATION)\\:,,,)?(?:/(.+?)(?:;V\\d+\\.\\d+\\.\\d+\\.\\d+)?;COMPONENT)?(/?[^/].*\\.[BX]AML)$");
 		BAMLAnalyzer analyzer;
 
 		internal Dictionary<string, List<IBAMLReference>> bamlRefs = new Dictionary<string, List<IBAMLReference>>(StringComparer.OrdinalIgnoreCase);
@@ -193,7 +194,7 @@ namespace Confuser.Renamer.Analyzers {
 							context.Logger.WarnFormat("Fail to extract XAML name from '{0}'.", instr.Operand);
 
 						var reference = new BAMLStringReference(instr);
-						operand = operand.TrimStart('/');
+						operand = WebUtility.UrlDecode(operand.TrimStart('/'));
 						var baml = operand.Substring(0, operand.Length - 5) + ".BAML";
 						var xaml = operand.Substring(0, operand.Length - 5) + ".XAML";
 						bamlRefs.AddListEntry(baml, reference);

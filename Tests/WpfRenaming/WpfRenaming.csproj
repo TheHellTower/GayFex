@@ -1,0 +1,17 @@
+﻿<Project Sdk="MSBuild.Sdk.Extras">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <ExtrasEnableWpfProjectSetup>true</ExtrasEnableWpfProjectSetup>
+    <MyType>Custom</MyType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="TestData.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="TestData.xml" />
+  </ItemGroup>
+
+</Project>
