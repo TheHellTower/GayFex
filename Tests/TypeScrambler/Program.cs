@@ -17,6 +17,14 @@ namespace TypeScrambler {
 			Console.WriteLine(new String(genericInstance.GetReverse("ssalc cireneg morf txeT").ToArray()));
 
 			Console.WriteLine(Properties.Resources.Test);
+
+			var implInterface = new ImplicitInterface();
+			Console.WriteLine(implInterface.GetText());
+			Console.WriteLine(((ITestInterface)implInterface).GetText());
+
+			var explInterface = new ExplicitInterface();
+			Console.WriteLine(((ITestInterface)explInterface).GetText());
+
 			Console.WriteLine("END");
 			return 42;
 		}

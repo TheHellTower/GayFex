@@ -30,8 +30,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			};
 		}
 
-
-
 		internal override void Scan() {
 			// First we need to verify if it is actually acceptable to modify the method in any way.
 			if (!CanScrambleMethod(TargetMethod, ScramblePublicMethods)) return;
@@ -65,6 +63,12 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 			// Resolving the references does not work in case the declaring type has generic paramters.
 			if (method.DeclaringType.HasGenericParameters) return false;
+
+			// Skip methods with multiple overloaded signatures.
+			if (method.DeclaringType.FindMethods(method.Name).Take(2).Count() > 1) return false;
+
+			// Skip methods that are implementations of a interface.
+			if (method.IsInterfaceImplementation()) return false;
 
 			// Skip public visible methods is scrambling of public members is disabled.
 			if (!scramblePublic && method.IsVisibleOutside()) return false;
@@ -101,11 +105,14 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		internal GenericInstMethodSig CreateGenericMethodSig(ScannedMethod from, GenericInstMethodSig original = null) {
 			var types = new List<TypeSig>(TrueTypes.Count);
-			var processedGenericParams = 0;
 			foreach (var trueType in TrueTypes) {
 				if (trueType.IsGenericMethodParameter) {
 					Debug.Assert(original != null, $"{nameof(original)} != null");
-					var originalArgument = original.GenericArguments[processedGenericParams++];
+
+					var number = ((GenericSig)trueType).Number;
+					Debug.Assert(number < original.GenericArguments.Count,
+						$"{nameof(number)} < {nameof(original)}.GenericArguments.Count");
+					var originalArgument = original.GenericArguments[(int)number];
 					types.Add(originalArgument);
 				} else if (from?.IsScambled == true) {
 					types.Add(from.ConvertToGenericIfAvalible(trueType));

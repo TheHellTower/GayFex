@@ -57,6 +57,10 @@ namespace TypeScrambler.Test {
 				Assert.Equal("Text from generic method", await stdout.ReadLineAsync());
 				Assert.Equal("Text from generic class", await stdout.ReadLineAsync());
 				Assert.Equal("Text from Resources", await stdout.ReadLineAsync());
+				Assert.Equal("Text from implicit interface implementation.", await stdout.ReadLineAsync());
+				Assert.Equal("Text from implicit interface implementation.", await stdout.ReadLineAsync());
+				Assert.Equal("Text from explicit interface implementation.", await stdout.ReadLineAsync());
+				
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);
