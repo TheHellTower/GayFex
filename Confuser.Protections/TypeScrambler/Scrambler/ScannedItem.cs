@@ -26,12 +26,25 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
 			if (t.IsSZArray) return false;
 
+			// Strip pinned and modifiers to get the proper type.
+			t = t.RemovePinnedAndModifiers();
+
 			var typeDef = t.ToTypeDefOrRef();
 			Debug.Assert(typeDef != null, $"{nameof(typeDef)} != null");
 			if (!Generics.ContainsKey(typeDef)) {
-				Generics.Add(typeDef, new GenericParamUser(GenericCount, GenericParamAttributes.NoSpecialConstraint, "T"));
+				GenericParam newGenericParam;
+				if (t.IsGenericMethodParameter) {
+					var mVar = t.ToGenericMVar();
+					Debug.Assert(mVar != null, $"{nameof(mVar)} != null");
+					newGenericParam = new GenericParamUser(GenericCount, mVar.GenericParam.Flags, "T") {
+						Rid = mVar.Rid
+					};
+				} else {
+					newGenericParam = new GenericParamUser(GenericCount, GenericParamAttributes.NoSpecialConstraint, "T");
+				}
+				Generics.Add(typeDef, newGenericParam);
 				GenericCount++;
-				_trueTypes.Add(typeDef.ToTypeSig());
+				_trueTypes.Add(t);
 				return true;
 			}
 			else {
@@ -42,7 +55,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 		internal GenericMVar GetGeneric(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
 
-			var typeDef = t.ToTypeDefOrRef();
+			var typeDef = t.RemovePinnedAndModifiers().ToTypeDefOrRef();
 			Debug.Assert(typeDef != null, $"{nameof(typeDef)} != null");
 			if (Generics.TryGetValue(typeDef, out var gp))
 				return new GenericMVar(gp.Number);

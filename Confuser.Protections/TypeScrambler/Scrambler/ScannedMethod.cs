@@ -122,7 +122,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 			foreach (var parameter in TargetMethod.Parameters.Where(ProcessParameter)) {
 				parameter.Type = ConvertToGenericIfAvalible(parameter.Type);
-
 				Debug.Assert(parameter.Type == TargetMethod.MethodSig.Params[parameter.MethodSigIndex],
 					$"{nameof(parameter)}.Type == {nameof(TargetMethod)}.MethodSig.Params[{nameof(parameter)}.MethodSigIndex]");
 			}
