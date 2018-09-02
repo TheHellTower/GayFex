@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler;
-using Confuser.Renamer;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble {
@@ -20,16 +19,15 @@ namespace Confuser.Protections.TypeScramble {
 
 			var typeService = context.Registry.GetService<TypeService>();
 			Debug.Assert(typeService != null, $"{nameof(typeService)} != null");
-			var nameService = context.Registry.GetService<INameService>();
 
 			foreach (var target in parameters.Targets.WithProgress(context.Logger)) {
 				switch (target) {
 					case TypeDef typeDef:
-						typeService.AddScannedItem(new ScannedType(typeDef, nameService));
+						typeService.AddScannedItem(new ScannedType(typeDef));
 						break;
 					case MethodDef methodDef:
 						var scramblePublic = parameters.GetParameter(context, methodDef, "scramblePublic", false);
-						typeService.AddScannedItem(new ScannedMethod(typeService, nameService, methodDef, scramblePublic));
+						typeService.AddScannedItem(new ScannedMethod(typeService, methodDef, scramblePublic));
 						break;
 
 				}

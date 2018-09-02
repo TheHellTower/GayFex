@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Linq;
 using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler.Analyzers;
-using Confuser.Renamer;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
@@ -15,7 +14,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		private bool ScramblePublicMethods { get; }
 
-		internal ScannedMethod(TypeService service, INameService nameService, MethodDef target, bool scramblePublic) : base(target, nameService) {
+		internal ScannedMethod(TypeService service, MethodDef target, bool scramblePublic) : base(target) {
 			Debug.Assert(service != null, $"{nameof(service)} != null");
 			Debug.Assert(target != null, $"{nameof(target)} != null");
 

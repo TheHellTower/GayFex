@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using Confuser.Renamer;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
 	internal sealed class ScannedType : ScannedItem {
 		internal TypeDef TargetType { get; private set; }
 
-		public ScannedType(TypeDef target, INameService nameService) : base(target, nameService) {
+		public ScannedType(TypeDef target) : base(target) {
 			Debug.Assert(target != null, $"{nameof(target)} != null");
 
 			TargetType = target;
