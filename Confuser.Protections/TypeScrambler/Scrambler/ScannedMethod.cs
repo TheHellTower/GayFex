@@ -43,11 +43,8 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void) {
 				RegisterGeneric(TargetMethod.ReturnType);
 			}
-			foreach (var param in TargetMethod.Parameters) {
-				if (!param.IsNormalMethodParameter) continue;
-
+			foreach (var param in TargetMethod.Parameters.Where(ProcessParameter))
 				RegisterGeneric(param.Type);
-			}
 
 			if (TargetMethod.HasBody)
 				foreach (var i in TargetMethod.Body.Instructions)
@@ -57,11 +54,22 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		private static bool CanScrambleMethod(MethodDef method, bool scramblePublic) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
+
+			// Unmanaged methods are very much not supported by this.
+			if (!method.IsManaged) return false;
 			
+			// The entry point of the assembly must not be scrambled.
 			if (method.IsEntryPoint()) return false;
-			if (method.HasOverrides || method.IsAbstract || method.IsConstructor || method.IsGetter || method.IsSetter) return false;
+
+			// Methods that are part of inheritance shouldn't be scrambled.
+			if (method.HasOverrides || method.IsAbstract) return false;
+
+			// Constructors and properties will not be scrambled.
+			// It may be possible for properties with some more investigation. 
+			if (method.IsConstructor || method.IsGetter || method.IsSetter) return false;
 
 			// Resolving the references does not work in case the declaring type has generic paramters.
+			// May be possible with some additional investigation.
 			if (method.DeclaringType.HasGenericParameters) return false;
 
 			// Skip methods with multiple overloaded signatures.
@@ -70,8 +78,27 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			// Skip methods that are implementations of a interface.
 			if (method.IsInterfaceImplementation()) return false;
 
+			// Delegates are something we better don't scramble.
+			if (method.DeclaringType.IsDelegate) return false;
+
+			// COM imports do not like generics.
+			if (method.DeclaringType.IsComImport()) return false;
+
 			// Skip public visible methods is scrambling of public members is disabled.
 			if (!scramblePublic && method.IsVisibleOutside()) return false;
+
+			return true;
+		}
+
+		private static bool ProcessParameter(Parameter parameter) {
+			Debug.Assert(parameter != null, $"{nameof(parameter)} != null");
+
+			// Only handle normal parameters.
+			// The hidden this parameter is skipped, the return parameter is handled later.
+			if (!parameter.IsNormalMethodParameter) return false;
+
+			// Skip ref and out parameters.
+			if (parameter.ParamDef?.IsOut == true) return false;
 
 			return true;
 		}
@@ -81,9 +108,12 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			if (!IsScambled) return;
 
 			TargetMethod.GenericParameters.Clear();
-			foreach (var generic in scrambleParams) {
+			foreach (var generic in scrambleParams)
 				TargetMethod.GenericParameters.Add(generic);
-			}
+
+			// The generic parameter count is not updated when adding stuff to the GenericParameters.
+			// So we do that by hand.
+			TargetMethod.MethodSig.GenParamCount = (ushort)TargetMethod.GenericParameters.Count;
 
 			if (TargetMethod.HasBody) {
 				foreach (var v in TargetMethod.Body.Variables) {
@@ -91,16 +121,23 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				}
 			}
 
-			foreach (var p in TargetMethod.Parameters) {
-				if (p.Index == 0 && !TargetMethod.IsStatic) {
-					continue;
-				}
-				p.Type = ConvertToGenericIfAvalible(p.Type);
+			foreach (var parameter in TargetMethod.Parameters.Where(ProcessParameter)) {
+				parameter.Type = ConvertToGenericIfAvalible(parameter.Type);
+
+				Debug.Assert(parameter.Type == TargetMethod.MethodSig.Params[parameter.MethodSigIndex],
+					$"{nameof(parameter)}.Type == {nameof(TargetMethod)}.MethodSig.Params[{nameof(parameter)}.MethodSigIndex]");
 			}
 
-			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void) {
+			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void)
 				TargetMethod.ReturnType = ConvertToGenericIfAvalible(TargetMethod.ReturnType);
-			}
+
+			Debug.Assert(TargetMethod.ReturnType == TargetMethod.MethodSig.RetType, 
+				$"{nameof(TargetMethod)}.ReturnType == {nameof(TargetMethod)}.MethodSig.RetType");
+
+			// The generic flag is not automatically set. So we fix it by hand.
+			TargetMethod.Signature.Generic = true;
+
+			Debug.Assert(TargetMethod.Signature.Generic, $"({nameof(TargetMethod)}.Signature.Generic");
 		}
 
 		internal GenericInstMethodSig CreateGenericMethodSig(ScannedMethod from, GenericInstMethodSig original = null) {
@@ -120,7 +157,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 					types.Add(trueType);
 				}
 			}
-
 			return new GenericInstMethodSig(types);
 		}
 

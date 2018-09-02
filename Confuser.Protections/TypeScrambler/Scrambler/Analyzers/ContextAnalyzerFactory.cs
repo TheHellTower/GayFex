@@ -23,10 +23,15 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
 			Debug.Assert(inst.Operand != null, $"{nameof(inst)}.Operand != null");
 
 			var operand = inst.Operand;
-			var analyzerRefType = operand.GetType().BaseType;
-			
-			if (Analyzers.TryGetValue(analyzerRefType, out var analyzer))
-				analyzer.ProcessOperand(TargetMethod, inst, operand);
+
+			var currentRefType = operand.GetType();
+			while (currentRefType != typeof(object)) {
+				if (Analyzers.TryGetValue(currentRefType, out var analyzer)) {
+					analyzer.ProcessOperand(TargetMethod, inst, operand);
+					break;
+				}
+				currentRefType = currentRefType.BaseType;
+			}
 		}
 
 		public IEnumerator<ContextAnalyzer> GetEnumerator() => Analyzers.Values.GetEnumerator();

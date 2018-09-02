@@ -60,7 +60,9 @@ namespace TypeScrambler.Test {
 				Assert.Equal("Text from implicit interface implementation.", await stdout.ReadLineAsync());
 				Assert.Equal("Text from implicit interface implementation.", await stdout.ReadLineAsync());
 				Assert.Equal("Text from explicit interface implementation.", await stdout.ReadLineAsync());
-				
+				Assert.Equal("Text from static generic method.", await stdout.ReadLineAsync());
+				Assert.Equal("From the factory: Test", await stdout.ReadLineAsync());
+
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);

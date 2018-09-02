@@ -16,9 +16,12 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 			var targetMethod = service.GetItem(operand);
 			if (targetMethod?.IsScambled == true) {
 				var currentItem = service.GetItem(method);
-				var newspec = new MethodSpecUser(targetMethod.TargetMethod, targetMethod.CreateGenericMethodSig(currentItem));
+				var newSpec = new MethodSpecUser(targetMethod.TargetMethod, targetMethod.CreateGenericMethodSig(currentItem));
 
-				body[index].Operand = newspec;
+				Debug.Assert(newSpec.GenericInstMethodSig.GenericArguments.Count == targetMethod.TargetMethod.GenericParameters.Count,
+					$"{nameof(newSpec)}.GenericInstMethodSig.GenericArguments.Count == {nameof(targetMethod)}.TargetMethod.GenericParameters.Count");
+
+				body[index].Operand = newSpec;
 			}
 		}
 	}

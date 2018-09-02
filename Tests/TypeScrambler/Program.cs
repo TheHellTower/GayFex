@@ -25,6 +25,10 @@ namespace TypeScrambler {
 			var explInterface = new ExplicitInterface();
 			Console.WriteLine(((ITestInterface)explInterface).GetText());
 
+			Console.WriteLine(TestClass.GetTextStaticGeneric("Text from static generic method."));
+
+			Console.WriteLine(FactoryPattern.Create("Test").Message);
+
 			Console.WriteLine("END");
 			return 42;
 		}

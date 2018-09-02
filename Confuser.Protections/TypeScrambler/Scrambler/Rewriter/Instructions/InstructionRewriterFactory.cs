@@ -27,9 +27,14 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 			Instruction current = instructions[index];
 			if (current.Operand == null) return;
 
-			var rewriterRefType = current.Operand.GetType().BaseType;
-			if (RewriterDefinitions.TryGetValue(rewriterRefType, out var rw))
-				rw.ProcessInstruction(service, method, instructions, ref index, current);
+			var currentRefType = current.Operand.GetType();
+			while (currentRefType != typeof(object)) {
+				if (RewriterDefinitions.TryGetValue(currentRefType, out var rw)) {
+					rw.ProcessInstruction(service, method, instructions, ref index, current);
+					break;
+				}
+				currentRefType = currentRefType.BaseType;
+			}
 		}
 
 		public IEnumerator<InstructionRewriter> GetEnumerator() => RewriterDefinitions.Values.GetEnumerator();
