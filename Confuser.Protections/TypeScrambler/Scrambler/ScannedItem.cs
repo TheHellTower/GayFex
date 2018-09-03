@@ -7,7 +7,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 	internal abstract class ScannedItem {
 		private readonly List<TypeSig> _trueTypes;
 
-		private IDictionary<ITypeDefOrRef, GenericParam> Generics { get; }
+		private IDictionary<TypeSig, GenericParam> Generics { get; }
 		internal IReadOnlyList<TypeSig> TrueTypes => _trueTypes;
 
 		private ushort GenericCount { get; set; }
@@ -16,22 +16,19 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		protected ScannedItem(IGenericParameterProvider genericsProvider) {
 			Debug.Assert(genericsProvider != null, $"{nameof(genericsProvider)} != null");
-			
+
 			GenericCount = 0;
-			Generics = new Dictionary<ITypeDefOrRef, GenericParam>();
+			Generics = new Dictionary<TypeSig, GenericParam>();
 			_trueTypes = new List<TypeSig>();
 		}
 
 		internal bool RegisterGeneric(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
-			if (t.IsSZArray) return false;
 
-			// Strip pinned and modifiers to get the proper type.
-			t = t.RemovePinnedAndModifiers();
+			// Get proper type.
+			t = GetLeaf(t);
 
-			var typeDef = t.ToTypeDefOrRef();
-			Debug.Assert(typeDef != null, $"{nameof(typeDef)} != null");
-			if (!Generics.ContainsKey(typeDef)) {
+			if (!Generics.ContainsKey(t)) {
 				GenericParam newGenericParam;
 				if (t.IsGenericMethodParameter) {
 					var mVar = t.ToGenericMVar();
@@ -39,10 +36,11 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 					newGenericParam = new GenericParamUser(GenericCount, mVar.GenericParam.Flags, "T") {
 						Rid = mVar.Rid
 					};
-				} else {
+				}
+				else {
 					newGenericParam = new GenericParamUser(GenericCount, GenericParamAttributes.NoSpecialConstraint, "T");
 				}
-				Generics.Add(typeDef, newGenericParam);
+				Generics.Add(t, newGenericParam);
 				GenericCount++;
 				_trueTypes.Add(t);
 				return true;
@@ -55,27 +53,62 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 		internal GenericMVar GetGeneric(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
 
-			var typeDef = t.RemovePinnedAndModifiers().ToTypeDefOrRef();
-			Debug.Assert(typeDef != null, $"{nameof(typeDef)} != null");
-			if (Generics.TryGetValue(typeDef, out var gp))
-				return new GenericMVar(gp.Number);
+			t = GetLeaf(t);
 
-			return null;
+			GenericMVar result = null;
+			if (Generics.TryGetValue(t, out var gp))
+				result = new GenericMVar(gp.Number);
+
+			return result;
 		}
 
 		internal TypeSig ConvertToGenericIfAvalible(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
 
 			TypeSig newSig = GetGeneric(t);
-			if (newSig != null && t.IsSingleOrMultiDimensionalArray) {
-				if (!(t is SZArraySig tarr) || tarr.IsMultiDimensional) {
-					newSig = null;
-				}
-				else {
-					newSig = new ArraySig(newSig, tarr.Rank);
+			if (newSig != null) {
+				// Now it may be that the signature contains lots of modifiers and signatures.
+				// We need to process those... inside out.
+				if (t is NonLeafSig) {
+					// There are additional signatures. Store all of the in a stack and process them one by one.
+					var sigStack = new Stack<NonLeafSig>();
+					var current = t as NonLeafSig;
+					while (current != null) {
+						sigStack.Push(current);
+						current = current.Next as NonLeafSig;
+					}
+
+					// Now process the entries on the stack one by one.
+					while (sigStack.Any()) {
+						current = sigStack.Pop();
+						if (current is SZArraySig arraySig)
+							newSig = new ArraySig(newSig, arraySig.Rank, arraySig.GetSizes(), arraySig.GetLowerBounds());
+						else if (current is ByRefSig byRefSig)
+							newSig = new ByRefSig(newSig);
+						else if (current is CModReqdSig cModReqdSig)
+							newSig = new CModReqdSig(cModReqdSig.Modifier, newSig);
+						else if (current is CModOptSig cModOptSig)
+							newSig = new CModOptSig(cModOptSig.Modifier, newSig);
+						else if (current is PtrSig ptrSig)
+							newSig = new PtrSig(newSig);
+						else if (current is PinnedSig pinnedSig)
+							newSig = new PinnedSig(newSig);
+						else
+							Debug.Fail("Unexpected leaf signature: " + current.GetType().FullName);
+					}
 				}
 			}
+
 			return newSig ?? t;
+		}
+
+		private static TypeSig GetLeaf(TypeSig t) {
+			Debug.Assert(t != null, $"{nameof(t)} != null");
+
+			while (t is NonLeafSig nonLeafSig)
+				t = nonLeafSig.Next;
+
+			return t;
 		}
 
 		internal void PrepareGenerics() => PrepareGenerics(Generics.Values.OrderBy(gp => gp.Number));

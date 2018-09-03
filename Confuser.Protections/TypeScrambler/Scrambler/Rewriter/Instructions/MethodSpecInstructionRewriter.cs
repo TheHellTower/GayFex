@@ -13,7 +13,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 			Debug.Assert(operand != null, $"{nameof(operand)} != null");
 			Debug.Assert(index >= 0, $"{nameof(index)} >= 0");
 			Debug.Assert(index < body.Count, $"{nameof(index)} < {nameof(body)}.Count");
-		
+
 			var current = service.GetItem(method);
 			if (operand.Method is MethodDef operandDef) {
 				var operandScanned = service.GetItem(operandDef);

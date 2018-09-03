@@ -24,7 +24,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 				return;
 
 			ModuleDef mod = method.Module;
-			
+
 			var gettype = typeof(Type).GetMethod("GetTypeFromHandle");
 			var createInstance = typeof(Activator).GetMethod("CreateInstance", new Type[] { typeof(Type) });
 
@@ -61,10 +61,10 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 				foreach(var param in operand.MethodSig.Params.Select(x => current.ConvertToGenericIfAvalible(x))) {
 				    genericCallSig.GenericArguments.Add(param);
 				}
-				
+
 				// tgtMethod.GenericInstMethodSig = genericCallSig;
 				var spec = new MethodSpecUser(tgtMethod, genericCallSig);
-				
+
 				body[index].OpCode = OpCodes.Call;
 				body[index].Operand = tgtMethod;
 				*/

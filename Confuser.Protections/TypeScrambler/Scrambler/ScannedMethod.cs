@@ -56,7 +56,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 			// Unmanaged methods are very much not supported by this.
 			if (!method.IsManaged) return false;
-			
+
 			// The entry point of the assembly must not be scrambled.
 			if (method.IsEntryPoint()) return false;
 
@@ -64,7 +64,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			if (method.HasOverrides || method.IsAbstract) return false;
 
 			// Constructors and properties will not be scrambled.
-			// It may be possible for properties with some more investigation. 
+			// It may be possible for properties with some more investigation.
 			if (method.IsConstructor || method.IsGetter || method.IsSetter) return false;
 
 			// Resolving the references does not work in case the declaring type has generic paramters.
@@ -129,7 +129,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void)
 				TargetMethod.ReturnType = ConvertToGenericIfAvalible(TargetMethod.ReturnType);
 
-			Debug.Assert(TargetMethod.ReturnType == TargetMethod.MethodSig.RetType, 
+			Debug.Assert(TargetMethod.ReturnType == TargetMethod.MethodSig.RetType,
 				$"{nameof(TargetMethod)}.ReturnType == {nameof(TargetMethod)}.MethodSig.RetType");
 
 			// The generic flag is not automatically set. So we fix it by hand.
