@@ -1,5 +1,6 @@
 ﻿using Confuser.Core;
 
+#if DEBUG
 namespace Confuser.Protections.TypeScramble {
 	class TypeScrambleProtection : Protection {
 		public override ProtectionPreset Preset => ProtectionPreset.None;
@@ -22,3 +23,4 @@ namespace Confuser.Protections.TypeScramble {
 		}
 	}
 }
+#endif
