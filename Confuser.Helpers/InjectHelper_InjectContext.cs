@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using dnlib.DotNet;
 
@@ -12,7 +13,7 @@ namespace Confuser.Helpers {
 			/// <summary>
 			///     The mapping of origin definitions to injected definitions.
 			/// </summary>
-			private readonly Dictionary<IMemberDef, IMemberDef> _map;
+			private IImmutableDictionary<IMemberDef, IMemberDef> _map;
 
 			/// <summary>
 			///     The module which source type originated from.
@@ -25,6 +26,19 @@ namespace Confuser.Helpers {
 			internal ModuleDef TargetModule { get; }
 
 			/// <summary>
+			///     Initializes a new child instance of the <see cref="InjectContext"/>. It inherits the mapping table
+			///     of the original context. How ever it does not alter the parent context.
+			/// </summary>
+			/// <param name="parentContext">The parent context that feeds the initial data.</param>
+			internal InjectContext(InjectContext parentContext) {
+				Debug.Assert(parentContext != null, $"{nameof(parentContext)} != null");
+
+				OriginModule = parentContext.OriginModule;
+				TargetModule = parentContext.TargetModule;
+				_map = parentContext._map;
+			}
+
+			/// <summary>
 			///     Initializes a new instance of the <see cref="InjectContext" /> class.
 			/// </summary>
 			/// <param name="module">The origin module.</param>
@@ -33,7 +47,7 @@ namespace Confuser.Helpers {
 				OriginModule = module ?? throw new ArgumentNullException(nameof(module));
 				TargetModule = target ?? throw new ArgumentNullException(nameof(target));
 
-				_map = new Dictionary<IMemberDef, IMemberDef>();
+				_map = ImmutableDictionary.Create<IMemberDef, IMemberDef>();
 			}
 
 			internal void ApplyMapping(IMemberDef source, IMemberDef target) {
@@ -41,7 +55,7 @@ namespace Confuser.Helpers {
 				if (target == null) throw new ArgumentNullException(nameof(target));
 
 				Debug.Assert(!_map.ContainsKey(source));
-				_map[source] = target;
+				_map = _map.SetItem(source, target);
 			}
 
 			internal TDef ResolveMapped<TDef>(TDef def) where TDef : class, IMemberDef {

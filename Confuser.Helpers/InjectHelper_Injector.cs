@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
 
 namespace Confuser.Helpers {
 	public static partial class InjectHelper {
@@ -26,10 +27,13 @@ namespace Confuser.Helpers {
 
 			private Queue<IMemberDef> PendingForInject { get; }
 
-			internal Injector(InjectContext injectContext, IInjectBehavior injectBehavior) {
+			private IImmutableList<IMethodInjectProcessor> MethodInjectProcessors { get; }
+
+			internal Injector(InjectContext injectContext, IInjectBehavior injectBehavior, IEnumerable<IMethodInjectProcessor> injectProcessors) {
 				InjectContext = injectContext ?? throw new ArgumentNullException(nameof(injectContext));
 				InjectBehavior = injectBehavior ?? throw new ArgumentNullException(nameof(injectBehavior));
 				PendingForInject = new Queue<IMemberDef>();
+				MethodInjectProcessors = injectProcessors.ToImmutableList();
 				_injectedMembers = new Dictionary<IMemberDef, IMemberDef>();
 			}
 
@@ -94,7 +98,7 @@ namespace Confuser.Helpers {
 						result.GenericParameters.Add(new GenericParamUser(genericParam.Number, genericParam.Flags, "-"));
 			}
 
-			private IReadOnlyCollection<IMemberDef> InjectRemaining(Importer importer) {
+			private IReadOnlyCollection<IMemberDef> InjectRemaining(Importer importer, IImmutableList<IMethodInjectProcessor> methodInjectProcessors) {
 				var resultBuilder = ImmutableList.CreateBuilder<IMemberDef>();
 
 				while (PendingForInject.Count > 0) {
@@ -102,7 +106,7 @@ namespace Confuser.Helpers {
 					if (memberDef is TypeDef typeDef)
 						resultBuilder.Add(InjectTypeDef(typeDef, importer));
 					else if (memberDef is MethodDef methodDef)
-						resultBuilder.Add(InjectMethodDef(methodDef, importer));
+						resultBuilder.Add(InjectMethodDef(methodDef, importer, methodInjectProcessors));
 					else if (memberDef is FieldDef fieldDef)
 						resultBuilder.Add(InjectFieldDef(fieldDef, importer));
 				}
@@ -114,8 +118,9 @@ namespace Confuser.Helpers {
 				if (existingMappedMethodDef != null) return existingMappedMethodDef;
 
 				var importer = new Importer(InjectContext.TargetModule) { Resolver = this };
-				var result = InjectMethodDef(methodDef, importer);
-				InjectRemaining(importer);
+				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
+				var result = InjectMethodDef(methodDef, importer, methodInjectProcessors);
+				InjectRemaining(importer, methodInjectProcessors);
 				return result;
 			}
 
@@ -184,7 +189,7 @@ namespace Confuser.Helpers {
 				return newFieldDef;
 			}
 
-			private MethodDef InjectMethodDef(MethodDef methodDef, Importer importer) {
+			private MethodDef InjectMethodDef(MethodDef methodDef, Importer importer, IEnumerable<IMethodInjectProcessor> methodInjectProcessors) {
 				if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
 
 				var existingMethodDef = InjectContext.ResolveMapped(methodDef);
@@ -223,15 +228,6 @@ namespace Confuser.Helpers {
 							SequencePoint = instr.SequencePoint
 						};
 
-						if (newInstr.Operand is IType typeOp)
-							newInstr.Operand = importer.Import(typeOp);
-
-						else if (newInstr.Operand is IMethod methodOp)
-							newInstr.Operand = importer.Import(methodOp);
-
-						else if (newInstr.Operand is IField fieldOp)
-							newInstr.Operand = importer.Import(fieldOp);
-
 						newMethodDef.Body.Instructions.Add(newInstr);
 						bodyMap[instr] = newInstr;
 					}
@@ -253,6 +249,9 @@ namespace Confuser.Helpers {
 							HandlerEnd = (Instruction)bodyMap[eh.HandlerEnd],
 							FilterStart = eh.FilterStart == null ? null : (Instruction)bodyMap[eh.FilterStart]
 						});
+
+					foreach (var processor in methodInjectProcessors)
+						processor.Process(newMethodDef);
 
 					newMethodDef.Body.OptimizeMacros();
 					newMethodDef.Body.OptimizeBranches();
@@ -295,6 +294,35 @@ namespace Confuser.Helpers {
 			}
 
 			#endregion
+
+			private struct ImportProcessor : IMethodInjectProcessor {
+				private Importer _importer;
+
+				internal ImportProcessor(Importer importer) => _importer = importer;
+
+				void IMethodInjectProcessor.Process(MethodDef method) {
+					Debug.Assert(method != null, $"{nameof(method)} != null");
+
+					if (method.HasBody && method.Body.HasInstructions)
+						foreach (var instruction in method.Body.Instructions) {
+							if (instruction.Operand is IType typeOp) {
+								var importedType = _importer.Import(typeOp);
+								Debug.Assert(importedType != null, $"{nameof(importedType)} != null");
+								instruction.Operand = importedType;
+							}
+							else if (instruction.Operand is IMethod methodOp) {
+								var importedMethod = _importer.Import(methodOp);
+								Debug.Assert(importedMethod != null, $"{nameof(importedMethod)} != null");
+								instruction.Operand = importedMethod;
+							}
+							else if (instruction.Operand is IField fieldOp) {
+								var importedField = _importer.Import(fieldOp);
+								Debug.Assert(importedField != null, $"{nameof(importedField)} != null");
+								instruction.Operand = importedField;
+							}
+						}
+				}
+			}
 		}
 	}
 }

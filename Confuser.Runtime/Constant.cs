@@ -56,7 +56,7 @@ namespace Confuser.Runtime {
 				// NOTE: Assume little-endian
 				else if (t == Mutation.KeyI1) {
 					var v = new T[1];
-					Buffer.BlockCopy(b, (int)id, v, 0, Mutation.Value<int>());
+					Buffer.BlockCopy(b, (int)id, v, 0, sizeof(int));
 					ret = v[0];
 				}
 				else if (t == Mutation.KeyI2) {
