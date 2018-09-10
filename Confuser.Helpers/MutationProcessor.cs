@@ -33,8 +33,12 @@ namespace Confuser.Helpers {
 
 		void IMethodInjectProcessor.Process(MethodDef method) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(method.HasBody, $"{nameof(method)}.HasBody");
 
-			foreach (var instr in method.Body.Instructions) {
+			var instructions = method.Body.Instructions;
+			for (var i = 0; i < instructions.Count; i++) {
+				var instr = instructions[i];
+
 				if (instr.OpCode == OpCodes.Ldsfld) {
 					if (instr.Operand is IField loadedField && loadedField.DeclaringType == MutationTypeDef) {
 						if (!ProcessKeyField(instr, loadedField))
@@ -43,12 +47,11 @@ namespace Confuser.Helpers {
 				}
 				else if (instr.OpCode == OpCodes.Call) {
 					if (instr.Operand is IMethod calledMethod && calledMethod.DeclaringType == MutationTypeDef) {
-						if (!ReplacePlaceholder(method, instr, calledMethod) && !ReplaceCrypt(method, instr, calledMethod))
+						if (!ReplacePlaceholder(method, instr, calledMethod, ref i) && !ReplaceCrypt(method, instr, calledMethod, ref i))
 							throw new InvalidOperationException("Unexpected call operation to Mutation class!");
 					}
 				}
 			}
-			throw new NotImplementedException();
 		}
 
 		private bool ProcessKeyField(Instruction instr, IField field) {
@@ -93,7 +96,7 @@ namespace Confuser.Helpers {
 			return false;
 		}
 
-		private bool ReplacePlaceholder(MethodDef method, Instruction instr, IMethod calledMethod) {
+		private bool ReplacePlaceholder(MethodDef method, Instruction instr, IMethod calledMethod, ref int index) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(instr != null, $"{nameof(instr)} != null");
 			Debug.Assert(calledMethod != null, $"{nameof(calledMethod)} != null");
@@ -105,15 +108,19 @@ namespace Confuser.Helpers {
 				if (argIndexes == null) throw new InvalidOperationException("Failed to trace placeholder argument.");
 
 				int argIndex = argIndexes[0];
-				IReadOnlyList<Instruction> arg = method.Body.Instructions.Skip(argIndex).TakeWhile(i => i != instr).ToImmutableArray();
+				IReadOnlyList<Instruction> arg = method.Body.Instructions.Skip(argIndex).Take(index - argIndex).ToImmutableArray();
 
 				for (int j = 0; j < arg.Count; j++)
 					method.Body.Instructions.RemoveAt(argIndex);
 				method.Body.Instructions.RemoveAt(argIndex);
 
+				index -= arg.Count;
+
 				arg = PlaceholderProcessor(arg);
 				for (int j = arg.Count - 1; j >= 0; j--)
 					method.Body.Instructions.Insert(argIndex, arg[j]);
+
+				index += arg.Count;
 
 				return true;
 			}
@@ -121,7 +128,7 @@ namespace Confuser.Helpers {
 			return false;
 		}
 
-		private bool ReplaceCrypt(MethodDef method, Instruction instr, IMethod calledMethod) {
+		private bool ReplaceCrypt(MethodDef method, Instruction instr, IMethod calledMethod, ref int index) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(instr != null, $"{nameof(instr)} != null");
 			Debug.Assert(calledMethod != null, $"{nameof(calledMethod)} != null");
@@ -142,6 +149,8 @@ namespace Confuser.Helpers {
 				for (var i = 0; i< cryptInstr.Count; i++) {
 					method.Body.Instructions.Insert(instrIndex - 2 + i, cryptInstr[i]);
 				}
+
+				index += cryptInstr.Count - 3;
 
 				return true;
 			}
