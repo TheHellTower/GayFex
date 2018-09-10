@@ -54,6 +54,9 @@ namespace Confuser.Helpers {
 
 				_injectedMembers.Add(source, typeDefUser);
 				PendingForInject.Enqueue(source);
+				if (source.IsDelegate)
+					foreach (var m in source.Methods)
+						PendingForInject.Enqueue(m);
 
 				return typeDefUser;
 			}
@@ -139,6 +142,9 @@ namespace Confuser.Helpers {
 				foreach (var iface in typeDef.Interfaces)
 					newTypeDef.Interfaces.Add(InjectInterfaceImpl(iface, importer));
 
+				foreach (var ca in typeDef.CustomAttributes)
+					newTypeDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+
 				InjectBehavior.Process(typeDef, newTypeDef);
 
 				if (!newTypeDef.IsNested)
@@ -172,6 +178,21 @@ namespace Confuser.Helpers {
 				return resultImpl;
 			}
 
+			private static CustomAttribute InjectCustomAttribute(CustomAttribute attribute, Importer importer) {
+				Debug.Assert(attribute != null, $"{nameof(attribute)} != null");
+
+				var result = new CustomAttribute((ICustomAttributeType)importer.Import(attribute.Constructor));
+				foreach (var arg in attribute.ConstructorArguments)
+					result.ConstructorArguments.Add(new CAArgument(importer.Import(arg.Type), arg.Value));
+
+				foreach (var arg in attribute.NamedArguments)
+					result.NamedArguments.Add(
+						new CANamedArgument(arg.IsField, importer.Import(arg.Type), arg.Name,
+						new CAArgument(importer.Import(arg.Argument.Type), arg.Argument.Value)));
+
+				return result;
+			}
+
 			private FieldDef InjectFieldDef(FieldDef fieldDef, Importer importer) {
 				if (fieldDef == null) throw new ArgumentNullException(nameof(fieldDef));
 
@@ -181,6 +202,9 @@ namespace Confuser.Helpers {
 				var newFieldDef = CopyDef(fieldDef);
 				newFieldDef.Signature = importer.Import(fieldDef.Signature);
 				newFieldDef.DeclaringType = (TypeDef)importer.Import(fieldDef.DeclaringType);
+
+				foreach (var ca in fieldDef.CustomAttributes)
+					newFieldDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
 
 				InjectBehavior.Process(fieldDef, newFieldDef);
 				InjectContext.TargetModule.UpdateRowId(newFieldDef);
@@ -204,7 +228,7 @@ namespace Confuser.Helpers {
 					newMethodDef.ImplMap = new ImplMapUser(new ModuleRefUser(InjectContext.TargetModule, methodDef.ImplMap.Module.Name), methodDef.ImplMap.Name, methodDef.ImplMap.Attributes);
 
 				foreach (var ca in methodDef.CustomAttributes)
-					newMethodDef.CustomAttributes.Add(new CustomAttribute((ICustomAttributeType)importer.Import(ca.Constructor)));
+					newMethodDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
 
 				if (methodDef.HasBody) {
 					methodDef.Body.SimplifyBranches();

@@ -65,7 +65,7 @@ namespace Confuser.Helpers {
 
 				if (injected.IsPublic)
 					injected.Access = MethodAttributes.Assembly;
-				if (!injected.IsSpecialName)
+				if (!injected.IsSpecialName && !injected.DeclaringType.IsDelegate)
 					injected.Name = GetName(injected.Name);
 
 				// There is no need for this to be renamed again.
