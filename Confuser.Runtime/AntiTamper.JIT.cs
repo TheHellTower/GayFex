@@ -237,7 +237,7 @@ namespace Confuser.Runtime {
 					var data = (MethodData*)newPtr;
 					uint* copyData = newPtr;
 
-					uint state = token * (uint)Mutation.KeyI0;
+					uint state = token * (uint)Mutation.KeyI5;
 					uint counter = state;
 					for (uint i = 0; i < dataLen; i++) {
 						*copyData = *dataPtr++ ^ state;

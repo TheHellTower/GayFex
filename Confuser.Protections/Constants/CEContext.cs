@@ -13,7 +13,6 @@ namespace Confuser.Protections.Constants {
 		public ConstantProtection Protection;
 		public ModuleDef Module;
 
-		public FieldDef BufferField;
 		public FieldDef DataField;
 		public TypeDef DataType;
 		public MethodDef InitMethod;

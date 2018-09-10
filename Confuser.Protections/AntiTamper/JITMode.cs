@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -51,62 +52,40 @@ namespace Confuser.Protections.AntiTamper {
 			name2 = random.NextUInt32() & 0x7f7f7f7f;
 			key = random.NextUInt32();
 
-			fieldLayout = new byte[6];
-			for (int i = 0; i < 6; i++) {
-				int index = random.NextInt32(0, 6);
-				while (fieldLayout[index] != 0)
-					index = random.NextInt32(0, 6);
-				fieldLayout[index] = (byte)i;
-			}
-
 			switch (parameters.GetParameter(context, context.CurrentModule, "key", Mode.Normal)) {
-			case Mode.Normal:
-				deriver = new NormalDeriver();
-				break;
-			case Mode.Dynamic:
-				deriver = new DynamicDeriver();
-				break;
-			default:
-				throw new UnreachableException();
+				case Mode.Normal:
+					deriver = new NormalDeriver();
+					break;
+				case Mode.Dynamic:
+					deriver = new DynamicDeriver();
+					break;
+				default:
+					throw new UnreachableException();
 			}
 			deriver.Init(context, random);
 
+			var mutationKeys = ImmutableDictionary.Create<Helpers.MutationField, int>()
+				.Add(Helpers.MutationField.KeyI0, (int)(name1 * name2))
+				.Add(Helpers.MutationField.KeyI1, (int)z)
+				.Add(Helpers.MutationField.KeyI2, (int)x)
+				.Add(Helpers.MutationField.KeyI3, (int)c)
+				.Add(Helpers.MutationField.KeyI4, (int)v)
+				.Add(Helpers.MutationField.KeyI5, (int)key);
+
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
-			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperJIT");
-			IEnumerable<IDnlibDef> defs = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
-			initMethod = defs.OfType<MethodDef>().Single(method => method.Name == "Initialize");
+			var name = context.Registry.GetRequiredService<INameService>();
+			var marker = context.Registry.GetRequiredService<IMarkerService>();
+			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
 
-			initMethod.Body.SimplifyMacros(initMethod.Parameters);
-			List<Instruction> instrs = initMethod.Body.Instructions.ToList();
-			for (int i = 0; i < instrs.Count; i++) {
-				Instruction instr = instrs[i];
-				if (instr.OpCode == OpCodes.Ldtoken) {
-					instr.Operand = context.CurrentModule.GlobalType;
-				}
-				else if (instr.OpCode == OpCodes.Call) {
-					var method = (IMethod)instr.Operand;
-					if (method.DeclaringType.Name == "Mutation" &&
-						method.Name == "Crypt") {
-						Instruction ldDst = instrs[i - 2];
-						Instruction ldSrc = instrs[i - 1];
-						Debug.Assert(ldDst.OpCode == OpCodes.Ldloc && ldSrc.OpCode == OpCodes.Ldloc);
-						instrs.RemoveAt(i);
-						instrs.RemoveAt(i - 1);
-						instrs.RemoveAt(i - 2);
-						instrs.InsertRange(i - 2, deriver.EmitDerivation(initMethod, context, (Local)ldDst.Operand, (Local)ldSrc.Operand));
-					}
-				}
-			}
-			initMethod.Body.Instructions.Clear();
-			foreach (Instruction instr in instrs)
-				initMethod.Body.Instructions.Add(instr);
+			var antiTamperInitMethod = rt.GetRuntimeType("Confuser.Runtime.AntiTamperJIT").FindMethod("Initialize");
+			var injectResult = Helpers.InjectHelper.Inject(antiTamperInitMethod, context.CurrentModule,
+				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
+				new Helpers.MutationProcessor(context.Registry) {
+					KeyFieldValues = mutationKeys,
+					CryptProcessor = deriver.EmitDerivation(context)
+				});
 
-			MutationHelper.InjectKeys(initMethod,
-									  new[] { 0, 1, 2, 3, 4 },
-									  new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
-
-			var name = context.Registry.GetService<INameService>();
-			var marker = context.Registry.GetService<IMarkerService>();
+			initMethod = injectResult.Requested.Mapped;
 
 			cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
 
@@ -116,32 +95,48 @@ namespace Confuser.Protections.AntiTamper {
 			cctorRepl.Body = new CilBody();
 			cctorRepl.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 			context.CurrentModule.GlobalType.Methods.Add(cctorRepl);
-			name?.MarkHelper(context, cctorRepl, marker, parent);
+			name.MarkHelper(context, cctorRepl, marker, parent);
 
-			MutationHelper.InjectKeys(defs.OfType<MethodDef>().Single(method => method.Name == "HookHandler"),
-									  new[] { 0 }, new[] { (int)key });
-
-			var antiTamperService = context.Registry.GetRequiredService<IAntiTamperService>();
-
-			foreach (IDnlibDef def in defs) {
-				if (def.Name == "MethodData") {
-					var dataType = (TypeDef)def;
-					FieldDef[] fields = dataType.Fields.ToArray();
-					var layout = fieldLayout.Clone() as byte[];
-					Array.Sort(layout, fields);
-					for (byte j = 0; j < 6; j++)
-						layout[j] = j;
-					Array.Sort(fieldLayout, layout);
-					fieldLayout = layout;
-					dataType.Fields.Clear();
-					foreach (FieldDef f in fields)
-						dataType.Fields.Add(f);
+			var methodDataMapping = new Dictionary<FieldDef, int>();
+			foreach (var dependency in injectResult) {
+				if (dependency.Source is FieldDef depField && depField.DeclaringType.Name == "MethodData") {
+					var mapField = (FieldDef)dependency.Mapped;
+					switch (depField.Name.String) {
+						case "ILCodeSize": methodDataMapping.Add(mapField, 0); break;
+						case "MaxStack": methodDataMapping.Add(mapField, 1); break;
+						case "EHCount": methodDataMapping.Add(mapField, 2); break;
+						case "LocalVars": methodDataMapping.Add(mapField, 3); break;
+						case "Options": methodDataMapping.Add(mapField, 4); break;
+						case "MulSeed": methodDataMapping.Add(mapField, 5); break;
+					}
 				}
-				name?.MarkHelper(context, def, marker, parent);
-				if (def is MethodDef)
-					antiTamperService.ExcludeMethod(context, (MethodDef)def);
 			}
-			antiTamperService.ExcludeMethod(context, cctor);
+
+			foreach (var dependency in injectResult.InjectedDependencies) {
+				if (dependency.Mapped is TypeDef mapType && dependency.Source.Name == "MethodData") {
+					var fields = mapType.Fields.ToArray();
+					random.Shuffle(fields);
+
+					fieldLayout = new byte[fields.Length];
+					for (var i = 0; i < fields.Length; i++) {
+						fieldLayout[i] = (byte)methodDataMapping[fields[i]];
+					}
+
+					mapType.Fields.Clear();
+					foreach (var field in fields)
+						mapType.Fields.Add(field);
+
+					break;
+				}
+			}
+
+			foreach (var dep in injectResult) {
+				name.MarkHelper(context, dep.Mapped, marker, parent);
+				if (dep.Mapped is MethodDef methodDef)
+					antiTamper.ExcludeMethod(context, methodDef);
+			}
+
+			antiTamper.ExcludeMethod(context, cctor);
 		}
 
 		public void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {

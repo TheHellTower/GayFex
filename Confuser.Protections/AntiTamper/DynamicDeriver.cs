@@ -5,6 +5,7 @@ using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,13 +34,13 @@ namespace Confuser.Protections.AntiTamper {
 			return ret;
 		}
 
-		public IEnumerable<Instruction> EmitDerivation(MethodDef method, IConfuserContext ctx, Local dst, Local src) {
+		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {
 			var ret = new List<Instruction>();
-			var codeGen = new CodeGen(dst, src, method, ret);
+			var codeGen = new CodeGen(block, key, method, ret);
 			codeGen.GenerateCIL(derivation);
 			codeGen.Commit(method.Body);
 			return ret;
-		}
+		};
 
 		class CodeGen : CILCodeGen {
 			readonly Local block;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -29,29 +30,29 @@ namespace Confuser.Protections.AntiTamper {
 			return ret;
 		}
 
-		public IEnumerable<Instruction> EmitDerivation(MethodDef method, IConfuserContext ctx, Local dst, Local src) {
-			for (int i = 0; i < 0x10; i++) {
-				yield return Instruction.Create(OpCodes.Ldloc, dst);
-				yield return Instruction.Create(OpCodes.Ldc_I4, i);
-				yield return Instruction.Create(OpCodes.Ldloc, dst);
-				yield return Instruction.Create(OpCodes.Ldc_I4, i);
-				yield return Instruction.Create(OpCodes.Ldelem_U4);
-				yield return Instruction.Create(OpCodes.Ldloc, src);
-				yield return Instruction.Create(OpCodes.Ldc_I4, i);
-				yield return Instruction.Create(OpCodes.Ldelem_U4);
-				switch (i % 3) {
-					case 0:
-						yield return Instruction.Create(OpCodes.Xor);
-						break;
-					case 1:
-						yield return Instruction.Create(OpCodes.Mul);
-						break;
-					case 2:
-						yield return Instruction.Create(OpCodes.Add);
-						break;
+		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {
+			var ret = new List<Instruction>(10 * 0x10);
+			OpCode getCode(int index) {
+				switch (index % 3) {
+					case 0: return OpCodes.Xor;
+					case 1: return OpCodes.Mul;
+					case 2: return OpCodes.Add;
+					default: throw new NotImplementedException();
 				}
-				yield return Instruction.Create(OpCodes.Stelem_I4);
 			}
-		}
+			for (int i = 0; i < 0x10; i++) {
+				ret.Add(Instruction.Create(OpCodes.Ldloc, block));
+				ret.Add(Instruction.Create(OpCodes.Ldc_I4, i));
+				ret.Add(Instruction.Create(OpCodes.Ldloc, block));
+				ret.Add(Instruction.Create(OpCodes.Ldc_I4, i));
+				ret.Add(Instruction.Create(OpCodes.Ldelem_U4));
+				ret.Add(Instruction.Create(OpCodes.Ldloc, key));
+				ret.Add(Instruction.Create(OpCodes.Ldc_I4, i));
+				ret.Add(Instruction.Create(OpCodes.Ldelem_U4));
+				ret.Add(Instruction.Create(getCode(i)));
+				ret.Add(Instruction.Create(OpCodes.Stelem_I4));
+			}
+			return ret;
+		};
 	}
 }
