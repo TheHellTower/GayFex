@@ -19,6 +19,7 @@ namespace Confuser.Helpers {
 		private TypeDef MutationTypeDef { get; }
 		private ITraceService TraceService { get; }
 		public IReadOnlyDictionary<MutationField, int> KeyFieldValues { get; set; }
+		public IReadOnlyDictionary<MutationField, LateMutationFieldUpdate> LateKeyFieldValues { get; set; }
 		public PlaceholderProcessor PlaceholderProcessor { get; set; }
 		public CryptProcessor CryptProcessor { get; set; }
 
@@ -41,7 +42,7 @@ namespace Confuser.Helpers {
 
 				if (instr.OpCode == OpCodes.Ldsfld) {
 					if (instr.Operand is IField loadedField && loadedField.DeclaringType == MutationTypeDef) {
-						if (!ProcessKeyField(instr, loadedField))
+						if (!ProcessKeyField(method, instr, loadedField))
 							throw new InvalidOperationException("Unexpected load field operation to Mutation class!");
 					}
 				}
@@ -54,7 +55,8 @@ namespace Confuser.Helpers {
 			}
 		}
 
-		private bool ProcessKeyField(Instruction instr, IField field) {
+		private bool ProcessKeyField(MethodDef method, Instruction instr, IField field) {
+			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(instr != null, $"{nameof(instr)} != null");
 			Debug.Assert(field != null, $"{nameof(field)} != null");
 
@@ -82,9 +84,16 @@ namespace Confuser.Helpers {
 						default: return false;
 					}
 
-					if (KeyFieldValues.TryGetValue(mutationField, out var keyValue)) {
+					if (KeyFieldValues != null && KeyFieldValues.TryGetValue(mutationField, out var keyValue)) {
 						instr.OpCode = OpCodes.Ldc_I4;
 						instr.Operand = keyValue;
+						return true;
+					}
+					else if (LateKeyFieldValues != null && LateKeyFieldValues.TryGetValue(mutationField, out var lateUpdate)) {
+						lateUpdate.AddUpdateInstruction(method, instr);
+						// Setting a dummy value, so the reference to the Mutation class is not injected.
+						instr.OpCode = OpCodes.Ldc_I4_0;
+						instr.Operand = null;
 						return true;
 					}
 					else {

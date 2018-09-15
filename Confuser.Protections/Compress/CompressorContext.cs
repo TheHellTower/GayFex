@@ -19,6 +19,7 @@ namespace Confuser.Protections.Compress {
 		public byte[] OriginModule;
 		public ModuleDef OriginModuleDef;
 		public bool CompatMode;
+		public Helpers.LateMutationFieldUpdate KeyTokenLoadUpdate;
 
 		public byte[] Encrypt(ICompressionService compress, byte[] data, uint seed, Action<double> progressFunc) {
 			data = (byte[])data.Clone();

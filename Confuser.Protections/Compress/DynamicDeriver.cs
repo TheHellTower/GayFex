@@ -5,18 +5,18 @@ using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Compress {
-	internal class DynamicDeriver : IKeyDeriver {
+	internal sealed class DynamicDeriver : IKeyDeriver {
 		StatementBlock derivation;
 		Action<uint[], uint[]> encryptFunc;
 
 		public void Init(IConfuserContext ctx, IRandomGenerator random) {
-			StatementBlock dummy;
-			ctx.Registry.GetRequiredService<IDynCipherService>().GenerateCipherPair(random, out derivation, out dummy);
+			ctx.Registry.GetRequiredService<IDynCipherService>().GenerateCipherPair(random, out derivation, out var dummy);
 
 			var dmCodeGen = new DMCodeGen(typeof(void), new[] {
 				Tuple.Create("{BUFFER}", typeof(uint[])),
@@ -26,37 +26,37 @@ namespace Confuser.Protections.Compress {
 			encryptFunc = dmCodeGen.Compile<Action<uint[], uint[]>>();
 		}
 
-		public uint[] DeriveKey(uint[] a, uint[] b) {
+		uint[] IKeyDeriver.DeriveKey(uint[] a, uint[] b) {
 			var ret = new uint[0x10];
 			Buffer.BlockCopy(a, 0, ret, 0, a.Length * sizeof(uint));
 			encryptFunc(ret, b);
 			return ret;
 		}
 
-		public IEnumerable<Instruction> EmitDerivation(MethodDef method, IConfuserContext ctx, Local dst, Local src) {
+		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {
 			var ret = new List<Instruction>();
-			var codeGen = new CodeGen(dst, src, method, ret);
+			var codeGen = new CodeGen(block, key, method, ret);
 			codeGen.GenerateCIL(derivation);
 			codeGen.Commit(method.Body);
 			return ret;
-		}
+		};
 
-		class CodeGen : CILCodeGen {
-			readonly Local block;
-			readonly Local key;
+		private sealed class CodeGen : CILCodeGen {
+			private readonly Local block;
+			private readonly Local key;
 
-			public CodeGen(Local block, Local key, MethodDef method, IList<Instruction> instrs)
+			internal CodeGen(Local block, Local key, MethodDef method, IList<Instruction> instrs)
 				: base(method, instrs) {
 				this.block = block;
 				this.key = key;
 			}
 
 			protected override Local Var(Variable var) {
-				if (var.Name == "{BUFFER}")
-					return block;
-				if (var.Name == "{KEY}")
-					return key;
-				return base.Var(var);
+				switch (var.Name) {
+					case "{BUFFER}": return block;
+					case "{KEY}": return key;
+					default: return base.Var(var);
+				}
 			}
 		}
 	}

@@ -120,7 +120,7 @@ namespace Confuser.Helpers {
 				var existingMappedMethodDef = InjectContext.ResolveMapped(methodDef);
 				if (existingMappedMethodDef != null) return existingMappedMethodDef;
 
-				var importer = new Importer(InjectContext.TargetModule) { Resolver = this };
+				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs) { Resolver = this };
 				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
 				var result = InjectMethodDef(methodDef, importer, methodInjectProcessors);
 				InjectRemaining(importer, methodInjectProcessors);
