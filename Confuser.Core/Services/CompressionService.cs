@@ -36,10 +36,9 @@ namespace Confuser.Core.Services {
 			var injectResult = context.Annotations.GetOrCreate(module, Decompressor, m => {
 				var rt = serviceProvider.GetRequiredService<IRuntimeService>();
 				var marker = context.Registry.GetRequiredService<IMarkerService>();
-				var name = context.Registry.GetService<INameService>();
 
 				var decompressMethod = rt.GetRuntimeType("Confuser.Runtime.Lzma").Methods.Where(method => method.Name == "Decompress").Single();
-				return Confuser.Helpers.InjectHelper.Inject(decompressMethod, module, Confuser.Helpers.InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType, name));
+				return Confuser.Helpers.InjectHelper.Inject(decompressMethod, module, Confuser.Helpers.InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 			});
 			init(injectResult.Requested.Mapped);
 			foreach (var injectedDependency in injectResult.InjectedDependencies) {

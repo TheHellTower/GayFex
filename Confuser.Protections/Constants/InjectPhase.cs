@@ -89,28 +89,28 @@ namespace Confuser.Protections.Constants {
 			Debug.Assert(constantRuntime != null, $"{nameof(constantRuntime)} != null");
 
 			var initInjectResult = Helpers.InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
+				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx)
 				});
 			moduleCtx.InitMethod = initInjectResult.Requested.Mapped;
-			moduleCtx.Name?.MarkHelper(context, moduleCtx.InitMethod, moduleCtx.Marker, Parent);
+			name?.MarkHelper(context, moduleCtx.InitMethod, moduleCtx.Marker, Parent);
 
-			var dataType = new TypeDefUser("", moduleCtx.Name.RandomName(), context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
+			var dataType = new TypeDefUser("", name.RandomName(), context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
 				Layout = TypeAttributes.ExplicitLayout,
 				Visibility = TypeAttributes.NestedPrivate,
 				IsSealed = true
 			};
 			moduleCtx.DataType = dataType;
 			context.CurrentModule.GlobalType.NestedTypes.Add(dataType);
-			moduleCtx.Name?.MarkHelper(context, dataType, moduleCtx.Marker, Parent);
+			name?.MarkHelper(context, dataType, moduleCtx.Marker, Parent);
 
-			moduleCtx.DataField = new FieldDefUser(moduleCtx.Name.RandomName(), new FieldSig(dataType.ToTypeSig())) {
+			moduleCtx.DataField = new FieldDefUser(name.RandomName(), new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
 				Access = FieldAttributes.CompilerControlled
 			};
 			context.CurrentModule.GlobalType.Fields.Add(moduleCtx.DataField);
-			moduleCtx.Name?.MarkHelper(context, moduleCtx.DataField, moduleCtx.Marker, Parent);
+			name?.MarkHelper(context, moduleCtx.DataField, moduleCtx.Marker, Parent);
 
 			var decoderDesc = new DecoderDesc();
 			decoderDesc.StringID = (byte)(moduleCtx.Random.NextByte() & 3);
@@ -135,14 +135,14 @@ namespace Confuser.Protections.Constants {
 					var decoderImpl = moduleCtx.ModeHandler.CreateDecoder(moduleCtx);
 
 					var decoderInjectResult = Helpers.InjectHelper.Inject(decoder, moduleCtx.Module,
-						Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
+						Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 						new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 							KeyFieldValues = mutationKeys,
 							PlaceholderProcessor = decoderImpl.Processor
 						});
 
 					var decoderInst = decoderInjectResult.Requested.Mapped;
-					moduleCtx.Name?.MarkHelper(context, decoderInst, moduleCtx.Marker, Parent);
+					name?.MarkHelper(context, decoderInst, moduleCtx.Marker, Parent);
 					context.GetParameters(decoderInst).RemoveParameters(Parent);
 					decoderDesc.Data = decoderImpl.Data;
 					moduleCtx.Decoders.Add(Tuple.Create(decoderInst, decoderDesc));

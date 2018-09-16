@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Helpers {
 	public static class InjectBehaviors {
@@ -15,28 +16,27 @@ namespace Confuser.Helpers {
 		/// public elements and it will declare all dependency classes as nested private classes.
 		/// </summary>
 		/// <param name="targetType">The "main" type. Inside of this type, all the references will be stored.</param>
-		/// <param name="nameService">The name service used to generate the random names.</param>
 		/// <returns>The inject behavior with the described properties.</returns>
-		/// <exception cref="ArgumentNullException">
-		///   <paramref name="targetType"/> is <see langword="null"/>
-		///   <br />- or -<br />
-		///   <paramref name="nameService"/> is <see langword="null"/>
-		/// </exception>
-		public static IInjectBehavior RenameAndNestBehavior(IConfuserContext context, TypeDef targetType, INameService nameService) =>
-			new RenameEverythingNestedPrivateDependenciesBehavior(context, targetType, nameService);
+		/// <exception cref="ArgumentNullException"><paramref name="targetType"/> is <see langword="null"/></exception>
+		/// <exception cref="InvalidOperationException"><see cref="INameService"/> is not registered</exception>
+		public static IInjectBehavior RenameAndNestBehavior(IConfuserContext context, TypeDef targetType) =>
+			new RenameEverythingNestedPrivateDependenciesBehavior(context, targetType);
+		public static IInjectBehavior RenameAndInternalizeBehavior(IConfuserContext context) =>
+			new RenameEverythingInternalDependenciesBehavior(context);
 
-		private sealed class RenameEverythingNestedPrivateDependenciesBehavior : IInjectBehavior {
+		public static IInjectBehavior RenameBehavior(IConfuserContext context) =>
+			new RenameEverythingBehavior(context);
+
+		private class RenameEverythingBehavior : IInjectBehavior {
 			private readonly IConfuserContext _context;
-			private readonly TypeDef _targetType;
 			private readonly INameService _nameService;
 
-			internal RenameEverythingNestedPrivateDependenciesBehavior(IConfuserContext context, TypeDef targetType, INameService nameService) {
+			internal RenameEverythingBehavior(IConfuserContext context) {
 				_context = context ?? throw new ArgumentNullException(nameof(context));
-				_targetType = targetType ?? throw new ArgumentNullException(nameof(targetType));
-				_nameService = nameService ?? throw new ArgumentNullException(nameof(nameService));
+				_nameService = context.Registry.GetRequiredService<INameService>();
 			}
 
-			void IInjectBehavior.Process(TypeDef source, TypeDefUser injected, Importer importer) {
+			public virtual void Process(TypeDef source, TypeDefUser injected, Importer importer) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
@@ -45,31 +45,17 @@ namespace Confuser.Helpers {
 
 				injected.Name = GetName(injected);
 				injected.Namespace = null;
-				if (injected.IsNested) {
-					if (injected.IsNestedPublic)
-						injected.Visibility = TypeAttributes.NestedAssembly;
-				} else {
-					var declaringType = (TypeDef)importer.Import(_targetType);
-					if (declaringType == injected) {
-						injected.Visibility = TypeAttributes.NotPublic;
-					} else {
-						injected.DeclaringType = declaringType;
-						injected.Visibility = TypeAttributes.NestedPrivate;
-					}
-				}
 
 				// There is no need for this to be renamed again.
 				_nameService.SetCanRename(_context, injected, false);
 			}
 
-			void IInjectBehavior.Process(MethodDef source, MethodDefUser injected, Importer importer) {
+			public virtual void Process(MethodDef source, MethodDefUser injected, Importer importer) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
 				_nameService.SetOriginalName(_context, injected, injected.Name);
 
-				if (injected.IsPublic)
-					injected.Access = MethodAttributes.Assembly;
 				if (!injected.IsSpecialName && !injected.DeclaringType.IsDelegate)
 					injected.Name = GetName(injected.Name);
 
@@ -77,22 +63,7 @@ namespace Confuser.Helpers {
 				_nameService.SetCanRename(_context, injected, false);
 			}
 
-			void IInjectBehavior.Process(FieldDef source, FieldDefUser injected, Importer importer) {
-				if (source == null) throw new ArgumentNullException(nameof(source));
-				if (injected == null) throw new ArgumentNullException(nameof(injected));
-
-				_nameService.SetOriginalName(_context, injected, injected.Name);
-
-				if (injected.IsPublic)
-					injected.Access = FieldAttributes.Assembly;
-				if (!injected.IsSpecialName)
-					injected.Name = GetName(injected.Name);
-
-				// There is no need for this to be renamed again.
-				_nameService.SetCanRename(_context, injected, false);
-			}
-
-			void IInjectBehavior.Process(EventDef source, EventDefUser injected, Importer importer) {
+			public virtual void Process(FieldDef source, FieldDefUser injected, Importer importer) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
@@ -105,7 +76,20 @@ namespace Confuser.Helpers {
 				_nameService.SetCanRename(_context, injected, false);
 			}
 
-			void IInjectBehavior.Process(PropertyDef source, PropertyDefUser injected, Importer importer) {
+			public virtual void Process(EventDef source, EventDefUser injected, Importer importer) {
+				if (source == null) throw new ArgumentNullException(nameof(source));
+				if (injected == null) throw new ArgumentNullException(nameof(injected));
+
+				_nameService.SetOriginalName(_context, injected, injected.Name);
+
+				if (!injected.IsSpecialName)
+					injected.Name = GetName(injected.Name);
+
+				// There is no need for this to be renamed again.
+				_nameService.SetCanRename(_context, injected, false);
+			}
+
+			public virtual void Process(PropertyDef source, PropertyDefUser injected, Importer importer) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
@@ -135,6 +119,55 @@ namespace Confuser.Helpers {
 			private string GetName(string originalName) {
 				//return _nameService.ObfuscateName(originalName.Replace('.', '_'), Renamer.RenameMode.Debug);
 				return _nameService.RandomName(Renamer.RenameMode.Letters);
+			}
+		}
+
+		private class RenameEverythingInternalDependenciesBehavior : RenameEverythingBehavior {
+			internal RenameEverythingInternalDependenciesBehavior(IConfuserContext context) : base(context) { }
+
+			public override void Process(TypeDef source, TypeDefUser injected, Importer importer) {
+				base.Process(source, injected, importer);
+
+				if (injected.IsNested) {
+					if (injected.IsNestedPublic)
+						injected.Visibility = TypeAttributes.NestedAssembly;
+				}
+				else if (injected.IsPublic)
+					injected.Visibility = TypeAttributes.NotPublic;
+			}
+
+			public override void Process(MethodDef source, MethodDefUser injected, Importer importer) {
+				base.Process(source, injected, importer);
+
+				if (!injected.HasOverrides && injected.IsPublic)
+					injected.Access = MethodAttributes.Assembly;
+			}
+
+			public override void Process(FieldDef source, FieldDefUser injected, Importer importer) {
+				base.Process(source, injected, importer);
+
+				if (injected.IsPublic)
+					injected.Access = FieldAttributes.Assembly;
+			}
+		}
+
+		private class RenameEverythingNestedPrivateDependenciesBehavior : RenameEverythingInternalDependenciesBehavior {
+			private readonly TypeDef _targetType;
+
+			internal RenameEverythingNestedPrivateDependenciesBehavior(IConfuserContext context, TypeDef targetType)
+				: base(context) =>
+				_targetType = targetType ?? throw new ArgumentNullException(nameof(targetType));
+
+			public override void Process(TypeDef source, TypeDefUser injected, Importer importer) {
+				base.Process(source, injected, importer);
+
+				if (!injected.IsNested) {
+					var declaringType = (TypeDef)importer.Import(_targetType);
+					if (declaringType != injected) {
+						injected.DeclaringType = declaringType;
+						injected.Visibility = TypeAttributes.NestedPrivate;
+					}
+				}
 			}
 		}
 	}

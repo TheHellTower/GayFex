@@ -220,7 +220,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (keyAttrs[index] == null) {
 				using (Helpers.InjectHelper.CreateChildContext()) {
 					var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
-					var name = ctx.Context.Registry.GetRequiredService<INameService>();
+					var name = ctx.Context.Registry.GetService<INameService>();
 					var marker = ctx.Context.Registry.GetRequiredService<IMarkerService>();
 
 					ctx.DynCipher.GenerateExpressionPair(
@@ -236,7 +236,7 @@ namespace Confuser.Protections.ReferenceProxy {
 					var rtType = rt.GetRuntimeType("Confuser.Runtime.RefProxyKey");
 
 					var injectResult = Helpers.InjectHelper.Inject(rtType, ctx.Module,
-						Helpers.InjectBehaviors.RenameAndNestBehavior(ctx.Context, rtType, name),
+						Helpers.InjectBehaviors.RenameAndNestBehavior(ctx.Context, rtType),
 						new Helpers.MutationProcessor(ctx.Context.Registry, ctx.Module) {
 							PlaceholderProcessor = (module, method, args) => {
 								var invCompiled = new List<Instruction>();
@@ -248,7 +248,7 @@ namespace Confuser.Protections.ReferenceProxy {
 					keyAttrs[index] = Tuple.Create(injectResult.Requested.Mapped, expCompiled);
 
 					foreach (var def in injectResult)
-						name.MarkHelper(ctx.Context, def.Mapped, marker, ctx.Protection);
+						name?.MarkHelper(ctx.Context, def.Mapped, marker, ctx.Protection);
 				}
 			}
 			return keyAttrs[index].Item1;
@@ -259,7 +259,6 @@ namespace Confuser.Protections.ReferenceProxy {
 				inits[encoding] = initDescs = new InitMethodDesc[ctx.InitCount];
 
 			var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
-			var name = ctx.Context.Registry.GetRequiredService<INameService>();
 
 			int index = ctx.Random.NextInt32(initDescs.Length);
 			if (initDescs[index] == null) {
@@ -289,7 +288,7 @@ namespace Confuser.Protections.ReferenceProxy {
 						.Add(Helpers.MutationField.KeyI8, desc.OpCodeIndex);
 
 					var injectResult = Helpers.InjectHelper.Inject(rtInitMethod, ctx.Module,
-						Helpers.InjectBehaviors.RenameAndNestBehavior(ctx.Context, ctx.Module.GlobalType, name),
+						Helpers.InjectBehaviors.RenameAndNestBehavior(ctx.Context, ctx.Module.GlobalType),
 						new Helpers.MutationProcessor(ctx.Context.Registry, ctx.Module) {
 							KeyFieldValues = mutationKeyValues,
 							PlaceholderProcessor = encoding.EmitDecode(ctx)

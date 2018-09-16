@@ -55,20 +55,20 @@ namespace Confuser.Protections.AntiTamper {
 				.Add(Helpers.MutationField.KeyI4, (int)v);
 
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
-			var name = context.Registry.GetRequiredService<INameService>();
+			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
 
 			var antiTamperInit = rt.GetRuntimeType("Confuser.Runtime.AntiTamperAnti").FindMethod("Initialize");
 			var injectResult = Helpers.InjectHelper.Inject(antiTamperInit, context.CurrentModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
+				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 					KeyFieldValues = mutationKeys,
 					CryptProcessor = deriver.EmitDerivation(context)
 				});
 
 			foreach (var dep in injectResult) {
-				name.MarkHelper(context, dep.Mapped, marker, parent);
+				name?.MarkHelper(context, dep.Mapped, marker, parent);
 				if (dep.Mapped is MethodDef methodDef)
 					antiTamper.ExcludeMethod(context, methodDef);
 			}

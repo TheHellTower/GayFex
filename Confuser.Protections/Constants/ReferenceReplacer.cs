@@ -125,17 +125,19 @@ namespace Confuser.Protections.Constants {
 
 		static void InjectStateType(CEContext ctx) {
 			if (ctx.CfgCtxType == null) {
-				var type = ctx.Context.Registry.GetRequiredService<IRuntimeService>().GetRuntimeType("Confuser.Runtime.CFGCtx");
-				ctx.CfgCtxType = InjectHelper.Inject(type, ctx.Module);
-				ctx.Module.Types.Add(ctx.CfgCtxType);
-				ctx.CfgCtxCtor = ctx.CfgCtxType.FindMethod(".ctor");
-				ctx.CfgCtxNext = ctx.CfgCtxType.FindMethod("Next");
+				var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
+				var rtType = rt.GetRuntimeType("Confuser.Runtime.CFGCtx");
 
-				ctx.Name?.MarkHelper(ctx.Context, ctx.CfgCtxType, ctx.Marker, ctx.Protection);
-				foreach (var def in ctx.CfgCtxType.Fields)
-					ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
-				foreach (var def in ctx.CfgCtxType.Methods)
-					ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
+				var injectResult = Helpers.InjectHelper.Inject(rtType, ctx.Module,
+					Helpers.InjectBehaviors.RenameAndInternalizeBehavior(ctx.Context));
+
+				ctx.CfgCtxType = injectResult.Requested.Mapped;
+				ctx.Module.Types.Add(ctx.CfgCtxType);
+				ctx.CfgCtxCtor = injectResult.Where(inj => inj.Source.IsMethodDef && ((MethodDef)inj.Source).IsInstanceConstructor).Single().Mapped as MethodDef;
+				ctx.CfgCtxNext = injectResult.Where(inj => inj.Source.IsMethodDef && inj.Source.Name.Equals("Next")).Single().Mapped as MethodDef;
+
+				foreach (var def in injectResult)
+					ctx.Name?.MarkHelper(ctx.Context, def.Mapped, ctx.Marker, ctx.Protection);
 			}
 		}
 

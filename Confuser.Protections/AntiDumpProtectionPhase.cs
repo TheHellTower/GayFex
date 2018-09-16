@@ -27,13 +27,12 @@ namespace Confuser.Protections {
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			var runtime = context.Registry.GetRequiredService<IRuntimeService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
-			var name = context.Registry.GetRequiredService<INameService>();
 
 			var rtType = runtime.GetRuntimeType("Confuser.Runtime.AntiDump");
 			var initMethod = rtType.FindMethod("Initialize");
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
-				var injectResult = InjectHelper.Inject(initMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType, name));
+				var injectResult = InjectHelper.Inject(initMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 
 				var cctor = module.GlobalType.FindStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));

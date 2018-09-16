@@ -110,7 +110,7 @@ namespace Confuser.Protections.Resources {
 				.Add(Helpers.MutationField.KeyI1, moduleCtx.loadSeedUpdate);
 
 			var injectResult = Helpers.InjectHelper.Inject(rtInitMethod, context.CurrentModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
+				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
 					PlaceholderProcessor = (module, method, arg) => {

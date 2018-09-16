@@ -211,7 +211,6 @@ namespace Confuser.Protections {
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(_FullId);
 			var comp = context.Registry.GetRequiredService<ICompressionService>();
-			var name = context.Registry.GetRequiredService<INameService>();
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
 
 			logger.Debug("Encrypting modules...");
@@ -248,7 +247,7 @@ namespace Confuser.Protections {
 				.Add(Helpers.MutationField.KeyI2, compCtx.KeyTokenLoadUpdate);
 
 			var injectResult = Helpers.InjectHelper.Inject(mainMethod, stubModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType, name),
+				Helpers.InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType),
 				new Helpers.MutationProcessor(context.Registry, stubModule) {
 					KeyFieldValues = mutationKeys,
 					LateKeyFieldValues = lateMutationKeys,
