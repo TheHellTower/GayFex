@@ -136,38 +136,45 @@ namespace Confuser.Protections {
 					maxLen = strLen;
 			}
 
-			byte[] key = random.NextBytes(4 + maxLen);
-			key[0] = (byte)(compCtx.EntryPointToken >> 0);
-			key[1] = (byte)(compCtx.EntryPointToken >> 8);
-			key[2] = (byte)(compCtx.EntryPointToken >> 16);
-			key[3] = (byte)(compCtx.EntryPointToken >> 24);
+			var key = random.NextBytes(4 + maxLen);
+			var keySpan = key.Span;
+			keySpan[0] = (byte)(compCtx.EntryPointToken >> 0);
+			keySpan[1] = (byte)(compCtx.EntryPointToken >> 8);
+			keySpan[2] = (byte)(compCtx.EntryPointToken >> 16);
+			keySpan[3] = (byte)(compCtx.EntryPointToken >> 24);
 			for (int i = 4; i < key.Length; i++) // no zero bytes
-				key[i] |= 1;
+				keySpan[i] |= 1;
 			compCtx.KeySig = key;
 
 			int moduleIndex = 0;
 			foreach (var entry in modules) {
 				byte[] name = Encoding.UTF8.GetBytes(entry.Key);
 				for (int i = 0; i < name.Length; i++)
-					name[i] *= key[i + 4];
+					name[i] *= keySpan[i + 4];
 
 				uint state = 0x6fff61;
 				foreach (byte chr in name)
 					state = state * 0x5e3f1f + chr;
-				byte[] encrypted = compCtx.Encrypt(comp, entry.Value, state, progress => {
+				var encrypted = compCtx.Encrypt(comp, new ReadOnlyMemory<byte>(entry.Value), state, progress => {
 					progress = (progress + moduleIndex) / modules.Count;
 					logger.Progress((int)(progress * 10000), 10000);
 				});
 				token.ThrowIfCancellationRequested();
 
-				var resource = new EmbeddedResource(Convert.ToBase64String(name), encrypted, ManifestResourceAttributes.Private);
+				var resource = new EmbeddedResource(Convert.ToBase64String(name), encrypted.ToArray(), ManifestResourceAttributes.Private);
 				stubModule.Resources.Add(resource);
 				moduleIndex++;
 			}
 			logger.EndProgress();
 		}
 
-		private Helpers.PlaceholderProcessor InjectData(ITraceService traceService, ModuleDef stubModule, byte[] data) {
+		private Helpers.PlaceholderProcessor InjectData(IConfuserContext context, ModuleDef stubModule, ReadOnlyMemory<byte> data) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(stubModule != null, $"{nameof(stubModule)} != null");
+
+			var name = context.Registry.GetService<INameService>();
+			var marker = context.Registry.GetRequiredService<IMarkerService>();
+
 			var dataType = new TypeDefUser("", "DataType", stubModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
 				Layout = TypeAttributes.ExplicitLayout,
 				Visibility = TypeAttributes.NestedPrivate,
@@ -177,15 +184,17 @@ namespace Confuser.Protections {
 			stubModule.GlobalType.NestedTypes.Add(dataType);
 			stubModule.UpdateRowId(dataType.ClassLayout);
 			stubModule.UpdateRowId(dataType);
+			name?.MarkHelper(context, dataType, marker, this);
 
 			var dataField = new FieldDefUser("DataField", new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
 				HasFieldRVA = true,
-				InitialValue = data,
+				InitialValue = data.ToArray(),
 				Access = FieldAttributes.CompilerControlled
 			};
 			stubModule.GlobalType.Fields.Add(dataField);
 			stubModule.UpdateRowId(dataField);
+			name?.MarkHelper(context, dataField, marker, this);
 
 			return (args) => {
 				var repl = new List<Instruction>(args.Count + 3);
@@ -202,7 +211,6 @@ namespace Confuser.Protections {
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(_FullId);
 			var comp = context.Registry.GetRequiredService<ICompressionService>();
-			var trace = context.Registry.GetRequiredService<ITraceService>();
 			var name = context.Registry.GetRequiredService<INameService>();
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
 			
@@ -226,8 +234,8 @@ namespace Confuser.Protections {
 			uint seed = random.NextUInt32();
 			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
 
-			byte[] encryptedModule = compCtx.Encrypt(comp, compCtx.OriginModule, seed,
-													 progress => logger.Progress((int)(progress * 10000), 10000));
+			var encryptedModule = compCtx.Encrypt(comp, compCtx.OriginModule, seed,
+				progress => logger.Progress((int)(progress * 10000), 10000));
 			token.ThrowIfCancellationRequested();
 
 			compCtx.EncryptedModule = encryptedModule;
@@ -245,7 +253,7 @@ namespace Confuser.Protections {
 					KeyFieldValues = mutationKeys,
 					LateKeyFieldValues = lateMutationKeys,
 					CryptProcessor = compCtx.Deriver.EmitDerivation(context),
-					PlaceholderProcessor = InjectData(trace, stubModule, encryptedModule)
+					PlaceholderProcessor = InjectData(context, stubModule, encryptedModule)
 				});
 
 			// Main
@@ -294,7 +302,7 @@ namespace Confuser.Protections {
 			public void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 				if (evt == ModuleWriterEvent.MDBeginCreateTables) {
 					// Add key signature
-					uint sigBlob = writer.Metadata.BlobHeap.Add(ctx.KeySig);
+					uint sigBlob = writer.Metadata.BlobHeap.Add(ctx.KeySig.ToArray());
 					uint sigRid = writer.Metadata.TablesHeap.StandAloneSigTable.Add(new RawStandAloneSigRow(sigBlob));
 					Debug.Assert(sigRid == 1);
 					uint sigToken = 0x11000000 | sigRid;

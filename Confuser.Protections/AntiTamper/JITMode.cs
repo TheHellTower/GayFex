@@ -204,7 +204,7 @@ namespace Confuser.Protections.AntiTamper {
 			writer.Sections.InsertBeforeReloc(random.NextInt32(writer.Sections.Count), newSection);
 
 			// random padding at beginning to prevent revealing hash key
-			newSection.Add(new ByteArrayChunk(random.NextBytes(0x10)), 0x10);
+			newSection.Add(new ByteArrayChunk(random.NextBytes(0x10).ToArray()), 0x10);
 
 			// create index
 			var bodyIndex = new JITBodyIndex(methods.Select(method => writer.Metadata.GetToken(method).Raw));

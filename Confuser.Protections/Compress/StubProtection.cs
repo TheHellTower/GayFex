@@ -85,16 +85,15 @@ namespace Confuser.Protections.Compress {
 					if (e.Event == ModuleWriterEvent.MDBeginCreateTables) {
 						// Add key signature
 						var writer = (ModuleWriterBase)sender;
-						var prot = (StubProtection)Parent;
-						uint blob = writer.Metadata.BlobHeap.Add(prot.ctx.KeySig);
+						uint blob = writer.Metadata.BlobHeap.Add(Parent.ctx.KeySig.ToArray());
 						uint rid = writer.Metadata.TablesHeap.StandAloneSigTable.Add(new RawStandAloneSigRow(blob));
-						Debug.Assert((0x11000000 | rid) == prot.ctx.KeyToken);
+						Debug.Assert((0x11000000 | rid) == Parent.ctx.KeyToken);
 
-						if (prot.ctx.CompatMode)
+						if (Parent.ctx.CompatMode)
 							return;
 
 						// Add File reference
-						byte[] hash = SHA1.Create().ComputeHash(prot.ctx.OriginModule);
+						byte[] hash = SHA1.Create().ComputeHash(Parent.ctx.OriginModule);
 						uint hashBlob = writer.Metadata.BlobHeap.Add(hash);
 
 						MDTable<RawFileRow> fileTbl = writer.Metadata.TablesHeap.FileTable;

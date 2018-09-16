@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Helpers;
@@ -12,42 +14,47 @@ namespace Confuser.Protections.Compress {
 		private uint seed;
 
 		void IKeyDeriver.Init(IConfuserContext ctx, IRandomGenerator random) {
+			Debug.Assert(ctx != null, $"{nameof(ctx)} != null");
+			Debug.Assert(random != null, $"{nameof(random)} != null");
+
 			k1 = random.NextUInt32() | 1;
 			k2 = random.NextUInt32() | 1;
 			k3 = random.NextUInt32() | 1;
 			seed = random.NextUInt32();
 		}
 
-		uint[] IKeyDeriver.DeriveKey(uint[] a, uint[] b) {
-			var ret = new uint[0x10];
+		void IKeyDeriver.DeriveKey(ReadOnlySpan<uint> a, ReadOnlySpan<uint> b, Span<uint> key) {
+			Debug.Assert(a.Length == 0x10, $"{nameof(a)}.Length == 0x10");
+			Debug.Assert(b.Length == 0x10, $"{nameof(b)}.Length == 0x10");
+			Debug.Assert(key.Length == 0x10, $"{nameof(key)}.Length == 0x10");
+			
 			var state = seed;
 			for (int i = 0; i < 0x10; i++) {
 				switch (state % 3) {
 					case 0:
-						ret[i] = a[i] ^ b[i];
+						key[i] = a[i] ^ b[i];
 						break;
 					case 1:
-						ret[i] = a[i] * b[i];
+						key[i] = a[i] * b[i];
 						break;
 					case 2:
-						ret[i] = a[i] + b[i];
+						key[i] = a[i] + b[i];
 						break;
 				}
 				state = (state * state) % 0x2E082D35;
 				switch (state % 3) {
 					case 0:
-						ret[i] += k1;
+						key[i] += k1;
 						break;
 					case 1:
-						ret[i] ^= k2;
+						key[i] ^= k2;
 						break;
 					case 2:
-						ret[i] *= k3;
+						key[i] *= k3;
 						break;
 				}
 				state = (state * state) % 0x2E082D35;
 			}
-			return ret;
 		}
 
 		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {

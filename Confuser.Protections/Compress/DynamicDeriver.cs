@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
@@ -26,11 +27,15 @@ namespace Confuser.Protections.Compress {
 			encryptFunc = dmCodeGen.Compile<Action<uint[], uint[]>>();
 		}
 
-		uint[] IKeyDeriver.DeriveKey(uint[] a, uint[] b) {
-			var ret = new uint[0x10];
-			Buffer.BlockCopy(a, 0, ret, 0, a.Length * sizeof(uint));
-			encryptFunc(ret, b);
-			return ret;
+		void IKeyDeriver.DeriveKey(ReadOnlySpan<uint> a, ReadOnlySpan<uint> b, Span<uint> key) {
+			Debug.Assert(a.Length == 0x10, $"{nameof(a)}.Length == 0x10");
+			Debug.Assert(b.Length == 0x10, $"{nameof(b)}.Length == 0x10");
+			Debug.Assert(key.Length == 0x10, $"{nameof(key)}.Length == 0x10");
+
+			var tmp = new uint[0x10];
+			a.CopyTo(tmp);
+			encryptFunc(tmp, b.ToArray());
+			tmp.CopyTo(key);
 		}
 
 		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {

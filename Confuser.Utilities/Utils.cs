@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -191,14 +192,26 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="buff">The input buffer.</param>
 		/// <returns>A hexadecimal representation of input buffer.</returns>
-		public static string ToHexString(byte[] buff) {
-			var ret = new char[buff.Length * 2];
-			int i = 0;
-			foreach (byte val in buff) {
-				ret[i++] = hexCharset[val >> 4];
-				ret[i++] = hexCharset[val & 0xf];
+		public static string ToHexString(ReadOnlySpan<byte> buff) {
+			if (buff.Length <= 64) {
+				Span<char> ret = stackalloc char[buff.Length * 2];
+				ToHexString(buff, ret);
+				return ret.ToString();
+			} else {
+				Span<char> ret = new char[buff.Length * 2];
+				ToHexString(buff, ret);
+				return ret.ToString();
 			}
-			return new string(ret);
+		}
+
+		private static void ToHexString(ReadOnlySpan<byte> buff, Span<char> result) {
+			Debug.Assert(result.Length == buff.Length * 2, $"{nameof(result)}.Length == {nameof(buff)}.Length * 2");
+
+			var count = buff.Length;
+			for (var i = 0; i < count; ++i) {
+				result[i * 2 + 0] = hexCharset[buff[i] >> 4];
+				result[i * 2 + 1] = hexCharset[buff[i] & 0xf];
+			}
 		}
 
 		/// <summary>

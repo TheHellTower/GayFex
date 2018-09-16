@@ -19,6 +19,7 @@
     <PackageReference Include="System.Threading" Version="4.*" />
     <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.*" />
+    <PackageReference Include="System.Security.Cryptography.Primitives" Version="4.*" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">

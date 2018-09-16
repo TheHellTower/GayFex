@@ -355,10 +355,11 @@ namespace Confuser.Protections.ReferenceProxy {
 					token = (uint)desc.InitDesc.Encoding.Encode(desc.InitDesc.Method, encodeCtx, (int)token);
 
 					// Field name
-					var name = new char[5];
+					Span<char> name = stackalloc char[5];
 					name[desc.InitDesc.OpCodeIndex] = (char)((byte)desc.OpCode ^ desc.OpKey);
 
-					byte[] nameKey = encodeCtx.Random.NextBytes(4);
+					Span<byte> nameKey = stackalloc byte[4];
+					encodeCtx.Random.NextBytes(nameKey);
 					uint encodedNameKey = 0;
 					for (int i = 0; i < 4; i++) {
 						// No zero bytes
@@ -367,7 +368,7 @@ namespace Confuser.Protections.ReferenceProxy {
 						name[desc.InitDesc.TokenNameOrder[i]] = (char)nameKey[i];
 						encodedNameKey |= (uint)nameKey[i] << desc.InitDesc.TokenByteOrder[i];
 					}
-					desc.Field.Name = new string(name);
+					desc.Field.Name = name.ToString();
 
 					// Field sig
 					FieldSig sig = desc.Field.FieldSig;
