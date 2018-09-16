@@ -6,24 +6,30 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.DynCipher.Generation {
 	public class CILCodeGen {
-		readonly Dictionary<string, Local> localMap = new Dictionary<string, Local>();
+		private readonly Dictionary<string, Local> localMap = new Dictionary<string, Local>();
 
-		public CILCodeGen(MethodDef method, IList<Instruction> instrs) {
-			Method = method;
-			Instructions = instrs;
+		public ModuleDef Module { get; }
+		public MethodDef Method { get; }
+		public IList<Instruction> Instructions { get; }
+
+		public CILCodeGen(MethodDef method, IList<Instruction> instrs) : this(method?.Module, method, instrs) { }
+
+		public CILCodeGen(ModuleDef module, MethodDef method, IList<Instruction> instrs) {
+			Module = module ?? throw new ArgumentNullException(nameof(module));
+			Method = method ?? throw new ArgumentNullException(nameof(method));
+			Instructions = instrs ?? throw new ArgumentNullException(nameof(instrs));
 		}
 
-		public MethodDef Method { get; private set; }
-		public IList<Instruction> Instructions { get; private set; }
-
 		protected void Emit(Instruction instr) {
+			if (instr == null) throw new ArgumentNullException(nameof(instr));
+			
 			Instructions.Add(instr);
 		}
 
 		protected virtual Local Var(Variable var) {
 			Local ret;
 			if (!localMap.TryGetValue(var.Name, out ret)) {
-				ret = new Local(Method.Module.CorLibTypes.UInt32);
+				ret = new Local(Module.CorLibTypes.UInt32);
 				ret.Name = var.Name;
 				localMap[var.Name] = ret;
 			}
@@ -152,19 +158,19 @@ namespace Confuser.DynCipher.Generation {
 			else if (statement is LoopStatement) {
 				var loop = (LoopStatement)statement;
 				/*
-                 *      ldc.i4  begin
-                 *      br      cmp
-                 *      ldc.i4  dummy   //hint for dnlib
-                 * lop: nop
-                 *      ...
-                 *      ...
-                 *      ldc.i4.1
-                 *      add
-                 * cmp: dup
-                 *      ldc.i4  limit
-                 *      blt     lop
-                 *      pop
-                 */
+				 *      ldc.i4  begin
+				 *      br      cmp
+				 *      ldc.i4  dummy   //hint for dnlib
+				 * lop: nop
+				 *      ...
+				 *      ...
+				 *      ldc.i4.1
+				 *      add
+				 * cmp: dup
+				 *      ldc.i4  limit
+				 *      blt     lop
+				 *      pop
+				 */
 				Instruction lbl = Instruction.Create(OpCodes.Nop);
 				Instruction dup = Instruction.Create(OpCodes.Dup);
 				Emit(Instruction.CreateLdcI4(loop.Begin));

@@ -57,7 +57,7 @@ namespace Confuser.Protections.Compress {
 			}
 		}
 
-		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {
+		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (module, method, block, key) => {
 			var state = seed;
 			var result = new List<Instruction>(12 * 0x10);
 			for (int i = 0; i < 0x10; i++) {

@@ -90,7 +90,7 @@ namespace Confuser.Protections.Constants {
 
 			var initInjectResult = Helpers.InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
 				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
-				new Helpers.MutationProcessor(context.Registry) {
+				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx)
 				});
 			moduleCtx.InitMethod = initInjectResult.Requested.Mapped;
@@ -136,7 +136,7 @@ namespace Confuser.Protections.Constants {
 
 					var decoderInjectResult = Helpers.InjectHelper.Inject(decoder, moduleCtx.Module,
 						Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
-						new Helpers.MutationProcessor(context.Registry) {
+						new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 							KeyFieldValues = mutationKeys,
 							PlaceholderProcessor = decoderImpl.Processor
 						});

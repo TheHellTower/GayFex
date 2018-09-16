@@ -30,7 +30,7 @@ namespace Confuser.Protections.AntiTamper {
 			return ret;
 		}
 
-		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {
+		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (module, method, block, key) => {
 			var ret = new List<Instruction>(10 * 0x10);
 			OpCode getCode(int index) {
 				switch (index % 3) {

@@ -1,13 +1,12 @@
-﻿using System;
-using Confuser.Core;
+﻿using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
-using Confuser.Renamer;
+using Confuser.Helpers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.Resources {
-	internal class REContext {
+	internal sealed class REContext {
 		public IConfuserContext Context;
 
 		public FieldDef DataField;
@@ -23,5 +22,8 @@ namespace Confuser.Protections.Resources {
 		public INameService Name;
 		public IRandomGenerator Random;
 		public ITraceService Trace;
+
+		internal readonly LateMutationFieldUpdate loadSizeUpdate = new LateMutationFieldUpdate();
+		internal readonly LateMutationFieldUpdate loadSeedUpdate = new LateMutationFieldUpdate();
 	}
 }

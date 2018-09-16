@@ -34,9 +34,9 @@ namespace Confuser.Protections.AntiTamper {
 			return ret;
 		}
 
-		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (method, block, key) => {
+		CryptProcessor IKeyDeriver.EmitDerivation(IConfuserContext ctx) => (module, method, block, key) => {
 			var ret = new List<Instruction>();
-			var codeGen = new CodeGen(block, key, method, ret);
+			var codeGen = new CodeGen(block, key, module, method, ret);
 			codeGen.GenerateCIL(derivation);
 			codeGen.Commit(method.Body);
 			return ret;
@@ -46,8 +46,8 @@ namespace Confuser.Protections.AntiTamper {
 			readonly Local block;
 			readonly Local key;
 
-			public CodeGen(Local block, Local key, MethodDef method, IList<Instruction> instrs)
-				: base(method, instrs) {
+			public CodeGen(Local block, Local key, ModuleDef module, MethodDef method, IList<Instruction> instrs)
+				: base(module, method, instrs) {
 				this.block = block;
 				this.key = key;
 			}

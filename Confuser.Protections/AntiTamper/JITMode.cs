@@ -80,7 +80,7 @@ namespace Confuser.Protections.AntiTamper {
 			var antiTamperInitMethod = rt.GetRuntimeType("Confuser.Runtime.AntiTamperJIT").FindMethod("Initialize");
 			var injectResult = Helpers.InjectHelper.Inject(antiTamperInitMethod, context.CurrentModule,
 				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
-				new Helpers.MutationProcessor(context.Registry) {
+				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 					KeyFieldValues = mutationKeys,
 					CryptProcessor = deriver.EmitDerivation(context)
 				});

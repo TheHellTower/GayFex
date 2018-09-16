@@ -28,9 +28,9 @@ namespace Confuser.Protections.Constants {
 			dmCodeGen.GenerateCIL(encrypt);
 			encryptFunc = dmCodeGen.Compile<Action<uint[], uint[]>>();
 
-			return (method, block, key) => {
+			return (module, method, block, key) => {
 				var ret = new List<Instruction>();
-				var codeGen = new CipherCodeGen(block, key, method, ret);
+				var codeGen = new CipherCodeGen(block, key, module, method, ret);
 				codeGen.GenerateCIL(decrypt);
 				codeGen.Commit(method.Body);
 				return ret;
@@ -61,12 +61,12 @@ namespace Confuser.Protections.Constants {
 			return (uint)encoding.expCompiled((int)id);
 		}
 
-		class CipherCodeGen : CILCodeGen {
-			readonly Local block;
-			readonly Local key;
+		private sealed class CipherCodeGen : CILCodeGen {
+			private readonly Local block;
+			private readonly Local key;
 
-			public CipherCodeGen(Local block, Local key, MethodDef init, IList<Instruction> instrs)
-				: base(init, instrs) {
+			internal CipherCodeGen(Local block, Local key, ModuleDef module, MethodDef init, IList<Instruction> instrs)
+				: base(module, init, instrs) {
 				this.block = block;
 				this.key = key;
 			}

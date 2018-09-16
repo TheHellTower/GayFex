@@ -8,7 +8,7 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.Constants {
 	internal class NormalMode : IEncodeMode {
-		CryptProcessor IEncodeMode.EmitDecrypt(CEContext ctx) => (method, block, key) => {
+		CryptProcessor IEncodeMode.EmitDecrypt(CEContext ctx) => (module, method, block, key) => {
 			var ret = new List<Instruction>(10 * 0x10);
 			for (int i = 0; i < 0x10; i++) {
 				ret.Add(Instruction.Create(OpCodes.Ldloc, block));

@@ -249,7 +249,7 @@ namespace Confuser.Protections {
 
 			var injectResult = Helpers.InjectHelper.Inject(mainMethod, stubModule,
 				Helpers.InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType, name),
-				new Helpers.MutationProcessor(context.Registry) {
+				new Helpers.MutationProcessor(context.Registry, stubModule) {
 					KeyFieldValues = mutationKeys,
 					LateKeyFieldValues = lateMutationKeys,
 					CryptProcessor = compCtx.Deriver.EmitDerivation(context),
