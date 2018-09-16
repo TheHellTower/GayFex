@@ -9,6 +9,7 @@ using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
+using Confuser.Helpers;
 using Confuser.Protections.Services;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
@@ -105,13 +106,13 @@ namespace Confuser.Protections.Resources {
 			var rtType = rt.GetRuntimeType(rtName);
 			var rtInitMethod = rtType.FindMethod("Initialize");
 
-			var lateMutationKeys = ImmutableDictionary.Create<Helpers.MutationField, Helpers.LateMutationFieldUpdate>()
-				.Add(Helpers.MutationField.KeyI0, moduleCtx.loadSizeUpdate)
-				.Add(Helpers.MutationField.KeyI1, moduleCtx.loadSeedUpdate);
+			var lateMutationKeys = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
+				.Add(MutationField.KeyI0, moduleCtx.loadSizeUpdate)
+				.Add(MutationField.KeyI1, moduleCtx.loadSeedUpdate);
 
-			var injectResult = Helpers.InjectHelper.Inject(rtInitMethod, context.CurrentModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
-				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
+			var injectResult = InjectHelper.Inject(rtInitMethod, context.CurrentModule,
+				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+				new MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
 					PlaceholderProcessor = (module, method, arg) => {
 						var repl = new List<Instruction>(arg.Count + 3);

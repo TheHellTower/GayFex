@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Confuser.Core.Helpers;
+using Confuser.Helpers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +39,7 @@ namespace Confuser.Core.Services {
 				var marker = context.Registry.GetRequiredService<IMarkerService>();
 
 				var decompressMethod = rt.GetRuntimeType("Confuser.Runtime.Lzma").Methods.Where(method => method.Name == "Decompress").Single();
-				return Confuser.Helpers.InjectHelper.Inject(decompressMethod, module, Confuser.Helpers.InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
+				return InjectHelper.Inject(decompressMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 			});
 			init(injectResult.Requested.Mapped);
 			foreach (var injectedDependency in injectResult.InjectedDependencies) {

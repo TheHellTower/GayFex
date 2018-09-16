@@ -12,6 +12,7 @@ using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using Confuser.Protections.Compress;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
@@ -168,7 +169,7 @@ namespace Confuser.Protections {
 			logger.EndProgress();
 		}
 
-		private Helpers.PlaceholderProcessor InjectData(IConfuserContext context, ModuleDef stubModule, ReadOnlyMemory<byte> data) {
+		private PlaceholderProcessor InjectData(IConfuserContext context, ModuleDef stubModule, ReadOnlyMemory<byte> data) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(stubModule != null, $"{nameof(stubModule)} != null");
 
@@ -239,16 +240,16 @@ namespace Confuser.Protections {
 
 			compCtx.EncryptedModule = encryptedModule;
 
-			var mutationKeys = ImmutableDictionary.Create<Helpers.MutationField, int>()
-				.Add(Helpers.MutationField.KeyI0, encryptedModule.Length >> 2)
-				.Add(Helpers.MutationField.KeyI1, (int)seed);
-			compCtx.KeyTokenLoadUpdate = new Helpers.LateMutationFieldUpdate();
-			var lateMutationKeys = ImmutableDictionary.Create<Helpers.MutationField, Helpers.LateMutationFieldUpdate>()
-				.Add(Helpers.MutationField.KeyI2, compCtx.KeyTokenLoadUpdate);
+			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, encryptedModule.Length >> 2)
+				.Add(MutationField.KeyI1, (int)seed);
+			compCtx.KeyTokenLoadUpdate = new LateMutationFieldUpdate();
+			var lateMutationKeys = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
+				.Add(MutationField.KeyI2, compCtx.KeyTokenLoadUpdate);
 
-			var injectResult = Helpers.InjectHelper.Inject(mainMethod, stubModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType),
-				new Helpers.MutationProcessor(context.Registry, stubModule) {
+			var injectResult = InjectHelper.Inject(mainMethod, stubModule,
+				InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType),
+				new MutationProcessor(context.Registry, stubModule) {
 					KeyFieldValues = mutationKeys,
 					LateKeyFieldValues = lateMutationKeys,
 					CryptProcessor = compCtx.Deriver.EmitDerivation(context),

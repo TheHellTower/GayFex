@@ -8,6 +8,7 @@ using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
+using Confuser.Helpers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -88,9 +89,9 @@ namespace Confuser.Protections.Constants {
 			var constantRuntime = rt.GetRuntimeType("Confuser.Runtime.Constant");
 			Debug.Assert(constantRuntime != null, $"{nameof(constantRuntime)} != null");
 
-			var initInjectResult = Helpers.InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
-				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
+			var initInjectResult = InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
+				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+				new MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx)
 				});
 			moduleCtx.InitMethod = initInjectResult.Requested.Mapped;
@@ -122,21 +123,21 @@ namespace Confuser.Protections.Constants {
 				decoderDesc.InitializerID = (byte)(moduleCtx.Random.NextByte() & 3);
 			while (decoderDesc.InitializerID == decoderDesc.StringID || decoderDesc.InitializerID == decoderDesc.NumberID);
 
-			var mutationKeys = ImmutableDictionary.Create<Helpers.MutationField, int>()
-				.Add(Helpers.MutationField.KeyI0, decoderDesc.StringID)
-				.Add(Helpers.MutationField.KeyI1, decoderDesc.NumberID)
-				.Add(Helpers.MutationField.KeyI2, decoderDesc.InitializerID);
+			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, decoderDesc.StringID)
+				.Add(MutationField.KeyI1, decoderDesc.NumberID)
+				.Add(MutationField.KeyI2, decoderDesc.InitializerID);
 
 			var decoder = rt.GetRuntimeType("Confuser.Runtime.Constant").FindMethod("Get");
 
 			moduleCtx.Decoders = new List<Tuple<MethodDef, DecoderDesc>>();
 			for (int i = 0; i < moduleCtx.DecoderCount; i++) {
-				using (Helpers.InjectHelper.CreateChildContext()) {
+				using (InjectHelper.CreateChildContext()) {
 					var decoderImpl = moduleCtx.ModeHandler.CreateDecoder(moduleCtx);
 
-					var decoderInjectResult = Helpers.InjectHelper.Inject(decoder, moduleCtx.Module,
-						Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
-						new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
+					var decoderInjectResult = InjectHelper.Inject(decoder, moduleCtx.Module,
+						InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+						new MutationProcessor(context.Registry, context.CurrentModule) {
 							KeyFieldValues = mutationKeys,
 							PlaceholderProcessor = decoderImpl.Processor
 						});

@@ -8,6 +8,7 @@ using System.Text;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using Confuser.Protections.Services;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
@@ -64,13 +65,13 @@ namespace Confuser.Protections.AntiTamper {
 			}
 			deriver.Init(context, random);
 
-			var mutationKeys = ImmutableDictionary.Create<Helpers.MutationField, int>()
-				.Add(Helpers.MutationField.KeyI0, (int)(name1 * name2))
-				.Add(Helpers.MutationField.KeyI1, (int)z)
-				.Add(Helpers.MutationField.KeyI2, (int)x)
-				.Add(Helpers.MutationField.KeyI3, (int)c)
-				.Add(Helpers.MutationField.KeyI4, (int)v)
-				.Add(Helpers.MutationField.KeyI5, (int)key);
+			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, (int)(name1 * name2))
+				.Add(MutationField.KeyI1, (int)z)
+				.Add(MutationField.KeyI2, (int)x)
+				.Add(MutationField.KeyI3, (int)c)
+				.Add(MutationField.KeyI4, (int)v)
+				.Add(MutationField.KeyI5, (int)key);
 
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var name = context.Registry.GetRequiredService<INameService>();
@@ -78,9 +79,9 @@ namespace Confuser.Protections.AntiTamper {
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
 
 			var antiTamperInitMethod = rt.GetRuntimeType("Confuser.Runtime.AntiTamperJIT").FindMethod("Initialize");
-			var injectResult = Helpers.InjectHelper.Inject(antiTamperInitMethod, context.CurrentModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
-				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
+			var injectResult = InjectHelper.Inject(antiTamperInitMethod, context.CurrentModule,
+				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+				new MutationProcessor(context.Registry, context.CurrentModule) {
 					KeyFieldValues = mutationKeys,
 					CryptProcessor = deriver.EmitDerivation(context)
 				});
@@ -213,11 +214,11 @@ namespace Confuser.Protections.AntiTamper {
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("anti tamper");
 
 			// save methods
-			foreach (MethodDef method in methods.WithProgress(logger)) {
+			foreach (var method in methods.WithProgress(logger)) {
 				if (!method.HasBody)
 					continue;
 
-				MDToken token = writer.Metadata.GetToken(method);
+				var token = writer.Metadata.GetToken(method);
 
 				var jitBody = new JITMethodBody();
 				var bodyWriter = new JITMethodBodyWriter(writer.Metadata, method.Body, jitBody, random.NextUInt32(), writer.Metadata.KeepOldMaxStack || method.Body.KeepOldMaxStack);
@@ -226,7 +227,7 @@ namespace Confuser.Protections.AntiTamper {
 				bodyIndex.Add(token.Raw, jitBody);
 
 				method.Body = NopBody;
-				RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[token.Rid];
+				var methodRow = writer.Metadata.TablesHeap.MethodTable[token.Rid];
 				writer.Metadata.TablesHeap.MethodTable[token.Rid] = new RawMethodRow(
 					methodRow.RVA,
 					(ushort)(methodRow.ImplFlags | (ushort)MethodImplAttributes.NoInlining),
@@ -242,7 +243,7 @@ namespace Confuser.Protections.AntiTamper {
 		}
 
 		void EncryptSection(ModuleWriterBase writer) {
-			Stream stream = writer.DestinationStream;
+			var stream = writer.DestinationStream;
 			var reader = new BinaryReader(writer.DestinationStream);
 			stream.Position = 0x3C;
 			stream.Position = reader.ReadUInt32();

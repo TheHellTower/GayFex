@@ -5,6 +5,7 @@ using System.Linq;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
@@ -128,8 +129,8 @@ namespace Confuser.Protections.Constants {
 				var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
 				var rtType = rt.GetRuntimeType("Confuser.Runtime.CFGCtx");
 
-				var injectResult = Helpers.InjectHelper.Inject(rtType, ctx.Module,
-					Helpers.InjectBehaviors.RenameAndInternalizeBehavior(ctx.Context));
+				var injectResult = InjectHelper.Inject(rtType, ctx.Module,
+					InjectBehaviors.RenameAndInternalizeBehavior(ctx.Context));
 
 				ctx.CfgCtxType = injectResult.Requested.Mapped;
 				ctx.Module.Types.Add(ctx.CfgCtxType);

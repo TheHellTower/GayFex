@@ -8,6 +8,7 @@ using System.Text;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using Confuser.Protections.Services;
 using Confuser.Renamer;
 using Confuser.Renamer.Services;
@@ -50,12 +51,12 @@ namespace Confuser.Protections.AntiTamper {
 			}
 			deriver.Init(context, random);
 
-			var mutationKeys = ImmutableDictionary.Create<Helpers.MutationField, int>()
-				.Add(Helpers.MutationField.KeyI0, (int)(name1 * name2))
-				.Add(Helpers.MutationField.KeyI1, (int)z)
-				.Add(Helpers.MutationField.KeyI2, (int)x)
-				.Add(Helpers.MutationField.KeyI3, (int)c)
-				.Add(Helpers.MutationField.KeyI4, (int)v);
+			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, (int)(name1 * name2))
+				.Add(MutationField.KeyI1, (int)z)
+				.Add(MutationField.KeyI2, (int)x)
+				.Add(MutationField.KeyI3, (int)c)
+				.Add(MutationField.KeyI4, (int)v);
 
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var name = context.Registry.GetService<INameService>();
@@ -63,9 +64,9 @@ namespace Confuser.Protections.AntiTamper {
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
 
 			var antiTamperInit = rt.GetRuntimeType("Confuser.Runtime.AntiTamperNormal").FindMethod("Initialize");
-			var injectResult = Helpers.InjectHelper.Inject(antiTamperInit, context.CurrentModule,
-				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
-				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
+			var injectResult = InjectHelper.Inject(antiTamperInit, context.CurrentModule,
+				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+				new MutationProcessor(context.Registry, context.CurrentModule) {
 					KeyFieldValues = mutationKeys,
 					CryptProcessor = deriver.EmitDerivation(context)
 				});
