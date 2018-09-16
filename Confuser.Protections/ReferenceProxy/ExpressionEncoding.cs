@@ -9,14 +9,14 @@ namespace Confuser.Protections.ReferenceProxy {
 	internal class ExpressionEncoding : IRPEncoding {
 		readonly Dictionary<MethodDef, Tuple<Expression, Func<int, int>>> keys = new Dictionary<MethodDef, Tuple<Expression, Func<int, int>>>();
 
-		public Instruction[] EmitDecode(MethodDef init, RPContext ctx, Instruction[] arg) {
-			Tuple<Expression, Func<int, int>> key = GetKey(ctx, init);
+		Helpers.PlaceholderProcessor IRPEncoding.EmitDecode(RPContext ctx) => (module, method, args) => {
+			var key = GetKey(ctx, method);
 
 			var invCompiled = new List<Instruction>();
-			new CodeGen(arg, ctx.Method, invCompiled).GenerateCIL(key.Item1);
-			init.Body.MaxStack += (ushort)ctx.Depth;
+			new CodeGen(args, module, method, invCompiled).GenerateCIL(key.Item1);
+			method.Body.MaxStack += (ushort)ctx.Depth;
 			return invCompiled.ToArray();
-		}
+		};
 
 		public int Encode(MethodDef init, RPContext ctx, int value) {
 			Tuple<Expression, Func<int, int>> key = GetKey(ctx, init);
@@ -49,17 +49,17 @@ namespace Confuser.Protections.ReferenceProxy {
 			return ret;
 		}
 
-		class CodeGen : CILCodeGen {
-			readonly Instruction[] arg;
+		private sealed class CodeGen : CILCodeGen {
+			private readonly IReadOnlyList<Instruction> arg;
 
-			public CodeGen(Instruction[] arg, MethodDef method, IList<Instruction> instrs)
-				: base(method, instrs) {
+			internal CodeGen(IReadOnlyList<Instruction> arg, ModuleDef module, MethodDef method, IList<Instruction> instrs)
+				: base(module, method, instrs) {
 				this.arg = arg;
 			}
 
 			protected override void LoadVar(Variable var) {
 				if (var.Name == "{RESULT}") {
-					foreach (Instruction instr in arg)
+					foreach (var instr in arg)
 						Emit(instr);
 				}
 				else

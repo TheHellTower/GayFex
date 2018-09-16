@@ -196,7 +196,7 @@ namespace Confuser.Protections {
 			stubModule.UpdateRowId(dataField);
 			name?.MarkHelper(context, dataField, marker, this);
 
-			return (args) => {
+			return (module, method, args) => {
 				var repl = new List<Instruction>(args.Count + 3);
 				repl.AddRange(args);
 				repl.Add(Instruction.Create(OpCodes.Dup));
@@ -213,7 +213,7 @@ namespace Confuser.Protections {
 			var comp = context.Registry.GetRequiredService<ICompressionService>();
 			var name = context.Registry.GetRequiredService<INameService>();
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
-			
+
 			logger.Debug("Encrypting modules...");
 
 			switch (parameters.GetParameter(context, context.CurrentModule, "key", Mode.Normal)) {
@@ -230,7 +230,7 @@ namespace Confuser.Protections {
 
 			var rtType = rt.GetRuntimeType(compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
 			var mainMethod = rtType.FindMethod("Main");
-			
+
 			uint seed = random.NextUInt32();
 			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
 

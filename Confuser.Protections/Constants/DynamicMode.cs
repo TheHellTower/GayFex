@@ -17,7 +17,7 @@ namespace Confuser.Protections.Constants {
 
 		CryptProcessor IEncodeMode.EmitDecrypt(CEContext ctx) {
 			StatementBlock encrypt, decrypt;
-			ctx.DynCipher.GenerateCipherPair(ctx.Random, out encrypt, out decrypt);			
+			ctx.DynCipher.GenerateCipherPair(ctx.Random, out encrypt, out decrypt);
 
 			var dmCodeGen = new DMCodeGen(typeof(void), new[] {
 				Tuple.Create("{BUFFER}", typeof(uint[])),
@@ -46,7 +46,7 @@ namespace Confuser.Protections.Constants {
 			uint k1 = ctx.Random.NextUInt32() | 1;
 			uint k2 = ctx.Random.NextUInt32();
 
-			IReadOnlyList<Instruction> processor(IReadOnlyList<Instruction> arg) {
+			IReadOnlyList<Instruction> processor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arg) {
 				var repl = new List<Instruction>(arg.Count + 4);
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Ldc_I4, (int)MathsUtils.modInv(k1)));

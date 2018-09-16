@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.Helpers;
+using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.Constants {
@@ -35,7 +36,7 @@ namespace Confuser.Protections.Constants {
 		(PlaceholderProcessor, object) IEncodeMode.CreateDecoder(CEContext ctx) {
 			uint k1 = ctx.Random.NextUInt32() | 1;
 			uint k2 = ctx.Random.NextUInt32();
-			IReadOnlyList<Instruction> processor(IReadOnlyList<Instruction> arg) {
+			IReadOnlyList<Instruction> processor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arg) {
 				var repl = new List<Instruction>(arg.Count + 4);
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Ldc_I4, (int)MathsUtils.modInv(k1)));

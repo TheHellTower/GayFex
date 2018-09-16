@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
-using Confuser.Renamer.Services;
 using dnlib.DotNet;
-using dnlib.DotNet.Emit;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Helpers {
 	/// <summary>
@@ -47,7 +43,7 @@ namespace Confuser.Helpers {
 						if (!parentMap.ContainsKey(kvp.Key))
 							parentMap = parentMap.Add(kvp.Key, kvp.Value);
 					}
-				} 
+				}
 				else {
 					parentMap = oldParentMap;
 				}
@@ -65,8 +61,8 @@ namespace Confuser.Helpers {
 		}
 
 		public static InjectResult<MethodDef> Inject(MethodDef methodDef,
-			                                         ModuleDef target, 
-													 IInjectBehavior behavior, 
+													 ModuleDef target,
+													 IInjectBehavior behavior,
 													 params IMethodInjectProcessor[] methodInjectProcessors) {
 			if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
 			if (target == null) throw new ArgumentNullException(nameof(target));
@@ -78,32 +74,23 @@ namespace Confuser.Helpers {
 			var injector = new Injector(ctx, behavior, methodInjectProcessors);
 
 			var mappedMethod = injector.Inject(methodDef);
-			return InjectResult.Create(methodDef, mappedMethod, injector.InjectedMembers.Where(kvp => kvp.Key != methodDef));
+			return InjectResult.Create(methodDef, mappedMethod, injector.InjectedMembers);
 		}
 
-		private sealed class ChildContextRelease : IDisposable {
-			private readonly Action _releaseAction;
-			private bool _disposed = false;
+		public static InjectResult<TypeDef> Inject(TypeDef typeDef,
+												   ModuleDef target,
+												   IInjectBehavior behavior,
+												   params IMethodInjectProcessor[] methodInjectProcessors) {
+			if (typeDef == null) throw new ArgumentNullException(nameof(typeDef));
+			if (target == null) throw new ArgumentNullException(nameof(target));
+			if (behavior == null) throw new ArgumentNullException(nameof(behavior));
+			if (methodInjectProcessors == null) throw new ArgumentNullException(nameof(methodInjectProcessors));
 
-			internal ChildContextRelease(Action releaseAction) {
-				Debug.Assert(releaseAction != null, $"{nameof(releaseAction)} != null");
+			var ctx = GetOrCreateContext(typeDef.Module, target);
+			var injector = new Injector(ctx, behavior, methodInjectProcessors);
 
-				_releaseAction = releaseAction;
-			}
-
-			void Dispose(bool disposing) {
-				if (!_disposed) {
-					if (disposing) {
-
-					}
-					_disposed = true;
-				}
-			}
-			
-			void IDisposable.Dispose() {
-				Dispose(true);
-				GC.SuppressFinalize(this);
-			}
+			var mappedMethod = injector.Inject(typeDef);
+			return InjectResult.Create(typeDef, mappedMethod, injector.InjectedMembers);
 		}
 	}
 }

@@ -3,12 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using dnlib.DotNet.Writer;
 
 namespace Confuser.Helpers {
 	public static partial class InjectHelper {
@@ -38,7 +34,7 @@ namespace Confuser.Helpers {
 			}
 
 			private TypeDefUser CopyDef(TypeDef source) {
-				if (source == null) throw new ArgumentNullException(nameof(source));
+				Debug.Assert(source != null, $"{nameof(source)} != null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (TypeDefUser)importedMember;
@@ -62,7 +58,7 @@ namespace Confuser.Helpers {
 			}
 
 			private MethodDefUser CopyDef(MethodDef source) {
-				if (source == null) throw new ArgumentNullException(nameof(source));
+				Debug.Assert(source != null, $"{nameof(source)} != null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (MethodDefUser)importedMember;
@@ -79,20 +75,46 @@ namespace Confuser.Helpers {
 				return methodDefUser;
 			}
 
-			internal FieldDefUser CopyDef(FieldDef source) {
-				if (source == null) throw new ArgumentNullException(nameof(source));
-
-				var fieldDefUser = new FieldDefUser(source.Name, null, source.Attributes) {
-					Attributes = source.Attributes
-				};
+			private FieldDefUser CopyDef(FieldDef source) {
+				Debug.Assert(source != null, $"{nameof(source)} != null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (FieldDefUser)importedMember;
+
+				var fieldDefUser = new FieldDefUser(source.Name, null, source.Attributes);
 
 				_injectedMembers.Add(source, fieldDefUser);
 				PendingForInject.Enqueue(source);
 
 				return fieldDefUser;
+			}
+
+			private EventDefUser CopyDef(EventDef source) {
+				Debug.Assert(source != null, $"{nameof(source)} != null");
+
+				if (_injectedMembers.TryGetValue(source, out var importedMember))
+					return (EventDefUser)importedMember;
+
+				var eventDefUser = new EventDefUser(source.Name, null, source.Attributes);
+
+				_injectedMembers.Add(source, eventDefUser);
+				PendingForInject.Enqueue(source);
+
+				return eventDefUser;
+			}
+
+			private PropertyDefUser CopyDef(PropertyDef source) {
+				Debug.Assert(source != null, $"{nameof(source)} != null");
+
+				if (_injectedMembers.TryGetValue(source, out var importedMember))
+					return (PropertyDefUser)importedMember;
+
+				var propertyDefUser = new PropertyDefUser(source.Name, null, source.Attributes);
+
+				_injectedMembers.Add(source, propertyDefUser);
+				PendingForInject.Enqueue(source);
+
+				return propertyDefUser;
 			}
 
 			private static void CloneGenericParameters(ITypeOrMethodDef origin, ITypeOrMethodDef result) {
@@ -112,6 +134,12 @@ namespace Confuser.Helpers {
 						resultBuilder.Add(InjectMethodDef(methodDef, importer, methodInjectProcessors));
 					else if (memberDef is FieldDef fieldDef)
 						resultBuilder.Add(InjectFieldDef(fieldDef, importer));
+					else if (memberDef is EventDef eventDef)
+						resultBuilder.Add(InjectEventDef(eventDef, importer));
+					else if (memberDef is PropertyDef propertyDef)
+						resultBuilder.Add(InjectPropertyDef(propertyDef, importer));
+					else
+						Debug.Fail("Unexpected member in remaining import list:" + memberDef.GetType().Name);
 				}
 				return resultBuilder.ToImmutable();
 			}
@@ -123,6 +151,23 @@ namespace Confuser.Helpers {
 				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs) { Resolver = this };
 				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
 				var result = InjectMethodDef(methodDef, importer, methodInjectProcessors);
+				InjectRemaining(importer, methodInjectProcessors);
+				return result;
+			}
+
+			internal TypeDef Inject(TypeDef typeDef) {
+				var existingMappedTypeDef = InjectContext.ResolveMapped(typeDef);
+				if (existingMappedTypeDef != null) return existingMappedTypeDef;
+
+				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs) { Resolver = this };
+				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
+				var result = InjectTypeDef(typeDef, importer);
+				foreach (var method in typeDef.Methods) CopyDef(method);
+				foreach (var field in typeDef.Fields) CopyDef(field);
+				foreach (var @event in typeDef.Events) CopyDef(@event);
+				foreach (var prop in typeDef.Properties) CopyDef(prop);
+				foreach (var nestedType in typeDef.NestedTypes) Inject(nestedType);
+
 				InjectRemaining(importer, methodInjectProcessors);
 				return result;
 			}
@@ -145,7 +190,7 @@ namespace Confuser.Helpers {
 				foreach (var ca in typeDef.CustomAttributes)
 					newTypeDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
 
-				InjectBehavior.Process(typeDef, newTypeDef);
+				InjectBehavior.Process(typeDef, newTypeDef, importer);
 
 				if (!newTypeDef.IsNested)
 					InjectContext.TargetModule.Types.Add(newTypeDef);
@@ -194,7 +239,7 @@ namespace Confuser.Helpers {
 			}
 
 			private FieldDef InjectFieldDef(FieldDef fieldDef, Importer importer) {
-				if (fieldDef == null) throw new ArgumentNullException(nameof(fieldDef));
+				Debug.Assert(fieldDef != null, $"{nameof(fieldDef)} != null");
 
 				var existingFieldDef = InjectContext.ResolveMapped(fieldDef);
 				if (existingFieldDef != null) return existingFieldDef;
@@ -206,7 +251,7 @@ namespace Confuser.Helpers {
 				foreach (var ca in fieldDef.CustomAttributes)
 					newFieldDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
 
-				InjectBehavior.Process(fieldDef, newFieldDef);
+				InjectBehavior.Process(fieldDef, newFieldDef, importer);
 				InjectContext.TargetModule.UpdateRowId(newFieldDef);
 				InjectContext.ApplyMapping(fieldDef, newFieldDef);
 
@@ -214,7 +259,8 @@ namespace Confuser.Helpers {
 			}
 
 			private MethodDef InjectMethodDef(MethodDef methodDef, Importer importer, IEnumerable<IMethodInjectProcessor> methodInjectProcessors) {
-				if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
+				Debug.Assert(methodDef != null, $"{nameof(methodDef)} != null");
+				Debug.Assert(methodInjectProcessors != null, $"{nameof(methodInjectProcessors)} != null");
 
 				var existingMethodDef = InjectContext.ResolveMapped(methodDef);
 				if (existingMethodDef != null) return existingMethodDef;
@@ -281,11 +327,65 @@ namespace Confuser.Helpers {
 					newMethodDef.Body.OptimizeBranches();
 				}
 
-				InjectBehavior.Process(methodDef, newMethodDef);
+				InjectBehavior.Process(methodDef, newMethodDef, importer);
 				InjectContext.TargetModule.UpdateRowId(newMethodDef);
 				InjectContext.ApplyMapping(methodDef, newMethodDef);
 
 				return newMethodDef;
+			}
+
+			private EventDef InjectEventDef(EventDef eventDef, Importer importer) {
+				Debug.Assert(eventDef != null, $"{nameof(eventDef)} != null");
+
+				var existingEventDef = InjectContext.ResolveMapped(eventDef);
+				if (existingEventDef != null) return existingEventDef;
+
+				var newEventDef = CopyDef(eventDef);
+				newEventDef.AddMethod = CopyDef(eventDef.AddMethod);
+				newEventDef.InvokeMethod = CopyDef(eventDef.InvokeMethod);
+				newEventDef.RemoveMethod = CopyDef(eventDef.RemoveMethod);
+				if (eventDef.HasOtherMethods) {
+					foreach (var otherMethod in eventDef.OtherMethods)
+						newEventDef.OtherMethods.Add(CopyDef(otherMethod));
+				}
+				newEventDef.DeclaringType = (TypeDef)importer.Import(eventDef.DeclaringType);
+
+				foreach (var ca in eventDef.CustomAttributes)
+					newEventDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+
+				InjectBehavior.Process(eventDef, newEventDef, importer);
+				InjectContext.TargetModule.UpdateRowId(newEventDef);
+				InjectContext.ApplyMapping(eventDef, newEventDef);
+
+				return newEventDef;
+			}
+
+			private PropertyDef InjectPropertyDef(PropertyDef propertyDef, Importer importer) {
+				Debug.Assert(propertyDef != null, $"{nameof(propertyDef)} != null");
+
+				var existingPropertyDef = InjectContext.ResolveMapped(propertyDef);
+				if (existingPropertyDef != null) return existingPropertyDef;
+
+				var newPropertyDef = CopyDef(propertyDef);
+				foreach (var getMethod in propertyDef.GetMethods)
+					newPropertyDef.GetMethods.Add(CopyDef(getMethod));
+				foreach (var setMethod in propertyDef.SetMethods)
+					newPropertyDef.SetMethods.Add(CopyDef(setMethod));
+
+				if (propertyDef.HasOtherMethods) {
+					foreach (var otherMethod in propertyDef.OtherMethods)
+						newPropertyDef.OtherMethods.Add(CopyDef(otherMethod));
+				}
+				newPropertyDef.DeclaringType = (TypeDef)importer.Import(propertyDef.DeclaringType);
+
+				foreach (var ca in propertyDef.CustomAttributes)
+					newPropertyDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+
+				InjectBehavior.Process(propertyDef, newPropertyDef, importer);
+				InjectContext.TargetModule.UpdateRowId(newPropertyDef);
+				InjectContext.ApplyMapping(propertyDef, newPropertyDef);
+
+				return newPropertyDef;
 			}
 
 			#region ImportResolver

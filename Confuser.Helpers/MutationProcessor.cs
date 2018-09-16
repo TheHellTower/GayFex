@@ -9,7 +9,7 @@ using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Helpers {
-	public delegate IReadOnlyList<Instruction> PlaceholderProcessor(IReadOnlyList<Instruction> arguments);
+	public delegate IReadOnlyList<Instruction> PlaceholderProcessor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arguments);
 
 	public delegate IReadOnlyList<Instruction> CryptProcessor(ModuleDef module, MethodDef method, Local block, Local key);
 
@@ -24,13 +24,11 @@ namespace Confuser.Helpers {
 		public PlaceholderProcessor PlaceholderProcessor { get; set; }
 		public CryptProcessor CryptProcessor { get; set; }
 
-		public MutationProcessor(IServiceProvider services, ModuleDef targetModule) { 
+		public MutationProcessor(IServiceProvider services, ModuleDef targetModule) {
 			if (services == null) throw new ArgumentNullException(nameof(services));
-			if (targetModule == null) throw new ArgumentNullException(nameof(targetModule));
-
 			var runtimeService = services.GetRequiredService<IRuntimeService>();
 			TraceService = services.GetRequiredService<ITraceService>();
-			TargetModule = targetModule;
+			TargetModule = targetModule ?? throw new ArgumentNullException(nameof(targetModule));
 
 			MutationTypeDef = runtimeService.GetRuntimeType(MutationClassName);
 		}
@@ -51,7 +49,7 @@ namespace Confuser.Helpers {
 				}
 				else if (instr.OpCode == OpCodes.Call) {
 					if (instr.Operand is IMethod calledMethod && calledMethod.DeclaringType == MutationTypeDef) {
-						if (!ReplacePlaceholder(method, instr, calledMethod, ref i) && !ReplaceCrypt(TargetModule, method, instr, calledMethod, ref i))
+						if (!ReplacePlaceholder(method, instr, calledMethod, ref i) && !ReplaceCrypt(method, instr, calledMethod, ref i))
 							throw new InvalidOperationException("Unexpected call operation to Mutation class!");
 					}
 				}
@@ -128,7 +126,7 @@ namespace Confuser.Helpers {
 
 				index -= arg.Count;
 
-				arg = PlaceholderProcessor(arg);
+				arg = PlaceholderProcessor(TargetModule, method, arg);
 				for (int j = arg.Count - 1; j >= 0; j--)
 					method.Body.Instructions.Insert(argIndex, arg[j]);
 
@@ -140,8 +138,7 @@ namespace Confuser.Helpers {
 			return false;
 		}
 
-		private bool ReplaceCrypt(ModuleDef module, MethodDef method, Instruction instr, IMethod calledMethod, ref int index) {
-			Debug.Assert(module != null, $"{nameof(module)} != null");
+		private bool ReplaceCrypt(MethodDef method, Instruction instr, IMethod calledMethod, ref int index) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(instr != null, $"{nameof(instr)} != null");
 			Debug.Assert(calledMethod != null, $"{nameof(calledMethod)} != null");
@@ -158,7 +155,7 @@ namespace Confuser.Helpers {
 				method.Body.Instructions.RemoveAt(instrIndex - 1);
 				method.Body.Instructions.RemoveAt(instrIndex - 2);
 
-				var cryptInstr = CryptProcessor(module, method, (Local)ldBlock.Operand, (Local)ldKey.Operand);
+				var cryptInstr = CryptProcessor(TargetModule, method, (Local)ldBlock.Operand, (Local)ldKey.Operand);
 				for (var i = 0; i< cryptInstr.Count; i++) {
 					method.Body.Instructions.Insert(instrIndex - 2 + i, cryptInstr[i]);
 				}

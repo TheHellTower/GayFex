@@ -47,7 +47,7 @@ namespace Confuser.Protections.Constants {
 		(PlaceholderProcessor, object) IEncodeMode.CreateDecoder(CEContext ctx) {
 			var encoding = new x86Encoding();
 			encoding.Compile(ctx);
-			IReadOnlyList<Instruction> processor(IReadOnlyList<Instruction> arg) {
+			IReadOnlyList<Instruction> processor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arg) {
 				var repl = new List<Instruction>(arg.Count + 1);
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Call, encoding.native));

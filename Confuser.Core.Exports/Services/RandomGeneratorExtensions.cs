@@ -146,6 +146,26 @@ namespace Confuser.Core.Services {
 		}
 
 		/// <summary>
+		///     Shuffles the element in the specified span.
+		/// </summary>
+		/// <typeparam name="T">The element type of the list.</typeparam>
+		/// <param name="generator">The generator used to generate the values.</param>
+		/// <param name="data">The list to shuffle.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="generator"/> is <see langword="null" /></exception>
+		public static void Shuffle<T>(this IRandomGenerator generator, Span<T> data) {
+			if (generator == null) throw new ArgumentNullException(nameof(generator));
+
+			if (data.IsEmpty) return;
+
+			for (int i = data.Length - 1; i > 1; i--) {
+				int k = NextInt32(generator, i + 1);
+				var tmp = data[k];
+				data[k] = data[i];
+				data[i] = tmp;
+			}
+		}
+
+		/// <summary>
 		///     Create a new list with the elements of the <paramref name="list"/> in random order.
 		/// </summary>
 		/// <typeparam name="T">The element type of the list.</typeparam>

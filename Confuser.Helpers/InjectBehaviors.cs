@@ -36,7 +36,7 @@ namespace Confuser.Helpers {
 				_nameService = nameService ?? throw new ArgumentNullException(nameof(nameService));
 			}
 
-			void IInjectBehavior.Process(TypeDef source, TypeDefUser injected) {
+			void IInjectBehavior.Process(TypeDef source, TypeDefUser injected, Importer importer) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
@@ -49,15 +49,20 @@ namespace Confuser.Helpers {
 					if (injected.IsNestedPublic)
 						injected.Visibility = TypeAttributes.NestedAssembly;
 				} else {
-					injected.DeclaringType = _targetType;
-					injected.Visibility = TypeAttributes.NestedPrivate;
+					var declaringType = (TypeDef)importer.Import(_targetType);
+					if (declaringType == injected) {
+						injected.Visibility = TypeAttributes.NotPublic;
+					} else {
+						injected.DeclaringType = declaringType;
+						injected.Visibility = TypeAttributes.NestedPrivate;
+					}
 				}
 
 				// There is no need for this to be renamed again.
 				_nameService.SetCanRename(_context, injected, false);
 			}
 
-			void IInjectBehavior.Process(MethodDef source, MethodDefUser injected) {
+			void IInjectBehavior.Process(MethodDef source, MethodDefUser injected, Importer importer) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
@@ -72,7 +77,7 @@ namespace Confuser.Helpers {
 				_nameService.SetCanRename(_context, injected, false);
 			}
 
-			void IInjectBehavior.Process(FieldDef source, FieldDefUser injected) {
+			void IInjectBehavior.Process(FieldDef source, FieldDefUser injected, Importer importer) {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
@@ -80,6 +85,32 @@ namespace Confuser.Helpers {
 
 				if (injected.IsPublic)
 					injected.Access = FieldAttributes.Assembly;
+				if (!injected.IsSpecialName)
+					injected.Name = GetName(injected.Name);
+
+				// There is no need for this to be renamed again.
+				_nameService.SetCanRename(_context, injected, false);
+			}
+
+			void IInjectBehavior.Process(EventDef source, EventDefUser injected, Importer importer) {
+				if (source == null) throw new ArgumentNullException(nameof(source));
+				if (injected == null) throw new ArgumentNullException(nameof(injected));
+
+				_nameService.SetOriginalName(_context, injected, injected.Name);
+
+				if (!injected.IsSpecialName)
+					injected.Name = GetName(injected.Name);
+
+				// There is no need for this to be renamed again.
+				_nameService.SetCanRename(_context, injected, false);
+			}
+
+			void IInjectBehavior.Process(PropertyDef source, PropertyDefUser injected, Importer importer) {
+				if (source == null) throw new ArgumentNullException(nameof(source));
+				if (injected == null) throw new ArgumentNullException(nameof(injected));
+
+				_nameService.SetOriginalName(_context, injected, injected.Name);
+
 				if (!injected.IsSpecialName)
 					injected.Name = GetName(injected.Name);
 

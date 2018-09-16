@@ -78,7 +78,7 @@ namespace Confuser.Protections.Resources {
 			Debug.Assert(moduleCtx != null, $"{nameof(moduleCtx)} != null");
 
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
-			var name = context.Registry.GetRequiredService<INameService>();	
+			var name = context.Registry.GetRequiredService<INameService>();
 			var constant = context.Registry.GetRequiredService<IConstantService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 
@@ -91,7 +91,7 @@ namespace Confuser.Protections.Resources {
 			moduleCtx.DataType = dataType;
 			context.CurrentModule.GlobalType.NestedTypes.Add(dataType);
 			name?.MarkHelper(context, dataType, marker, Parent);
-			
+
 			moduleCtx.DataField = new FieldDefUser("_ConfuserResourceData", new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
 				HasFieldRVA = true,
@@ -104,7 +104,7 @@ namespace Confuser.Protections.Resources {
 			var rtName = context.Packer != null ? "Confuser.Runtime.Resource_Packer" : "Confuser.Runtime.Resource";
 			var rtType = rt.GetRuntimeType(rtName);
 			var rtInitMethod = rtType.FindMethod("Initialize");
-			
+
 			var lateMutationKeys = ImmutableDictionary.Create<Helpers.MutationField, Helpers.LateMutationFieldUpdate>()
 				.Add(Helpers.MutationField.KeyI0, moduleCtx.loadSizeUpdate)
 				.Add(Helpers.MutationField.KeyI1, moduleCtx.loadSeedUpdate);
@@ -113,7 +113,7 @@ namespace Confuser.Protections.Resources {
 				Helpers.InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType, name),
 				new Helpers.MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
-					PlaceholderProcessor = (arg) => {
+					PlaceholderProcessor = (module, method, arg) => {
 						var repl = new List<Instruction>(arg.Count + 3);
 						repl.AddRange(arg);
 						repl.Add(Instruction.Create(OpCodes.Dup));

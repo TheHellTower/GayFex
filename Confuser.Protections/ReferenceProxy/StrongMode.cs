@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Confuser.Core.Helpers;
@@ -7,6 +8,7 @@ using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
@@ -151,14 +153,14 @@ namespace Confuser.Protections.ReferenceProxy {
 			// Insert field load & replace instruction
 			if (argBeginIndex == instrIndex) {
 				ctx.Body.Instructions.Insert(instrIndex + 1,
-				                             new Instruction(OpCodes.Call, delegateType.FindMethod("Invoke")));
+											 new Instruction(OpCodes.Call, delegateType.FindMethod("Invoke")));
 				instr.OpCode = OpCodes.Ldsfld;
 				instr.Operand = proxy.Item1;
 			}
 			else {
 				Instruction argBegin = ctx.Body.Instructions[argBeginIndex];
 				ctx.Body.Instructions.Insert(argBeginIndex + 1,
-				                             new Instruction(argBegin.OpCode, argBegin.Operand));
+											 new Instruction(argBegin.OpCode, argBegin.Operand));
 				argBegin.OpCode = OpCodes.Ldsfld;
 				argBegin.Operand = proxy.Item1;
 
@@ -210,91 +212,94 @@ namespace Confuser.Protections.ReferenceProxy {
 			return field;
 		}
 
-		TypeDef GetKeyAttr(RPContext ctx) {
+		private TypeDef GetKeyAttr(RPContext ctx) {
 			if (keyAttrs == null)
 				keyAttrs = new Tuple<TypeDef, Func<int, int>>[0x10];
 
 			int index = ctx.Random.NextInt32(keyAttrs.Length);
 			if (keyAttrs[index] == null) {
-				TypeDef rtType = ctx.Context.Registry.GetService<IRuntimeService>().GetRuntimeType("Confuser.Runtime.RefProxyKey");
-				TypeDef injectedAttr = InjectHelper.Inject(rtType, ctx.Module);
-				injectedAttr.Name = ctx.Name.RandomName();
-				injectedAttr.Namespace = string.Empty;
+				using (Helpers.InjectHelper.CreateChildContext()) {
+					var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
+					var name = ctx.Context.Registry.GetRequiredService<INameService>();
+					var marker = ctx.Context.Registry.GetRequiredService<IMarkerService>();
 
-				Expression expression, inverse;
-				var var = new Variable("{VAR}");
-				var result = new Variable("{RESULT}");
+					ctx.DynCipher.GenerateExpressionPair(
+						ctx.Random,
+						new VariableExpression { Variable = new Variable("{VAR}") },
+						new VariableExpression { Variable = new Variable("{RESULT}") },
+						ctx.Depth, out var expression, out var inverse);
 
-				ctx.DynCipher.GenerateExpressionPair(
-					ctx.Random,
-					new VariableExpression { Variable = var }, new VariableExpression { Variable = result },
-					ctx.Depth, out expression, out inverse);
+					var expCompiled = new DMCodeGen(typeof(int), new[] { Tuple.Create("{VAR}", typeof(int)) })
+						.GenerateCIL(expression)
+						.Compile<Func<int, int>>();
 
-				var expCompiled = new DMCodeGen(typeof(int), new[] { Tuple.Create("{VAR}", typeof(int)) })
-					.GenerateCIL(expression)
-					.Compile<Func<int, int>>();
+					var rtType = rt.GetRuntimeType("Confuser.Runtime.RefProxyKey");
 
-				MethodDef ctor = injectedAttr.FindMethod(".ctor");
-				MutationHelper.ReplacePlaceholder(ctx.Trace, ctor, arg => {
-					var invCompiled = new List<Instruction>();
-					new CodeGen(arg, ctor, invCompiled).GenerateCIL(inverse);
-					return invCompiled.ToArray();
-				});
-				keyAttrs[index] = Tuple.Create(injectedAttr, expCompiled);
+					var injectResult = Helpers.InjectHelper.Inject(rtType, ctx.Module,
+						Helpers.InjectBehaviors.RenameAndNestBehavior(ctx.Context, rtType, name),
+						new Helpers.MutationProcessor(ctx.Context.Registry, ctx.Module) {
+							PlaceholderProcessor = (module, method, args) => {
+								var invCompiled = new List<Instruction>();
+								new CodeGen(args, module, method, invCompiled).GenerateCIL(inverse);
+								return invCompiled;
+							}
+						});
 
-				ctx.Module.AddAsNonNestedType(injectedAttr);
+					keyAttrs[index] = Tuple.Create(injectResult.Requested.Mapped, expCompiled);
 
-				foreach (IDnlibDef def in injectedAttr.FindDefinitions()) {
-					if (def.Name == "GetHashCode") {
-						ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
-						((MethodDef)def).Access = MethodAttributes.Public;
-					}
-					else
-						ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
+					foreach (var def in injectResult)
+						name.MarkHelper(ctx.Context, def.Mapped, marker, ctx.Protection);
 				}
 			}
 			return keyAttrs[index].Item1;
 		}
 
 		InitMethodDesc GetInitMethod(RPContext ctx, IRPEncoding encoding) {
-			InitMethodDesc[] initDescs;
-			if (!inits.TryGetValue(encoding, out initDescs))
+			if (!inits.TryGetValue(encoding, out var initDescs))
 				inits[encoding] = initDescs = new InitMethodDesc[ctx.InitCount];
+
+			var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
+			var name = ctx.Context.Registry.GetRequiredService<INameService>();
 
 			int index = ctx.Random.NextInt32(initDescs.Length);
 			if (initDescs[index] == null) {
-				TypeDef rtType = ctx.Context.Registry.GetService<IRuntimeService>().GetRuntimeType("Confuser.Runtime.RefProxyStrong");
-				MethodDef injectedMethod = InjectHelper.Inject(rtType.FindMethod("Initialize"), ctx.Module);
-				ctx.Module.GlobalType.Methods.Add(injectedMethod);
+				using (Helpers.InjectHelper.CreateChildContext()) {
+					var rtType = rt.GetRuntimeType("Confuser.Runtime.RefProxyStrong");
+					var rtInitMethod = rtType.FindMethod("Initialize");
 
-				injectedMethod.Access = MethodAttributes.PrivateScope;
-				injectedMethod.Name = ctx.Name.RandomName();
-				ctx.Name?.SetCanRename(ctx.Context, injectedMethod, false);
-				ctx.Marker.Mark(ctx.Context, injectedMethod, ctx.Protection);
+					var desc = new InitMethodDesc();
 
-				var desc = new InitMethodDesc { Method = injectedMethod };
+					Span<int> order = stackalloc int[5];
+					for (var i = 0; i < order.Length; i++) order[i] = i;
+					ctx.Random.Shuffle(order);
+					desc.OpCodeIndex = order[4];
+					desc.TokenNameOrder = order.Slice(0, 4).ToArray();
+					desc.TokenByteOrder = Enumerable.Range(0, 4).Select(x => x * 8).ToArray();
+					ctx.Random.Shuffle(desc.TokenByteOrder);
 
-				// Field name has five bytes, each bytes has different order & meaning
-				int[] order = Enumerable.Range(0, 5).ToArray();
-				ctx.Random.Shuffle(order);
-				desc.OpCodeIndex = order[4];
+					var mutationKeyValues = ImmutableDictionary.Create<Helpers.MutationField, int>()
+						.Add(Helpers.MutationField.KeyI0, desc.TokenNameOrder[0])
+						.Add(Helpers.MutationField.KeyI1, desc.TokenNameOrder[1])
+						.Add(Helpers.MutationField.KeyI2, desc.TokenNameOrder[2])
+						.Add(Helpers.MutationField.KeyI3, desc.TokenNameOrder[3])
+						.Add(Helpers.MutationField.KeyI4, desc.TokenByteOrder[0])
+						.Add(Helpers.MutationField.KeyI5, desc.TokenByteOrder[1])
+						.Add(Helpers.MutationField.KeyI6, desc.TokenByteOrder[2])
+						.Add(Helpers.MutationField.KeyI7, desc.TokenByteOrder[3])
+						.Add(Helpers.MutationField.KeyI8, desc.OpCodeIndex);
 
-				desc.TokenNameOrder = new int[4];
-				Array.Copy(order, 0, desc.TokenNameOrder, 0, 4);
-				desc.TokenByteOrder = Enumerable.Range(0, 4).Select(x => x * 8).ToArray();
-				ctx.Random.Shuffle(desc.TokenByteOrder);
+					var injectResult = Helpers.InjectHelper.Inject(rtInitMethod, ctx.Module,
+						Helpers.InjectBehaviors.RenameAndNestBehavior(ctx.Context, ctx.Module.GlobalType, name),
+						new Helpers.MutationProcessor(ctx.Context.Registry, ctx.Module) {
+							KeyFieldValues = mutationKeyValues,
+							PlaceholderProcessor = encoding.EmitDecode(ctx)
+						});
 
-				var keyInjection = new int[9];
-				Array.Copy(desc.TokenNameOrder, 0, keyInjection, 0, 4);
-				Array.Copy(desc.TokenByteOrder, 0, keyInjection, 4, 4);
-				keyInjection[8] = desc.OpCodeIndex;
-				MutationHelper.InjectKeys(injectedMethod, Enumerable.Range(0, 9).ToArray(), keyInjection);
+					desc.Method = injectResult.Requested.Mapped;
+					desc.Encoding = encoding;
 
-				// Encoding
-				MutationHelper.ReplacePlaceholder(ctx.Trace, injectedMethod, arg => { return encoding.EmitDecode(injectedMethod, ctx, arg); });
-				desc.Encoding = encoding;
-
-				initDescs[index] = desc;
+					initDescs[index] = desc;
+				}
 			}
 			return initDescs[index];
 		}
@@ -308,9 +313,9 @@ namespace Confuser.Protections.ReferenceProxy {
 					opKey = ctx.Random.NextByte();
 				} while (opKey == (byte)field.Key.Item1);
 
-				TypeDef delegateType = field.Value.Item1.DeclaringType;
+				var delegateType = field.Value.Item1.DeclaringType;
 
-				MethodDef cctor = delegateType.FindOrCreateStaticConstructor();
+				var cctor = delegateType.FindOrCreateStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, init.Method));
 				cctor.Body.Instructions.Insert(0, Instruction.CreateLdcI4(opKey));
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Ldtoken, field.Value.Item1));
@@ -324,8 +329,8 @@ namespace Confuser.Protections.ReferenceProxy {
 				});
 			}
 
-			foreach (TypeDef delegateType in ctx.Delegates.Values) {
-				MethodDef cctor = delegateType.FindOrCreateStaticConstructor();
+			foreach (var delegateType in ctx.Delegates.Values) {
+				var cctor = delegateType.FindOrCreateStaticConstructor();
 				ctx.Marker.Mark(ctx.Context, cctor, ctx.Protection);
 				ctx.Name?.SetCanRename(ctx.Context, cctor, false);
 			}
@@ -387,17 +392,17 @@ namespace Confuser.Protections.ReferenceProxy {
 			}
 		}
 
-		class CodeGen : CILCodeGen {
-			readonly Instruction[] arg;
+		private sealed class CodeGen : CILCodeGen {
+			private readonly IReadOnlyList<Instruction> arg;
 
-			public CodeGen(Instruction[] arg, MethodDef method, IList<Instruction> instrs)
-				: base(method, instrs) {
+			internal CodeGen(IReadOnlyList<Instruction> arg, ModuleDef module, MethodDef method, IList<Instruction> instrs)
+				: base(module, method, instrs) {
 				this.arg = arg;
 			}
 
 			protected override void LoadVar(Variable var) {
 				if (var.Name == "{RESULT}") {
-					foreach (Instruction instr in arg)
+					foreach (var instr in arg)
 						Emit(instr);
 				}
 				else
