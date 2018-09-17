@@ -53,7 +53,8 @@ namespace Confuser.Helpers {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (target == null) throw new ArgumentNullException(nameof(target));
 
-				Debug.Assert(!_map.ContainsKey(source));
+				Debug.Assert(!_map.ContainsKey(source) || _map[source] == target,
+					"Overwritten existing mapping");
 				_map = _map.SetItem(source, target);
 			}
 

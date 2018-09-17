@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Helpers;
@@ -66,12 +67,6 @@ namespace Confuser.Protections.Constants {
 						throw new UnreachableException();
 				}
 
-				// Inject helpers
-				var decomp = compression.GetRuntimeDecompressor(context, context.CurrentModule, member => {
-					name?.MarkHelper(context, member, marker, Parent);
-					if (member is MethodDef)
-						context.GetParameters(member).RemoveParameters(Parent);
-				});
 				InjectHelpers(context, moduleCtx);
 				var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, moduleCtx.InitMethod));
@@ -89,13 +84,62 @@ namespace Confuser.Protections.Constants {
 			var constantRuntime = rt.GetRuntimeType("Confuser.Runtime.Constant");
 			Debug.Assert(constantRuntime != null, $"{nameof(constantRuntime)} != null");
 
+			var lateMutationFields = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
+				.Add(MutationField.KeyI0, moduleCtx.EncodingBufferSizeUpdate)
+				.Add(MutationField.KeyI1, moduleCtx.KeySeedUpdate);
+
 			var initInjectResult = InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
-					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx)
+					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
+					PlaceholderProcessor = CreateDataField(context, moduleCtx),
+					LateKeyFieldValues = lateMutationFields
 				});
 			moduleCtx.InitMethod = initInjectResult.Requested.Mapped;
 			name?.MarkHelper(context, moduleCtx.InitMethod, moduleCtx.Marker, Parent);
+
+			var decoder = rt.GetRuntimeType("Confuser.Runtime.Constant").FindMethod("Get");
+
+			moduleCtx.Decoders = new List<Tuple<MethodDef, DecoderDesc>>();
+			for (int i = 0; i < moduleCtx.DecoderCount; i++) {
+				Span<byte> ids = stackalloc byte[3] { 0, 1, 2 };
+				moduleCtx.Random.Shuffle(ids);
+
+				var decoderDesc = new DecoderDesc {
+					StringID = ids[0],
+					NumberID = ids[1],
+					InitializerID = ids[2]
+				};
+
+				var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
+					.Add(MutationField.KeyI0, decoderDesc.StringID)
+					.Add(MutationField.KeyI1, decoderDesc.NumberID)
+					.Add(MutationField.KeyI2, decoderDesc.InitializerID);
+
+				using (InjectHelper.CreateChildContext()) {
+					var decoderImpl = moduleCtx.ModeHandler.CreateDecoder(moduleCtx);
+
+					var decoderInjectResult = InjectHelper.Inject(decoder, moduleCtx.Module,
+						InjectBehaviors.RenameAndInternalizeBehavior(context),
+						new MutationProcessor(context.Registry, context.CurrentModule) {
+							KeyFieldValues = mutationKeys,
+							PlaceholderProcessor = decoderImpl.Processor
+						});
+
+					var decoderInst = decoderInjectResult.Requested.Mapped;
+					name?.MarkHelper(context, decoderInst, moduleCtx.Marker, Parent);
+					context.GetParameters(decoderInst).RemoveParameters(Parent);
+					decoderDesc.Data = decoderImpl.Data;
+					moduleCtx.Decoders.Add(Tuple.Create(decoderInst, decoderDesc));
+				}
+			}
+		}
+
+		private PlaceholderProcessor CreateDataField(IConfuserContext context, CEContext moduleCtx) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(moduleCtx != null, $"{nameof(moduleCtx)} != null");
+
+			var name = context.Registry.GetRequiredService<INameService>();
 
 			var dataType = new TypeDefUser("", name.RandomName(), context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
 				Layout = TypeAttributes.ExplicitLayout,
@@ -113,42 +157,15 @@ namespace Confuser.Protections.Constants {
 			context.CurrentModule.GlobalType.Fields.Add(moduleCtx.DataField);
 			name?.MarkHelper(context, moduleCtx.DataField, moduleCtx.Marker, Parent);
 
-			var decoderDesc = new DecoderDesc();
-			decoderDesc.StringID = (byte)(moduleCtx.Random.NextByte() & 3);
-			do
-				decoderDesc.NumberID = (byte)(moduleCtx.Random.NextByte() & 3);
-			while (decoderDesc.NumberID == decoderDesc.StringID);
-
-			do
-				decoderDesc.InitializerID = (byte)(moduleCtx.Random.NextByte() & 3);
-			while (decoderDesc.InitializerID == decoderDesc.StringID || decoderDesc.InitializerID == decoderDesc.NumberID);
-
-			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
-				.Add(MutationField.KeyI0, decoderDesc.StringID)
-				.Add(MutationField.KeyI1, decoderDesc.NumberID)
-				.Add(MutationField.KeyI2, decoderDesc.InitializerID);
-
-			var decoder = rt.GetRuntimeType("Confuser.Runtime.Constant").FindMethod("Get");
-
-			moduleCtx.Decoders = new List<Tuple<MethodDef, DecoderDesc>>();
-			for (int i = 0; i < moduleCtx.DecoderCount; i++) {
-				using (InjectHelper.CreateChildContext()) {
-					var decoderImpl = moduleCtx.ModeHandler.CreateDecoder(moduleCtx);
-
-					var decoderInjectResult = InjectHelper.Inject(decoder, moduleCtx.Module,
-						InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
-						new MutationProcessor(context.Registry, context.CurrentModule) {
-							KeyFieldValues = mutationKeys,
-							PlaceholderProcessor = decoderImpl.Processor
-						});
-
-					var decoderInst = decoderInjectResult.Requested.Mapped;
-					name?.MarkHelper(context, decoderInst, moduleCtx.Marker, Parent);
-					context.GetParameters(decoderInst).RemoveParameters(Parent);
-					decoderDesc.Data = decoderImpl.Data;
-					moduleCtx.Decoders.Add(Tuple.Create(decoderInst, decoderDesc));
-				}
-			}
+			return (module, method, args) => {
+				var repl = new List<Instruction>(args.Count + 3);
+				repl.AddRange(args);
+				repl.Add(Instruction.Create(OpCodes.Dup));
+				repl.Add(Instruction.Create(OpCodes.Ldtoken, moduleCtx.DataField));
+				repl.Add(Instruction.Create(OpCodes.Call, context.CurrentModule.Import(
+					typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.InitializeArray)))));
+				return repl;
+			};
 		}
 	}
 }
