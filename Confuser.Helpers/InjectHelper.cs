@@ -1,21 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using dnlib.DotNet;
 
 namespace Confuser.Helpers {
 	/// <summary>
-	///     Provides methods to inject a <see cref="TypeDef" /> into another module.
+	///     Provides methods to inject any kind of member from one module to another and transform
+	///     them while doing so according to specific rules.
 	/// </summary>
 	public static partial class InjectHelper {
+		/// <summary>The stack of contexts that are parents to the current context.</summary>
 		private static Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>> _parentMaps =
 			new Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>>();
 
+		/// <summary>The current context storage. One context for each pair of source and target module.</summary>
 		private static IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext> _contextMap =
 			ImmutableDictionary.Create<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>();
 
 		private static InjectContext GetOrCreateContext(ModuleDef sourceModule, ModuleDef targetModule) {
+			Debug.Assert(sourceModule != null, $"{nameof(sourceModule)} != null");
+			Debug.Assert(targetModule != null, $"{nameof(targetModule)} != null");
+
 			var key = (sourceModule, targetModule);
 			// Check if the current map has a context for the two modules.
 			if (!_contextMap.TryGetValue(key, out var context)) {
@@ -34,6 +41,51 @@ namespace Confuser.Helpers {
 			return context;
 		}
 
+		/// <summary>
+		///    Create a new child injection context.
+		/// </summary>
+		/// <returns>The disposable used to release the context again.</returns>
+		/// <remarks>
+		///     <para>
+		///         The newly created child context knows about all injected members that were inject by
+		///         the context that is active up to this point. How ever once the context is released again,
+		///         the information about the injected types is gone.
+		///     </para>
+		///     <para>
+		///         This is required, because the injection system will not inject any member twice, in case
+		///         it is already present in the currently active injection context. In case a single member
+		///         needs to be imported twice, the imports need to happen in different contexts.
+		///     </para>
+		///     <para>
+		///         It is possible to stack the child contexts as required. A new child context will always
+		///         know all injected members of every parent index. So if one method needs to be injected
+		///         multiple times, but reference a single instance of another method, it is possible to
+		///         inject the method that is only injected once first and inject the method that needs to
+		///         be around multiple times with child contexts.
+		///     </para>
+		///     <para>If the returned disposable is not properly disposed, ConfuserEx will leak memory.</para>
+		/// </remarks>
+		/// <example>
+		///     Injecting twice without child context.
+		///     <code>
+		///     var injectResult1 = InjectionHelper.Inject(sourceMember, targetModule, behavior);
+		///     var injectResult2 = InjectionHelper.Inject(sourceMember, targetModule, behavior);
+		///     Debug.Assert(injectResult1.Requested.Mapped == injectResult2.Requested.Mapped);
+		///     </code>
+		///     <para />
+		///     Injecting twice with child context.
+		///     <code>
+		///     InjectResult&lt;MethodDef&gt; injectResult1;
+		///     InjectResult&lt;MethodDef&gt; injectResult2;
+		///     using (InjectionHelper.CreateChildContext()) {
+		///         injectResult1 = InjectionHelper.Inject(sourceMember, targetModule, behavior);
+		///     }
+		///     using (InjectionHelper.CreateChildContext()) {
+		///         injectResult2 = InjectionHelper.Inject(sourceMember, targetModule, behavior);
+		///     }
+		///     Debug.Assert(injectResult1.Requested.Mapped != injectResult2.Requested.Mapped);
+		///     </code>
+		/// </example>
 		public static IDisposable CreateChildContext() {
 			var parentMap = _contextMap;
 			if (_parentMaps.Any()) {
@@ -60,6 +112,18 @@ namespace Confuser.Helpers {
 			_contextMap = _parentMaps.Pop();
 		}
 
+		/// <summary>
+		///     Inject a method into the target module. The method is automatically added to the global type.
+		/// </summary>
+		/// <param name="methodDef">The method to be injected.</param>
+		/// <param name="target">The target module.</param>
+		/// <param name="behavior">The behavior that is used to modify the injected members.</param>
+		/// <param name="methodInjectProcessors">
+		///     Any additional method code processors that are required to inject this and any dependency
+		///     method.
+		/// </param>
+		/// <returns>The result of the injection that contains the mapping of all injected members.</returns>
+		/// <exception cref="ArgumentNullException">Any parameter is <see langword="null"/>.</exception>
 		public static InjectResult<MethodDef> Inject(MethodDef methodDef,
 													 ModuleDef target,
 													 IInjectBehavior behavior,
@@ -74,9 +138,21 @@ namespace Confuser.Helpers {
 			var injector = new Injector(ctx, behavior, methodInjectProcessors);
 
 			var mappedMethod = injector.Inject(methodDef);
-			return InjectResult.Create(methodDef, mappedMethod, injector.InjectedMembers);
+			return InjectResult.Create(methodDef, mappedMethod, injector.InjectedMembers.Where(m => m.Value != mappedMethod));
 		}
 
+		/// <summary>
+		///     Inject a type into the target module.
+		/// </summary>
+		/// <param name="typeDef">The type to be injected.</param>
+		/// <param name="target">The target module.</param>
+		/// <param name="behavior">The behavior that is used to modify the injected members.</param>
+		/// <param name="methodInjectProcessors">
+		///     Any additional method code processors that are required to inject this and any dependency
+		///     method.
+		/// </param>
+		/// <returns>The result of the injection that contains the mapping of all injected members.</returns>
+		/// <exception cref="ArgumentNullException">Any parameter is <see langword="null"/>.</exception>
 		public static InjectResult<TypeDef> Inject(TypeDef typeDef,
 												   ModuleDef target,
 												   IInjectBehavior behavior,
@@ -89,8 +165,8 @@ namespace Confuser.Helpers {
 			var ctx = GetOrCreateContext(typeDef.Module, target);
 			var injector = new Injector(ctx, behavior, methodInjectProcessors);
 
-			var mappedMethod = injector.Inject(typeDef);
-			return InjectResult.Create(typeDef, mappedMethod, injector.InjectedMembers);
+			var mappedType = injector.Inject(typeDef);
+			return InjectResult.Create(typeDef, mappedType, injector.InjectedMembers.Where(m => m.Value != mappedType));
 		}
 	}
 }
