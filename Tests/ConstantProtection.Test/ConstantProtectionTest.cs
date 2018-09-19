@@ -20,7 +20,7 @@ namespace CompressorWithResx.Test {
 		[MemberData(nameof(ProtectAndExecuteTestData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "constants")]
-		public async Task ProtectAndExecuteTest(string modeKey, string elementsKey) {
+		public async Task ProtectAndExecuteTest(string modeKey, bool cfgKey, string elementsKey) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
 			var inputFile = Path.Combine(baseDir, "ConstantProtection.exe");
@@ -34,6 +34,7 @@ namespace CompressorWithResx.Test {
 			proj.Rules.Add(new Rule() {
 				new SettingItem<IProtection>("constants") {
 					{ "mode", modeKey },
+					{ "cfg", cfgKey ? "true" : "false" },
 					{ "elements", elementsKey }
 				}
 			});
@@ -72,11 +73,12 @@ namespace CompressorWithResx.Test {
 
 		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
 			foreach (var mode in new string[] { "Normal", "Dynamic", "x86" })
-				foreach (var encodeStrings in new string[] { "", "S" })
-					foreach (var encodeNumbers in new string[] { "", "N" })
-						foreach (var encodePrimitives in new string[] { "", "P" })
-							foreach (var encodeInitializers in new string[] { "", "I" })
-								yield return new object[] { mode, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
+				foreach (var cfg in new bool[] { false, true })
+					foreach (var encodeStrings in new string[] { "", "S" })
+						foreach (var encodeNumbers in new string[] { "", "N" })
+							foreach (var encodePrimitives in new string[] { "", "P" })
+								foreach (var encodeInitializers in new string[] { "", "I" })
+									yield return new object[] { mode, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
 		}
 	}
 }
