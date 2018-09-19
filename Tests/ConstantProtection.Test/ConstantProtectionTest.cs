@@ -17,12 +17,10 @@ namespace CompressorWithResx.Test {
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		[Theory]
-		[InlineData("Normal")]
-		[InlineData("Dynamic")]
-		[InlineData("x86")]
+		[MemberData(nameof(ProtectAndExecuteTestData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "constants")]
-		public async Task ProtectAndExecuteTest(string modeKey) {
+		public async Task ProtectAndExecuteTest(string modeKey, string elementsKey) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
 			var inputFile = Path.Combine(baseDir, "ConstantProtection.exe");
@@ -35,7 +33,8 @@ namespace CompressorWithResx.Test {
 
 			proj.Rules.Add(new Rule() {
 				new SettingItem<IProtection>("constants") {
-					{ "mode", modeKey }
+					{ "mode", modeKey },
+					{ "elements", elementsKey }
 				}
 			});
 
@@ -69,6 +68,15 @@ namespace CompressorWithResx.Test {
 			}
 
 			FileUtilities.ClearOutput(outputFile);
+		}
+
+		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
+			foreach (var mode in new string[] { "Normal", "Dynamic", "x86" })
+				foreach (var encodeStrings in new string[] { "", "S" })
+					foreach (var encodeNumbers in new string[] { "", "N" })
+						foreach (var encodePrimitives in new string[] { "", "P" })
+							foreach (var encodeInitializers in new string[] { "", "I" })
+								yield return new object[] { mode, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
 		}
 	}
 }
