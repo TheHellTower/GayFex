@@ -60,6 +60,8 @@ namespace CompressorWithResx.Test {
 				var stdout = process.StandardOutput;
 				Assert.Equal("START", await stdout.ReadLineAsync());
 				Assert.Equal("123456", await stdout.ReadLineAsync());
+				Assert.Equal("3", await stdout.ReadLineAsync());
+				Assert.Equal("Test3", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);
