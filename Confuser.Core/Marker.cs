@@ -143,8 +143,11 @@ namespace Confuser.Core {
 				context.Annotations.Set(module.Item2, SNKey, LoadSNKey(context, module.Item1.SNKeyPath == null ? null : Path.Combine(proj.BaseDirectory, module.Item1.SNKeyPath), module.Item1.SNKeyPassword));
 				context.Annotations.Set(module.Item2, RulesKey, rules);
 
-				foreach (IDnlibDef def in module.Item2.FindDefinitions()) {
+				foreach (var def in module.Item2.FindDefinitions()) {
 					ApplyRules(context, def, rules);
+					if (def is MethodDef method) {
+						var a = method.CustomDebugInfos;
+					}
 					token.ThrowIfCancellationRequested();
 				}
 
