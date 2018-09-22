@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
@@ -16,16 +15,17 @@ using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.ReferenceProxy {
-	internal class StrongMode : RPMode {
+	internal sealed class StrongMode : RPMode {
+		private readonly List<FieldDesc> fieldDescs = new List<FieldDesc>();
 		// { invoke opCode, invoke target, encoding}, { proxy field, bridge method }
-		readonly List<FieldDesc> fieldDescs = new List<FieldDesc>();
-		readonly Dictionary<Tuple<Code, IMethod, IRPEncoding>, Tuple<FieldDef, MethodDef>> fields = new Dictionary<Tuple<Code, IMethod, IRPEncoding>, Tuple<FieldDef, MethodDef>>();
+		private readonly Dictionary<(Code OpCode, IMethod TargetMethod, IRPEncoding Encoding), (FieldDef Field, MethodDef BridgeMethod)> fields
+			= new Dictionary<(Code, IMethod, IRPEncoding), (FieldDef, MethodDef)>();
 
-		readonly Dictionary<IRPEncoding, InitMethodDesc[]> inits = new Dictionary<IRPEncoding, InitMethodDesc[]>();
-		RPContext encodeCtx;
-		Tuple<TypeDef, Func<int, int>>[] keyAttrs;
+		private readonly Dictionary<IRPEncoding, InitMethodDesc[]> inits = new Dictionary<IRPEncoding, InitMethodDesc[]>();
+		private RPContext encodeCtx;
+		private Tuple<TypeDef, Func<int, int>>[] keyAttrs;
 
-		static int? TraceBeginning(RPContext ctx, int index, int argCount) {
+		private static int? TraceBeginning(RPContext ctx, int index, int argCount) {
 			if (ctx.BranchTargets.Contains(ctx.Body.Instructions[index]))
 				return null;
 
@@ -50,8 +50,7 @@ namespace Confuser.Protections.ReferenceProxy {
 						return null;
 				}
 
-				int push, pop;
-				currentInstr.CalculateStackUsage(out push, out pop);
+				currentInstr.CalculateStackUsage(out var push, out var pop);
 				currentStack += pop;
 				currentStack -= push;
 
@@ -66,15 +65,17 @@ namespace Confuser.Protections.ReferenceProxy {
 
 		public override void ProcessCall(RPContext ctx, int instrIndex) {
 			var invoke = ctx.Body.Instructions[instrIndex];
+			var target = invoke.Operand as IMethod;
+			Debug.Assert(target != null, $"{nameof(target)} of instruction is not a method.");
+			if (target == null) return;
 
-			var declType = ((IMethod)invoke.Operand).DeclaringType.ResolveTypeDefThrow();
+			var declType = target.DeclaringType.ResolveTypeDefThrow();
 			if (!declType.Module.IsILOnly) // Reflection doesn't like mixed mode modules.
 				return;
 			if (declType.IsGlobalModuleType) // Reflection doesn't like global methods too.
 				return;
 
-			int push, pop;
-			invoke.CalculateStackUsage(out push, out pop);
+			invoke.CalculateStackUsage(out var push, out var pop);
 			int? begin = TraceBeginning(ctx, instrIndex, pop);
 			// Fail to trace the arguments => fall back to bridge method
 			bool fallBack = begin == null;
@@ -87,9 +88,11 @@ namespace Confuser.Protections.ReferenceProxy {
 			}
 		}
 
-		void ProcessBridge(RPContext ctx, int instrIndex) {
+		private void ProcessBridge(RPContext ctx, int instrIndex) {
 			var instr = ctx.Body.Instructions[instrIndex];
-			var target = (IMethod)instr.Operand;
+			var target = instr.Operand as IMethod;
+			Debug.Assert(target != null, $"{nameof(target)} of instruction is not a method.");
+			if (target == null) return;
 
 			var declType = target.DeclaringType.ResolveTypeDefThrow();
 			if (!declType.Module.IsILOnly) // Reflection doesn't like mixed mode modules.
@@ -97,57 +100,51 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (declType.IsGlobalModuleType) // Reflection doesn't like global methods too.
 				return;
 
-			var key = Tuple.Create(instr.OpCode.Code, target, ctx.EncodingHandler);
-			Tuple<FieldDef, MethodDef> proxy;
-			if (fields.TryGetValue(key, out proxy)) {
-				if (proxy.Item2 != null) {
+			var key = (instr.OpCode.Code, target, ctx.EncodingHandler);
+			if (fields.TryGetValue(key, out var proxy)) {
+				if (proxy.BridgeMethod != null) {
 					instr.OpCode = OpCodes.Call;
-					instr.Operand = proxy.Item2;
+					instr.Operand = proxy.BridgeMethod;
 					return;
 				}
 			}
-			else
-				proxy = new Tuple<FieldDef, MethodDef>(null, null);
 
 			var sig = CreateProxySignature(ctx, target, instr.OpCode.Code == Code.Newobj);
 			var delegateType = GetDelegateType(ctx, sig);
 
 			// Create proxy field
-			if (proxy.Item1 == null)
-				proxy = new Tuple<FieldDef, MethodDef>(
-					CreateField(ctx, delegateType),
-					proxy.Item2);
+			if (proxy.Field == null)
+				proxy = (CreateField(ctx, delegateType), proxy.BridgeMethod);
 
 			// Create proxy bridge
-			Debug.Assert(proxy.Item2 == null);
+			Debug.Assert(proxy.BridgeMethod == null);
 
-			proxy = new Tuple<FieldDef, MethodDef>(
-				proxy.Item1,
-				CreateBridge(ctx, delegateType, proxy.Item1, sig));
+			proxy = (proxy.Field, CreateBridge(ctx, delegateType, proxy.Field, sig));
 
 			fields[key] = proxy;
 
 			// Replace instruction
 			instr.OpCode = OpCodes.Call;
-			instr.Operand = proxy.Item2;
+			instr.Operand = proxy.BridgeMethod;
 
 			var targetDef = target.ResolveMethodDef();
 			if (targetDef != null)
 				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted, ReferenceProxyProtection.Targeted);
 		}
 
-		void ProcessInvoke(RPContext ctx, int instrIndex, int argBeginIndex) {
+		private void ProcessInvoke(RPContext ctx, int instrIndex, int argBeginIndex) {
 			var instr = ctx.Body.Instructions[instrIndex];
-			var target = (IMethod)instr.Operand;
+			var target = instr.Operand as IMethod;
+			Debug.Assert(target != null, $"{nameof(target)} of instruction is not a method.");
+			if (target == null) return;
 
 			var sig = CreateProxySignature(ctx, target, instr.OpCode.Code == Code.Newobj);
 			var delegateType = GetDelegateType(ctx, sig);
 
-			var key = Tuple.Create(instr.OpCode.Code, target, ctx.EncodingHandler);
-			Tuple<FieldDef, MethodDef> proxy;
-			if (!fields.TryGetValue(key, out proxy)) {
+			var key = (instr.OpCode.Code, target, ctx.EncodingHandler);
+			if (!fields.TryGetValue(key, out var proxy)) {
 				// Create proxy field
-				proxy = new Tuple<FieldDef, MethodDef>(CreateField(ctx, delegateType), null);
+				proxy = (CreateField(ctx, delegateType), null);
 				fields[key] = proxy;
 			}
 
@@ -156,14 +153,14 @@ namespace Confuser.Protections.ReferenceProxy {
 				ctx.Body.Instructions.Insert(instrIndex + 1,
 											 new Instruction(OpCodes.Call, delegateType.FindMethod("Invoke")));
 				instr.OpCode = OpCodes.Ldsfld;
-				instr.Operand = proxy.Item1;
+				instr.Operand = proxy.Field;
 			}
 			else {
 				var argBegin = ctx.Body.Instructions[argBeginIndex];
 				ctx.Body.Instructions.Insert(argBeginIndex + 1,
 											 new Instruction(argBegin.OpCode, argBegin.Operand));
 				argBegin.OpCode = OpCodes.Ldsfld;
-				argBegin.Operand = proxy.Item1;
+				argBegin.Operand = proxy.Field;
 
 				instr.OpCode = OpCodes.Call;
 				instr.Operand = delegateType.FindMethod("Invoke");
@@ -174,27 +171,29 @@ namespace Confuser.Protections.ReferenceProxy {
 				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted, ReferenceProxyProtection.Targeted);
 		}
 
-		MethodDef CreateBridge(RPContext ctx, TypeDef delegateType, FieldDef field, MethodSig sig) {
-			var method = new MethodDefUser(ctx.Name.RandomName(), sig);
-			method.Attributes = MethodAttributes.PrivateScope | MethodAttributes.Static;
-			method.ImplAttributes = MethodImplAttributes.Managed | MethodImplAttributes.IL;
+		private MethodDef CreateBridge(RPContext ctx, TypeDef delegateType, FieldDef field, MethodSig sig) {
+			var method = new MethodDefUser(ctx.Name.RandomName(), sig) {
+				Attributes = MethodAttributes.PrivateScope | MethodAttributes.Static,
+				ImplAttributes = MethodImplAttributes.Managed | MethodImplAttributes.IL,
 
-			method.Body = new CilBody();
-			method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldsfld, field));
-			for (int i = 0; i < method.Parameters.Count; i++)
-				method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, method.Parameters[i]));
-			method.Body.Instructions.Add(Instruction.Create(OpCodes.Call, delegateType.FindMethod("Invoke")));
-			method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+				Body = new CilBody()
+			};
+
+			var instructions = method.Body.Instructions;
+			instructions.Add(Instruction.Create(OpCodes.Ldsfld, field));
+			foreach (var parameter in method.Parameters)
+				instructions.Add(Instruction.Create(OpCodes.Ldarg, parameter));
+			instructions.Add(Instruction.Create(OpCodes.Call, delegateType.FindMethod("Invoke")));
+			instructions.Add(Instruction.Create(OpCodes.Ret));
 
 			delegateType.Methods.Add(method);
 
-			ctx.Context.Registry.GetRequiredService<IMarkerService>().Mark(ctx.Context, method, ctx.Protection);
-			ctx.Name?.SetCanRename(ctx.Context, method, false);
+			ctx.MarkMember(method);
 
 			return method;
 		}
 
-		FieldDef CreateField(RPContext ctx, TypeDef delegateType) {
+		private FieldDef CreateField(RPContext ctx, TypeDef delegateType) {
 			// Details will be filled in during metadata writing
 			TypeDef randomType;
 			do {
@@ -207,8 +206,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			field.CustomAttributes.Add(new CustomAttribute(GetKeyAttr(ctx).FindInstanceConstructors().First()));
 			delegateType.Fields.Add(field);
 
-			ctx.Marker.Mark(ctx.Context, field, ctx.Protection);
-			ctx.Name?.SetCanRename(ctx.Context, field, false);
+			ctx.MarkMember(field);
 
 			return field;
 		}
@@ -255,7 +253,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			return keyAttrs[index].Item1;
 		}
 
-		InitMethodDesc GetInitMethod(RPContext ctx, IRPEncoding encoding) {
+		private InitMethodDesc GetInitMethod(RPContext ctx, IRPEncoding encoding) {
 			if (!inits.TryGetValue(encoding, out var initDescs))
 				inits[encoding] = initDescs = new InitMethodDesc[ctx.InitCount];
 
@@ -306,24 +304,24 @@ namespace Confuser.Protections.ReferenceProxy {
 
 		public override void Finalize(RPContext ctx) {
 			foreach (var field in fields) {
-				var init = GetInitMethod(ctx, field.Key.Item3);
+				var init = GetInitMethod(ctx, field.Key.Encoding);
 				byte opKey;
 				do {
 					// No zero bytes
 					opKey = ctx.Random.NextByte();
-				} while (opKey == (byte)field.Key.Item1);
+				} while (opKey == (byte)field.Key.OpCode);
 
-				var delegateType = field.Value.Item1.DeclaringType;
+				var delegateType = field.Value.Field.DeclaringType;
 
 				var cctor = delegateType.FindOrCreateStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, init.Method));
 				cctor.Body.Instructions.Insert(0, Instruction.CreateLdcI4(opKey));
-				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Ldtoken, field.Value.Item1));
+				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Ldtoken, field.Value.Field));
 
 				fieldDescs.Add(new FieldDesc {
-					Field = field.Value.Item1,
-					OpCode = field.Key.Item1,
-					Method = field.Key.Item2,
+					Field = field.Value.Field,
+					OpCode = field.Key.OpCode,
+					Method = field.Key.TargetMethod,
 					OpKey = opKey,
 					InitDesc = init
 				});
@@ -340,7 +338,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			encodeCtx = ctx;
 		}
 
-		void EncodeField(object sender, ModuleWriterEventArgs e) {
+		private void EncodeField(object sender, ModuleWriterEventArgs e) {
 			var writer = (ModuleWriterBase)sender;
 			if (e.Event == ModuleWriterEvent.MDMemberDefRidsAllocated && keyAttrs != null) {
 				var keyFuncs = keyAttrs
@@ -410,7 +408,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			}
 		}
 
-		class FieldDesc {
+		private sealed class FieldDesc {
 			public FieldDef Field;
 			public InitMethodDesc InitDesc;
 			public IMethod Method;
@@ -418,7 +416,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			public byte OpKey;
 		}
 
-		class InitMethodDesc {
+		private sealed class InitMethodDesc {
 			public IRPEncoding Encoding;
 			public MethodDef Method;
 			public int OpCodeIndex;

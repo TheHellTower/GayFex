@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Confuser.Core;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.ReferenceProxy {
-	internal class MildMode : RPMode {
+	internal sealed class MildMode : RPMode {
 		// proxy method, { opCode, calling type, target method}
-		readonly Dictionary<Tuple<Code, TypeDef, IMethod>, MethodDef> proxies = new Dictionary<Tuple<Code, TypeDef, IMethod>, MethodDef>();
+		private readonly Dictionary<(Code OpCode, TypeDef CallingType, IMethod TargetMethod), MethodDef> proxies =
+			new Dictionary<(Code, TypeDef, IMethod), MethodDef>();
 
 		public override void ProcessCall(RPContext ctx, int instrIndex) {
-			Instruction invoke = ctx.Body.Instructions[instrIndex];
-			var target = (IMethod)invoke.Operand;
+			var invoke = ctx.Body.Instructions[instrIndex];
+			var target = invoke.Operand as IMethod;
+			Debug.Assert(target != null, $"{nameof(target)} of instruction is not a method.");
+			if (target == null) return;
 
 			// Value type proxy is not supported in mild mode.
 			if (target.DeclaringType.ResolveTypeDefThrow().IsValueType)
@@ -20,14 +24,14 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (!target.ResolveThrow().IsPublic && !target.ResolveThrow().IsAssembly)
 				return;
 
-			Tuple<Code, TypeDef, IMethod> key = Tuple.Create(invoke.OpCode.Code, ctx.Method.DeclaringType, target);
-			MethodDef proxy;
-			if (!proxies.TryGetValue(key, out proxy)) {
-				MethodSig sig = CreateProxySignature(ctx, target, invoke.OpCode.Code == Code.Newobj);
+			var key = (invoke.OpCode.Code, ctx.Method.DeclaringType, target);
+			if (!proxies.TryGetValue(key, out var proxy)) {
+				var sig = CreateProxySignature(ctx, target, invoke.OpCode.Code == Code.Newobj);
 
-				proxy = new MethodDefUser(ctx.Name.RandomName(), sig);
-				proxy.Attributes = MethodAttributes.PrivateScope | MethodAttributes.Static;
-				proxy.ImplAttributes = MethodImplAttributes.Managed | MethodImplAttributes.IL;
+				proxy = new MethodDefUser(ctx.Name.RandomName(), sig) {
+					Attributes = MethodAttributes.PrivateScope | MethodAttributes.Static,
+					ImplAttributes = MethodImplAttributes.Managed | MethodImplAttributes.IL
+				};
 				ctx.Method.DeclaringType.Methods.Add(proxy);
 
 				// Fix peverify --- Non-virtual call to virtual methods must be done on this pointer
@@ -37,9 +41,7 @@ namespace Confuser.Protections.ReferenceProxy {
 					sig.Params.RemoveAt(0);
 				}
 
-				ctx.Marker.Mark(ctx.Context, proxy, ctx.Protection);
-				ctx.Name?.Analyze(ctx.Context, proxy);
-				ctx.Name?.SetCanRename(ctx.Context, proxy, false);
+				ctx.MarkMember(proxy);
 
 				proxy.Body = new CilBody();
 				for (int i = 0; i < proxy.Parameters.Count; i++)

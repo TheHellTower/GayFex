@@ -41,5 +41,14 @@ namespace Confuser.Protections.ReferenceProxy {
 		internal IRandomGenerator Random;
 		internal ITraceService Trace;
 		internal bool TypeErasure;
+
+		internal void MarkMember(IDnlibDef def) {
+			if (Name == null) {
+				Marker.Mark(Context, def, Protection);
+			}
+			else {
+				Name.MarkHelper(Context, def, Marker, Protection);
+			}
+		}
 	}
 }
