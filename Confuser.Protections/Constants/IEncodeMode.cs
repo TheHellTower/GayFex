@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.Constants {
 	internal interface IEncodeMode {
-		IEnumerable<Instruction> EmitDecrypt(MethodDef init, CEContext ctx, Local block, Local key);
+		CryptProcessor EmitDecrypt(CEContext ctx);
 		uint[] Encrypt(uint[] data, int offset, uint[] key);
 
-		object CreateDecoder(MethodDef decoder, CEContext ctx);
+		(PlaceholderProcessor Processor, object Data) CreateDecoder(CEContext ctx);
 		uint Encode(object data, CEContext ctx, uint id);
 	}
 }

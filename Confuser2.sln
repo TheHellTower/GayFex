@@ -41,21 +41,31 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core.Exports", "Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Utilities", "Confuser.Utilities\Confuser.Utilities.csproj", "{DEA3D825-38DA-4FBB-9CAF-D58316854D7E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Renamer.Exports", "Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj", "{18759555-5A63-4826-AD37-51DDB12973A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer.Exports", "Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj", "{18759555-5A63-4826-AD37-51DDB12973A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Protections.Exports", "Confuser.Protections.Exports\Confuser.Protections.Exports.csproj", "{03627089-A2AB-40E4-B22F-2262BED6753E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Protections.Exports", "Confuser.Protections.Exports\Confuser.Protections.Exports.csproj", "{03627089-A2AB-40E4-B22F-2262BED6753E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.UnitTest", "Tests\Confuser.UnitTest\Confuser.UnitTest.csproj", "{73226E13-1701-424E-A4F2-3E4D575A1DD0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiTamper", "Tests\AntiTamper\AntiTamper.csproj", "{6A2BA6F7-3399-4890-9453-2D5BE8EEBBA9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiProtections", "Tests\AntiProtections\AntiProtections.csproj", "{6A2BA6F7-3399-4890-9453-2D5BE8EEBBA9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiTamper.Test", "Tests\AntiTamper.Test\AntiTamper.Test.csproj", "{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntiProtections.Test", "Tests\AntiProtections.Test\AntiProtections.Test.csproj", "{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.MSBuild.Tasks", "Confuser.MSBuild.Tasks\Confuser.MSBuild.Tasks.csproj", "{91B12706-DC6A-45DE-97F1-FAF0901FF6AF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming", "Tests\WpfRenaming\WpfRenaming.csproj", "{BA9D2748-1342-41A3-87F2-343E82D99813}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming.Test", "Tests\WpfRenaming.Test\WpfRenaming.Test.csproj", "{30B8883F-A0A2-4256-ADCF-A790525D3696}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Helpers", "Confuser.Helpers\Confuser.Helpers.csproj", "{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RefProxyProtection", "Tests\RefProxyProtection\RefProxyProtection.csproj", "{22516193-DE4E-49E3-AFC8-4474D8297C18}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RefProxyProtection.Test", "Tests\RefProxyProtection.Test\RefProxyProtection.Test.csproj", "{C0D817F3-9B8E-48D2-A34E-9FDC426CBAC6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConstantProtection", "Tests\ConstantProtection\ConstantProtection.csproj", "{A046FE3C-7C58-4421-A321-808407120FAC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConstantProtection.Test", "Tests\ConstantProtection.Test\ConstantProtection.Test.csproj", "{E16E2B11-5BE9-4CA8-9EAC-043EB26B7AB3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,8 +93,8 @@ Global
 		{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A45C184F-F98F-4258-A928-BFF437034791}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A45C184F-F98F-4258-A928-BFF437034791}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A45C184F-F98F-4258-A928-BFF437034791}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -143,6 +153,26 @@ Global
 		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30B8883F-A0A2-4256-ADCF-A790525D3696}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22516193-DE4E-49E3-AFC8-4474D8297C18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22516193-DE4E-49E3-AFC8-4474D8297C18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22516193-DE4E-49E3-AFC8-4474D8297C18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22516193-DE4E-49E3-AFC8-4474D8297C18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0D817F3-9B8E-48D2-A34E-9FDC426CBAC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0D817F3-9B8E-48D2-A34E-9FDC426CBAC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0D817F3-9B8E-48D2-A34E-9FDC426CBAC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0D817F3-9B8E-48D2-A34E-9FDC426CBAC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A046FE3C-7C58-4421-A321-808407120FAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A046FE3C-7C58-4421-A321-808407120FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A046FE3C-7C58-4421-A321-808407120FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A046FE3C-7C58-4421-A321-808407120FAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E16E2B11-5BE9-4CA8-9EAC-043EB26B7AB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E16E2B11-5BE9-4CA8-9EAC-043EB26B7AB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E16E2B11-5BE9-4CA8-9EAC-043EB26B7AB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E16E2B11-5BE9-4CA8-9EAC-043EB26B7AB3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,6 +185,10 @@ Global
 		{3F5558BD-7B94-4CB0-A46C-A7252B5BCA17} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{BA9D2748-1342-41A3-87F2-343E82D99813} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{30B8883F-A0A2-4256-ADCF-A790525D3696} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{22516193-DE4E-49E3-AFC8-4474D8297C18} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{C0D817F3-9B8E-48D2-A34E-9FDC426CBAC6} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{A046FE3C-7C58-4421-A321-808407120FAC} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{E16E2B11-5BE9-4CA8-9EAC-043EB26B7AB3} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}

@@ -15,7 +15,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
-    <ProjectReference Include="..\AntiTamper\AntiTamper.csproj" />
+    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
+    <ProjectReference Include="..\AntiProtections\AntiProtections.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
 

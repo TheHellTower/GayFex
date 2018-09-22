@@ -5,6 +5,7 @@ using Confuser.Core.Helpers;
 using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
@@ -15,14 +16,10 @@ namespace Confuser.Protections.Constants {
 	internal class x86Mode : IEncodeMode {
 		Action<uint[], uint[]> encryptFunc;
 
-		public IEnumerable<Instruction> EmitDecrypt(MethodDef init, CEContext ctx, Local block, Local key) {
+		CryptProcessor IEncodeMode.EmitDecrypt(CEContext ctx) {
 			StatementBlock encrypt, decrypt;
 			ctx.DynCipher.GenerateCipherPair(ctx.Random, out encrypt, out decrypt);
-			var ret = new List<Instruction>();
 
-			var codeGen = new CipherCodeGen(block, key, init, ret);
-			codeGen.GenerateCIL(decrypt);
-			codeGen.Commit(init.Body);
 
 			var dmCodeGen = new DMCodeGen(typeof(void), new[] {
 				Tuple.Create("{BUFFER}", typeof(uint[])),
@@ -31,7 +28,13 @@ namespace Confuser.Protections.Constants {
 			dmCodeGen.GenerateCIL(encrypt);
 			encryptFunc = dmCodeGen.Compile<Action<uint[], uint[]>>();
 
-			return ret;
+			return (module, method, block, key) => {
+				var ret = new List<Instruction>();
+				var codeGen = new CipherCodeGen(block, key, module, method, ret);
+				codeGen.GenerateCIL(decrypt);
+				codeGen.Commit(method.Body);
+				return ret;
+			};
 		}
 
 		public uint[] Encrypt(uint[] data, int offset, uint[] key) {
@@ -41,16 +44,16 @@ namespace Confuser.Protections.Constants {
 			return ret;
 		}
 
-		public object CreateDecoder(MethodDef decoder, CEContext ctx) {
+		(PlaceholderProcessor, object) IEncodeMode.CreateDecoder(CEContext ctx) {
 			var encoding = new x86Encoding();
 			encoding.Compile(ctx);
-			MutationHelper.ReplacePlaceholder(ctx.Trace, decoder, arg => {
-				var repl = new List<Instruction>();
+			IReadOnlyList<Instruction> processor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arg) {
+				var repl = new List<Instruction>(arg.Count + 1);
 				repl.AddRange(arg);
 				repl.Add(Instruction.Create(OpCodes.Call, encoding.native));
 				return repl.ToArray();
-			});
-			return encoding;
+			};
+			return (processor, encoding);
 		}
 
 		public uint Encode(object data, CEContext ctx, uint id) {
@@ -58,12 +61,12 @@ namespace Confuser.Protections.Constants {
 			return (uint)encoding.expCompiled((int)id);
 		}
 
-		class CipherCodeGen : CILCodeGen {
-			readonly Local block;
-			readonly Local key;
+		private sealed class CipherCodeGen : CILCodeGen {
+			private readonly Local block;
+			private readonly Local key;
 
-			public CipherCodeGen(Local block, Local key, MethodDef init, IList<Instruction> instrs)
-				: base(init, instrs) {
+			internal CipherCodeGen(Local block, Local key, ModuleDef module, MethodDef init, IList<Instruction> instrs)
+				: base(module, init, instrs) {
 				this.block = block;
 				this.key = key;
 			}

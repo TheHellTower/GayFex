@@ -1,160 +1,178 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Buffers;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-using dnlib.DotNet.Writer;
 
 namespace Confuser.Core.Services {
-	/// <summary>
-	///     A seeded SHA256 PRNG.
-	/// </summary>
-	internal sealed class RandomGenerator : IRandomGenerator {
-		/// <summary>
-		///     The prime numbers used for generation
-		/// </summary>
-		static readonly byte[] primes = { 7, 11, 23, 37, 43, 59, 71 };
-
-		readonly SHA256Managed sha256 = new SHA256Managed();
-		int mixIndex;
-		byte[] state; //32 bytes
-		int stateFilled;
-
-		/// <summary>
-		///     Initializes a new instance of the <see cref="RandomGenerator" /> class.
-		/// </summary>
-		/// <param name="seed">The seed.</param>
-		internal RandomGenerator(byte[] seed) {
-			state = (byte[])seed.Clone();
-			stateFilled = 32;
-			mixIndex = 0;
-		}
-
-		/// <summary>
-		///     Creates a seed buffer.
-		/// </summary>
-		/// <param name="seed">The seed data.</param>
-		/// <returns>The seed buffer.</returns>
-		internal static byte[] Seed(string seed) {
-			byte[] ret;
-			if (!string.IsNullOrEmpty(seed))
-				ret = Utils.SHA256(Encoding.UTF8.GetBytes(seed));
-			else
-				ret = Utils.SHA256(Guid.NewGuid().ToByteArray());
-
-			for (int i = 0; i < 32; i++) {
-				ret[i] *= primes[i % primes.Length];
-				ret = Utils.SHA256(ret);
-			}
-			return ret;
-		}
-
-		/// <summary>
-		///     Refills the state buffer.
-		/// </summary>
-		void NextState() {
-			for (int i = 0; i < 32; i++)
-				state[i] ^= primes[mixIndex = (mixIndex + 1) % primes.Length];
-			state = sha256.ComputeHash(state);
-			stateFilled = 32;
-		}
-
-		/// <summary>
-		///     Fills the specified buffer with random bytes.
-		/// </summary>
-		/// <param name="buffer">The buffer.</param>
-		/// <param name="offset">The offset of buffer to fill in.</param>
-		/// <param name="length">The number of random bytes.</param>
-		/// <exception cref="System.ArgumentNullException"><paramref name="buffer" /> is <c>null</c>.</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException">
-		///     <paramref name="offset" /> or <paramref name="length" /> is less than 0.
-		/// </exception>
-		/// <exception cref="System.ArgumentException">Invalid <paramref name="offset" /> or <paramref name="length" />.</exception>
-		public void NextBytes(byte[] buffer, int offset, int length) {
-			if (buffer == null)
-				throw new ArgumentNullException("buffer");
-			if (offset < 0)
-				throw new ArgumentOutOfRangeException("offset");
-			if (length < 0)
-				throw new ArgumentOutOfRangeException("length");
-			if (buffer.Length - offset < length)
-				throw new ArgumentException("Invalid offset or length.");
-
-			while (length > 0) {
-				if (length >= stateFilled) {
-					Buffer.BlockCopy(state, 32 - stateFilled, buffer, offset, stateFilled);
-					offset += stateFilled;
-					length -= stateFilled;
-					stateFilled = 0;
-				}
-				else {
-					Buffer.BlockCopy(state, 32 - stateFilled, buffer, offset, length);
-					stateFilled -= length;
-					length = 0;
-				}
-				if (stateFilled == 0)
-					NextState();
-			}
-		}
-
-		/// <summary>
-		///     Returns a random byte.
-		/// </summary>
-		/// <returns>Requested random byte.</returns>
-		public byte NextByte() {
-			byte ret = state[32 - stateFilled];
-			stateFilled--;
-			if (stateFilled == 0)
-				NextState();
-			return ret;
-		}
-
-		/// <summary>
-		///     Gets a buffer of random bytes with the specified length.
-		/// </summary>
-		/// <param name="length">The number of random bytes.</param>
-		/// <returns>A buffer of random bytes.</returns>
-		public byte[] NextBytes(int length) {
-			var ret = new byte[length];
-			NextBytes(ret, 0, length);
-			return ret;
-		}
-
-		/// <summary>
-		///     Returns a random boolean value.
-		/// </summary>
-		/// <returns>Requested random boolean value.</returns>
-		public bool NextBoolean() {
-			byte s = state[32 - stateFilled];
-			stateFilled--;
-			if (stateFilled == 0)
-				NextState();
-			return s % 2 == 0;
-		}
-	}
-
+	// TODO: There is more performance to be found here, once the hash algorithmns are properly able to handle Span.
 	/// <summary>
 	///     Implementation of <see cref="IRandomService" />.
 	/// </summary>
-	internal class RandomService : IRandomService {
-		readonly byte[] seed; //32 bytes
+	internal sealed class RandomService : IRandomService {
+		private readonly ReadOnlyMemory<byte> seed; //32 bytes
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="RandomService" /> class.
 		/// </summary>
 		/// <param name="seed">The project seed.</param>
-		public RandomService(string seed) {
-			this.seed = RandomGenerator.Seed(seed);
-		}
+		public RandomService(string seed) => this.seed = RandomGenerator.Seed(GetHashAlgorithm(), seed);
 
 		/// <inheritdoc />
 		public IRandomGenerator GetRandomGenerator(string id) {
-			if (string.IsNullOrEmpty(id))
-				throw new ArgumentNullException("id");
-			byte[] newSeed = seed;
-			byte[] idHash = Utils.SHA256(Encoding.UTF8.GetBytes(id));
-			for (int i = 0; i < 32; i++)
+			if (string.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
+
+			var hashAlgo = GetHashAlgorithm();
+			byte[] newSeed = seed.ToArray();
+			byte[] idHash = hashAlgo.ComputeHash(Encoding.UTF8.GetBytes(id));
+			Debug.Assert(newSeed.Length == idHash.Length, $"{nameof(newSeed)}.Length == {nameof(idHash)}.Length");
+			for (int i = 0; i < newSeed.Length; i++)
 				newSeed[i] ^= idHash[i];
-			return new RandomGenerator(Utils.SHA256(newSeed));
+			return new RandomGenerator(hashAlgo, hashAlgo.ComputeHash(newSeed));
+		}
+
+		private static HashAlgorithm GetHashAlgorithm() {
+			if (CryptoConfig.AllowOnlyFipsAlgorithms)
+				return HashAlgorithm.Create();
+			else
+				return SHA256.Create();
+		}
+
+
+		/// <summary>
+		///     The default random value generator.
+		/// </summary>
+		private sealed class RandomGenerator : IRandomGenerator, IDisposable {
+			/// <summary>
+			///     The prime numbers used for generation
+			/// </summary>
+			private static readonly byte[] primes = { 7, 11, 23, 37, 43, 59, 71 };
+
+			private readonly HashAlgorithm hashAlgo;
+			private int mixIndex;
+			private readonly Memory<byte> fullState;
+			private Memory<byte> state;
+
+			/// <summary>
+			///     Initializes a new instance of the <see cref="RandomGenerator" /> class.
+			/// </summary>
+			/// <param name="seed">The seed.</param>
+			internal RandomGenerator(HashAlgorithm hashAlgo, Span<byte> seed) {
+				Debug.Assert(hashAlgo != null, $"{nameof(hashAlgo)} != null");
+				this.hashAlgo = hashAlgo;
+
+				Debug.Assert(seed.Length == hashAlgo.HashSize / 8, $"{nameof(seed)}.Length == {nameof(hashAlgo)}.HashSize / 8 ({hashAlgo.HashSize / 8})");
+
+				fullState = new byte[seed.Length];
+				seed.CopyTo(fullState.Span);
+				state = fullState;
+				mixIndex = 0;
+			}
+
+			/// <summary>
+			///     Creates a seed buffer.
+			/// </summary>
+			/// <param name="hashAlgo">The algorithm implementation to create hashes.</param>
+			/// <param name="seed">The seed data.</param>
+			/// <returns>The seed buffer.</returns>
+			internal static Memory<byte> Seed(HashAlgorithm hashAlgo, string seed) {
+				Debug.Assert(hashAlgo != null, $"{nameof(hashAlgo)} != null");
+
+				byte[] ret;
+				if (!string.IsNullOrEmpty(seed))
+					ret = hashAlgo.ComputeHash(Encoding.UTF8.GetBytes(seed));
+				else
+					ret = hashAlgo.ComputeHash(Guid.NewGuid().ToByteArray());
+
+				for (int i = 0; i < ret.Length; i++) {
+					ret[i] *= primes[i % primes.Length];
+					ret = hashAlgo.ComputeHash(ret);
+				}
+
+				return ret;
+			}
+
+			/// <summary>
+			///     Refills the state buffer.
+			/// </summary>
+			void NextState() {
+				var stateSpan = fullState.Span;
+				for (int i = 0; i < stateSpan.Length; i++)
+					stateSpan[i] ^= primes[mixIndex = (mixIndex + 1) % primes.Length];
+				var tmpInputArray = ArrayPool<byte>.Shared.Rent(stateSpan.Length);
+				try {
+					stateSpan.CopyTo(tmpInputArray);
+					var hash = hashAlgo.ComputeHash(tmpInputArray);
+					hash.CopyTo(fullState);
+					state = fullState;
+				}
+				finally {
+					ArrayPool<byte>.Shared.Return(tmpInputArray);
+				}
+			}
+
+			/// <summary>
+			///     Fills the specified buffer with random bytes.
+			/// </summary>
+			/// <param name="buffer">The buffer.</param>
+			/// <exception cref="ArgumentNullException"><paramref name="buffer" /> is <see langword="null"/>.</exception>
+			public void NextBytes(Span<byte> buffer) {
+				if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+
+				while (buffer.Length > 0) {
+					if (buffer.Length >= state.Length) {
+						state.Span.CopyTo(buffer);
+						buffer = buffer.Slice(state.Length);
+						state = Memory<byte>.Empty;
+					}
+					else {
+						state.Span.Slice(0, buffer.Length).CopyTo(buffer);
+						state = state.Slice(buffer.Length);
+						buffer = Span<byte>.Empty;
+					}
+					if (state.IsEmpty)
+						NextState();
+				}
+			}
+
+			/// <summary>
+			///     Returns a random byte.
+			/// </summary>
+			/// <returns>Requested random byte.</returns>
+			public byte NextByte() {
+				byte ret = state.Span[0];
+				state = state.Slice(1);
+				if (state.IsEmpty)
+					NextState();
+				return ret;
+			}
+
+			/// <summary>
+			///     Returns a random boolean value.
+			/// </summary>
+			/// <returns>Requested random boolean value.</returns>
+			public bool NextBoolean() {
+				byte s = NextByte();
+				return s % 2 == 0;
+			}
+
+			#region IDisposable Support
+			private bool _disposed = false;
+
+			void Dispose(bool disposing) {
+				if (!_disposed) {
+					if (disposing) {
+						hashAlgo.Dispose();
+					}
+
+					_disposed = true;
+				}
+			}
+			public void Dispose() {
+				Dispose(true);
+				GC.SuppressFinalize(this);
+			}
+			#endregion
 		}
 	}
 }

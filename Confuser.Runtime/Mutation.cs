@@ -22,13 +22,5 @@ internal class Mutation {
 		return val;
 	}
 
-	public static T Value<T>() {
-		return default(T);
-	}
-
-	public static T Value<T, Arg0>(Arg0 arg0) {
-		return default(T);
-	}
-
 	public static void Crypt(uint[] data, uint[] key) { }
 }

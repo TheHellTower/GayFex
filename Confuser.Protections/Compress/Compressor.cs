@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +12,9 @@ using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using Confuser.Protections.Compress;
+using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
@@ -27,9 +30,9 @@ namespace Confuser.Protections {
 	[ExportMetadata(nameof(IPackerMetadata.Id), _FullId)]
 	[ExportMetadata(nameof(IPackerMetadata.MarkerId), _Id)]
 	internal sealed class Compressor : IPacker {
-		public const string _Id = "compressor";
-		public const string _FullId = "Ki.Compressor";
-		public static readonly object ContextKey = new object();
+		internal const string _Id = "compressor";
+		internal const string _FullId = "Ki.Compressor";
+		internal static readonly object ContextKey = new object();
 
 		public string Name => "Compressing Packer";
 
@@ -50,7 +53,7 @@ namespace Confuser.Protections {
 				throw new ConfuserException(null);
 			}
 
-			ModuleDefMD originModule = context.Modules[ctx.ModuleIndex];
+			var originModule = context.Modules[ctx.ModuleIndex];
 			ctx.OriginModuleDef = originModule;
 
 			var stubModule = new ModuleDefUser(ctx.ModuleName, originModule.Mvid, originModule.CorLibTypes.AssemblyRef);
@@ -96,7 +99,7 @@ namespace Confuser.Protections {
 			}
 		}
 
-		static string GetId(byte[] module) {
+		private static string GetId(byte[] module) {
 			var md = MetadataFactory.CreateMetadata(new PEImage(module));
 			var assembly = new AssemblyNameInfo();
 			if (md.TablesStream.TryReadAssemblyRow(1, out var assemblyRow)) {
@@ -110,11 +113,10 @@ namespace Confuser.Protections {
 			return GetId(assembly);
 		}
 
-		static string GetId(IAssembly assembly) {
-			return new SR.AssemblyName(assembly.FullName).FullName.ToUpperInvariant();
-		}
+		private static string GetId(IAssembly assembly) =>
+			new SR.AssemblyName(assembly.FullName).FullName.ToUpperInvariant();
 
-		void PackModules(IConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, IRandomGenerator random, ILogger logger, CancellationToken token) {
+		private void PackModules(IConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, IRandomGenerator random, ILogger logger, CancellationToken token) {
 			int maxLen = 0;
 			var modules = new Dictionary<string, byte[]>();
 			for (int i = 0; i < context.OutputModules.Count; i++) {
@@ -137,90 +139,127 @@ namespace Confuser.Protections {
 					maxLen = strLen;
 			}
 
-			byte[] key = random.NextBytes(4 + maxLen);
-			key[0] = (byte)(compCtx.EntryPointToken >> 0);
-			key[1] = (byte)(compCtx.EntryPointToken >> 8);
-			key[2] = (byte)(compCtx.EntryPointToken >> 16);
-			key[3] = (byte)(compCtx.EntryPointToken >> 24);
+			var key = random.NextBytes(4 + maxLen);
+			var keySpan = key.Span;
+			keySpan[0] = (byte)(compCtx.EntryPointToken >> 0);
+			keySpan[1] = (byte)(compCtx.EntryPointToken >> 8);
+			keySpan[2] = (byte)(compCtx.EntryPointToken >> 16);
+			keySpan[3] = (byte)(compCtx.EntryPointToken >> 24);
 			for (int i = 4; i < key.Length; i++) // no zero bytes
-				key[i] |= 1;
+				keySpan[i] |= 1;
 			compCtx.KeySig = key;
 
 			int moduleIndex = 0;
 			foreach (var entry in modules) {
 				byte[] name = Encoding.UTF8.GetBytes(entry.Key);
 				for (int i = 0; i < name.Length; i++)
-					name[i] *= key[i + 4];
+					name[i] *= keySpan[i + 4];
 
 				uint state = 0x6fff61;
 				foreach (byte chr in name)
 					state = state * 0x5e3f1f + chr;
-				byte[] encrypted = compCtx.Encrypt(comp, entry.Value, state, progress => {
+				var encrypted = compCtx.Encrypt(comp, new ReadOnlyMemory<byte>(entry.Value), state, progress => {
 					progress = (progress + moduleIndex) / modules.Count;
 					logger.Progress((int)(progress * 10000), 10000);
 				});
 				token.ThrowIfCancellationRequested();
 
-				var resource = new EmbeddedResource(Convert.ToBase64String(name), encrypted, ManifestResourceAttributes.Private);
+				var resource = new EmbeddedResource(Convert.ToBase64String(name), encrypted.ToArray(), ManifestResourceAttributes.Private);
 				stubModule.Resources.Add(resource);
 				moduleIndex++;
 			}
 			logger.EndProgress();
 		}
 
-		void InjectData(ITraceService traceService, ModuleDef stubModule, MethodDef method, byte[] data) {
-			var dataType = new TypeDefUser("", "DataType", stubModule.CorLibTypes.GetTypeRef("System", "ValueType"));
-			dataType.Layout = TypeAttributes.ExplicitLayout;
-			dataType.Visibility = TypeAttributes.NestedPrivate;
-			dataType.IsSealed = true;
-			dataType.ClassLayout = new ClassLayoutUser(1, (uint)data.Length);
+		private PlaceholderProcessor InjectData(IConfuserContext context, ModuleDef stubModule, ReadOnlyMemory<byte> data) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(stubModule != null, $"{nameof(stubModule)} != null");
+
+			var name = context.Registry.GetService<INameService>();
+			var marker = context.Registry.GetRequiredService<IMarkerService>();
+
+			var dataType = new TypeDefUser("", "DataType", stubModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
+				Layout = TypeAttributes.ExplicitLayout,
+				Visibility = TypeAttributes.NestedPrivate,
+				IsSealed = true,
+				ClassLayout = new ClassLayoutUser(1, (uint)data.Length)
+			};
 			stubModule.GlobalType.NestedTypes.Add(dataType);
+			stubModule.UpdateRowId(dataType.ClassLayout);
+			stubModule.UpdateRowId(dataType);
+			name?.MarkHelper(context, dataType, marker, this);
 
 			var dataField = new FieldDefUser("DataField", new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
 				HasFieldRVA = true,
-				InitialValue = data,
+				InitialValue = data.ToArray(),
 				Access = FieldAttributes.CompilerControlled
 			};
 			stubModule.GlobalType.Fields.Add(dataField);
+			stubModule.UpdateRowId(dataField);
+			name?.MarkHelper(context, dataField, marker, this);
 
-			MutationHelper.ReplacePlaceholder(traceService, method, arg => {
-				var repl = new List<Instruction>();
-				repl.AddRange(arg);
+			return (module, method, args) => {
+				var repl = new List<Instruction>(args.Count + 3);
+				repl.AddRange(args);
 				repl.Add(Instruction.Create(OpCodes.Dup));
 				repl.Add(Instruction.Create(OpCodes.Ldtoken, dataField));
 				repl.Add(Instruction.Create(OpCodes.Call, stubModule.Import(
-					typeof(RuntimeHelpers).GetMethod("InitializeArray"))));
-				return repl.ToArray();
-			});
+					typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.InitializeArray)))));
+				return repl;
+			};
 		}
 
-		void InjectStub(IConfuserContext context, CompressorContext compCtx, IProtectionParameters parameters, ModuleDef stubModule, CancellationToken token) {
+		private void InjectStub(IConfuserContext context, CompressorContext compCtx, IProtectionParameters parameters, ModuleDef stubModule, CancellationToken token) {
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(_FullId);
 			var comp = context.Registry.GetRequiredService<ICompressionService>();
-			var trace = context.Registry.GetRequiredService<ITraceService>();
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
-
-			var rtType = rt.GetRuntimeType(compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
-			IEnumerable<IDnlibDef> defs = InjectHelper.Inject(rtType, stubModule.GlobalType, stubModule);
-
-			switch (parameters.GetParameter(context, context.CurrentModule, Parameters.Key)) {
-			case KeyDeriverMode.Normal:
-				compCtx.Deriver = new NormalDeriver();
-				break;
-			case KeyDeriverMode.Dynamic:
-				compCtx.Deriver = new DynamicDeriver();
-				break;
-			default:
-				throw new UnreachableException();
-			}
-			compCtx.Deriver.Init(context, random);
 
 			logger.Debug("Encrypting modules...");
 
+			switch (parameters.GetParameter(context, context.CurrentModule, Parameters.Key)) {
+				case KeyDeriverMode.Normal:
+					compCtx.Deriver = new NormalDeriver();
+					break;
+				case KeyDeriverMode.Dynamic:
+					compCtx.Deriver = new DynamicDeriver();
+					break;
+				default:
+					throw new UnreachableException();
+			}
+			compCtx.Deriver.Init(context, random);
+
+			var rtType = rt.GetRuntimeType(compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
+			var mainMethod = rtType.FindMethod("Main");
+
+			uint seed = random.NextUInt32();
+			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
+
+			var encryptedModule = compCtx.Encrypt(comp, compCtx.OriginModule, seed,
+				progress => logger.Progress((int)(progress * 10000), 10000));
+			token.ThrowIfCancellationRequested();
+
+			compCtx.EncryptedModule = encryptedModule;
+
+			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, encryptedModule.Length >> 2)
+				.Add(MutationField.KeyI1, (int)seed);
+			compCtx.KeyTokenLoadUpdate = new LateMutationFieldUpdate();
+			var lateMutationKeys = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
+				.Add(MutationField.KeyI2, compCtx.KeyTokenLoadUpdate);
+
+			var injectResult = InjectHelper.Inject(mainMethod, stubModule,
+				InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType),
+				new MutationProcessor(context.Registry, stubModule) {
+					KeyFieldValues = mutationKeys,
+					LateKeyFieldValues = lateMutationKeys,
+					CryptProcessor = compCtx.Deriver.EmitDerivation(context),
+					PlaceholderProcessor = InjectData(context, stubModule, encryptedModule)
+				});
+
 			// Main
-			MethodDef entryPoint = defs.OfType<MethodDef>().Single(method => method.Name == "Main");
+			var entryPoint = injectResult.Requested.Mapped;
 			stubModule.EntryPoint = entryPoint;
 
 			if (compCtx.EntryPoint.HasAttribute("System.STAThreadAttribute")) {
@@ -235,50 +274,7 @@ namespace Confuser.Protections {
 				entryPoint.CustomAttributes.Add(new CustomAttribute(
 					new MemberRefUser(stubModule, ".ctor", ctorSig, attrType)));
 			}
-
-			uint seed = random.NextUInt32();
-			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
-
-			byte[] encryptedModule = compCtx.Encrypt(comp, compCtx.OriginModule, seed,
-													 progress => logger.Progress((int)(progress * 10000), 10000));
 			logger.EndProgress();
-			token.ThrowIfCancellationRequested();
-
-			compCtx.EncryptedModule = encryptedModule;
-
-			MutationHelper.InjectKeys(entryPoint,
-									  new[] { 0, 1 },
-									  new[] { encryptedModule.Length >> 2, (int)seed });
-			InjectData(trace, stubModule, entryPoint, encryptedModule);
-
-			// Decrypt
-			MethodDef decrypter = defs.OfType<MethodDef>().Single(method => method.Name == "Decrypt");
-			decrypter.Body.SimplifyMacros(decrypter.Parameters);
-			List<Instruction> instrs = decrypter.Body.Instructions.ToList();
-			for (int i = 0; i < instrs.Count; i++) {
-				Instruction instr = instrs[i];
-				if (instr.OpCode == OpCodes.Call) {
-					var method = (IMethod)instr.Operand;
-					if (method.DeclaringType.Name == "Mutation" &&
-						method.Name == "Crypt") {
-						Instruction ldDst = instrs[i - 2];
-						Instruction ldSrc = instrs[i - 1];
-						Debug.Assert(ldDst.OpCode == OpCodes.Ldloc && ldSrc.OpCode == OpCodes.Ldloc);
-						instrs.RemoveAt(i);
-						instrs.RemoveAt(i - 1);
-						instrs.RemoveAt(i - 2);
-						instrs.InsertRange(i - 2, compCtx.Deriver.EmitDerivation(decrypter, context, (Local)ldDst.Operand, (Local)ldSrc.Operand));
-					}
-					else if (method.DeclaringType.Name == "Lzma" &&
-							 method.Name == "Decompress") {
-						MethodDef decomp = comp.GetRuntimeDecompressor(context, stubModule, member => { });
-						instr.Operand = decomp;
-					}
-				}
-			}
-			decrypter.Body.Instructions.Clear();
-			foreach (Instruction instr in instrs)
-				decrypter.Body.Instructions.Add(instr);
 
 			// Pack modules
 			PackModules(context, compCtx, stubModule, comp, random, logger, token);
@@ -296,33 +292,31 @@ namespace Confuser.Protections {
 			}
 		}
 
-		class KeyInjector : IModuleWriterListener {
+		private sealed class KeyInjector : IModuleWriterListener {
 			readonly CompressorContext ctx;
 
-			public KeyInjector(CompressorContext ctx) {
+			public KeyInjector(CompressorContext ctx) =>
 				this.ctx = ctx;
-			}
 
-			public void WriterEvent(object sender, ModuleWriterEventArgs args) {
+			public void WriterEvent(object sender, ModuleWriterEventArgs args) =>
 				OnWriterEvent(args.Writer, args.Event);
-			}
 
 			public void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 				if (evt == ModuleWriterEvent.MDBeginCreateTables) {
 					// Add key signature
-					uint sigBlob = writer.Metadata.BlobHeap.Add(ctx.KeySig);
+					uint sigBlob = writer.Metadata.BlobHeap.Add(ctx.KeySig.ToArray());
 					uint sigRid = writer.Metadata.TablesHeap.StandAloneSigTable.Add(new RawStandAloneSigRow(sigBlob));
 					Debug.Assert(sigRid == 1);
 					uint sigToken = 0x11000000 | sigRid;
 					ctx.KeyToken = sigToken;
-					MutationHelper.InjectKey(writer.Module.EntryPoint, 2, (int)sigToken);
+					ctx.KeyTokenLoadUpdate.ApplyValue((int)sigToken);
 				}
 				else if (evt == ModuleWriterEvent.MDBeginAddResources && !ctx.CompatMode) {
 					// Compute hash
 					byte[] hash = SHA1.Create().ComputeHash(ctx.OriginModule);
 					uint hashBlob = writer.Metadata.BlobHeap.Add(hash);
 
-					MDTable<RawFileRow> fileTbl = writer.Metadata.TablesHeap.FileTable;
+					var fileTbl = writer.Metadata.TablesHeap.FileTable;
 					uint fileRid = fileTbl.Add(new RawFileRow(
 												   (uint)FileAttributes.ContainsMetadata,
 												   writer.Metadata.StringsHeap.Add("koi"),
@@ -330,19 +324,22 @@ namespace Confuser.Protections {
 					uint impl = CodedToken.Implementation.Encode(new MDToken(Table.File, fileRid));
 
 					// Add resources
-					MDTable<RawManifestResourceRow> resTbl = writer.Metadata.TablesHeap.ManifestResourceTable;
+					var resTbl = writer.Metadata.TablesHeap.ManifestResourceTable;
 					foreach (var resource in ctx.ManifestResources)
 						resTbl.Add(new RawManifestResourceRow(resource.Offset, resource.Flags, writer.Metadata.StringsHeap.Add(resource.Value), impl));
 
 					// Add exported types
-					var exTbl = writer.Metadata.TablesHeap.ExportedTypeTable;
-					foreach (var type in ctx.OriginModuleDef.GetTypes()) {
-						if (!type.IsVisibleOutside())
-							continue;
-						exTbl.Add(new RawExportedTypeRow((uint)type.Attributes, 0,
-														 writer.Metadata.StringsHeap.Add(type.Name),
-														 writer.Metadata.StringsHeap.Add(type.Namespace), impl));
-					}
+					// This creates a meta data warning in peverify, stating that the exported type has no TypeDefId.
+					// Is this even required?
+
+					//  var exTbl = writer.Metadata.TablesHeap.ExportedTypeTable;
+					//  foreach (var type in ctx.OriginModuleDef.GetTypes()) {
+					//  	if (!type.IsVisibleOutside())
+					//  		continue;
+					//  	exTbl.Add(new RawExportedTypeRow((uint)type.Attributes, 0,
+					//  									 writer.Metadata.StringsHeap.Add(type.Name),
+					//  									 writer.Metadata.StringsHeap.Add(type.Namespace), impl));
+					//  }
 				}
 			}
 		}

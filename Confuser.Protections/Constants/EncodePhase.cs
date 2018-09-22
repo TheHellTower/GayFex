@@ -36,7 +36,7 @@ namespace Confuser.Protections.Constants {
 
 			var ldc = new Dictionary<object, List<Tuple<MethodDef, Instruction>>>();
 			var ldInit = new Dictionary<byte[], List<Tuple<MethodDef, Instruction>>>(new ByteArrayComparer());
-			
+
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("constants");
 
 			// Extract constants
@@ -120,20 +120,9 @@ namespace Confuser.Protections.Constants {
 			moduleCtx.DataField.InitialValue = encryptedBuffer;
 			moduleCtx.DataField.HasFieldRVA = true;
 			moduleCtx.DataType.ClassLayout = new ClassLayoutUser(0, (uint)encryptedBuffer.Length);
-			MutationHelper.InjectKeys(moduleCtx.InitMethod,
-			                          new[] { 0, 1 },
-			                          new[] { encryptedBuffer.Length / 4, (int)keySeed });
 
-			var trace = context.Registry.GetRequiredService<ITraceService>();
-			MutationHelper.ReplacePlaceholder(trace, moduleCtx.InitMethod, arg => {
-				var repl = new List<Instruction>();
-				repl.AddRange(arg);
-				repl.Add(Instruction.Create(OpCodes.Dup));
-				repl.Add(Instruction.Create(OpCodes.Ldtoken, moduleCtx.DataField));
-				repl.Add(Instruction.Create(OpCodes.Call, moduleCtx.Module.Import(
-					typeof(RuntimeHelpers).GetMethod("InitializeArray"))));
-				return repl.ToArray();
-			});
+			moduleCtx.EncodingBufferSizeUpdate.ApplyValue(encryptedBuffer.Length / 4);
+			moduleCtx.KeySeedUpdate.ApplyValue((int)keySeed);
 		}
 
 		void EncodeString(CEContext moduleCtx, string value, List<Tuple<MethodDef, Instruction>> references) {
@@ -159,7 +148,7 @@ namespace Confuser.Protections.Constants {
 				if (buffIndex + 1 < moduleCtx.EncodedBuffer.Count && moduleCtx.EncodedBuffer[buffIndex + 1] == hi)
 					break;
 			} while (buffIndex >= 0);
-			
+
 			if (buffIndex == -1) {
 				buffIndex = moduleCtx.EncodedBuffer.Count;
 				moduleCtx.EncodedBuffer.Add(lo);

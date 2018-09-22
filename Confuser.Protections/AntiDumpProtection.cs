@@ -21,7 +21,7 @@ namespace Confuser.Protections {
 			//
 		}
 
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new AntiDumpProtectionPhase(this));
 	}
 }

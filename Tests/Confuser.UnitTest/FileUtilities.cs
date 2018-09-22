@@ -18,6 +18,11 @@ namespace Confuser.UnitTest {
 				}
 			}
 			catch (UnauthorizedAccessException) { }
+
+			try {
+				Directory.Delete(Path.GetDirectoryName(outputFile), false);
+			}
+			catch (IOException) { }
 		}
 
 		public static byte[] ComputeFileChecksum(string file) {

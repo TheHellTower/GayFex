@@ -8,7 +8,7 @@
 		/// </summary>
 		/// <param name="id">The identifier.</param>
 		/// <returns>The requested RNG.</returns>
-		/// <exception cref="System.ArgumentNullException"><paramref name="id" /> is <c>null</c>.</exception>
+		/// <exception cref="System.ArgumentNullException"><paramref name="id" /> is <see langword="null"/>.</exception>
 		IRandomGenerator GetRandomGenerator(string id);
 	}
 }

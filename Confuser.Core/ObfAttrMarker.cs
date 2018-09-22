@@ -312,7 +312,11 @@ namespace Confuser.Core {
 					continue;
 				}
 
-				ModuleDefMD modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
+				var modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
+				foreach (var method in modDef.FindDefinitions().OfType<MethodDef>()) {
+					var a = method.CustomDebugInfos;
+					token.ThrowIfCancellationRequested();
+				}
 				token.ThrowIfCancellationRequested();
 
 				context.Resolver.AddToCache(modDef);

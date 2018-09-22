@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -17,11 +18,15 @@ namespace Confuser.Core.Services {
 		/// <param name="length">The number of random bytes.</param>
 		/// <returns>A buffer of random bytes.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="generator"/> is <see langword="null" /></exception>
-		public static byte[] NextBytes(this IRandomGenerator generator, int length) {
+		/// <exception cref="ArgumentOutOfRangeException"><paramref name="generator"/> &lt; 0</exception>
+		public static Memory<byte> NextBytes(this IRandomGenerator generator, int length) {
 			if (generator == null) throw new ArgumentNullException(nameof(generator));
+			if (length < 0) throw new ArgumentOutOfRangeException(nameof(length), length, "Length can't be less than 0");
 
-			var ret = new byte[length];
-			generator.NextBytes(ret, 0, length);
+			if (length == 0) return Memory<byte>.Empty;
+
+			Memory<byte> ret = new byte[length];
+			generator.NextBytes(ret.Span);
 			return ret;
 		}
 
@@ -31,8 +36,19 @@ namespace Confuser.Core.Services {
 		/// <param name="generator">The generator used to generate the values.</param>
 		/// <returns>Requested random number.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="generator"/> is <see langword="null" /></exception>
-		public static int NextInt32(this IRandomGenerator generator) => 
-			BitConverter.ToInt32(NextBytes(generator, 4), 0);
+		public static int NextInt32(this IRandomGenerator generator) {
+			if (generator == null) throw new ArgumentNullException(nameof(generator));
+
+			Span<byte> buffer = stackalloc byte[4];
+			generator.NextBytes(buffer);
+			var tmpArray = ArrayPool<byte>.Shared.Rent(4);
+			try {
+				buffer.CopyTo(tmpArray);
+				return BitConverter.ToInt32(tmpArray, 0);
+			} finally {
+				ArrayPool<byte>.Shared.Return(tmpArray);
+			}
+		}
 
 		/// <summary>
 		///     Returns a nonnegative random integer that is less than the specified maximum.
@@ -62,8 +78,20 @@ namespace Confuser.Core.Services {
 		/// <param name="generator">The generator used to generate the values.</param>
 		/// <returns>Requested random number.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="generator"/> is <see langword="null" /></exception>
-		public static uint NextUInt32(this IRandomGenerator generator) =>
-			BitConverter.ToUInt32(NextBytes(generator, 4), 0);
+		public static uint NextUInt32(this IRandomGenerator generator) {
+			if (generator == null) throw new ArgumentNullException(nameof(generator));
+
+			Span<byte> buffer = stackalloc byte[4];
+			generator.NextBytes(buffer);
+			var tmpArray = ArrayPool<byte>.Shared.Rent(4);
+			try {
+				buffer.CopyTo(tmpArray);
+				return BitConverter.ToUInt32(tmpArray, 0);
+			}
+			finally {
+				ArrayPool<byte>.Shared.Return(tmpArray);
+			}
+		}
 
 		/// <summary>
 		///     Returns a nonnegative random integer that is less than the specified maximum.
@@ -114,6 +142,26 @@ namespace Confuser.Core.Services {
 				var tmp = list[k];
 				list[k] = list[i];
 				list[i] = tmp;
+			}
+		}
+
+		/// <summary>
+		///     Shuffles the element in the specified span.
+		/// </summary>
+		/// <typeparam name="T">The element type of the list.</typeparam>
+		/// <param name="generator">The generator used to generate the values.</param>
+		/// <param name="data">The list to shuffle.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="generator"/> is <see langword="null" /></exception>
+		public static void Shuffle<T>(this IRandomGenerator generator, Span<T> data) {
+			if (generator == null) throw new ArgumentNullException(nameof(generator));
+
+			if (data.IsEmpty) return;
+
+			for (int i = data.Length - 1; i > 1; i--) {
+				int k = NextInt32(generator, i + 1);
+				var tmp = data[k];
+				data[k] = data[i];
+				data[i] = tmp;
 			}
 		}
 
