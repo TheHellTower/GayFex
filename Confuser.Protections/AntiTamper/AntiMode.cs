@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using Confuser.Protections.Services;
-using Confuser.Renamer;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -49,52 +48,34 @@ namespace Confuser.Protections.AntiTamper {
 			}
 			deriver.Init(context, random);
 
-			var rt = context.Registry.GetService<IRuntimeService>();
-			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperAnti");
-			IEnumerable<IDnlibDef> members = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
-			var initMethod = (MethodDef)members.Single(m => m.Name == "Initialize");
+			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, (int)(name1 * name2))
+				.Add(MutationField.KeyI1, (int)z)
+				.Add(MutationField.KeyI2, (int)x)
+				.Add(MutationField.KeyI3, (int)c)
+				.Add(MutationField.KeyI4, (int)v);
 
-			initMethod.Body.SimplifyMacros(initMethod.Parameters);
-			List<Instruction> instrs = initMethod.Body.Instructions.ToList();
-			for (int i = 0; i < instrs.Count; i++) {
-				Instruction instr = instrs[i];
-				if (instr.OpCode == OpCodes.Ldtoken) {
-					instr.Operand = context.CurrentModule.GlobalType;
-				}
-				else if (instr.OpCode == OpCodes.Call) {
-					var method = (IMethod)instr.Operand;
-					if (method.DeclaringType.Name == "Mutation" &&
-						method.Name == "Crypt") {
-						Instruction ldDst = instrs[i - 2];
-						Instruction ldSrc = instrs[i - 1];
-						Debug.Assert(ldDst.OpCode == OpCodes.Ldloc && ldSrc.OpCode == OpCodes.Ldloc);
-						instrs.RemoveAt(i);
-						instrs.RemoveAt(i - 1);
-						instrs.RemoveAt(i - 2);
-						instrs.InsertRange(i - 2, deriver.EmitDerivation(initMethod, context, (Local)ldDst.Operand, (Local)ldSrc.Operand));
-					}
-				}
-			}
-			initMethod.Body.Instructions.Clear();
-			foreach (Instruction instr in instrs)
-				initMethod.Body.Instructions.Add(instr);
-
-			MutationHelper.InjectKeys(initMethod,
-									  new[] { 0, 1, 2, 3, 4 },
-									  new[] { (int)(name1 * name2), (int)z, (int)x, (int)c, (int)v });
-
+			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
-			foreach (IDnlibDef def in members) {
-				name?.MarkHelper(context, def, marker, parent);
-				if (def is MethodDef)
-					antiTamper.ExcludeMethod(context, (MethodDef)def);
+
+			var antiTamperInit = rt.GetRuntimeType("Confuser.Runtime.AntiTamperAnti").FindMethod("Initialize");
+			var injectResult = InjectHelper.Inject(antiTamperInit, context.CurrentModule,
+				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+				new MutationProcessor(context.Registry, context.CurrentModule) {
+					KeyFieldValues = mutationKeys,
+					CryptProcessor = deriver.EmitDerivation(context)
+				});
+
+			foreach (var dep in injectResult) {
+				name?.MarkHelper(context, dep.Mapped, marker, parent);
+				if (dep.Mapped is MethodDef methodDef)
+					antiTamper.ExcludeMethod(context, methodDef);
 			}
 
-			MethodDef cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
-			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, initMethod));
-
+			var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
+			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
 			antiTamper.ExcludeMethod(context, cctor);
 		}
 
@@ -164,10 +145,10 @@ namespace Confuser.Protections.AntiTamper {
 			// move encrypted methods
 			var encryptedChunk = new MethodBodyChunks(writer.TheOptions.ShareMethodBodies);
 			newSection.Add(encryptedChunk, 4);
-			foreach (MethodDef method in methods) {
+			foreach (var method in methods) {
 				if (!method.HasBody)
 					continue;
-				MethodBody body = writer.Metadata.GetMethodBody(method);
+				var body = writer.Metadata.GetMethodBody(method);
 				bool ok = writer.MethodBodies.Remove(body);
 				encryptedChunk.Add(body);
 			}
@@ -177,7 +158,7 @@ namespace Confuser.Protections.AntiTamper {
 		}
 
 		void EncryptSection(ModuleWriterBase writer) {
-			Stream stream = writer.DestinationStream;
+			var stream = writer.DestinationStream;
 			var reader = new BinaryReader(writer.DestinationStream);
 			stream.Position = 0x3C;
 			stream.Position = reader.ReadUInt32();

@@ -20,14 +20,14 @@ namespace Confuser.Protections.ReferenceProxy {
 		readonly List<Tuple<MethodDef, byte[], MethodBody>> nativeCodes = new List<Tuple<MethodDef, byte[], MethodBody>>();
 		bool addedHandler;
 
-		public Instruction[] EmitDecode(MethodDef init, RPContext ctx, Instruction[] arg) {
-			Tuple<MethodDef, Func<int, int>> key = GetKey(ctx, init);
+		Helpers.PlaceholderProcessor IRPEncoding.EmitDecode(RPContext ctx) => (module, method, args) => {
+			var key = GetKey(ctx, method);
 
-			var repl = new List<Instruction>();
-			repl.AddRange(arg);
+			var repl = new List<Instruction>(args.Count + 1);
+			repl.AddRange(args);
 			repl.Add(Instruction.Create(OpCodes.Call, key.Item1));
-			return repl.ToArray();
-		}
+			return repl;
+		};
 
 		public int Encode(MethodDef init, RPContext ctx, int value) {
 			Tuple<MethodDef, Func<int, int>> key = GetKey(ctx, init);

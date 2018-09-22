@@ -17,7 +17,7 @@ namespace Confuser.Renamer.Services {
 		static readonly object OriginalNameKey = new object();
 		static readonly object OriginalNamespaceKey = new object();
 		
-		readonly byte[] nameSeed;
+		private readonly ReadOnlyMemory<byte> nameSeed;
 		readonly IRandomGenerator random;
 		readonly VTableStorage storage;
 		AnalyzePhase analyze;
@@ -188,7 +188,7 @@ namespace Confuser.Renamer.Services {
 			if (nameMap1.ContainsKey(name))
 				return nameMap1[name];
 
-			byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed);
+			byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed.ToArray());
 			for (int i = 0; i < 100; i++) {
 				newName = ObfuscateNameInternal(hash, mode);
 				if (!identifiers.Contains(MakeGenericName(newName, count)))
@@ -209,7 +209,9 @@ namespace Confuser.Renamer.Services {
 		}
 
 		public string RandomName(RenameMode mode) {
-			return ObfuscateName(Utils.ToHexString(random.NextBytes(16)), mode);
+			Span<byte> buf = stackalloc byte[16];
+			random.NextBytes(buf);
+			return ObfuscateName(Utils.ToHexString(buf), mode);
 		}
 
 		public void SetOriginalName(IConfuserContext context, object obj, string name) {
@@ -233,8 +235,8 @@ namespace Confuser.Renamer.Services {
 		public void MarkHelper(IConfuserContext context, IDnlibDef def, IMarkerService marker, IConfuserComponent parentComp) {
 			if (marker.IsMarked(context, def))
 				return;
-			if (def is MethodDef) {
-				var method = (MethodDef)def;
+			// TODO: Private definitions are not properly handled there. They get a wider visibility.
+			if (def is MethodDef method) {
 				method.Access = MethodAttributes.Assembly;
 				if (!method.IsSpecialName && !method.IsRuntimeSpecialName && !method.DeclaringType.IsDelegate())
 					method.Name = RandomName();

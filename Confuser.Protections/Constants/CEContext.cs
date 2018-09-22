@@ -3,40 +3,43 @@ using System.Collections.Generic;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
+using Confuser.Helpers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.Constants {
-	internal class CEContext {
-		public IConfuserContext Context;
-		public ConstantProtection Protection;
-		public ModuleDef Module;
+	internal sealed class CEContext {
+		internal IConfuserContext Context;
+		internal ConstantProtection Protection;
+		internal ModuleDef Module;
 
-		public FieldDef BufferField;
-		public FieldDef DataField;
-		public TypeDef DataType;
-		public MethodDef InitMethod;
+		internal FieldDef DataField;
+		internal TypeDef DataType;
+		internal MethodDef InitMethod;
 
-		public int DecoderCount;
-		public List<Tuple<MethodDef, DecoderDesc>> Decoders;
+		internal int DecoderCount;
+		internal List<Tuple<MethodDef, DecoderDesc>> Decoders;
 
-		public EncodeElements Elements;
-		public List<uint> EncodedBuffer;
+		internal EncodeElements Elements;
+		internal List<uint> EncodedBuffer;
 
-		public Mode Mode;
-		public IEncodeMode ModeHandler;
+		internal Mode Mode;
+		internal IEncodeMode ModeHandler;
 
-		public IDynCipherService DynCipher;
-		public IMarkerService Marker;
-		public INameService Name;
-		public IRandomGenerator Random;
-		public ITraceService Trace;
+		internal IDynCipherService DynCipher;
+		internal IMarkerService Marker;
+		internal INameService Name;
+		internal IRandomGenerator Random;
+		internal ITraceService Trace;
 
-		public TypeDef CfgCtxType;
-		public MethodDef CfgCtxCtor;
-		public MethodDef CfgCtxNext;
-		public Dictionary<MethodDef, List<Tuple<Instruction, uint, IMethod>>> ReferenceRepl;
+		internal TypeDef CfgCtxType;
+		internal MethodDef CfgCtxCtor;
+		internal MethodDef CfgCtxNext;
+		internal Dictionary<MethodDef, List<Tuple<Instruction, uint, IMethod>>> ReferenceRepl;
+
+		internal readonly LateMutationFieldUpdate EncodingBufferSizeUpdate = new LateMutationFieldUpdate();
+		internal readonly LateMutationFieldUpdate KeySeedUpdate = new LateMutationFieldUpdate();
 	}
 
 	internal class DecoderDesc {

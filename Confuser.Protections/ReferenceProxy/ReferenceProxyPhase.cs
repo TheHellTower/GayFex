@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Confuser.Core;
@@ -27,33 +29,28 @@ namespace Confuser.Protections.ReferenceProxy {
 		public string Name => "Encoding reference proxies";
 
 		RPContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
-			var ret = new RPContext();
-			ret.Mode = parameters.GetParameter(context, method, "mode", Mode.Mild);
-			ret.Encoding = parameters.GetParameter(context, method, "encoding", EncodingType.Normal);
-			ret.InternalAlso = parameters.GetParameter(context, method, "internal", false);
-			ret.TypeErasure = parameters.GetParameter(context, method, "typeErasure", false);
-			ret.Depth = parameters.GetParameter(context, method, "depth", 3);
+			var ret = new RPContext {
+				Mode = parameters.GetParameter(context, method, "mode", Mode.Mild),
+				Encoding = parameters.GetParameter(context, method, "encoding", EncodingType.Normal),
+				InternalAlso = parameters.GetParameter(context, method, "internal", false),
+				TypeErasure = parameters.GetParameter(context, method, "typeErasure", false),
+				Depth = parameters.GetParameter(context, method, "depth", 3),
 
-			ret.Module = method.Module;
-			ret.Method = method;
-			ret.Body = method.Body;
-			ret.BranchTargets = new HashSet<Instruction>(
-				method.Body.Instructions
-				      .Select(instr => instr.Operand as Instruction)
-				      .Concat(method.Body.Instructions
-				                    .Where(instr => instr.Operand is Instruction[])
-				                    .SelectMany(instr => (Instruction[])instr.Operand))
-				      .Where(target => target != null));
+				Module = method.Module,
+				Method = method,
+				Body = method.Body,
+				BranchTargets = method.Body.Instructions.SelectMany(InstructionOperands).ToImmutableHashSet(),
 
-			ret.Protection = (ReferenceProxyProtection)Parent;
-			ret.Random = store.random;
-			ret.Context = context;
-			ret.Marker = context.Registry.GetRequiredService<IMarkerService>();
-			ret.DynCipher = context.Registry.GetRequiredService<IDynCipherService>();
-			ret.Name = context.Registry.GetService<INameService>();
-			ret.Trace = context.Registry.GetRequiredService<ITraceService>();
+				Protection = Parent,
+				Random = store.random,
+				Context = context,
+				Marker = context.Registry.GetRequiredService<IMarkerService>(),
+				DynCipher = context.Registry.GetRequiredService<IDynCipherService>(),
+				Name = context.Registry.GetService<INameService>(),
+				Trace = context.Registry.GetRequiredService<ITraceService>(),
 
-			ret.Delegates = store.delegates;
+				Delegates = store.delegates
+			};
 
 			switch (ret.Mode) {
 				case Mode.Mild:
@@ -86,19 +83,32 @@ namespace Confuser.Protections.ReferenceProxy {
 			return ret;
 		}
 
-		static RPContext ParseParameters(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
-			var ret = new RPContext();
-			ret.Depth = parameters.GetParameter(context, module, "depth", 3);
-			ret.InitCount = parameters.GetParameter(context, module, "initCount", 0x10);
+		private static IEnumerable<Instruction> InstructionOperands(Instruction instr) {
+			Debug.Assert(instr != null, $"{nameof(instr)} != null");
 
-			ret.Random = store.random;
-			ret.Module = module;
-			ret.Context = context;
-			ret.Marker = context.Registry.GetRequiredService<IMarkerService>();
-			ret.DynCipher = context.Registry.GetRequiredService<IDynCipherService>();
-			ret.Name = context.Registry.GetService<INameService>();
+			if (instr.Operand is Instruction instrOp) {
+				return ImmutableArray.Create(instrOp);
+			}
+			else if(instr.Operand is Instruction[] instrsOp) {
+				return instrsOp;
+			}
+			return Enumerable.Empty<Instruction>();
+		}
 
-			ret.Delegates = store.delegates;
+		private static RPContext ParseParameters(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
+			var ret = new RPContext {
+				Depth = parameters.GetParameter(context, module, "depth", 3),
+				InitCount = parameters.GetParameter(context, module, "initCount", 0x10),
+
+				Random = store.random,
+				Module = module,
+				Context = context,
+				Marker = context.Registry.GetRequiredService<IMarkerService>(),
+				DynCipher = context.Registry.GetRequiredService<IDynCipherService>(),
+				Name = context.Registry.GetService<INameService>(),
+
+				Delegates = store.delegates
+			};
 
 			return ret;
 		}
@@ -109,13 +119,13 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			var store = new RPStore { random = random };
 
-			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(logger))
+			foreach (var method in parameters.Targets.OfType<MethodDef>().WithProgress(logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
 					ProcessMethod(ParseParameters(method, context, parameters, store));
 					token.ThrowIfCancellationRequested();
 				}
 
-			RPContext ctx = ParseParameters(context.CurrentModule, context, parameters, store);
+			var ctx = ParseParameters(context.CurrentModule, context, parameters, store);
 
 			if (store.mild != null)
 				store.mild.Finalize(ctx);
@@ -126,7 +136,7 @@ namespace Confuser.Protections.ReferenceProxy {
 
 		void ProcessMethod(RPContext ctx) {
 			for (int i = 0; i < ctx.Body.Instructions.Count; i++) {
-				Instruction instr = ctx.Body.Instructions[i];
+				var instr = ctx.Body.Instructions[i];
 				if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt || instr.OpCode.Code == Code.Newobj) {
 					var operand = (IMethod)instr.Operand;
 					var def = operand.ResolveMethodDef();
@@ -150,7 +160,7 @@ namespace Confuser.Protections.ReferenceProxy {
 					if (operand.MethodSig.ParamsAfterSentinel != null &&
 						operand.MethodSig.ParamsAfterSentinel.Count > 0)
 						continue;
-					TypeDef declType = operand.DeclaringType.ResolveTypeDefThrow();
+					var declType = operand.DeclaringType.ResolveTypeDefThrow();
 					// No delegates
 					if (declType.IsDelegate())
 						continue;
@@ -166,24 +176,20 @@ namespace Confuser.Protections.ReferenceProxy {
 			}
 		}
 
-		class RPStore {
-			public readonly Dictionary<MethodSig, TypeDef> delegates = new Dictionary<MethodSig, TypeDef>(new MethodSigComparer());
-			public ExpressionEncoding expression;
-			public MildMode mild;
+		private sealed class RPStore {
+			internal readonly Dictionary<MethodSig, TypeDef> delegates = new Dictionary<MethodSig, TypeDef>(new MethodSigComparer());
+			internal ExpressionEncoding expression;
+			internal MildMode mild;
 
-			public NormalEncoding normal;
-			public IRandomGenerator random;
-			public StrongMode strong;
-			public x86Encoding x86;
+			internal NormalEncoding normal;
+			internal IRandomGenerator random;
+			internal StrongMode strong;
+			internal x86Encoding x86;
 
-			class MethodSigComparer : IEqualityComparer<MethodSig> {
-				public bool Equals(MethodSig x, MethodSig y) {
-					return new SigComparer().Equals(x, y);
-				}
+			private sealed class MethodSigComparer : IEqualityComparer<MethodSig> {
+				bool IEqualityComparer<MethodSig>.Equals(MethodSig x, MethodSig y) => new SigComparer().Equals(x, y);
 
-				public int GetHashCode(MethodSig obj) {
-					return new SigComparer().GetHashCode(obj);
-				}
+				int IEqualityComparer<MethodSig>.GetHashCode(MethodSig obj) => new SigComparer().GetHashCode(obj);
 			}
 		}
 	}

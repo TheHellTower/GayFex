@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Confuser.Runtime {
 	internal static class Constant {
-		static byte[] b;
+		private static byte[] b;
 
-		static void Initialize() {
+		private static void Initialize() {
 			var l = (uint)Mutation.KeyI0;
 			uint[] q = Mutation.Placeholder(new uint[Mutation.KeyI0]);
 
@@ -40,7 +40,7 @@ namespace Confuser.Runtime {
 			b = Lzma.Decompress(o);
 		}
 
-		static T Get<T>(uint id) {
+		internal static T Get<T>(uint id) {
 			if (Assembly.GetExecutingAssembly() == Assembly.GetCallingAssembly()) {
 				id = (uint)Mutation.Placeholder((int)id);
 				uint t = id >> 30;
@@ -56,7 +56,7 @@ namespace Confuser.Runtime {
 				// NOTE: Assume little-endian
 				else if (t == Mutation.KeyI1) {
 					var v = new T[1];
-					Buffer.BlockCopy(b, (int)id, v, 0, Mutation.Value<int>());
+					Buffer.BlockCopy(b, (int)id, v, 0, sizeof(int));
 					ret = v[0];
 				}
 				else if (t == Mutation.KeyI2) {

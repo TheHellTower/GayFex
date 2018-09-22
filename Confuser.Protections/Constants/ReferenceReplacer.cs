@@ -5,6 +5,7 @@ using System.Linq;
 using Confuser.Core;
 using Confuser.Core.Helpers;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,9 +26,9 @@ namespace Confuser.Protections.Constants {
 				int i = method.Body.Instructions.IndexOf(instr.Item1);
 				instr.Item1.OpCode = OpCodes.Ldc_I4;
 				instr.Item1.Operand = (int)instr.Item2;
-				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Call, instr.Item3));
-				Instruction instr1 = method.Body.Instructions[i + 1];
-				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Br_S, instr1));
+				var callInstr = Instruction.Create(OpCodes.Call, instr.Item3);
+				method.Body.Instructions.Insert(i + 1, callInstr);
+				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Br_S, callInstr));
 			}
 		}
 
@@ -125,17 +126,18 @@ namespace Confuser.Protections.Constants {
 
 		static void InjectStateType(CEContext ctx) {
 			if (ctx.CfgCtxType == null) {
-				var type = ctx.Context.Registry.GetRequiredService<IRuntimeService>().GetRuntimeType("Confuser.Runtime.CFGCtx");
-				ctx.CfgCtxType = InjectHelper.Inject(type, ctx.Module);
-				ctx.Module.Types.Add(ctx.CfgCtxType);
-				ctx.CfgCtxCtor = ctx.CfgCtxType.FindMethod(".ctor");
-				ctx.CfgCtxNext = ctx.CfgCtxType.FindMethod("Next");
+				var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
+				var rtType = rt.GetRuntimeType("Confuser.Runtime.CFGCtx");
 
-				ctx.Name?.MarkHelper(ctx.Context, ctx.CfgCtxType, ctx.Marker, ctx.Protection);
-				foreach (var def in ctx.CfgCtxType.Fields)
-					ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
-				foreach (var def in ctx.CfgCtxType.Methods)
-					ctx.Name?.MarkHelper(ctx.Context, def, ctx.Marker, ctx.Protection);
+				var injectResult = InjectHelper.Inject(rtType, ctx.Module,
+					InjectBehaviors.RenameAndInternalizeBehavior(ctx.Context));
+
+				ctx.CfgCtxType = injectResult.Requested.Mapped;
+				ctx.CfgCtxCtor = injectResult.Where(inj => inj.Source.IsMethodDef && ((MethodDef)inj.Source).IsInstanceConstructor).Single().Mapped as MethodDef;
+				ctx.CfgCtxNext = injectResult.Where(inj => inj.Source.IsMethodDef && inj.Source.Name.Equals("Next")).Single().Mapped as MethodDef;
+
+				foreach (var def in injectResult)
+					ctx.Name?.MarkHelper(ctx.Context, def.Mapped, ctx.Marker, ctx.Protection);
 			}
 		}
 

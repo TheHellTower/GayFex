@@ -79,7 +79,7 @@ namespace Confuser.Protections.Resources {
 
 				// encrypt
 				uint keySeed = ctx.Random.NextUInt32() | 0x10;
-				var key = new uint[0x10];
+				Span<uint> key = stackalloc uint[0x10];
 				uint state = keySeed;
 				for (int i = 0; i < 0x10; i++) {
 					state ^= state >> 13;
@@ -91,10 +91,11 @@ namespace Confuser.Protections.Resources {
 				var encryptedBuffer = new byte[compressedBuff.Length * 4];
 				int buffIndex = 0;
 				while (buffIndex < compressedBuff.Length) {
-					uint[] enc = ctx.ModeHandler.Encrypt(compressedBuff, buffIndex, key);
+					Span<uint> enc = stackalloc uint[0x10];
+					ctx.ModeHandler.Encrypt(compressedBuff.AsSpan().Slice(buffIndex), key, enc);
 					for (int j = 0; j < 0x10; j++)
 						key[j] ^= compressedBuff[buffIndex + j];
-					Buffer.BlockCopy(enc, 0, encryptedBuffer, buffIndex * 4, 0x40);
+					Buffer.BlockCopy(enc.ToArray(), 0, encryptedBuffer, buffIndex * 4, 0x40);
 					buffIndex += 0x10;
 				}
 				Debug.Assert(buffIndex == compressedBuff.Length);
@@ -112,9 +113,8 @@ namespace Confuser.Protections.Resources {
 				encryptedResource = writer.Constants.Add(new ByteArrayChunk(encryptedBuffer), 8);
 
 				// inject key values
-				MutationHelper.InjectKeys(ctx.InitMethod,
-										  new[] { 0, 1 },
-										  new[] { (int)(size / 4), (int)(keySeed) });
+				ctx.loadSizeUpdate.ApplyValue((int)(size / 4));
+				ctx.loadSeedUpdate.ApplyValue((int)keySeed);
 			}
 			else if (e.Event == ModuleWriterEvent.EndCalculateRvasAndFileOffsets) {
 				TablesHeap tblHeap = writer.Metadata.TablesHeap;

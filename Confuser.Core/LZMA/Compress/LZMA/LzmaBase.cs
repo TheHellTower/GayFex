@@ -1,10 +1,9 @@
 // LzmaBase.cs
 
-using System;
-
-namespace SevenZip.Compression.LZMA {
-	internal abstract class Base {
-
+namespace SevenZip.Compression.LZMA
+{
+	internal abstract class Base
+	{
 		public const uint kNumRepDistances = 4;
 		public const uint kNumStates = 12;
 
@@ -12,6 +11,22 @@ namespace SevenZip.Compression.LZMA {
 		// static byte []kMatchNextStates    = {7, 7, 7, 7, 7, 7, 7, 10, 10, 10, 10, 10};
 		// static byte []kRepNextStates      = {8, 8, 8, 8, 8, 8, 8, 11, 11, 11, 11, 11};
 		// static byte []kShortRepNextStates = {9, 9, 9, 9, 9, 9, 9, 11, 11, 11, 11, 11};
+
+		public struct State
+		{
+			public uint Index;
+			public void Init() { Index = 0; }
+			public void UpdateChar()
+			{
+				if (Index < 4) Index = 0;
+				else if (Index < 10) Index -= 3;
+				else Index -= 6;
+			}
+			public void UpdateMatch() { Index = (uint)(Index < 7 ? 7 : 10); }
+			public void UpdateRep() { Index = (uint)(Index < 7 ? 8 : 11); }
+			public void UpdateShortRep() { Index = (uint)(Index < 7 ? 9 : 11); }
+			public bool IsCharState() { return Index < 7; }
+		}
 
 		public const int kNumPosSlotBits = 6;
 		public const int kDicLogSizeMin = 0;
@@ -22,6 +37,14 @@ namespace SevenZip.Compression.LZMA {
 		public const uint kNumLenToPosStates = 1 << kNumLenToPosStatesBits;
 
 		public const uint kMatchMinLen = 2;
+
+		public static uint GetLenToPosState(uint len)
+		{
+			len -= kMatchMinLen;
+			if (len < kNumLenToPosStates)
+				return len;
+			return (uint)(kNumLenToPosStates - 1);
+		}
 
 		public const int kNumAlignBits = 4;
 		public const uint kAlignTableSize = 1 << kNumAlignBits;
@@ -46,50 +69,8 @@ namespace SevenZip.Compression.LZMA {
 		public const int kNumHighLenBits = 8;
 		public const uint kNumLowLenSymbols = 1 << kNumLowLenBits;
 		public const uint kNumMidLenSymbols = 1 << kNumMidLenBits;
-
 		public const uint kNumLenSymbols = kNumLowLenSymbols + kNumMidLenSymbols +
-		                                   (1 << kNumHighLenBits);
-
+				(1 << kNumHighLenBits);
 		public const uint kMatchMaxLen = kMatchMinLen + kNumLenSymbols - 1;
-
-		public static uint GetLenToPosState(uint len) {
-			len -= kMatchMinLen;
-			if (len < kNumLenToPosStates)
-				return len;
-			return kNumLenToPosStates - 1;
-		}
-
-		public struct State {
-
-			public uint Index;
-
-			public void Init() {
-				Index = 0;
-			}
-
-			public void UpdateChar() {
-				if (Index < 4) Index = 0;
-				else if (Index < 10) Index -= 3;
-				else Index -= 6;
-			}
-
-			public void UpdateMatch() {
-				Index = (uint)(Index < 7 ? 7 : 10);
-			}
-
-			public void UpdateRep() {
-				Index = (uint)(Index < 7 ? 8 : 11);
-			}
-
-			public void UpdateShortRep() {
-				Index = (uint)(Index < 7 ? 9 : 11);
-			}
-
-			public bool IsCharState() {
-				return Index < 7;
-			}
-
-		}
-
 	}
 }

@@ -19,17 +19,26 @@
     <PackageReference Include="System.Threading" Version="4.*" />
     <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.*" />
+    <PackageReference Include="System.Security.Cryptography.Primitives" Version="4.*" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\dnlib\src\dnlib.netstandard.csproj" />
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Project\ConfuserPrj.xsd">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup Label="LZMA">
+    <Compile Remove="LZMA\Compress\LzmaAlone\**\*.cs" />
+    <Compile Remove="LZMA\Common\CommandLineParser.cs" />
+    <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.csproj" />
+    <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.sln" />
   </ItemGroup>
 
   <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
