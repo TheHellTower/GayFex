@@ -16,10 +16,10 @@ namespace Confuser.Core.Parameter {
 			DefaultValue = defaultValue;
 		}
 
-		uint IProtectionParameter<uint>.Deserialize(string serializedValue) { 
-			if (uint.TryParse(serializedValue, NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, CultureInfo.InvariantCulture, out uint value)) 
+		uint IProtectionParameter<uint>.Deserialize(string serializedValue) {
+			if (uint.TryParse(serializedValue, NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, CultureInfo.InvariantCulture, out uint value))
 				return value;
-			
+
 			throw new SerializationException($"Value {serializedValue} can't be deserialized to unsigned integer.");
 		}
 

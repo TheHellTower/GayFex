@@ -16,7 +16,7 @@ namespace Confuser.Protections.Constants {
 
 			EncodeElements IProtectionParameter<EncodeElements>.Deserialize(string serializedValue) {
 				var result = EncodeElements.None;
-				foreach (char elem in serializedValue.ToUpperInvariant())
+				foreach (char elem in serializedValue?.ToUpperInvariant() ?? string.Empty)
 					switch (elem) {
 						case 'S': result |= EncodeElements.Strings; break;
 						case 'N': result |= EncodeElements.Numbers; break;

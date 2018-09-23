@@ -18,9 +18,9 @@ namespace Confuser.Core.Parameter {
 		}
 
 		double IProtectionParameter<double>.Deserialize(string serializedValue) {
-			if (double.TryParse(serializedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)) 
+			if (double.TryParse(serializedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
 				return Math.Min(1.0, Math.Max(0.0, value / 100.0));
-			
+
 			throw new SerializationException($"Value {serializedValue} can't be deserialized to percentage.");
 		}
 

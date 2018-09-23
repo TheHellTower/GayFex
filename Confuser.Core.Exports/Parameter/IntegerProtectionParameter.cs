@@ -17,9 +17,9 @@ namespace Confuser.Core.Parameter {
 		}
 
 		int IProtectionParameter<int>.Deserialize(string serializedValue) {
-			if (int.TryParse(serializedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)) 
+			if (int.TryParse(serializedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
 				return value;
-			
+
 			throw new SerializationException($"Value {serializedValue} can't be deserialized to integer.");
 		}
 
