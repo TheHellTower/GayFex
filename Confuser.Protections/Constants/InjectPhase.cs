@@ -48,8 +48,8 @@ namespace Confuser.Protections.Constants {
 				};
 
 				// Extract parameters
-				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, "mode", Mode.Normal);
-				moduleCtx.DecoderCount = parameters.GetParameter(context, context.CurrentModule, "decoderCount", 5);
+				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.Mode);
+				moduleCtx.DecoderCount = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.DecoderCount);
 
 				switch (moduleCtx.Mode) {
 					case Mode.Normal:

@@ -22,7 +22,7 @@ namespace Confuser.Protections.AntiTamper {
 			if (!parameters.Targets.Any())
 				return;
 
-			AntiTamperMode mode = parameters.GetParameter(context, context.CurrentModule, "mode", AntiTamperMode.Normal);
+			AntiTamperMode mode = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.Mode);
 			IModeHandler modeHandler;
 			switch (mode) {
 			case AntiTamperMode.Normal:
@@ -37,7 +37,7 @@ namespace Confuser.Protections.AntiTamper {
 			default:
 				throw new UnreachableException();
 			}
-			modeHandler.HandleInject((AntiTamperProtection)Parent, context, parameters);
+			modeHandler.HandleInject(Parent, context, parameters);
 			context.Annotations.Set(context.CurrentModule, AntiTamperProtection.HandlerKey, modeHandler);
 		}
 	}

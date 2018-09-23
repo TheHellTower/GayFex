@@ -19,9 +19,8 @@ namespace Confuser.Core {
 		/// <typeparam name="T">The type of the parameter value.</typeparam>
 		/// <param name="context">The working context.</param>
 		/// <param name="target">The protection target.</param>
-		/// <param name="name">The name of the parameter.</param>
-		/// <param name="defValue">Default value if the parameter does not exist.</param>
+		/// <param name="name">The parameter definition to query.</param>
 		/// <returns>The value of the parameter.</returns>
-		T GetParameter<T>(IConfuserContext context, IDnlibDef target, string name, T defValue = default);
+		T GetParameter<T>(IConfuserContext context, IDnlibDef target, IProtectionParameter<T> parameter);
 	}
 }

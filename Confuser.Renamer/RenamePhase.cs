@@ -39,28 +39,28 @@ namespace Confuser.Renamer {
 			var targets = service.GetRandom().Shuffle(parameters.Targets);
 			var pdbDocs = new HashSet<string>();
 			foreach (var def in targets.WithProgress(logger)) {
-				if (def is ModuleDef && parameters.GetParameter(context, def, "rickroll", false))
+				if (def is ModuleDef && parameters.GetParameter(context, def, Parent.Parameters.RickRoll))
 					RickRoller.CommenceRickroll(context, (ModuleDef)def);
 
 				bool canRename = service.CanRename(context, def);
 				var mode = service.GetRenameMode(context, def);
 
 				if (def is MethodDef method) {
-					if ((canRename || method.IsConstructor) && parameters.GetParameter(context, def, "renameArgs", true)) {
+					if ((canRename || method.IsConstructor) && parameters.GetParameter(context, def, Parent.Parameters.RenameArguments)) {
 						foreach (var param in method.ParamDefs)
 							param.Name = null;
 					}
 
-					if (parameters.GetParameter(context, def, "renPdb", false) && method.HasBody) {
+					if (parameters.GetParameter(context, def, Parent.Parameters.RenamePDB) && method.HasBody) {
 						foreach (var instr in method.Body.Instructions) {
 							if (instr.SequencePoint != null && !pdbDocs.Contains(instr.SequencePoint.Document.Url)) {
-								instr.SequencePoint.Document.Url = service.ObfuscateName(instr.SequencePoint.Document.Url, mode);
+								instr.SequencePoint.Document.Url = service.ObfuscateName(method.Module, instr.SequencePoint.Document.Url, mode);
 								pdbDocs.Add(instr.SequencePoint.Document.Url);
 							}
 						}
 						foreach (var local in method.Body.Variables) {
 							if (!string.IsNullOrEmpty(local.Name))
-								local.Name = service.ObfuscateName(local.Name, mode);
+								local.Name = service.ObfuscateName(method.Module, local.Name, mode);
 						}
 						method.Body.PdbMethod.Scope = new PdbScope();
 					}
@@ -79,25 +79,27 @@ namespace Confuser.Renamer {
 					continue;
 
 				if (def is TypeDef typeDef) {
-					if (parameters.GetParameter(context, def, "flatten", true)) {
-						typeDef.Name = service.ObfuscateName(typeDef.FullName, mode);
+					if (parameters.GetParameter(context, def, Parent.Parameters.FlattenNamespace)) {
+						typeDef.Name = service.ObfuscateName(typeDef.Module, typeDef.FullName, mode);
 						typeDef.Namespace = "";
 					}
 					else {
-						typeDef.Namespace = service.ObfuscateName(typeDef.Namespace, mode);
-						typeDef.Name = service.ObfuscateName(typeDef.Name, mode);
+						typeDef.Namespace = service.ObfuscateName(typeDef.Module, typeDef.Namespace, mode);
+						typeDef.Name = service.ObfuscateName(typeDef.Module, typeDef.Name, mode);
 					}
 					foreach (var param in typeDef.GenericParameters)
 						param.Name = ((char)(param.Number + 1)).ToString();
 				}
-				else if (def is MethodDef) {
-					foreach (var param in ((MethodDef)def).GenericParameters)
+				else if (def is MethodDef methodDef) {
+					foreach (var param in methodDef.GenericParameters)
 						param.Name = ((char)(param.Number + 1)).ToString();
 
-					def.Name = service.ObfuscateName(def.Name, mode);
+					def.Name = service.ObfuscateName(methodDef.Module, def.Name, mode);
 				}
+				else if (def is IOwnerModule ownerModuleDef)
+					def.Name = service.ObfuscateName(ownerModuleDef.Module, def.Name, mode);
 				else
-					def.Name = service.ObfuscateName(def.Name, mode);
+					throw new NotImplementedException("Unexpected implementation of IDnlibDef: " + def.GetType().FullName);
 
 				foreach (var refer in references.ToList()) {
 					if (!refer.UpdateNameReference(context, service)) {

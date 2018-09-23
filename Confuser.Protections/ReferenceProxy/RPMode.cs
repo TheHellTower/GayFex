@@ -64,7 +64,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (ctx.Delegates.TryGetValue(sig, out ret))
 				return ret;
 
-			ret = new TypeDefUser(ctx.Name.ObfuscateName(ctx.Method.DeclaringType.Namespace, RenameMode.Unicode), ctx.Name.RandomName(), ctx.Module.CorLibTypes.GetTypeRef("System", "MulticastDelegate"));
+			ret = new TypeDefUser(ctx.Name.ObfuscateName(ctx.Method.Module, ctx.Method.DeclaringType.Namespace, RenameMode.Unicode), ctx.Name.RandomName(), ctx.Module.CorLibTypes.GetTypeRef("System", "MulticastDelegate"));
 			ret.Attributes = TypeAttributes.NotPublic | TypeAttributes.Sealed;
 
 			var ctor = new MethodDefUser(".ctor", MethodSig.CreateInstance(ctx.Module.CorLibTypes.Void, ctx.Module.CorLibTypes.Object, ctx.Module.CorLibTypes.IntPtr));

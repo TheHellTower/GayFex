@@ -17,6 +17,8 @@ namespace Confuser.Protections {
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
 
+		internal AntiDebugProtectionParameters Parameters { get; } = new AntiDebugProtectionParameters();
+
 		void IConfuserComponent.Initialize(IServiceCollection context) {
 			//
 		}

@@ -52,7 +52,7 @@ namespace Confuser.Protections.Resources {
 				};
 
 				// Extract parameters
-				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, "mode", Mode.Normal);
+				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.Mode);
 
 				switch (moduleCtx.Mode) {
 				case Mode.Normal:

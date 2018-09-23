@@ -10,7 +10,7 @@ using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
-	class AntiDebugProtectionPhase : IProtectionPhase {
+	internal sealed class AntiDebugProtectionPhase : IProtectionPhase {
 		public AntiDebugProtectionPhase(AntiDebugProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
@@ -31,7 +31,7 @@ namespace Confuser.Protections {
 			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(AntiDebugProtectionPhase));
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
-				var mode = parameters.GetParameter(context, module, "mode", AntiDebugMode.Safe);
+				var mode = parameters.GetParameter(context, module, Parent.Parameters.Mode);
 
 				TypeDef rtType = null;
 				switch (mode) {

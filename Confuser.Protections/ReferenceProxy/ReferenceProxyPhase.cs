@@ -30,11 +30,11 @@ namespace Confuser.Protections.ReferenceProxy {
 
 		RPContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
 			var ret = new RPContext {
-				Mode = parameters.GetParameter(context, method, "mode", Mode.Mild),
-				Encoding = parameters.GetParameter(context, method, "encoding", EncodingType.Normal),
-				InternalAlso = parameters.GetParameter(context, method, "internal", false),
-				TypeErasure = parameters.GetParameter(context, method, "typeErasure", false),
-				Depth = parameters.GetParameter(context, method, "depth", 3),
+				Mode = parameters.GetParameter(context, method, Parent.Parameters.Mode),
+				Encoding = parameters.GetParameter(context, method, Parent.Parameters.Encoding),
+				InternalAlso = parameters.GetParameter(context, method, Parent.Parameters.InternalAlso),
+				TypeErasure = parameters.GetParameter(context, method, Parent.Parameters.EraseTypes),
+				Depth = parameters.GetParameter(context, method, Parent.Parameters.Depth),
 
 				Module = method.Module,
 				Method = method,
@@ -95,10 +95,10 @@ namespace Confuser.Protections.ReferenceProxy {
 			return Enumerable.Empty<Instruction>();
 		}
 
-		private static RPContext ParseParameters(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
+		private RPContext ParseParameters(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
 			var ret = new RPContext {
-				Depth = parameters.GetParameter(context, module, "depth", 3),
-				InitCount = parameters.GetParameter(context, module, "initCount", 0x10),
+				Depth = parameters.GetParameter(context, module, Parent.Parameters.Depth),
+				InitCount = parameters.GetParameter(context, module, Parent.Parameters.InitCount),
 
 				Random = store.random,
 				Module = module,

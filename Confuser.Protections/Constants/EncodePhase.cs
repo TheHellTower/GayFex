@@ -74,7 +74,7 @@ namespace Confuser.Protections.Constants {
 					throw new UnreachableException();
 				token.ThrowIfCancellationRequested();
 			}
-			ReferenceReplacer.ReplaceReference(moduleCtx, parameters);
+			ReferenceReplacer.ReplaceReference(Parent, moduleCtx, parameters);
 
 			// compress
 			var encodedBuff = new byte[moduleCtx.EncodedBuffer.Count * 4];
@@ -236,30 +236,9 @@ namespace Confuser.Protections.Constants {
 			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(logger)) {
 				if (!method.HasBody)
 					continue;
-
-				moduleCtx.Elements = 0;
-				string elements = parameters.GetParameter(context, method, "elements", "SI");
-				foreach (char elem in elements)
-					switch (elem) {
-						case 'S':
-						case 's':
-							moduleCtx.Elements |= EncodeElements.Strings;
-							break;
-						case 'N':
-						case 'n':
-							moduleCtx.Elements |= EncodeElements.Numbers;
-							break;
-						case 'P':
-						case 'p':
-							moduleCtx.Elements |= EncodeElements.Primitive;
-							break;
-						case 'I':
-						case 'i':
-							moduleCtx.Elements |= EncodeElements.Initializers;
-							break;
-					}
-
-				if (moduleCtx.Elements == 0)
+				
+				moduleCtx.Elements = parameters.GetParameter(context, method, Parent.Parameters.Elements);
+				if (moduleCtx.Elements == EncodeElements.None)
 					continue;
 
 				foreach (Instruction instr in method.Body.Instructions) {

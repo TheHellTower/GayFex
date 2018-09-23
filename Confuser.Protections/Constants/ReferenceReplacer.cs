@@ -12,9 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Constants {
 	internal class ReferenceReplacer {
-		public static void ReplaceReference(CEContext ctx, IProtectionParameters parameters) {
+		public static void ReplaceReference(ConstantProtection protection, CEContext ctx, IProtectionParameters parameters) {
 			foreach (var entry in ctx.ReferenceRepl) {
-				if (parameters.GetParameter<bool>(ctx.Context, entry.Key, "cfg"))
+				if (parameters.GetParameter<bool>(ctx.Context, entry.Key, protection.Parameters.ControlFlowGraphReplacement))
 					ReplaceCFG(entry.Key, entry.Value, ctx);
 				else
 					ReplaceNormal(entry.Key, entry.Value);

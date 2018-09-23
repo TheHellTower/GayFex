@@ -18,7 +18,7 @@ namespace Confuser.Protections.Constants {
 		internal TypeDef DataType;
 		internal MethodDef InitMethod;
 
-		internal int DecoderCount;
+		internal uint DecoderCount;
 		internal List<Tuple<MethodDef, DecoderDesc>> Decoders;
 
 		internal EncodeElements Elements;

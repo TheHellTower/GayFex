@@ -44,7 +44,7 @@ namespace Confuser.Renamer.Services
 		void SetRenameMode(IConfuserContext context, object obj, RenameMode val);
 		void ReduceRenameMode(IConfuserContext context, object obj, RenameMode val);
 
-		string ObfuscateName(string name, RenameMode mode);
+		string ObfuscateName(ModuleDef module, string name, RenameMode mode);
 		string RandomName();
 		string RandomName(RenameMode mode);
 
@@ -56,7 +56,5 @@ namespace Confuser.Renamer.Services
 		void SetOriginalNamespace(IConfuserContext context, object obj, string ns);
 
 		void MarkHelper(IConfuserContext context, IDnlibDef def, IMarkerService marker, IConfuserComponent parentComp);
-
-		IReadOnlyCollection<KeyValuePair<string, string>> GetNameMap();
 	}
 }

@@ -11,7 +11,6 @@ using dnlib.DotNet;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
-using ILogger = Confuser.Core.ILogger;
 
 namespace Confuser.Protections.Resources {
 	internal sealed class MDPhase {

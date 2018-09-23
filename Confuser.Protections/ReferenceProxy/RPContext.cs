@@ -25,11 +25,11 @@ namespace Confuser.Protections.ReferenceProxy {
 		internal IImmutableSet<Instruction> BranchTargets;
 		internal IConfuserContext Context;
 		internal Dictionary<MethodSig, TypeDef> Delegates;
-		internal int Depth;
+		internal uint Depth;
 		internal IDynCipherService DynCipher;
 		internal EncodingType Encoding;
 		internal IRPEncoding EncodingHandler;
-		internal int InitCount;
+		internal uint InitCount;
 		internal bool InternalAlso;
 		internal IMarkerService Marker;
 		internal MethodDef Method;
