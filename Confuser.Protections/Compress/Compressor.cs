@@ -21,8 +21,9 @@ using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using dnlib.PE;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using FileAttributes = dnlib.DotNet.FileAttributes;
-using ILogger = Confuser.Core.ILogger;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 using SR = System.Reflection;
 
 namespace Confuser.Protections {
@@ -47,9 +48,9 @@ namespace Confuser.Protections {
 
 		void IPacker.Pack(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			var ctx = context.Annotations.Get<CompressorContext>(context, ContextKey);
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("compressor");
 			if (ctx == null) {
-				logger.Error("No executable module!");
+				logger.LogCritical("No executable module!");
 				throw new ConfuserException(null);
 			}
 
@@ -160,7 +161,7 @@ namespace Confuser.Protections {
 					state = state * 0x5e3f1f + chr;
 				var encrypted = compCtx.Encrypt(comp, new ReadOnlyMemory<byte>(entry.Value), state, progress => {
 					progress = (progress + moduleIndex) / modules.Count;
-					logger.Progress((int)(progress * 10000), 10000);
+					//logger.Progress((int)(progress * 10000), 10000);
 				});
 				token.ThrowIfCancellationRequested();
 
@@ -168,7 +169,7 @@ namespace Confuser.Protections {
 				stubModule.Resources.Add(resource);
 				moduleIndex++;
 			}
-			logger.EndProgress();
+			//logger.EndProgress();
 		}
 
 		private PlaceholderProcessor InjectData(IConfuserContext context, ModuleDef stubModule, ReadOnlyMemory<byte> data) {
@@ -214,9 +215,9 @@ namespace Confuser.Protections {
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(_FullId);
 			var comp = context.Registry.GetRequiredService<ICompressionService>();
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("compressor");
 
-			logger.Debug("Encrypting modules...");
+			//logger.Debug("Encrypting modules...");
 
 			switch (parameters.GetParameter(context, context.CurrentModule, Parameters.Key)) {
 				case KeyDeriverMode.Normal:
@@ -237,7 +238,7 @@ namespace Confuser.Protections {
 			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
 
 			var encryptedModule = compCtx.Encrypt(comp, compCtx.OriginModule, seed,
-				progress => logger.Progress((int)(progress * 10000), 10000));
+				progress => { });// logger.Progress((int)(progress * 10000), 10000));
 			token.ThrowIfCancellationRequested();
 
 			compCtx.EncryptedModule = encryptedModule;
@@ -274,7 +275,7 @@ namespace Confuser.Protections {
 				entryPoint.CustomAttributes.Add(new CustomAttribute(
 					new MemberRefUser(stubModule, ".ctor", ctorSig, attrType)));
 			}
-			logger.EndProgress();
+			//logger.EndProgress();
 
 			// Pack modules
 			PackModules(context, compCtx, stubModule, comp, random, logger, token);

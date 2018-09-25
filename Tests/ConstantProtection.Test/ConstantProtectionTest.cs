@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
 using Confuser.UnitTest;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -44,7 +45,7 @@ namespace CompressorWithResx.Test {
 
 			var parameters = new ConfuserParameters {
 				Project = proj,
-				Logger = new XunitLogger(outputHelper)
+				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper))
 			};
 
 			await ConfuserEngine.Run(parameters);

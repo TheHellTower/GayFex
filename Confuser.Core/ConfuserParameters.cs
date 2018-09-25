@@ -1,5 +1,6 @@
 ﻿using System;
 using Confuser.Core.Project;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {
 	/// <summary>
@@ -16,7 +17,7 @@ namespace Confuser.Core {
 		///     Gets or sets the logger that used to log the protection process.
 		/// </summary>
 		/// <value>The logger, or <c>null</c> if logging is not needed.</value>
-		public ILogger Logger { get; set; }
+		public Action<ILoggingBuilder> ConfigureLogging { get; set; }
 
 		internal bool PackerInitiated { get; set; }
 
@@ -31,14 +32,6 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <value>The marker, or <c>null</c> if default marker is used.</value>
 		public Marker Marker { get; set; }
-
-		/// <summary>
-		///     Gets the actual non-null logger.
-		/// </summary>
-		/// <returns>The logger.</returns>
-		internal ILogger GetLogger() {
-			return Logger ?? NullLogger.Instance;
-		}
 
 		/// <summary>
 		///     Gets the actual non-null plugin discovery service.

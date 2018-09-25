@@ -15,6 +15,7 @@ using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.Resources {
 	internal sealed class InjectPhase : IProtectionPhase {
@@ -33,10 +34,10 @@ namespace Confuser.Protections.Resources {
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			if (parameters.Targets.Any()) {
-				var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(ResourceProtection._Id);
+				var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ResourceProtection._Id);
 				if (!UTF8String.IsNullOrEmpty(context.CurrentModule.Assembly.Culture)) {
-					logger.DebugFormat("Skipping resource encryption for satellite assembly '{0}'.",
-									   context.CurrentModule.Assembly.FullName);
+					logger.LogDebug("Skipping resource encryption for satellite assembly '{0}'.",
+									context.CurrentModule.Assembly.FullName);
 					return;
 				}
 				var name = context.Registry.GetService<INameService>();

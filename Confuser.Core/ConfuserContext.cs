@@ -139,12 +139,6 @@ namespace Confuser.Core {
 			Registry = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 		}
 
-		internal ILogger Logger {
-			get {
-				return Registry.GetRequiredService<ILoggingService>().GetLogger();
-			}
-		}
-
 		/// <summary>
 		///     Requests the current module to be written as mix-mode module, and return the native writer options.
 		/// </summary>

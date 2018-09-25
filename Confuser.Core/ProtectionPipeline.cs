@@ -7,6 +7,7 @@ using System.Threading;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {
 	/// <summary>
@@ -70,18 +71,18 @@ namespace Confuser.Core {
 		/// <param name="targets">The target list of the stage.</param>
 		/// <param name="context">The working context.</param>
 		internal void ExecuteStage(PipelineStage stage, Action<ConfuserContext, CancellationToken> func, Func<IList<IDnlibDef>> targets, ConfuserContext context, CancellationToken token) {
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger();
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("Pipeline");
 
 			foreach (var pre in preStage[stage]) {
 				token.ThrowIfCancellationRequested();
-				logger.DebugFormat("Executing '{0}' phase...", pre.Name);
+				logger.LogDebug("Executing '{0}' phase...", pre.Name);
 				pre.Execute(context, new ProtectionParameters(pre.Parent, Filter(context, targets(), pre)), token);
 			}
 			token.ThrowIfCancellationRequested();
 			func(context, token);
 			token.ThrowIfCancellationRequested();
 			foreach (var post in postStage[stage]) {
-				logger.DebugFormat("Executing '{0}' phase...", post.Name);
+				logger.LogDebug("Executing '{0}' phase...", post.Name);
 				post.Execute(context, new ProtectionParameters(post.Parent, Filter(context, targets(), post)), token);
 				token.ThrowIfCancellationRequested();
 			}
@@ -118,8 +119,8 @@ namespace Confuser.Core {
 				ProtectionSettings parameters = ProtectionParameters.GetParameters(context, def);
 				Debug.Assert(parameters != null);
 				if (parameters == null) {
-					var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger();
-					logger.ErrorFormat("'{0}' not marked for obfuscation, possibly a bug.", def);
+					var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+					logger.LogCritical("'{0}' not marked for obfuscation, possibly a bug.", def);
 					throw new ConfuserException(null);
 				}
 				return parameters.ContainsKey(phase.Parent);

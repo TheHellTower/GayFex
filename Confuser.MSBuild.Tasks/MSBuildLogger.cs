@@ -1,61 +1,55 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using ILogger = Confuser.Core.ILogger;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions.Internal;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.MSBuild.Tasks {
-	internal sealed class MSBuildLogger : ILogger {
+	internal sealed class MSBuildLogger : ILogger, ILoggerProvider {
 		private readonly TaskLoggingHelper loggingHelper;
-		
-		internal bool HasError { get; private set; }
 
-		internal MSBuildLogger(TaskLoggingHelper loggingHelper) =>
+		internal MSBuildLogger(TaskLoggingHelper loggingHelper) {
 			this.loggingHelper = loggingHelper ?? throw new ArgumentNullException(nameof(loggingHelper));
-
-		void ILogger.Debug(string msg) => loggingHelper.LogMessage(MessageImportance.Low, "[DEBUG] " + msg);
-
-		void ILogger.DebugFormat(string format, params object[] args) {
-			loggingHelper.LogMessage(MessageImportance.Low, "[DEBUG] " + format, args);
 		}
 
-		void ILogger.EndProgress() {}
+		public ILogger CreateLogger(string categoryName) => this;
 
-		void ILogger.Error(string msg) {
-			loggingHelper.LogError(msg);
-			HasError = true;
-		}
+		public void Dispose() { }
 
-		void ILogger.ErrorException(string msg, Exception ex) {
-			loggingHelper.LogError(msg);
-			loggingHelper.LogErrorFromException(ex);
-			HasError = true;
-		}
+		IDisposable ILogger.BeginScope<TState>(TState state) => NullScope.Instance;
 
-		void ILogger.ErrorFormat(string format, params object[] args) {
-			loggingHelper.LogError(format, args);
-			HasError = true;
-		}
+		bool ILogger.IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
 
-		void ILogger.Finish(bool successful) {
-			if (!successful) {
-				HasError = false;
+		void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
+			var textBuilder = new StringBuilder();
+			switch (logLevel) {
+				case LogLevel.Critical: textBuilder.Append("[CRITICAL]"); break;
+				case LogLevel.Debug: textBuilder.Append("[DEBUG]"); break;
+				case LogLevel.Error: textBuilder.Append("[ERROR]"); break;
+				case LogLevel.Information: textBuilder.Append("[INFO]"); break;
+				case LogLevel.Trace: textBuilder.Append("[TRACE]"); break;
+				case LogLevel.Warning: textBuilder.Append("[WARN]"); break;
 			}
+			textBuilder.Append(" ");
+			textBuilder.Append(formatter(state, exception));
+
+			var result = textBuilder.ToString();
+			var importance = MessageImportance.Normal;
+			switch (logLevel) {
+				case LogLevel.Critical:
+				case LogLevel.Error:
+					importance = MessageImportance.High;
+					break;
+				case LogLevel.Information:
+				case LogLevel.Debug:
+					importance = MessageImportance.Low;
+					break;
+			}
+
+			loggingHelper.LogMessage(importance, result);
 		}
-
-		void ILogger.Info(string msg) => loggingHelper.LogMessage(MessageImportance.Normal, msg);
-
-		void ILogger.InfoFormat(string format, params object[] args) =>
-			loggingHelper.LogMessage(MessageImportance.Normal, format, args);
-
-		void ILogger.Progress(int progress, int overall) { }
-
-		void ILogger.Warn(string msg) => loggingHelper.LogWarning(msg);
-
-		void ILogger.WarnException(string msg, Exception ex) {
-			loggingHelper.LogWarning(msg);
-			loggingHelper.LogWarningFromException(ex);
-		}
-
-		void ILogger.WarnFormat(string format, params object[] args) => loggingHelper.LogWarning(format, args);
 	}
 }

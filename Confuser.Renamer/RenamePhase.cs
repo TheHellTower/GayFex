@@ -8,6 +8,7 @@ using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Pdb;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Renamer {
 	internal sealed class RenamePhase : IProtectionPhase {
@@ -26,9 +27,9 @@ namespace Confuser.Renamer {
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			var service = (NameService)context.Registry.GetRequiredService<INameService>();
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
-			logger.Debug("Renaming...");
+			logger.LogDebug("Renaming...");
 			foreach (var renamer in service.Renamers) {
 				foreach (var def in parameters.Targets)
 					renamer.PreRename(context, service, parameters, def);
@@ -38,7 +39,7 @@ namespace Confuser.Renamer {
 
 			var targets = service.GetRandom().Shuffle(parameters.Targets);
 			var pdbDocs = new HashSet<string>();
-			foreach (var def in targets.WithProgress(logger)) {
+			foreach (var def in targets/*.WithProgress(logger)*/) {
 				if (def is ModuleDef && parameters.GetParameter(context, def, Parent.Parameters.RickRoll))
 					RickRoller.CommenceRickroll(context, (ModuleDef)def);
 
@@ -103,7 +104,7 @@ namespace Confuser.Renamer {
 
 				foreach (var refer in references.ToList()) {
 					if (!refer.UpdateNameReference(context, service)) {
-						logger.ErrorFormat("Failed to update name reference on '{0}'.", def);
+						logger.LogCritical("Failed to update name reference on '{0}'.", def);
 						throw new ConfuserException(null);
 					}
 				}

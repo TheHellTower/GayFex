@@ -2,20 +2,20 @@
 using System.Diagnostics;
 using System.Linq;
 using Confuser.Core;
-using Confuser.Core.Services;
 using Confuser.Renamer.References;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class TypeBlobAnalyzer : IRenamer {
 		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			if (!(def is ModuleDefMD module)) return;
 
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
 			// MemberRef
 			var table = module.TablesStream.Get(Table.Method);
@@ -75,14 +75,14 @@ namespace Confuser.Renamer.Analyzers {
 				foreach (CANamedArgument fieldArg in attr.Fields) {
 					FieldDef field = attrType.FindField(fieldArg.Name, new FieldSig(fieldArg.Type));
 					if (field == null)
-						logger.WarnFormat("Failed to resolve CA field '{0}::{1} : {2}'.", attrType, fieldArg.Name, fieldArg.Type);
+						logger.LogWarning("Failed to resolve CA field '{0}::{1} : {2}'.", attrType, fieldArg.Name, fieldArg.Type);
 					else
 						service.AddReference(context, field, new CAMemberReference(fieldArg, field));
 				}
 				foreach (CANamedArgument propertyArg in attr.Properties) {
 					PropertyDef property = attrType.FindProperty(propertyArg.Name, new PropertySig(true, propertyArg.Type));
 					if (property == null)
-						logger.WarnFormat("Failed to resolve CA property '{0}::{1} : {2}'.", attrType, propertyArg.Name, propertyArg.Type);
+						logger.LogWarning("Failed to resolve CA property '{0}::{1} : {2}'.", attrType, propertyArg.Name, propertyArg.Type);
 					else
 						service.AddReference(context, property, new CAMemberReference(propertyArg, property));
 				}

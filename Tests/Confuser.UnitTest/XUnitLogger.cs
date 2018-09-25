@@ -1,57 +1,50 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Confuser.Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions.Internal;
 using Xunit.Abstractions;
 
 namespace Confuser.UnitTest {
-	public sealed class XunitLogger : ILogger {
+	public sealed class XunitLogger : ILogger, ILoggerProvider {
 		private readonly ITestOutputHelper outputHelper;
 		private readonly StringBuilder errorMessages;
 
-		public XunitLogger(ITestOutputHelper outputHelper) {  
+		public XunitLogger(ITestOutputHelper outputHelper) {
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 			errorMessages = new StringBuilder();
 		}
 
-		void ILogger.Debug(string msg) => 
-			outputHelper.WriteLine("[DEBUG] " + msg);
+		public ILogger CreateLogger(string categoryName) => this;
 
-		void ILogger.DebugFormat(string format, params object[] args) =>
-			outputHelper.WriteLine("[DEBUG] " + format, args);
+		public void Dispose() { }
 
-		void ILogger.EndProgress() { }
+		IDisposable ILogger.BeginScope<TState>(TState state) => NullScope.Instance;
 
-		void ILogger.Error(string msg) {
-			outputHelper.WriteLine("[ERROR] " + msg);
-			errorMessages.AppendLine(msg);
+		bool ILogger.IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+
+		void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
+			var textBuilder = new StringBuilder();
+			switch (logLevel) {
+				case LogLevel.Critical: textBuilder.Append("[CRITICAL]"); break;
+				case LogLevel.Debug: textBuilder.Append("[DEBUG]"); break;
+				case LogLevel.Error: textBuilder.Append("[ERROR]"); break;
+				case LogLevel.Information: textBuilder.Append("[INFO]"); break;
+				case LogLevel.Trace: textBuilder.Append("[TRACE]"); break;
+				case LogLevel.Warning: textBuilder.Append("[WARN]"); break;
+			}
+			textBuilder.Append(" ");
+			textBuilder.Append(formatter(state, exception));
+
+			var result = textBuilder.ToString();
+			switch (logLevel) {
+				case LogLevel.Critical:
+				case LogLevel.Error:
+					errorMessages.AppendLine(result);
+					break;
+			}
+			outputHelper.WriteLine(result);
 		}
-
-		void ILogger.ErrorException(string msg, Exception ex) => 
-			throw new Exception(msg, ex);
-
-		void ILogger.ErrorFormat(string format, params object[] args) {
-			outputHelper.WriteLine("[DEBUG] " + format, args);
-			errorMessages.AppendLine(String.Format(format, args));
-		}
-
-		void ILogger.Finish(bool successful) =>
-			outputHelper.WriteLine("[DONE]");
-
-		void ILogger.Info(string msg) =>
-			outputHelper.WriteLine("[INFO] " + msg);
-
-		void ILogger.InfoFormat(string format, params object[] args) =>
-			outputHelper.WriteLine("[INFO] " + format, args);
-
-		void ILogger.Progress(int progress, int overall) { }
-
-		void ILogger.Warn(string msg) =>
-			outputHelper.WriteLine("[WARN] " + msg);
-
-		void ILogger.WarnException(string msg, Exception ex) =>
-			outputHelper.WriteLine("[WARN] " + msg + Environment.NewLine + ex.ToString());
-
-		void ILogger.WarnFormat(string format, params object[] args) =>
-			outputHelper.WriteLine("[WARN] " + format, args);
 	}
 }

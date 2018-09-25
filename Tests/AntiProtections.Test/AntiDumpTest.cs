@@ -26,7 +26,7 @@ namespace AntiProtections.Test {
 
 			var parameters = new ConfuserParameters {
 				Project = proj,
-				Logger = GetLogger()
+				ConfigureLogging = ConfigureLogging()
 			};
 
 			FileUtilities.ClearOutput(outputFile);

@@ -11,13 +11,17 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using System.Diagnostics;
 using CopyrightAttribute = System.Reflection.AssemblyCopyrightAttribute;
 using InformationalAttribute = System.Reflection.AssemblyInformationalVersionAttribute;
 using MethodAttributes = dnlib.DotNet.MethodAttributes;
 using MethodImplAttributes = dnlib.DotNet.MethodImplAttributes;
 using ProductAttribute = System.Reflection.AssemblyProductAttribute;
 using TypeAttributes = dnlib.DotNet.TypeAttributes;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using System.Text;
 
 namespace Confuser.Core {
 	/// <summary>
@@ -62,7 +66,7 @@ namespace Confuser.Core {
 		/// <exception cref="System.ArgumentNullException">
 		///     <paramref name="parameters" />.Project is <c>null</c>.
 		/// </exception>
-		public static Task Run(ConfuserParameters parameters, CancellationToken? token = null) {
+		public static Task<bool> Run(ConfuserParameters parameters, CancellationToken? token = null) {
 			if (parameters.Project == null)
 				throw new ArgumentNullException("parameters");
 			if (token == null)
@@ -75,8 +79,12 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="parameters">The parameters.</param>
 		/// <param name="token">The cancellation token.</param>
-		static void RunInternal(ConfuserParameters parameters, CancellationToken token) {
-			var logger = parameters.Logger;
+		private static bool RunInternal(ConfuserParameters parameters, CancellationToken token) {
+			var serviceCollection = new ServiceCollection();
+			serviceCollection.AddLogging(parameters.ConfigureLogging ?? delegate { });
+
+			var tempServiceProvder = serviceCollection.BuildServiceProvider();
+			var logger = tempServiceProvder.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
 			bool ok = false;
 			try {
@@ -84,14 +92,14 @@ namespace Confuser.Core {
 				Marker marker = parameters.GetMarker();
 
 				// 2. Discover plugins
-				logger.Debug("Discovering plugins...");
+				logger.LogDebug("Discovering plugins...");
 
 				var plugInContainer = parameters.GetPluginDiscovery().GetPlugins(parameters.Project, logger);
 				var prots = plugInContainer.GetExports<IProtection, IProtectionMetadata>().ToArray();
 				var packers = plugInContainer.GetExports<IPacker, IPackerMetadata>().ToArray();
 				var components = plugInContainer.GetExports<IConfuserComponent>();
 
-				logger.InfoFormat("Discovered {0} protections, {1} packers.", prots.Count(), packers.Count());
+				logger.LogInformation("Discovered {0} protections, {1} packers.", prots.Count(), packers.Count());
 
 				token.ThrowIfCancellationRequested();
 
@@ -100,13 +108,13 @@ namespace Confuser.Core {
 				sortedComponents.AddRange(components.Select(l => l.Value));
 
 				// 3. Resolve dependency
-				logger.Debug("Resolving component dependency...");
+				logger.LogDebug("Resolving component dependency...");
 				try {
 					var resolver = new DependencyResolver(prots);
 					sortedComponents.AddRange(resolver.SortDependency());
 				}
 				catch (CircularDependencyException ex) {
-					logger.ErrorException("", ex);
+					logger.LogCritical(ex, "Plug-Ins have a circular dependency.");
 					throw new ConfuserException(ex);
 				}
 				sortedComponents.AddRange(packers.Select(l => l.Value));
@@ -114,14 +122,13 @@ namespace Confuser.Core {
 				token.ThrowIfCancellationRequested();
 
 				// 4. Initialize components
-				logger.Info("Initializing...");
-				var serviceCollection = new ServiceCollection();
+				logger.LogDebug("Initializing...");
 				foreach (var comp in sortedComponents) {
 					try {
 						comp.Initialize(serviceCollection);
 					}
 					catch (Exception ex) {
-						logger.ErrorException("Error occured during initialization of '" + comp.Name + "'.", ex);
+						logger.LogCritical(ex, "Error occurred during initialization of '{0}'.", comp.Name);
 						throw new ConfuserException(ex);
 					}
 					token.ThrowIfCancellationRequested();
@@ -132,7 +139,7 @@ namespace Confuser.Core {
 				context.Project = parameters.Project.Clone();
 				context.PackerInitiated = parameters.PackerInitiated;
 
-				PrintInfo(context);
+				PrintInfo(context, logger);
 
 				try {
 					var asmResolver = new AssemblyResolver();
@@ -148,7 +155,7 @@ namespace Confuser.Core {
 
 
 					// 5. Load modules
-					logger.Info("Loading input modules...");
+					logger.LogInformation("Loading input modules...");
 					marker.Initalize(prots, packers);
 					MarkerResult markings = marker.MarkProject(parameters.Project, context, token);
 					context.Modules = new ModuleSorter(markings.Modules).Sort().ToImmutableArray();
@@ -163,10 +170,10 @@ namespace Confuser.Core {
 					token.ThrowIfCancellationRequested();
 
 					// 6. Build pipeline
-					logger.Debug("Building pipeline...");
+					logger.LogDebug("Building pipeline...");
 					var pipeline = new ProtectionPipeline();
 					context.Pipeline = pipeline;
-					foreach (IConfuserComponent comp in sortedComponents) {
+					foreach (var comp in sortedComponents) {
 						comp.PopulatePipeline(pipeline);
 					}
 
@@ -175,37 +182,38 @@ namespace Confuser.Core {
 					//7. Run pipeline
 					RunPipeline(pipeline, context, token);
 
+					if (!context.PackerInitiated)
+						logger.LogInformation("Done.");
+
 					ok = true;
 				}
 				catch (Exception) {
-					PrintEnvironmentInfo(context);
+					PrintEnvironmentInfo(context, logger);
 					throw;
 				}
 			}
 			catch (AssemblyResolveException ex) {
-				logger.ErrorException("Failed to resolve an assembly, check if all dependencies are present in the correct version.", ex);
+				logger.LogCritical(ex, "Failed to resolve an assembly, check if all dependencies are present in the correct version.");
 			}
 			catch (TypeResolveException ex) {
-				logger.ErrorException("Failed to resolve a type, check if all dependencies are present in the correct version.", ex);
+				logger.LogCritical(ex, "Failed to resolve a type, check if all dependencies are present in the correct version.");
 			}
 			catch (MemberRefResolveException ex) {
-				logger.ErrorException("Failed to resolve a member, check if all dependencies are present in the correct version.", ex);
+				logger.LogCritical(ex, "Failed to resolve a member, check if all dependencies are present in the correct version.");
 			}
 			catch (IOException ex) {
-				logger.ErrorException("An IO error occurred, check if all input/output locations are readable/writable.", ex);
+				logger.LogCritical(ex, "An IO error occurred, check if all input/output locations are readable/writable.");
 			}
 			catch (OperationCanceledException) {
-				logger.Error("Operation cancelled.");
+				logger.LogInformation("Operation canceled.");
 			}
 			catch (ConfuserException) {
 				// Exception is already handled/logged, so just ignore and report failure
 			}
 			catch (Exception ex) {
-				logger.ErrorException("Unknown error occurred.", ex);
+				logger.LogCritical("Unknown error occurred.", ex);
 			}
-			finally {
-				logger.Finish(ok);
-			}
+			return ok;
 		}
 
 		/// <summary>
@@ -213,7 +221,7 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="pipeline">The protection pipeline.</param>
 		/// <param name="context">The context.</param>
-		static void RunPipeline(ProtectionPipeline pipeline, ConfuserContext context, CancellationToken token) {
+		private static void RunPipeline(ProtectionPipeline pipeline, ConfuserContext context, CancellationToken token) {
 			Func<IList<IDnlibDef>> getAllDefs = () => context.Modules.SelectMany(module => module.FindDefinitions()).ToList();
 			Func<ModuleDef, IList<IDnlibDef>> getModuleDefs = module => module.FindDefinitions().ToList();
 
@@ -249,61 +257,61 @@ namespace Confuser.Core {
 
 			context.CurrentModuleIndex = -1;
 
-			pipeline.ExecuteStage(PipelineStage.Debug, Debug, () => getAllDefs(), context, token);
+			pipeline.ExecuteStage(PipelineStage.Debug, DebugSymbols, () => getAllDefs(), context, token);
 			pipeline.ExecuteStage(PipelineStage.Pack, Pack, () => getAllDefs(), context, token);
 			pipeline.ExecuteStage(PipelineStage.SaveModules, SaveModules, () => getAllDefs(), context, token);
-
-			if (!context.PackerInitiated)
-				context.Logger.Info("Done.");
 		}
 
-		static void Inspection(ConfuserContext context, CancellationToken token) {
-			context.Logger.Info("Resolving dependencies...");
+		private static void Inspection(ConfuserContext context, CancellationToken token) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+			logger.LogInformation("Resolving dependencies...");
 			foreach (var dependency in context.Modules
 											  .SelectMany(module => module.GetAssemblyRefs()
 											  .Select(asmRef => Tuple.Create(asmRef, module)))) {
 				token.ThrowIfCancellationRequested();
 
 				try {
-					AssemblyDef assembly = context.Resolver.ResolveThrow(dependency.Item1, dependency.Item2);
+					context.Resolver.ResolveThrow(dependency.Item1, dependency.Item2);
 				}
 				catch (AssemblyResolveException ex) {
-					context.Logger.ErrorException("Failed to resolve dependency of '" + dependency.Item2.Name + "'.", ex);
+					logger.LogCritical(ex, "Failed to resolve dependency of '{0}'.", dependency.Item2.Name);
 					throw new ConfuserException(ex);
 				}
 			}
 
-			context.Logger.Debug("Checking Strong Name...");
-			foreach (ModuleDefMD module in context.Modules) {
+			logger.LogDebug("Checking Strong Name...");
+			foreach (var module in context.Modules) {
 				var snKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
 				if (snKey == null && module.IsStrongNameSigned)
-					context.Logger.WarnFormat("[{0}] SN Key is not provided for a signed module, the output may not be working.", module.Name);
+					logger.LogWarning("[{0}] SN Key is not provided for a signed module, the output may not be working.", module.Name);
 				else if (snKey != null && !module.IsStrongNameSigned)
-					context.Logger.WarnFormat("[{0}] SN Key is provided for an unsigned module, the output may not be working.", module.Name);
-				else if (snKey != null && module.IsStrongNameSigned &&
-						 !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
-					context.Logger.WarnFormat("[{0}] Provided SN Key and signed module's public key do not match, the output may not be working.", module.Name);
+					logger.LogWarning("[{0}] SN Key is provided for an unsigned module, the output may not be working.", module.Name);
+				else if (snKey != null && module.IsStrongNameSigned && !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
+					logger.LogWarning("[{0}] Provided SN Key and signed module's public key do not match, the output may not be working.", module.Name);
 			}
 
 			var marker = context.Registry.GetService<IMarkerService>();
 
-			context.Logger.Debug("Creating global .cctors...");
-			foreach (ModuleDefMD module in context.Modules) {
-				TypeDef modType = module.GlobalType;
+			logger.LogDebug("Creating global .cctors...");
+			foreach (var module in context.Modules) {
+				var modType = module.GlobalType;
 				if (modType == null) {
-					modType = new TypeDefUser("", "<Module>", null);
-					modType.Attributes = TypeAttributes.AnsiClass;
+					modType = new TypeDefUser("", "<Module>", null) {
+						Attributes = TypeAttributes.AnsiClass
+					};
 					module.Types.Add(modType);
 					marker.Mark(context, modType, null);
 				}
-				MethodDef cctor = modType.FindOrCreateStaticConstructor();
+				var cctor = modType.FindOrCreateStaticConstructor();
 				if (!marker.IsMarked(context, cctor))
 					marker.Mark(context, cctor, null);
 			}
 
-			context.Logger.Debug("Watermarking...");
-			foreach (ModuleDefMD module in context.Modules) {
-				TypeRef attrRef = module.CorLibTypes.GetTypeRef("System", "Attribute");
+			logger.LogDebug("Watermarking...");
+			foreach (var module in context.Modules) {
+				var attrRef = module.CorLibTypes.GetTypeRef("System", "Attribute");
 				var attrType = new TypeDefUser("", "ConfusedByAttribute", attrRef);
 				module.Types.Add(attrType);
 				marker.Mark(context, attrType, null);
@@ -328,7 +336,7 @@ namespace Confuser.Core {
 			}
 		}
 
-		static void CopyPEHeaders(PEHeadersOptions writerOptions, ModuleDefMD module) {
+		private static void CopyPEHeaders(PEHeadersOptions writerOptions, ModuleDefMD module) {
 			var image = module.Metadata.PEImage;
 			writerOptions.MajorImageVersion = image.ImageNTHeaders.OptionalHeader.MajorImageVersion;
 			writerOptions.MajorLinkerVersion = image.ImageNTHeaders.OptionalHeader.MajorLinkerVersion;
@@ -340,8 +348,11 @@ namespace Confuser.Core {
 			writerOptions.MinorSubsystemVersion = image.ImageNTHeaders.OptionalHeader.MinorSubsystemVersion;
 		}
 
-		static void BeginModule(ConfuserContext context, CancellationToken token) {
-			context.Logger.InfoFormat("Processing module '{0}'...", context.CurrentModule.Name);
+		private static void BeginModule(ConfuserContext context, CancellationToken token) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+			logger.LogInformation("Processing module '{0}'...", context.CurrentModule.Name);
 
 			context.CurrentModuleWriterOptions = new ModuleWriterOptions(context.CurrentModule);
 			context.CurrentModuleWriterOptions.WriterEvent += (sender, e) => token.ThrowIfCancellationRequested();
@@ -353,8 +364,8 @@ namespace Confuser.Core {
 			var snKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNKey);
 			context.CurrentModuleWriterOptions.InitializeStrongNameSigning(context.CurrentModule, snKey);
 
-			foreach (TypeDef type in context.CurrentModule.GetTypes())
-				foreach (MethodDef method in type.Methods) {
+			foreach (var type in context.CurrentModule.GetTypes())
+				foreach (var method in type.Methods) {
 					token.ThrowIfCancellationRequested();
 
 					if (method.Body != null) {
@@ -366,12 +377,18 @@ namespace Confuser.Core {
 		static void ProcessModule(ConfuserContext context, CancellationToken token) { }
 
 		static void OptimizeMethods(ConfuserContext context, CancellationToken token) {
-			foreach (TypeDef type in context.CurrentModule.GetTypes())
-				foreach (MethodDef method in type.Methods) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+
+			foreach (var type in context.CurrentModule.GetTypes())
+				foreach (var method in type.Methods) {
 					token.ThrowIfCancellationRequested();
 
-					if (method.Body != null)
+					if (method.Body != null) {
+						logger.LogTrace("Optimizing method '{0}'", method);
 						method.Body.Instructions.OptimizeMacros();
+					}
 				}
 		}
 
@@ -389,7 +406,11 @@ namespace Confuser.Core {
 		}
 
 		static void WriteModule(ConfuserContext context, CancellationToken token) {
-			context.Logger.InfoFormat("Writing module '{0}'...", context.CurrentModule.Name);
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+
+			logger.LogInformation("Writing module '{0}'...", context.CurrentModule.Name);
 
 			MemoryStream pdb = null, output = new MemoryStream();
 
@@ -414,8 +435,12 @@ namespace Confuser.Core {
 				context.CurrentModuleSymbol = pdb.ToArray();
 		}
 
-		static void Debug(ConfuserContext context, CancellationToken token) {
-			context.Logger.Info("Finalizing...");
+		static void DebugSymbols(ConfuserContext context, CancellationToken token) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+
+			logger.LogInformation("Finalizing...");
 			for (int i = 0; i < context.OutputModules.Count; i++) {
 				token.ThrowIfCancellationRequested();
 
@@ -430,14 +455,22 @@ namespace Confuser.Core {
 		}
 
 		static void Pack(ConfuserContext context, CancellationToken token) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+
 			if (context.Packer != null) {
-				context.Logger.Info("Packing...");
+				var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+				logger.LogInformation("Packing...");
 				context.Packer.Pack(context, new ProtectionParameters(context.Packer, context.Modules.OfType<IDnlibDef>().ToImmutableArray()), token);
 			}
 		}
 
 		static void SaveModules(ConfuserContext context, CancellationToken token) {
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+
 			context.Resolver.Clear();
+
 			for (int i = 0; i < context.OutputModules.Count; i++) {
 				token.ThrowIfCancellationRequested();
 
@@ -445,7 +478,7 @@ namespace Confuser.Core {
 				string dir = Path.GetDirectoryName(path);
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
-				context.Logger.DebugFormat("Saving to '{0}'...", path);
+				logger.LogDebug("Saving to '{0}'...", path);
 				File.WriteAllBytes(path, context.OutputModules[i]);
 			}
 		}
@@ -454,20 +487,21 @@ namespace Confuser.Core {
 		///     Prints the copyright stuff and environment information.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		static void PrintInfo(ConfuserContext context) {
+		static void PrintInfo(ConfuserContext context, ILogger logger) {
 			if (context.PackerInitiated) {
-				context.Logger.Info("Protecting packer stub...");
+				logger.LogInformation("Protecting packer stub...");
 			}
 			else {
-				context.Logger.InfoFormat("{0} {1}", Version, Copyright);
+				logger.LogInformation("{0} {1}", Version, Copyright);
 
-				Type mono = Type.GetType("Mono.Runtime");
-				context.Logger.InfoFormat("Running on {0}, {1}, {2} bits",
-										  Environment.OSVersion,
-										  mono == null ?
-											  ".NET Framework v" + Environment.Version :
-											  mono.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null),
-										  IntPtr.Size * 8);
+				var mono = Type.GetType("Mono.Runtime");
+				logger.LogInformation(
+					"Running on {0}, {1}, {2} bits",
+					Environment.OSVersion,
+					mono == null ?
+						".NET Framework v" + Environment.Version :
+						mono.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null),
+					IntPtr.Size * 8);
 			}
 		}
 
@@ -520,31 +554,33 @@ namespace Confuser.Core {
 		///     Prints the environment information when error occurred.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		static void PrintEnvironmentInfo(ConfuserContext context) {
+		static void PrintEnvironmentInfo(ConfuserContext context, ILogger logger) {
 			if (context.PackerInitiated)
 				return;
 
-			context.Logger.Error("---BEGIN DEBUG INFO---");
+			var buildMsg = new StringBuilder();
 
-			context.Logger.Error("Installed Framework Versions:");
+			buildMsg.AppendLine("---BEGIN DEBUG INFO---");
+			buildMsg.AppendLine("Installed Framework Versions:");
 			foreach (string ver in GetFrameworkVersions()) {
-				context.Logger.ErrorFormat("    {0}", ver.Trim());
+				buildMsg.AppendFormat("    {0}", ver.Trim()).AppendLine();
 			}
-			context.Logger.Error("");
+			buildMsg.AppendLine();
 
 			if (context.Resolver != null) {
-				context.Logger.Error("Cached assemblies:");
-				foreach (AssemblyDef asm in context.Resolver.GetCachedAssemblies()) {
+				buildMsg.AppendLine("Cached assemblies:");
+				foreach (var asm in context.Resolver.GetCachedAssemblies()) {
 					if (string.IsNullOrEmpty(asm.ManifestModule.Location))
-						context.Logger.ErrorFormat("    {0}", asm.FullName);
+						buildMsg.AppendFormat("    {0}", asm.FullName).AppendLine();
 					else
-						context.Logger.ErrorFormat("    {0} ({1})", asm.FullName, asm.ManifestModule.Location);
+						buildMsg.AppendFormat("    {0} ({1})", asm.FullName, asm.ManifestModule.Location).AppendLine();
 					foreach (var reference in asm.Modules.OfType<ModuleDefMD>().SelectMany(m => m.GetAssemblyRefs()))
-						context.Logger.ErrorFormat("        {0}", reference.FullName);
+						buildMsg.AppendFormat("        {0}", reference.FullName).AppendLine();
 				}
 			}
 
-			context.Logger.Error("---END DEBUG INFO---");
+			buildMsg.AppendLine("---END DEBUG INFO---");
+			logger.LogDebug(buildMsg.ToString());
 		}
 	}
 }

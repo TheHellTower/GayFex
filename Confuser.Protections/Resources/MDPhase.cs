@@ -11,6 +11,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.Resources {
 	internal sealed class MDPhase {
@@ -31,9 +32,9 @@ namespace Confuser.Protections.Resources {
 		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
 			var writer = e.Writer;
 			if (e.Event == ModuleWriterEvent.MDBeginAddResources) {
-				var logger = ctx.Context.Registry.GetRequiredService<ILoggingService>().GetLogger("resources");
+				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ResourceProtection._Id);
 				token.ThrowIfCancellationRequested();
-				logger.Debug("Encrypting resources...");
+				logger.LogDebug("Encrypting resources...");
 				bool hasPacker = ctx.Context.Packer != null;
 
 				List<EmbeddedResource> resources = ctx.Module.Resources.OfType<EmbeddedResource>().ToList();
@@ -66,8 +67,8 @@ namespace Confuser.Protections.Resources {
 				// compress
 				moduleBuff = ctx.Context.Registry.GetRequiredService<ICompressionService>().Compress(
 					moduleBuff,
-					progress => logger.Progress((int)(progress * 10000), 10000));
-				logger.EndProgress();
+					null);// logger.Progress((int)(progress * 10000), 10000));
+				//logger.EndProgress();
 				token.ThrowIfCancellationRequested();
 
 				uint compressedLen = (uint)(moduleBuff.Length + 3) / 4;

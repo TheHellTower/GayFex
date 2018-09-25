@@ -5,14 +5,15 @@ using System.ComponentModel.Composition.Primitives;
 using System.IO;
 using System.Reflection;
 using Confuser.Core.Project;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {
 	/// <summary>
-	///     Discovers available protection plugins.
+	///     Discovers available protection plug-ins.
 	/// </summary>
 	public class PluginDiscovery {
 		/// <summary>
-		///     The default plugin discovery service.
+		///     The default plug-in discovery service.
 		/// </summary>
 		internal static readonly PluginDiscovery Instance = new PluginDiscovery();
 
@@ -22,9 +23,9 @@ namespace Confuser.Core {
 		protected PluginDiscovery() { }
 
 		/// <summary>
-		///     Retrieves the available protection plugins.
+		///     Retrieves the available protection plug-ins.
 		/// </summary>
-		/// <param name="project">The project supplying additional plugin paths.</param>
+		/// <param name="project">The project supplying additional plug-in paths.</param>
 		public CompositionContainer GetPlugins(ConfuserProject project, ILogger logger) {
 			var catalog = new AggregateCatalog(
 				DefaultPlugInDiscovery.Instance.GetDefaultPlugIns(logger),
@@ -45,11 +46,11 @@ namespace Confuser.Core {
 						result.Add(new DirectoryCatalog(pluginPath));
 					}
 					else {
-						logger.Warn($"Plugin path {pluginPath} does not seem to be valid.");
+						logger.LogWarning("Plug-in path {0} does not seem to be valid.", pluginPath);
 					}
 				}
 				catch (Exception ex) {
-					logger.WarnException("Failed to load plugin '" + pluginPath + "'.", ex);
+					logger.LogWarning(ex, "Failed to load plug-in '{0}'.", pluginPath);
 				}
 			}
 

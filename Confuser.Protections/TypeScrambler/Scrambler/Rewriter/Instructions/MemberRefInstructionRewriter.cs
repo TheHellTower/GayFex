@@ -6,6 +6,7 @@ using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 	class MemberRefInstructionRewriter : InstructionRewriter<MemberRef> {
@@ -13,13 +14,13 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 		MethodInfo[] CreationFactoryMethods;
 		public MemberRefInstructionRewriter(IConfuserContext context) {
 			ModuleDefMD md = ModuleDefMD.Load(typeof(EmbeddedCode.ObjectCreationFactory).Module);
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("typescrambler");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(TypeScrambleProtection._Id);
 
 			MethodInfo[] tMethods = typeof(EmbeddedCode.ObjectCreationFactory).GetMethods(BindingFlags.Static | BindingFlags.Public);
 			CreationFactoryMethods = new MethodInfo[tMethods.Length];
 			foreach (var m in tMethods) {
 				CreationFactoryMethods[m.GetParameters().Length] = m;
-				logger.DebugFormat("{0}] {1}", m.GetParameters().Length, m.Name);
+				logger.LogDebug("{0}] {1}", m.GetParameters().Length, m.Name);
 			}
 		}
 
@@ -73,10 +74,10 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 				foreach(var param in operand.MethodSig.Params.Select(x => current.ConvertToGenericIfAvalible(x))) {
 					genericCallSig.GenericArguments.Add(param);
 				}
-				
+
 				/ tgtMethod.GenericInstMethodSig = genericCallSig;
 				var spec = new MethodSpecUser(tgtMethod, genericCallSig);
-				
+
 				body[index].OpCode = OpCodes.Call;
 				body[index].Operand = tgtMethod;
 				*/

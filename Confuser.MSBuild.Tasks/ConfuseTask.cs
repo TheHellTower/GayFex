@@ -4,6 +4,7 @@ using Confuser.Core;
 using Confuser.Core.Project;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.MSBuild.Tasks {
 	public sealed class ConfuseTask : Task {
@@ -23,11 +24,10 @@ namespace Confuser.MSBuild.Tasks {
 			var logger = new MSBuildLogger(Log);
 			var parameters = new ConfuserParameters {
 				Project = project,
-				Logger = logger
+				ConfigureLogging = builder => builder.AddProvider(logger)
 			};
 
-			ConfuserEngine.Run(parameters).Wait();
-			return !logger.HasError;
+			return ConfuserEngine.Run(parameters).Result;
 		}
 	}
 }

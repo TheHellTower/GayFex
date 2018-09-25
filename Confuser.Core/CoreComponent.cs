@@ -31,7 +31,6 @@ namespace Confuser.Core {
 		/// <inheritdoc />
 		void IConfuserComponent.Initialize(IServiceCollection collection) {
 			collection.AddTransient(typeof(IPackerService), (p) => new PackerService(p));
-			collection.AddSingleton(typeof(ILoggingService), (p) => new LoggingService(parameters.Logger));
 			collection.AddSingleton(typeof(IRandomService), (p) => new RandomService(parameters.Project.Seed));
 			collection.AddSingleton(typeof(IMarkerService), (p) => new MarkerService(marker));
 			collection.AddSingleton(typeof(ITraceService), (p) => new TraceService());

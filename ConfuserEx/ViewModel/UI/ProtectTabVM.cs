@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -8,19 +10,19 @@ using System.Windows.Media;
 using Confuser.Core;
 using Confuser.Core.Project;
 using GalaSoft.MvvmLight.Command;
+using Microsoft.Extensions.Logging;
 
 namespace ConfuserEx.ViewModel {
-	internal class ProtectTabVM : TabViewModel, ILogger {
-		readonly Paragraph documentContent;
+	internal class ProtectTabVM : TabViewModel {
 		CancellationTokenSource cancelSrc;
 		double? progress = 0;
 		bool? result;
+		private ConcurrentQueue<(LogLevel level, string message)> UnpublishedMessage { get; set; }
+		private CancellationTokenSource TokenSource { get; set; }
 
 		public ProtectTabVM(AppVM app)
 			: base(app, "Protect!") {
-			documentContent = new Paragraph();
 			LogDocument = new FlowDocument();
-			LogDocument.Blocks.Add(documentContent);
 		}
 
 		public ICommand ProtectCmd {
@@ -43,108 +45,83 @@ namespace ConfuserEx.ViewModel {
 			set { SetProperty(ref result, value, "Result"); }
 		}
 
-		void DoProtect() {
-			var parameters = new ConfuserParameters();
-			parameters.Project = ((IViewModel<ConfuserProject>)App.Project).Model;
+		private async void DoProtect() {
+			var parameters = new ConfuserParameters {
+				Project = ((IViewModel<ConfuserProject>)App.Project).Model,
+				ConfigureLogging = builder => builder.AddProvider(new UiLoggerProvider(SendLogMessage)).SetMinimumLevel(LogLevel.Debug)
+			};
 			if (File.Exists(App.FileName))
 				Environment.CurrentDirectory = Path.GetDirectoryName(App.FileName);
-			parameters.Logger = this;
 
-			documentContent.Inlines.Clear();
 			cancelSrc = new CancellationTokenSource();
 			Result = null;
 			Progress = null;
-			begin = DateTime.Now;
 			App.NavigationDisabled = true;
 
-			ConfuserEngine.Run(parameters, cancelSrc.Token)
-			              .ContinueWith(_ =>
-			                            Application.Current.Dispatcher.BeginInvoke(new Action(() => {
-				                            Progress = 0;
-				                            App.NavigationDisabled = false;
-				                            CommandManager.InvalidateRequerySuggested();
-			                            })));
+			UnpublishedMessage = new ConcurrentQueue<(LogLevel level, string message)>();
+			TokenSource = new CancellationTokenSource();
+			SendLogMessagesToUi();
+
+			await ConfuserEngine.Run(parameters, cancelSrc.Token).ConfigureAwait(true);
+
+			TokenSource.Cancel();
+			Progress = 0;
+			App.NavigationDisabled = false;
+			CommandManager.InvalidateRequerySuggested();
 		}
 
 		void DoCancel() {
 			cancelSrc.Cancel();
 		}
 
-		void AppendLine(string format, Brush foreground, params object[] args) {
-			Application.Current.Dispatcher.BeginInvoke(new Action(() => {
-				documentContent.Inlines.Add(new Run(string.Format(format, args)) { Foreground = foreground });
-				documentContent.Inlines.Add(new LineBreak());
-			}));
+		private void SendLogMessage(LogLevel level, string message) =>
+			UnpublishedMessage.Enqueue((level, message));
+
+		private async void SendLogMessagesToUi() {
+			var token = TokenSource.Token;
+
+			LogDocument.Blocks.Clear();
+			var documentContent = new Paragraph();
+			LogDocument.Blocks.Add(documentContent);
+
+			try {
+				for (; ; ) {
+					token.ThrowIfCancellationRequested();
+
+					var newMessages = 0;
+					while (UnpublishedMessage.TryDequeue(out var log)) {
+						var messageRun = new Run(log.message) { Foreground = GetLogLevelForeground(log.level) };
+
+						documentContent.Inlines.Add(messageRun);
+						documentContent.Inlines.Add(new LineBreak());
+
+						newMessages++;
+						if (newMessages >= 10) break;
+					}
+
+					await Task.Delay(200).ConfigureAwait(true);
+				}
+			}
+			catch (OperationCanceledException) { }
 		}
 
-		#region Logger Impl
-
-		DateTime begin;
-
-		void ILogger.Debug(string msg) {
-			AppendLine("[DEBUG] {0}", Brushes.Gray, msg);
+		private static Brush GetLogLevelForeground(LogLevel logLevel) {
+			switch (logLevel) {
+				case LogLevel.Trace:
+					return Brushes.DarkGray;
+				case LogLevel.Debug:
+					return Brushes.Gray;
+				case LogLevel.Information:
+					return Brushes.White;
+				case LogLevel.Warning:
+					return Brushes.Yellow;
+				case LogLevel.Error:
+					return Brushes.IndianRed;
+				case LogLevel.Critical:
+					return Brushes.Red;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(logLevel));
+			}
 		}
-
-		void ILogger.DebugFormat(string format, params object[] args) {
-			AppendLine("[DEBUG] {0}", Brushes.Gray, string.Format(format, args));
-		}
-
-		void ILogger.Info(string msg) {
-			AppendLine(" [INFO] {0}", Brushes.White, msg);
-		}
-
-		void ILogger.InfoFormat(string format, params object[] args) {
-			AppendLine(" [INFO] {0}", Brushes.White, string.Format(format, args));
-		}
-
-		void ILogger.Warn(string msg) {
-			AppendLine(" [WARN] {0}", Brushes.Yellow, msg);
-		}
-
-		void ILogger.WarnFormat(string format, params object[] args) {
-			AppendLine(" [WARN] {0}", Brushes.Yellow, string.Format(format, args));
-		}
-
-		void ILogger.WarnException(string msg, Exception ex) {
-			AppendLine(" [WARN] {0}", Brushes.Yellow, msg);
-			AppendLine("Exception: {0}", Brushes.Yellow, ex);
-		}
-
-		void ILogger.Error(string msg) {
-			AppendLine("[ERROR] {0}", Brushes.Red, msg);
-		}
-
-		void ILogger.ErrorFormat(string format, params object[] args) {
-			AppendLine("[ERROR] {0}", Brushes.Red, string.Format(format, args));
-		}
-
-		void ILogger.ErrorException(string msg, Exception ex) {
-			AppendLine("[ERROR] {0}", Brushes.Red, msg);
-			AppendLine("Exception: {0}", Brushes.Red, ex);
-		}
-
-		void ILogger.Progress(int progress, int overall) {
-			Progress = (double)progress / overall;
-		}
-
-		void ILogger.EndProgress() {
-			Progress = null;
-		}
-
-		void ILogger.Finish(bool successful) {
-			DateTime now = DateTime.Now;
-			string timeString = string.Format(
-				"at {0}, {1}:{2:d2} elapsed.",
-				now.ToShortTimeString(),
-				(int)now.Subtract(begin).TotalMinutes,
-				now.Subtract(begin).Seconds);
-			if (successful)
-				AppendLine("Finished {0}", Brushes.Lime, timeString);
-			else
-				AppendLine("Failed {0}", Brushes.Red, timeString);
-			Result = successful;
-		}
-
-		#endregion
 	}
 }

@@ -5,6 +5,7 @@ using Confuser.Core.Services;
 using Confuser.Protections.TypeScramble.Scrambler;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.TypeScramble {
 	internal sealed class ScramblePhase : IProtectionPhase {
@@ -26,9 +27,9 @@ namespace Confuser.Protections.TypeScramble {
 			var rewriter = new TypeRewriter(context);
 			rewriter.ApplyGeterics();
 
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("typescramble");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(TypeScrambleProtection._Id);
 
-			foreach (var def in parameters.Targets.WithProgress(logger)) {
+			foreach (var def in parameters.Targets/*.WithProgress(logger)*/) {
 				switch (def) {
 					case MethodDef md:
 						if (md.HasBody) {

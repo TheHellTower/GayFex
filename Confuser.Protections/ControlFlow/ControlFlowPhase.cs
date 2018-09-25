@@ -11,6 +11,7 @@ using dnlib.DotNet.MD;
 using dnlib.DotNet.Pdb;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.ControlFlow {
 	internal class ControlFlowPhase : IProtectionPhase {
@@ -75,9 +76,9 @@ namespace Confuser.Protections.ControlFlow {
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			bool disabledOpti = DisabledOptimization(context.CurrentModule);
 			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ControlFlowProtection._FullId);
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("control flow");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ControlFlowProtection._Id);
 
-			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(logger))
+			foreach (var method in parameters.Targets.OfType<MethodDef>()) //.WithProgress(logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
 					ProcessMethod(method.Body, ParseParameters(method, context, parameters, random, disabledOpti));
 					token.ThrowIfCancellationRequested();
@@ -93,8 +94,8 @@ namespace Confuser.Protections.ControlFlow {
 		void ProcessMethod(CilBody body, CFContext ctx) {
 			uint maxStack;
 			if (!MaxStackCalculator.GetMaxStack(body.Instructions, body.ExceptionHandlers, out maxStack)) {
-				var logger = ctx.Context.Registry.GetRequiredService<ILoggingService>().GetLogger("control flow");
-				logger.Error("Failed to calcuate maxstack.");
+				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ControlFlowProtection._Id);
+				logger.LogError("Failed to calculate maxstack.");
 				throw new ConfuserException(null);
 			}
 			body.MaxStack = (ushort)maxStack;

@@ -16,6 +16,7 @@ using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.AntiTamper {
 	internal class JITMode : IModeHandler {
@@ -152,15 +153,19 @@ namespace Confuser.Protections.AntiTamper {
 			context.CurrentModuleWriterOptions.WriterEvent += OnWriterEvent;
 		}
 
+		private Microsoft.Extensions.Logging.ILogger CreateLogger() =>
+			context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(AntiTamperProtection._Id);
+
 		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("anti tamper");
 			var writer = e.Writer;
 			if (e.Event == ModuleWriterEvent.MDBeginWriteMethodBodies) {
-				logger.Debug("Extracting method bodies...");
+				var logger = CreateLogger();
+				logger.LogDebug("Extracting method bodies...");
 				CreateSection(writer);
 			}
 			else if (e.Event == ModuleWriterEvent.BeginStrongNameSign) {
-				logger.Debug("Encrypting method section...");
+				var logger = CreateLogger();
+				logger.LogDebug("Encrypting method section...");
 				EncryptSection(writer);
 			}
 		}
@@ -211,10 +216,10 @@ namespace Confuser.Protections.AntiTamper {
 			var bodyIndex = new JITBodyIndex(methods.Select(method => writer.Metadata.GetToken(method).Raw));
 			newSection.Add(bodyIndex, 0x10);
 
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("anti tamper");
+			var logger = CreateLogger();
 
 			// save methods
-			foreach (var method in methods.WithProgress(logger)) {
+			foreach (var method in methods) {//.WithProgress(logger)) {
 				if (!method.HasBody)
 					continue;
 

@@ -8,6 +8,7 @@ using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections {
 	internal sealed class AntiDebugProtectionPhase : IProtectionPhase {
@@ -28,7 +29,7 @@ namespace Confuser.Protections {
 			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var name = context.Registry.GetRequiredService<INameService>();
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(AntiDebugProtectionPhase));
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(AntiDebugProtection._Id);
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
 				var mode = parameters.GetParameter(context, module, Parent.Parameters.Mode);
@@ -50,7 +51,7 @@ namespace Confuser.Protections {
 
 				var initMethod = rtType.FindMethod("Initialize");
 				if (initMethod == null) {
-					logger.Error("Could not find \"Initialize\" for " + rtType.FullName);
+					logger.LogError("Could not find \"Initialize\" for {0}", rtType.FullName);
 					continue;
 				}
 

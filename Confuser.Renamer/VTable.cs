@@ -5,7 +5,8 @@ using System.Linq;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
-using ILogger = Confuser.Core.ILogger;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Renamer {
 	public class VTableSignature {
@@ -303,9 +304,9 @@ namespace Confuser.Renamer {
 		[Conditional("DEBUG")]
 		static void CheckKeyExist<TKey, TValue>(VTableStorage storage, IDictionary<TKey, TValue> dictionary, TKey key, string name) {
 			if (!dictionary.ContainsKey(key)) {
-				storage.GetLogger().ErrorFormat("{0} not found: {1}", name, key);
+				storage.GetLogger().LogError("{0} not found: {1}", name, key);
 				foreach (var k in dictionary.Keys)
-					storage.GetLogger().ErrorFormat("    {0}", k);
+					storage.GetLogger().LogError("    {0}", k);
 			}
 		}
 	}
@@ -315,7 +316,7 @@ namespace Confuser.Renamer {
 		readonly ILogger logger;
 
 		public VTableStorage(IServiceProvider provider) {
-			logger = provider.GetRequiredService<ILoggingService>().GetLogger("naming");
+			logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 		}
 
 		public ILogger GetLogger() {

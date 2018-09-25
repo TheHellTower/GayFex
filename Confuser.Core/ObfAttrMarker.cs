@@ -10,6 +10,8 @@ using System.Threading;
 using Confuser.Core.Project;
 using Confuser.Core.Project.Patterns;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {
 	using Rules = Dictionary<Rule, PatternExpression>;
@@ -202,16 +204,19 @@ namespace Confuser.Core {
 		}
 
 		bool ToInfo(ObfuscationAttributeInfo attr, out ProtectionSettingsInfo info) {
-			info = new ProtectionSettingsInfo();
+			info = new ProtectionSettingsInfo {
+				Condition = null,
 
-			info.Condition = null;
+				Exclude = (attr.Exclude ?? true),
+				ApplyToMember = (attr.ApplyToMembers ?? true),
+				Settings = attr.FeatureValue
+			};
 
-			info.Exclude = (attr.Exclude ?? true);
-			info.ApplyToMember = (attr.ApplyToMembers ?? true);
-			info.Settings = attr.FeatureValue;
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
 			bool ok = true;
 			try {
+				logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
 				new ObfAttrParser(protections).ParseProtectionString(null, info.Settings);
 			}
 			catch {
@@ -219,7 +224,7 @@ namespace Confuser.Core {
 			}
 
 			if (!ok) {
-				context.Logger.WarnFormat("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
+				logger.LogWarning("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
 				return false;
 			}
 
@@ -283,7 +288,7 @@ namespace Confuser.Core {
 
 		/// <inheritdoc />
 		protected internal override void MarkMember(IDnlibDef member, IConfuserContext context) {
-			ModuleDef module = ((IMemberRef)member).Module;
+			var module = ((IMemberRef)member).Module;
 			var stack = context.Annotations.Get<ProtectionSettingsStack>(module, ModuleSettingsKey);
 			using (stack.Apply(member, Enumerable.Empty<ProtectionSettingsInfo>()))
 				return;
@@ -291,13 +296,15 @@ namespace Confuser.Core {
 
 		/// <inheritdoc />
 		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
-			this.context = context;
-			project = proj;
+			this.context = context ?? throw new ArgumentNullException(nameof(context));
+			project = proj ?? throw new ArgumentNullException(nameof(proj));
 			extModules = new List<byte[]>();
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
 			if (proj.Packer != null) {
 				if (!packers.ContainsKey(proj.Packer.Id)) {
-					context.Logger.ErrorFormat("Cannot find packer with ID '{0}'.", proj.Packer.Id);
+					logger.LogCritical("Cannot find packer with ID '{0}'.", proj.Packer.Id);
 					throw new ConfuserException(null);
 				}
 
@@ -306,7 +313,7 @@ namespace Confuser.Core {
 			}
 
 			var modules = new List<Tuple<ProjectModule, ModuleDefMD>>();
-			foreach (ProjectModule module in proj) {
+			foreach (var module in proj) {
 				if (module.IsExternal) {
 					extModules.Add(module.LoadRaw(proj.BaseDirectory));
 					continue;
@@ -314,6 +321,7 @@ namespace Confuser.Core {
 
 				var modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
 				foreach (var method in modDef.FindDefinitions().OfType<MethodDef>()) {
+					logger.LogTrace("Loading custom debug infos for '{0}'.", method);
 					var a = method.CustomDebugInfos;
 					token.ThrowIfCancellationRequested();
 				}
@@ -323,9 +331,9 @@ namespace Confuser.Core {
 				modules.Add(Tuple.Create(module, modDef));
 			}
 			foreach (var module in modules) {
-				context.Logger.InfoFormat("Loading '{0}'...", module.Item1.Path);
+				logger.LogInformation("Loading '{0}'...", module.Item1.Path);
 
-				Rules rules = ParseRules(proj, module.Item1, context);
+				var rules = ParseRules(proj, module.Item1, context);
 				MarkModule(module.Item1, module.Item2, rules, module == modules[0]);
 
 				context.Annotations.Set(module.Item2, RulesKey, rules);
@@ -336,7 +344,7 @@ namespace Confuser.Core {
 			}
 
 			if (proj.Debug && proj.Packer != null)
-				context.Logger.Warn("Generated Debug symbols might not be usable with packers!");
+				logger.LogWarning("Generated Debug symbols might not be usable with packers!");
 
 			return new MarkerResult(modules.Select(module => module.Item2).ToImmutableArray(), packer, extModules.ToImmutableArray());
 		}
@@ -353,15 +361,19 @@ namespace Confuser.Core {
 				throw new Exception("Error when parsing pattern " + pattern + " in ObfuscationAttribute. Owner=" + attr.Owner, ex);
 			}
 
-			var info = new ProtectionSettingsInfo();
-			info.Condition = expr;
+			var info = new ProtectionSettingsInfo {
+				Condition = expr,
 
-			info.Exclude = (attr.Exclude ?? true);
-			info.ApplyToMember = (attr.ApplyToMembers ?? true);
-			info.Settings = attr.FeatureValue;
+				Exclude = (attr.Exclude ?? true),
+				ApplyToMember = (attr.ApplyToMembers ?? true),
+				Settings = attr.FeatureValue
+			};
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
 			bool ok = true;
 			try {
+				logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
 				new ObfAttrParser(protections).ParseProtectionString(null, info.Settings);
 			}
 			catch {
@@ -369,7 +381,7 @@ namespace Confuser.Core {
 			}
 
 			if (!ok)
-				context.Logger.WarnFormat("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
+				logger.LogWarning("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
 			else if (infos != null)
 				infos.Add(info);
 			return info;

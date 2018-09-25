@@ -12,7 +12,8 @@ using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
-using ILogger = Confuser.Core.ILogger;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Protections.Constants {
 	internal class EncodePhase : IProtectionPhase {
@@ -37,7 +38,7 @@ namespace Confuser.Protections.Constants {
 			var ldc = new Dictionary<object, List<Tuple<MethodDef, Instruction>>>();
 			var ldInit = new Dictionary<byte[], List<Tuple<MethodDef, Instruction>>>(new ByteArrayComparer());
 
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("constants");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("constants");
 
 			// Extract constants
 			ExtractConstants(context, parameters, moduleCtx, ldc, ldInit, logger, token);
@@ -45,12 +46,12 @@ namespace Confuser.Protections.Constants {
 			// Encode constants
 			moduleCtx.ReferenceRepl = new Dictionary<MethodDef, List<Tuple<Instruction, uint, IMethod>>>();
 			moduleCtx.EncodedBuffer = new List<uint>();
-			foreach (var entry in ldInit.WithProgress(logger)) // Ensure the array length haven't been encoded yet
+			foreach (var entry in ldInit) //.WithProgress(logger)) // Ensure the array length haven't been encoded yet
 			{
 				EncodeInitializer(moduleCtx, entry.Key, entry.Value);
 				token.ThrowIfCancellationRequested();
 			}
-			foreach (var entry in ldc.WithProgress(logger)) {
+			foreach (var entry in ldc) {//.WithProgress(logger)) {
 				if (entry.Key is string) {
 					EncodeString(moduleCtx, (string)entry.Key, entry.Value);
 				}
@@ -233,10 +234,10 @@ namespace Confuser.Protections.Constants {
 			ILogger logger, CancellationToken token) {
 			var dataFields = new HashSet<FieldDef>();
 			var fieldRefs = new HashSet<Instruction>();
-			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(logger)) {
+			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>()) { //.WithProgress(logger)) {
 				if (!method.HasBody)
 					continue;
-				
+
 				moduleCtx.Elements = parameters.GetParameter(context, method, Parent.Parameters.Elements);
 				if (moduleCtx.Elements == EncodeElements.None)
 					continue;

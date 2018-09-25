@@ -11,6 +11,7 @@ using Confuser.Renamer.References;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Renamer.BAML {
 	internal class BAMLAnalyzer {
@@ -331,8 +332,8 @@ namespace Confuser.Renamer.BAML {
 					if (attrInfo.Item1 is EventDef) {
 						MethodDef method = root.Type.FindMethod(propRec.Value);
 						if (method == null) {
-							var logger = Context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
-							logger.WarnFormat("Cannot resolve method '{0}' in '{1}'.", root.Type.FullName, propRec.Value);
+							var logger = Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
+							logger.LogWarning("Cannot resolve method '{0}' in '{1}'.", root.Type.FullName, propRec.Value);
 						}
 						else {
 							var reference = new BAMLAttributeReference(method, propRec);
@@ -434,6 +435,7 @@ namespace Confuser.Renamer.BAML {
 
 		void ProcessConverter(PropertyWithConverterRecord rec, TypeDef type) {
 			TypeDef converter = ResolveType(rec.ConverterTypeId);
+			var logger = Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
 			if (converter.FullName == "System.ComponentModel.EnumConverter") {
 				if (type != null && Context.Modules.Contains((ModuleDefMD)type.Module)) {
@@ -469,8 +471,7 @@ namespace Confuser.Renamer.BAML {
 								service.AddReference(Context, field, reference);
 							}
 							if (property == null && field == null) {
-								var logger = Context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
-								logger.WarnFormat("Could not resolve command '{0}' in '{1}'.", cmd, CurrentBAMLName);
+								logger.LogWarning("Could not resolve command '{0}' in '{1}'.", cmd, CurrentBAMLName);
 							}
 						}
 					}
@@ -524,8 +525,7 @@ namespace Confuser.Renamer.BAML {
 							src = match.Groups[2].Value;
 						}
 						else if (rec.Value.Contains("/")) {
-							var logger = Context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
-							logger.WarnFormat("Fail to extract XAML name from '{0}'.", rec.Value);
+							logger.LogWarning("Fail to extract XAML name from '{0}'.", rec.Value);
 						}
 
 						if (!src.StartsWith(packScheme, StringComparison.OrdinalIgnoreCase)) {

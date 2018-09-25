@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
 using Confuser.UnitTest;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,7 +18,7 @@ namespace AntiProtections.Test {
 		protected AntiProtectionsTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		protected ILogger GetLogger() => new XunitLogger(outputHelper);
+		protected Action<ILoggingBuilder> ConfigureLogging() => builder => builder.AddProvider(new XunitLogger(outputHelper));
 
 		protected ConfuserProject CreateProject() {
 			var baseDir = Environment.CurrentDirectory;

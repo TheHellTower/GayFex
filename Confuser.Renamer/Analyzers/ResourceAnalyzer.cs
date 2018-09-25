@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 using Confuser.Core;
-using Confuser.Core.Services;
 using Confuser.Renamer.References;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class ResourceAnalyzer : IRenamer {
@@ -14,7 +14,7 @@ namespace Confuser.Renamer.Analyzers {
 		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			if (!(def is ModuleDef module)) return;
 
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
 			string asmName = module.Assembly.Name.String;
 			if (!string.IsNullOrEmpty(module.Assembly.Culture) &&
@@ -24,7 +24,7 @@ namespace Confuser.Renamer.Analyzers {
 				string nameAsmName = asmName.Substring(0, asmName.Length - ".resources".Length);
 				ModuleDef mainModule = context.Modules.SingleOrDefault(mod => mod.Assembly.Name == nameAsmName);
 				if (mainModule == null) {
-					logger.ErrorFormat("Could not find main assembly of satellite assembly '{0}'.", module.Assembly.FullName);
+					logger.LogError("Could not find main assembly of satellite assembly '{0}'.", module.Assembly.FullName);
 					throw new ConfuserException(null);
 				}
 
@@ -36,7 +36,7 @@ namespace Confuser.Renamer.Analyzers {
 					string typeName = match.Groups[1].Value;
 					TypeDef type = mainModule.FindReflection(typeName);
 					if (type == null) {
-						logger.WarnFormat("Could not find resource type '{0}'.", typeName);
+						logger.LogWarning("Could not find resource type '{0}'.", typeName);
 						continue;
 					}
 					service.ReduceRenameMode(context, type, RenameMode.ASCII);
@@ -63,7 +63,7 @@ namespace Confuser.Renamer.Analyzers {
 					}
 
 					if (type == null) {
-						logger.WarnFormat("Could not find resource type '{0}'.", typeName);
+						logger.LogWarning("Could not find resource type '{0}'.", typeName);
 						continue;
 					}
 					service.ReduceRenameMode(context, type, RenameMode.ASCII);

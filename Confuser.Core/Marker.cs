@@ -11,6 +11,7 @@ using Confuser.Core.Project.Patterns;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {
 	using Rules = Dictionary<Rule, PatternExpression>;
@@ -89,8 +90,8 @@ namespace Confuser.Core {
 				return new StrongNameKey(path);
 			}
 			catch (Exception ex) {
-				var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(Marker));
-				logger.ErrorException("Cannot load the Strong Name Key located at: " + path, ex);
+				var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+				logger.LogCritical(ex, "Cannot load the Strong Name Key located at: {0}", path);
 				throw new ConfuserException(ex);
 			}
 		}
@@ -102,17 +103,17 @@ namespace Confuser.Core {
 		/// <param name="context">The working context.</param>
 		/// <returns><see cref="MarkerResult" /> storing the marked modules and packer information.</returns>
 		protected internal virtual MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(Marker));
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 			IPacker packer = null;
 			Dictionary<string, string> packerParams = null;
 
 			if (proj.Packer != null) {
 				if (!packers.ContainsKey(proj.Packer.Id)) {
-					logger.ErrorFormat("Cannot find packer with ID '{0}'.", proj.Packer.Id);
+					logger.LogCritical("Cannot find packer with ID '{0}'.", proj.Packer.Id);
 					throw new ConfuserException(null);
 				}
 				if (proj.Debug)
-					logger.Warn("Generated Debug symbols might not be usable with packers!");
+					logger.LogWarning("Generated Debug symbols might not be usable with packers!");
 
 				packer = packers[proj.Packer.Id];
 				packerParams = new Dictionary<string, string>(proj.Packer, StringComparer.OrdinalIgnoreCase);
@@ -137,7 +138,7 @@ namespace Confuser.Core {
 			}
 
 			foreach (var module in modules) {
-				logger.InfoFormat("Loading '{0}'...", module.Item1.Path);
+				logger.LogInformation("Loading '{0}'...", module.Item1.Path);
 				Rules rules = ParseRules(proj, module.Item1, context);
 
 				context.Annotations.Set(module.Item2, SNKey, LoadSNKey(context, module.Item1.SNKeyPath == null ? null : Path.Combine(proj.BaseDirectory, module.Item1.SNKeyPath), module.Item1.SNKeyPassword));
@@ -180,7 +181,7 @@ namespace Confuser.Core {
 		///     One of the rules has invalid pattern.
 		/// </exception>
 		protected Rules ParseRules(ConfuserProject proj, ProjectModule module, ConfuserContext context) {
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(Marker));
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 			var ret = new Rules();
 			var parser = new PatternParser();
 			foreach (Rule rule in proj.Rules.Concat(module.Rules)) {
@@ -188,12 +189,12 @@ namespace Confuser.Core {
 					ret.Add(rule, parser.Parse(rule.Pattern));
 				}
 				catch (InvalidPatternException ex) {
-					logger.ErrorFormat("Invalid rule pattern: " + rule.Pattern + ".", ex);
+					logger.LogCritical(ex, "Invalid rule pattern: {0}.", rule.Pattern);
 					throw new ConfuserException(ex);
 				}
 				foreach (var setting in rule) {
 					if (!protections.ContainsKey(setting.Id)) {
-						logger.ErrorFormat("Cannot find protection with ID '{0}'.", setting.Id);
+						logger.LogCritical("Cannot find protection with ID '{0}'.", setting.Id);
 						throw new ConfuserException(null);
 					}
 				}

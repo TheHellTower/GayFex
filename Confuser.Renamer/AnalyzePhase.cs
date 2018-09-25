@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
-using ILogger = Confuser.Core.ILogger;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Renamer {
 	internal sealed class AnalyzePhase : IProtectionPhase {
-		public AnalyzePhase(NameProtection parent) => 
+		public AnalyzePhase(NameProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
 		public NameProtection Parent { get; }
@@ -34,9 +34,8 @@ namespace Confuser.Renamer {
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
 			var service = (NameService)context.Registry.GetRequiredService<INameService>();
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
-			logger.Debug("Building VTables & identifier list...");
-			foreach (IDnlibDef def in parameters.Targets.WithProgress(logger)) {
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);			logger.LogDebug("Building VTables & identifier list...");
+			foreach (IDnlibDef def in parameters.Targets/*.WithProgress(logger)*/) {
 				ParseParameters(context, def, service, parameters);
 
 				if (def is ModuleDef module) {
@@ -53,10 +52,10 @@ namespace Confuser.Renamer {
 				token.ThrowIfCancellationRequested();
 			}
 
-			logger.Debug("Analyzing...");
+			logger.LogDebug("Analyzing...");
 			RegisterRenamers(context, service, logger);
 			var renamers = service.Renamers;
-			foreach (IDnlibDef def in parameters.Targets.WithProgress(logger)) {
+			foreach (IDnlibDef def in parameters.Targets/*.WithProgress(logger)*/) {
 				Analyze(service, context, parameters, def, true);
 				token.ThrowIfCancellationRequested();
 			}
@@ -94,29 +93,29 @@ namespace Confuser.Renamer {
 
 			if (wpf) {
 				var wpfAnalyzer = new WPFAnalyzer(Parent);
-				logger.Debug("WPF found, enabling compatibility.");
+				logger.LogDebug("WPF found, enabling compatibility.");
 				service.Renamers.Add(wpfAnalyzer);
 				if (caliburn) {
-					logger.Debug("Caliburn.Micro found, enabling compatibility.");
+					logger.LogDebug("Caliburn.Micro found, enabling compatibility.");
 					service.Renamers.Add(new CaliburnAnalyzer(context, wpfAnalyzer));
 				}
 			}
 
 			if (winforms) {
 				var winformsAnalyzer = new WinFormsAnalyzer();
-				logger.Debug("WinForms found, enabling compatibility.");
+				logger.LogDebug("WinForms found, enabling compatibility.");
 				service.Renamers.Add(winformsAnalyzer);
 			}
 
 			if (json) {
 				var jsonAnalyzer = new JsonAnalyzer();
-				logger.Debug("Newtonsoft.Json found, enabling compatibility.");
+				logger.LogDebug("Newtonsoft.Json found, enabling compatibility.");
 				service.Renamers.Add(jsonAnalyzer);
 			}
 
 			if (visualBasic) {
 				var vbAnalyzer = new VisualBasicRuntimeAnalyzer();
-				logger.Debug("Visual Basic Embedded Runtime found, enabling compatibility.");
+				logger.LogDebug("Visual Basic Embedded Runtime found, enabling compatibility.");
 				service.Renamers.Add(vbAnalyzer);
 			}
 		}

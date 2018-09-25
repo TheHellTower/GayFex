@@ -84,6 +84,8 @@
     <Compile Include="StackTraceDecoder.xaml.cs">
       <DependentUpon>StackTraceDecoder.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UiLogger.cs" />
+    <Compile Include="UiLoggerProvider.cs" />
     <Compile Include="ViewModel\Project\ProjectRuleVM.cs" />
     <Compile Include="ViewModel\Project\ProjectSettingVM.cs" />
     <Compile Include="ViewModel\StringItem.cs" />
@@ -228,6 +230,9 @@
     <Resource Include="Resources\TeamLogo.png" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions">
+      <Version>2.1.1</Version>
+    </PackageReference>
     <PackageReference Include="MvvmLightLibs">
       <Version>5.4.1</Version>
     </PackageReference>

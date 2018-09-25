@@ -12,6 +12,7 @@ using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Renamer.Analyzers {
 	internal sealed class WPFAnalyzer : IRenamer {
@@ -53,7 +54,7 @@ namespace Confuser.Renamer.Analyzers {
 			if (wpfResInfo == null)
 				return;
 
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
 			foreach (var res in wpfResInfo.Values)
 				foreach (var doc in res.Values) {
@@ -88,7 +89,7 @@ namespace Confuser.Renamer.Analyzers {
 						else if (newName.EndsWith(".XAML"))
 							newName = newShinyName + service.RandomName(RenameMode.Letters).ToLowerInvariant() + ".xaml";
 
-						logger.Debug(String.Format("Preserving virtual paths. Replaced {0} with {1}", doc.DocumentName, newName));
+						logger.LogDebug("Preserving virtual paths. Replaced {0} with {1}", doc.DocumentName, newName);
 
 						#endregion
 
@@ -160,7 +161,7 @@ namespace Confuser.Renamer.Analyzers {
 		}
 
 		void AnalyzeMethod(IConfuserContext context, INameService service, MethodDef method) {
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("naming");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
 			var dpRegInstrs = new List<Tuple<bool, Instruction>>();
 			var routedEvtRegInstrs = new List<Instruction>();
@@ -201,7 +202,7 @@ namespace Confuser.Renamer.Analyzers {
 							operand = match.Groups[2].Value;
 						}
 						else if (operand.Contains("/"))
-							logger.WarnFormat("Fail to extract XAML name from '{0}'.", instr.Operand);
+							logger.LogWarning("Fail to extract XAML name from '{0}'.", instr.Operand);
 
 						var reference = new BAMLStringReference(instr);
 						operand = operand.TrimStart('/');
@@ -224,14 +225,14 @@ namespace Confuser.Renamer.Analyzers {
 				int[] args = trace.TraceArguments(instrInfo.Item2);
 				if (args == null) {
 					if (!erred)
-						logger.WarnFormat("Failed to extract dependency property name in '{0}'.", method.FullName);
+						logger.LogWarning("Failed to extract dependency property name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
 				Instruction ldstr = method.Body.Instructions[args[0]];
 				if (ldstr.OpCode.Code != Code.Ldstr) {
 					if (!erred)
-						logger.WarnFormat("Failed to extract dependency property name in '{0}'.", method.FullName);
+						logger.LogWarning("Failed to extract dependency property name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
@@ -272,10 +273,10 @@ namespace Confuser.Renamer.Analyzers {
 				}
 				if (!found) {
 					if (instrInfo.Item1)
-						logger.WarnFormat("Failed to find the accessors of attached dependency property '{0}' in type '{1}'.",
+						logger.LogWarning("Failed to find the accessors of attached dependency property '{0}' in type '{1}'.",
 												  name, declType.FullName);
 					else
-						logger.WarnFormat("Failed to find the CLR property of normal dependency property '{0}' in type '{1}'.",
+						logger.LogWarning("Failed to find the CLR property of normal dependency property '{0}' in type '{1}'.",
 												  name, declType.FullName);
 				}
 			}
@@ -285,14 +286,14 @@ namespace Confuser.Renamer.Analyzers {
 				int[] args = trace.TraceArguments(instr);
 				if (args == null) {
 					if (!erred)
-						logger.WarnFormat("Failed to extract routed event name in '{0}'.", method.FullName);
+						logger.LogWarning("Failed to extract routed event name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
 				Instruction ldstr = method.Body.Instructions[args[0]];
 				if (ldstr.OpCode.Code != Code.Ldstr) {
 					if (!erred)
-						logger.WarnFormat("Failed to extract routed event name in '{0}'.", method.FullName);
+						logger.LogWarning("Failed to extract routed event name in '{0}'.", method.FullName);
 					erred = true;
 					continue;
 				}
@@ -302,7 +303,7 @@ namespace Confuser.Renamer.Analyzers {
 
 				EventDef eventDef = null;
 				if ((eventDef = declType.FindEvent(name)) == null) {
-					logger.WarnFormat("Failed to find the CLR event of routed event '{0}' in type '{1}'.",
+					logger.LogWarning("Failed to find the CLR event of routed event '{0}' in type '{1}'.",
 											  name, declType.FullName);
 					continue;
 				}

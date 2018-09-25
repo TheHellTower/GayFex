@@ -8,6 +8,7 @@ using Confuser.Protections.Services;
 using Confuser.Protections.TypeScramble.Scrambler;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.TypeScramble {
 	internal sealed class AnalyzePhase : IProtectionPhase {
@@ -26,14 +27,14 @@ namespace Confuser.Protections.TypeScramble {
 		public string Name => "Type scanner";
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("typescramble");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(TypeScrambleProtection._Id);
 			//CreateGenericsForTypes(context, parameters.Targets.OfType<TypeDef>().WithProgress(context.Logger), token);
 
 			CreateGenericsForMethods(context, parameters.Targets.OfType<MethodDef>()
 				.OrderBy(x =>
 				x?.Parameters?.Count ?? 0 +
 				x.Body?.Variables?.Count ?? 0)
-				.WithProgress(logger), token);
+				/*.WithProgress(logger)*/, token);
 		}
 
 

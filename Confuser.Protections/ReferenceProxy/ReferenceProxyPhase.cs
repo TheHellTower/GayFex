@@ -12,6 +12,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.ReferenceProxy {
 	internal sealed class ReferenceProxyPhase : IProtectionPhase {
@@ -115,11 +116,11 @@ namespace Confuser.Protections.ReferenceProxy {
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
 			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ReferenceProxyProtection._FullId);
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("proxy");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ReferenceProxyProtection._Id);
 
 			var store = new RPStore { random = random };
 
-			foreach (var method in parameters.Targets.OfType<MethodDef>().WithProgress(logger))
+			foreach (var method in parameters.Targets.OfType<MethodDef>()) //.WithProgress(logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
 					ProcessMethod(ParseParameters(method, context, parameters, store));
 					token.ThrowIfCancellationRequested();

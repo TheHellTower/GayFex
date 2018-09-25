@@ -12,13 +12,15 @@ using System.Threading.Tasks;
 using Confuser.Core.Project;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Core.Services {
 	internal sealed class PackerService : IPackerService {
-		private readonly ILoggingService loggingService;
+		private readonly ILoggerFactory loggerFactory;
 
-		public PackerService(IServiceProvider provider) => 
-			loggingService = provider.GetRequiredService<ILoggingService>();
+		public PackerService(IServiceProvider provider) =>
+			loggerFactory = provider.GetRequiredService<ILoggerFactory>();
 
 		public void ProtectStub(IConfuserContext context1, string fileName, byte[] module, StrongNameKey snKey, IProtection prot, CancellationToken token) {
 			var context = (ConfuserContext)context1;
@@ -35,9 +37,10 @@ namespace Confuser.Core.Services {
 			}
 			File.WriteAllBytes(Path.Combine(tmpDir, fileName), module);
 
-			var proj = new ConfuserProject();
-			proj.Seed = context.Project.Seed;
-			foreach (Rule rule in context.Project.Rules)
+			var proj = new ConfuserProject {
+				Seed = context.Project.Seed
+			};
+			foreach (var rule in context.Project.Rules)
 				proj.Rules.Add(rule);
 			proj.Add(new ProjectModule {
 				Path = fileName
@@ -70,11 +73,11 @@ namespace Confuser.Core.Services {
 				discovery = new PackerDiscovery(protectionId, prot);
 			}
 
-			var logger = loggingService.GetLogger("packer");
+			var logger = loggerFactory.CreateLogger("packer");
 
 			try {
 				ConfuserEngine.Run(new ConfuserParameters {
-					Logger = new PackerLogger(logger),
+					ConfigureLogging = builder => builder.AddProvider(new PackerLoggerProvider(loggerFactory)),
 					PluginDiscovery = discovery,
 					Marker = new PackerMarker(snKey),
 					Project = proj,
@@ -82,7 +85,7 @@ namespace Confuser.Core.Services {
 				}, token).Wait();
 			}
 			catch (AggregateException ex) {
-				logger.Error("Failed to protect packer stub.");
+				logger.LogCritical("Failed to protect packer stub.");
 				throw new ConfuserException(ex);
 			}
 
@@ -91,43 +94,16 @@ namespace Confuser.Core.Services {
 
 		}
 
-		private sealed class PackerLogger : ILogger {
-			readonly ILogger baseLogger;
+		private sealed class PackerLoggerProvider : ILoggerProvider {
+			private readonly ILoggerFactory baseLoggerFactory;
 
-			public PackerLogger(ILogger baseLogger) => this.baseLogger = baseLogger;
+			public PackerLoggerProvider(ILoggerFactory baseLoggerFactory) => this.baseLoggerFactory = baseLoggerFactory;
 
-			void ILogger.Debug(string msg) => baseLogger.Debug(msg);
+			ILogger ILoggerProvider.CreateLogger(string categoryName) => baseLoggerFactory.CreateLogger("packer:" + categoryName);
 
-			void ILogger.DebugFormat(string format, params object[] args) => baseLogger.DebugFormat(format, args);
-
-			void ILogger.Info(string msg) => baseLogger.Info(msg);
-
-			void ILogger.InfoFormat(string format, params object[] args) => baseLogger.InfoFormat(format, args);
-
-			void ILogger.Warn(string msg) => baseLogger.Warn(msg);
-
-			void ILogger.WarnFormat(string format, params object[] args) => baseLogger.WarnFormat(format, args);
-
-			void ILogger.WarnException(string msg, Exception ex) => baseLogger.WarnException(msg, ex);
-
-			void ILogger.Error(string msg) => baseLogger.Error(msg);
-
-			void ILogger.ErrorFormat(string format, params object[] args) => baseLogger.ErrorFormat(format, args);
-
-			void ILogger.ErrorException(string msg, Exception ex) => baseLogger.ErrorException(msg, ex);
-
-			void ILogger.Progress(int progress, int overall) {
-				baseLogger.Progress(progress, overall);
-			}
-
-			void ILogger.EndProgress() => baseLogger.EndProgress();
-
-			void ILogger.Finish(bool successful) {
-				if (!successful) throw new ConfuserException(null);
-				baseLogger.Info("Finish protecting packer stub.");
-			}
+			void IDisposable.Dispose() {}
 		}
-		
+
 		private sealed class PackerMarker : Marker {
 			readonly StrongNameKey snKey;
 
@@ -163,7 +139,7 @@ namespace Confuser.Core.Services {
 		private sealed class PackerCompositionCatalog : ComposablePartCatalog {
 			private readonly ComposablePartDefinition partDef;
 
-			public PackerCompositionCatalog(string protectionId, IProtection protection) => 
+			public PackerCompositionCatalog(string protectionId, IProtection protection) =>
 				partDef = new PackerComposablePartDefinition(protectionId, protection);
 
 			public override IEnumerable<Tuple<ComposablePartDefinition, ExportDefinition>> GetExports(ImportDefinition definition) {
@@ -178,7 +154,7 @@ namespace Confuser.Core.Services {
 		private sealed class PackerComposablePartDefinition : ComposablePartDefinition {
 			private readonly ComposablePart part;
 
-			public PackerComposablePartDefinition(string protectionId, IProtection protection) => 
+			public PackerComposablePartDefinition(string protectionId, IProtection protection) =>
 				part = new PackerComposablePart(protectionId, protection);
 
 			public override IEnumerable<ExportDefinition> ExportDefinitions => part.ExportDefinitions;

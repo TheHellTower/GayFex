@@ -7,6 +7,7 @@ using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.Compress {
 	internal sealed class ExtractPhase : IProtectionPhase {
@@ -27,14 +28,14 @@ namespace Confuser.Protections.Compress {
 			if (context.Packer == null)
 				return;
 
-			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger("compressor");
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(Compressor._Id);
 
 			bool isExe = context.CurrentModule.Kind == ModuleKind.Windows ||
 						 context.CurrentModule.Kind == ModuleKind.Console;
 
 			if (context.Annotations.Get<CompressorContext>(context, Compressor.ContextKey) != null) {
 				if (isExe) {
-					logger.Error("Too many executable modules!");
+					logger.LogCritical("Too many executable modules!");
 					throw new ConfuserException(null);
 				}
 				return;
