@@ -19,11 +19,9 @@ namespace Confuser.Protections {
 
 		internal AntiDebugProtectionParameters Parameters { get; } = new AntiDebugProtectionParameters();
 
-		void IConfuserComponent.Initialize(IServiceCollection context) {
-			//
-		}
+		void IConfuserComponent.Initialize(IServiceCollection services) => services.AddRuntime();
 
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new AntiDebugProtectionPhase(this));
 	}
 }

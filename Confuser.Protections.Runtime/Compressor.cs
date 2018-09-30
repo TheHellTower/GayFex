@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -33,7 +32,7 @@ namespace Confuser.Runtime {
 				h += 4;
 			}
 			Array.Clear(w, 0, 0x10);
-			byte[] j = Lzma.Decompress(b);
+			byte[] j = CompressionService.Decompress(b);
 			Array.Clear(b, 0, b.Length);
 
 			GCHandle g = GCHandle.Alloc(j, GCHandleType.Pinned);

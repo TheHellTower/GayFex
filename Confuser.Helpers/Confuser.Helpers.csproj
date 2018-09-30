@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Project Dependencies">
+    <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\dnlib\src\dnlib.netstandard.csproj" />
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
   </ItemGroup>

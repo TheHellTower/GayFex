@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.Helpers;
@@ -75,13 +74,13 @@ namespace Confuser.Protections.Constants {
 			}
 		}
 
-		void InjectHelpers(IConfuserContext context, CEContext moduleCtx) {
+		private void InjectHelpers(IConfuserContext context, CEContext moduleCtx) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(moduleCtx != null, $"{nameof(moduleCtx)} != null");
 
-			var rt = context.Registry.GetRequiredService<IRuntimeService>();
+			var logger = context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(ConstantProtection));
 			var name = context.Registry.GetRequiredService<INameService>();
-			var constantRuntime = rt.GetRuntimeType("Confuser.Runtime.Constant");
+			var constantRuntime = GetRuntimeType(moduleCtx.Module, context, logger);
 			Debug.Assert(constantRuntime != null, $"{nameof(constantRuntime)} != null");
 
 			var lateMutationFields = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
@@ -90,6 +89,7 @@ namespace Confuser.Protections.Constants {
 
 			var initInjectResult = InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+				new CompressionServiceProcessor(context, context.CurrentModule),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
 					PlaceholderProcessor = CreateDataField(context, moduleCtx),
@@ -98,7 +98,7 @@ namespace Confuser.Protections.Constants {
 			moduleCtx.InitMethod = initInjectResult.Requested.Mapped;
 			name?.MarkHelper(context, moduleCtx.InitMethod, moduleCtx.Marker, Parent);
 
-			var decoder = rt.GetRuntimeType("Confuser.Runtime.Constant").FindMethod("Get");
+			var decoder = constantRuntime.FindMethod("Get");
 
 			moduleCtx.Decoders = new List<Tuple<MethodDef, DecoderDesc>>();
 			for (int i = 0; i < moduleCtx.DecoderCount; i++) {
@@ -133,6 +133,32 @@ namespace Confuser.Protections.Constants {
 					moduleCtx.Decoders.Add(Tuple.Create(decoderInst, decoderDesc));
 				}
 			}
+		}
+
+		private static TypeDef GetRuntimeType(ModuleDef module, IConfuserContext context, Core.ILogger logger) {
+			Debug.Assert(module != null, $"{nameof(module)} != null");
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(logger != null, $"{nameof(logger)} != null");
+
+			var rt = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
+
+			const string runtimeTypeName = "Confuser.Runtime.Constant";
+
+			TypeDef rtType = null;
+			try {
+				rtType = rt.GetRuntimeType(runtimeTypeName, module);
+			}
+			catch (ArgumentException ex) {
+				logger.Error("Failed to load runtime: " + ex.Message);
+				return null;
+			}
+
+			if (rtType == null) {
+				logger.Error("Failed to load runtime: " + runtimeTypeName);
+				return null;
+			}
+
+			return rtType;
 		}
 
 		private PlaceholderProcessor CreateDataField(IConfuserContext context, CEContext moduleCtx) {

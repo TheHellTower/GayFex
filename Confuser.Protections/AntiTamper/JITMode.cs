@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.Helpers;
 using Confuser.Protections.Services;
@@ -73,12 +71,13 @@ namespace Confuser.Protections.AntiTamper {
 				.Add(MutationField.KeyI4, (int)v)
 				.Add(MutationField.KeyI5, (int)key);
 
-			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var name = context.Registry.GetRequiredService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
 
-			var antiTamperInitMethod = rt.GetRuntimeType("Confuser.Runtime.AntiTamperJIT").FindMethod("Initialize");
+			var antiTamperInitMethod = context.GetInitMethod("Confuser.Runtime.AntiTamperJIT", context.CurrentModule);
+			if (antiTamperInitMethod == null) return;
+
 			var injectResult = InjectHelper.Inject(antiTamperInitMethod, context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new MutationProcessor(context.Registry, context.CurrentModule) {

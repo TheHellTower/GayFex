@@ -11,17 +11,20 @@ using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.Constants {
-	internal class ReferenceReplacer {
-		public static void ReplaceReference(ConstantProtection protection, CEContext ctx, IProtectionParameters parameters) {
+	internal static class ReferenceReplacer {
+		internal static bool ReplaceReference(ConstantProtection protection, CEContext ctx, IProtectionParameters parameters) {
 			foreach (var entry in ctx.ReferenceRepl) {
-				if (parameters.GetParameter<bool>(ctx.Context, entry.Key, protection.Parameters.ControlFlowGraphReplacement))
-					ReplaceCFG(entry.Key, entry.Value, ctx);
-				else
-					ReplaceNormal(entry.Key, entry.Value);
+				if (parameters.GetParameter(ctx.Context, entry.Key, protection.Parameters.ControlFlowGraphReplacement)) {
+					if (!ReplaceCFG(entry.Key, entry.Value, ctx)) return false;
+				}
+				else {
+					if (!ReplaceNormal(entry.Key, entry.Value)) return false;
+				}
 			}
+			return true;
 		}
 
-		static void ReplaceNormal(MethodDef method, List<Tuple<Instruction, uint, IMethod>> instrs) {
+		private static bool ReplaceNormal(MethodDef method, List<Tuple<Instruction, uint, IMethod>> instrs) {
 			foreach (var instr in instrs) {
 				int i = method.Body.Instructions.IndexOf(instr.Item1);
 				instr.Item1.OpCode = OpCodes.Ldc_I4;
@@ -30,6 +33,7 @@ namespace Confuser.Protections.Constants {
 				method.Body.Instructions.Insert(i + 1, callInstr);
 				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Br_S, callInstr));
 			}
+			return true;
 		}
 
 		struct CFGContext {
@@ -124,10 +128,10 @@ namespace Confuser.Protections.Constants {
 			}
 		}
 
-		static void InjectStateType(CEContext ctx) {
+		private static bool InjectStateType(CEContext ctx) {
 			if (ctx.CfgCtxType == null) {
-				var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
-				var rtType = rt.GetRuntimeType("Confuser.Runtime.CFGCtx");
+				var rtType = GetRuntimeType("Confuser.Runtime.CFGCtx", ctx);
+				if (rtType == null) return false;
 
 				var injectResult = InjectHelper.Inject(rtType, ctx.Module,
 					InjectBehaviors.RenameAndInternalizeBehavior(ctx.Context));
@@ -139,6 +143,23 @@ namespace Confuser.Protections.Constants {
 				foreach (var def in injectResult)
 					ctx.Name?.MarkHelper(ctx.Context, def.Mapped, ctx.Marker, ctx.Protection);
 			}
+			return true;
+		}
+
+		private static TypeDef GetRuntimeType(string fullName, CEContext ctx) {
+			Debug.Assert(fullName != null, $"{nameof(fullName)} != null");
+			Debug.Assert(ctx != null, $"{nameof(ctx)} != null");
+
+			var logger = ctx.Context.Registry.GetRequiredService<ILoggingService>().GetLogger(nameof(ReferenceReplacer));
+			var rt = ctx.Context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
+
+			try {
+				return rt.GetRuntimeType(fullName, ctx.Module);
+			}
+			catch (ArgumentException ex) {
+				logger.Error("Failed to load runtime: " + ex.Message);
+			}
+			return null;
 		}
 
 		static void InsertEmptyStateUpdate(CFGContext ctx, ControlFlowBlock block) {
@@ -347,8 +368,8 @@ namespace Confuser.Protections.Constants {
 			}
 		}
 
-		static void ReplaceCFG(MethodDef method, List<Tuple<Instruction, uint, IMethod>> instrs, CEContext ctx) {
-			InjectStateType(ctx);
+		private static bool ReplaceCFG(MethodDef method, List<Tuple<Instruction, uint, IMethod>> instrs, CEContext ctx) {
+			if (!InjectStateType(ctx)) return false;
 
 			var graph = ControlFlowGraph.Construct(method.Body);
 			var sequence = KeySequence.ComputeKeys(graph, null);
@@ -433,6 +454,7 @@ namespace Confuser.Protections.Constants {
 					type = BlockKeyType.Incremental;
 				}
 			}
+			return true;
 		}
 	}
 }

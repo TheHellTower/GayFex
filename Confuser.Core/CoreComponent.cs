@@ -1,5 +1,4 @@
-﻿using System;
-using Confuser.Core.API;
+﻿using Confuser.Core.API;
 using Confuser.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,6 +37,8 @@ namespace Confuser.Core {
 			collection.AddSingleton(typeof(IRuntimeService), (p) => new RuntimeService());
 			collection.AddSingleton(typeof(ICompressionService), (p) => new CompressionService(p));
 			collection.AddSingleton(typeof(IAPIStore), (p) => new APIStore(p));
+
+			collection.AddSingleton(p => new CoreRuntimeService(p));
 		}
 
 		/// <inheritdoc />

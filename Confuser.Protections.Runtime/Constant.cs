@@ -37,7 +37,7 @@ namespace Confuser.Runtime {
 				s += 0x10;
 			}
 
-			b = Lzma.Decompress(o);
+			b = CompressionService.Decompress(o);
 		}
 
 		internal static T Get<T>(uint id) {

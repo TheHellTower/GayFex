@@ -34,12 +34,12 @@ namespace Confuser.Runtime {
 				s += 0x10;
 			}
 
-			return Assembly.Load(Lzma.Decompress(o));
+			return Assembly.Load(CompressionService.Decompress(o));
 		}
 	}
 	internal static class Resource {
 		private static Assembly c;
-		
+
 		internal static void Initialize() {
 			c = Resource_Shared.InitAssembly();
 			AppDomain.CurrentDomain.AssemblyResolve += Handler;

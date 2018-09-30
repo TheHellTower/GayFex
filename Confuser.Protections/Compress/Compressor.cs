@@ -10,7 +10,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.Helpers;
 using Confuser.Protections.Compress;
@@ -230,8 +229,12 @@ namespace Confuser.Protections {
 			}
 			compCtx.Deriver.Init(context, random);
 
-			var rtType = rt.GetRuntimeType(compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
-			var mainMethod = rtType.FindMethod("Main");
+			var rtType = GetRuntimeType(stubModule, context, compCtx, logger);
+			var mainMethod = rtType?.FindMethod("Main");
+			if (mainMethod == null) {
+				logger.Error("Runtime type for compressor not available. Packed assembly can't work.");
+				throw new ConfuserException(null);
+			}
 
 			uint seed = random.NextUInt32();
 			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
@@ -251,6 +254,7 @@ namespace Confuser.Protections {
 
 			var injectResult = InjectHelper.Inject(mainMethod, stubModule,
 				InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType),
+				new CompressionServiceProcessor(context, stubModule),
 				new MutationProcessor(context.Registry, stubModule) {
 					KeyFieldValues = mutationKeys,
 					LateKeyFieldValues = lateMutationKeys,
@@ -342,6 +346,33 @@ namespace Confuser.Protections {
 					//  }
 				}
 			}
+		}
+
+		private static TypeDef GetRuntimeType(ModuleDef module, IConfuserContext context, CompressorContext compCtx, ILogger logger) {
+			Debug.Assert(module != null, $"{nameof(module)} != null");
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(compCtx != null, $"{nameof(compCtx)} != null");
+			Debug.Assert(logger != null, $"{nameof(logger)} != null");
+
+			var rt = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
+
+			string runtimeTypeName = (compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
+
+			TypeDef rtType = null;
+			try {
+				rtType = rt.GetRuntimeType(runtimeTypeName, module);
+			}
+			catch (ArgumentException ex) {
+				logger.Error("Failed to load runtime: " + ex.Message);
+				return null;
+			}
+
+			if (rtType == null) {
+				logger.Error("Failed to load runtime: " + runtimeTypeName);
+				return null;
+			}
+
+			return rtType;
 		}
 	}
 }
