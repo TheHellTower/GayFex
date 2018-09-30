@@ -6,7 +6,7 @@ using System.Threading;
 namespace Confuser.Runtime {
 	public static class AntiDebugWin32 {
 		public static void Initialize() {
-			string x = "COR";
+			const string x = "COR";
 			if (Environment.GetEnvironmentVariable(x + "_PROFILER") != null ||
 			    Environment.GetEnvironmentVariable(x + "_ENABLE_PROFILING") != null)
 				Environment.FailFast(null);
@@ -21,8 +21,8 @@ namespace Confuser.Runtime {
 		[DllImport("kernel32.dll")]
 		private static extern bool IsDebuggerPresent();
 
-		[DllImport("kernel32.dll")]
-		private static extern int OutputDebugString(string str);
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern void OutputDebugString([In,Optional] string str);
 
 		private static void Worker(object thread) {
 			if (!(thread is Thread th)) {
@@ -33,32 +33,33 @@ namespace Confuser.Runtime {
 			while (true) {
 				// Managed
 				if (Debugger.IsAttached || Debugger.IsLogging())
-					Environment.FailFast("");
+					Environment.FailFast("Managed Debugger detected.");
 
 				// IsDebuggerPresent
 				if (IsDebuggerPresent())
-					Environment.FailFast("");
+					Environment.FailFast("IsDebuggerPresent");
 
 				// OpenProcess
-				Process ps = Process.GetCurrentProcess();
-				if (ps.Handle == IntPtr.Zero)
-					Environment.FailFast("");
-				ps.Close();
+				using (var ps = Process.GetCurrentProcess()) {
+					if (ps.Handle == IntPtr.Zero)
+						Environment.FailFast("CurrentProcess");
+				};
 
 				// OutputDebugString
-				if (OutputDebugString("") > IntPtr.Size)
-					Environment.FailFast("");
+				OutputDebugString("");
+				if (Marshal.GetLastWin32Error() == 0)
+					Environment.FailFast("OutputDebugString");
 
 				// CloseHandle
 				try {
 					CloseHandle(IntPtr.Zero);
 				}
 				catch {
-					Environment.FailFast("");
+					Environment.FailFast("CloseHandle");
 				}
 
 				if (!th.IsAlive)
-					Environment.FailFast("");
+					Environment.FailFast("Thread is not alive");
 
 				Thread.Sleep(1000);
 			}
