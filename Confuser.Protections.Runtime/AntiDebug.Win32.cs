@@ -21,7 +21,7 @@ namespace Confuser.Runtime {
 		[DllImport("kernel32.dll")]
 		private static extern bool IsDebuggerPresent();
 
-		[DllImport("kernel32.dll", SetLastError = true)]
+		[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
 		private static extern void OutputDebugString([In,Optional] string str);
 
 		private static void Worker(object thread) {
@@ -45,10 +45,12 @@ namespace Confuser.Runtime {
 						Environment.FailFast("CurrentProcess");
 				};
 
+#if !NET20
 				// OutputDebugString
 				OutputDebugString("");
 				if (Marshal.GetLastWin32Error() == 0)
 					Environment.FailFast("OutputDebugString");
+#endif
 
 				// CloseHandle
 				try {

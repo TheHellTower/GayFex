@@ -21,6 +21,10 @@
     </Compile>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net20'">
+    <DefineConstant Include="NET20" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Compile Remove="..\antinet\antinet\HandleProcessCorruptedStateExceptionsAttribute.cs" />
   </ItemGroup>
