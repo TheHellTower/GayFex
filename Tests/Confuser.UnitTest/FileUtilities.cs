@@ -1,10 +1,18 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace Confuser.UnitTest {
 	public static class FileUtilities {
 		public static void ClearOutput(string outputFile) {
+			for (var i = 0; i < 10; i++) {
+				if (ClearOutputInternal(outputFile)) return;
+				Task.Delay(500);
+			}
+		}
+
+		private static bool ClearOutputInternal(string outputFile) {
 			try {
 				if (File.Exists(outputFile)) {
 					File.Delete(outputFile);
@@ -20,9 +28,11 @@ namespace Confuser.UnitTest {
 			catch (UnauthorizedAccessException) { }
 
 			try {
-				Directory.Delete(Path.GetDirectoryName(outputFile), false);
+				Directory.Delete(Path.GetDirectoryName(outputFile), true);
 			}
-			catch (IOException) { }
+			catch (IOException) { return false; }
+			catch (UnauthorizedAccessException) { return false; }
+			return true;
 		}
 
 		public static byte[] ComputeFileChecksum(string file) {

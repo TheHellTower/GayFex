@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,15 +13,14 @@ namespace AntiProtections.Test {
 	public class AntiProtectionsTest {
 		private readonly ITestOutputHelper outputHelper;
 
-		protected const string ExecutableFile = "AntiProtections.exe";
-
 		protected AntiProtectionsTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		protected ILogger GetLogger() => new XunitLogger(outputHelper);
 
-		protected ConfuserProject CreateProject() {
-			var baseDir = Environment.CurrentDirectory;
+		protected ConfuserProject CreateProject(string framework)
+		{
+			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			return new ConfuserProject {
 				BaseDirectory = baseDir,
@@ -28,14 +28,22 @@ namespace AntiProtections.Test {
 			};
 		}
 
-		protected async Task VerifyTestApplication(string inputFile, string outputFile) {
+		protected async Task VerifyTestApplication(string inputFile, string outputFile)
+		{
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var info = new ProcessStartInfo(outputFile) {
+			var info = new ProcessStartInfo() {
 				RedirectStandardOutput = true,
 				UseShellExecute = false
 			};
+			if (outputFile.EndsWith(".dll")) {
+				info.FileName = "dotnet";
+				info.Arguments = '"' + outputFile + '"';
+			}
+			else
+				info.FileName = outputFile;
+
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
 				Assert.Equal("START", await stdout.ReadLineAsync());
@@ -48,5 +56,14 @@ namespace AntiProtections.Test {
 
 			FileUtilities.ClearOutput(outputFile);
 		}
+
+		protected static string GetExecutableName(string targetFramework) =>
+			targetFramework.StartsWith("netstandard") || targetFramework.StartsWith("netcoreapp") ? "AntiProtections.dll" : "AntiProtections.exe";
+
+
+		protected static string GetInputAssembly(ConfuserProject project, string targetFramework) =>
+			Path.Combine(project.BaseDirectory, GetExecutableName(targetFramework));
+
+		protected static IEnumerable<string> GetTargetFrameworks() => new string[] { "net20", "net40", "net471" };
 	}
 }

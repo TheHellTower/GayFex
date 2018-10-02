@@ -18,10 +18,11 @@ namespace CompressorWithResx.Test {
 
 		[Theory]
 		[MemberData(nameof(CompressAndExecuteTestData))]
+		[MemberData(nameof(CompressAndExecuteSkippedTestData), Skip = ".NET Framework 2.0 is not properly supported by the compressor.")]
 		[Trait("Category", "Packer")]
 		[Trait("Packer", "compressor")]
-		public async Task CompressAndExecuteTest(string compatKey, string deriverKey, string resourceProtectionMode) {
-			var baseDir = Environment.CurrentDirectory;
+		public async Task CompressAndExecuteTest(string framework, string compatKey, string deriverKey, string resourceProtectionMode) {
+			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp");
 			var inputFile = Path.Combine(baseDir, "CompressorWithResx.exe");
 			var inputSatelliteFile = Path.Combine(baseDir, "de", "CompressorWithResx.resources.dll");
@@ -77,10 +78,22 @@ namespace CompressorWithResx.Test {
 		}
 
 		public static IEnumerable<object[]> CompressAndExecuteTestData() {
+			foreach (var framework in new string[] { "net40", "net471" })
+				foreach (var data in CompressorParameterData(framework))
+					yield return data;
+		}
+
+		public static IEnumerable<object[]> CompressAndExecuteSkippedTestData() {
+			foreach (var framework in new string[] { "net20" })
+				foreach (var data in CompressorParameterData(framework))
+					yield return data;
+		}
+
+		private static IEnumerable<object[]> CompressorParameterData(string framework) {
 			foreach (var compressorCompatKey in new string[] { "true", "false" })
 				foreach (var compressorDeriveKey in new string[] { "normal", "dynamic" })
 					foreach (var resourceProtectionMode in new string[] { "none", "normal", "dynamic" })
-						yield return new object[] { compressorCompatKey, compressorDeriveKey, resourceProtectionMode };
+						yield return new object[] { framework, compressorCompatKey, compressorDeriveKey, resourceProtectionMode };
 		}
 	}
 }

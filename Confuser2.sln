@@ -18,6 +18,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib.netstandard", "dnlib\src\dnlib.netstandard.csproj", "{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{356BDB31-853E-43BB-8F9A-D8AC08F69EBB}"
+	ProjectSection(SolutionItems) = preProject
+		Tests\ConfuserEx.Test.targets = Tests\ConfuserEx.Test.targets
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompressorWithResx", "Tests\CompressorWithResx\CompressorWithResx.csproj", "{32223BE8-3E78-489C-92ED-7900B26DFF43}"
 EndProject

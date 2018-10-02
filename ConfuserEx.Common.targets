@@ -1,5 +1,5 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
+
   <ItemGroup>
     <PackageReference Include="SourceLink.Create.CommandLine" Version="*" PrivateAssets="all" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="*" PrivateAssets="all" />
@@ -15,17 +15,17 @@
     </BuildConfuserRuntimeDependsOn>
   </PropertyGroup>
 
-  <Target Name="BuildConfuserRuntime" 
-          AfterTargets="PrepareForBuild" 
-          DependsOnTargets="$(BuildConfuserRuntimeDependsOn)" 
+  <Target Name="BuildConfuserRuntime"
+          AfterTargets="PrepareForBuild"
+          DependsOnTargets="$(BuildConfuserRuntimeDependsOn)"
           Condition="'@(ConfuserRuntimeReference)' != ''" />
 
   <Target Name="_ConfuserRuntimeGetTargetFrameworks">
-    <MSBuild Projects="@(ConfuserRuntimeReference)" 
+    <MSBuild Projects="@(ConfuserRuntimeReference)"
              Targets="GetTargetFrameworks"
              BuildInParallel="$(BuildInParallel)"
              Properties="Configuration=$(Configuration)"
-             RemoveProperties="TargetFramework;RuntimeIdentifier" 
+             RemoveProperties="TargetFramework;RuntimeIdentifier"
              SkipNonexistentTargets="true">
       <Output TaskParameter="TargetOutputs" ItemName="_BuildConfuserRuntimeTargets" />
     </MSBuild>
@@ -47,10 +47,10 @@
   </Target>
 
   <Target Name="_ConfuserRuntimeBuildAndEmbedd">
-    <MSBuild Projects="%(_BuildConfuserRuntimeTargetFramework.MSBuildSourceProjectFile)" 
+    <MSBuild Projects="%(_BuildConfuserRuntimeTargetFramework.MSBuildSourceProjectFile)"
              Targets="Build"
              Properties="Configuration=$(Configuration);TargetFramework=%(_BuildConfuserRuntimeTargetFramework.Identity)"
-             RemoveProperties="TargetFrameworks;RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker" 
+             RemoveProperties="TargetFrameworks;RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
              BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="_ConfuserCoreRuntimeBuildOutput" />
     </MSBuild>
@@ -72,10 +72,10 @@
   <Target Name="CleanConfuserRuntime"
           AfterTargets="CleanReferencedProjects"
           Condition="'@(ConfuserRuntimeReference)' != ''">
-    <MSBuild Projects="@(ConfuserRuntimeReference)" 
-             Targets="Clean" 
-             Properties="Configuration=$(Configuration)" 
-             RemoveProperties="TargetFrameworks;TargetFramework;RuntimeIdentifier" 
+    <MSBuild Projects="@(ConfuserRuntimeReference)"
+             Targets="Clean"
+             Properties="Configuration=$(Configuration)"
+             RemoveProperties="TargetFrameworks;TargetFramework;RuntimeIdentifier"
              BuildInParallel="$(BuildInParallel)" />
   </Target>
 </Project>

@@ -8,12 +8,12 @@ namespace Confuser.UnitTest {
 		private readonly ITestOutputHelper outputHelper;
 		private readonly StringBuilder errorMessages;
 
-		public XunitLogger(ITestOutputHelper outputHelper) {  
+		public XunitLogger(ITestOutputHelper outputHelper) {
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 			errorMessages = new StringBuilder();
 		}
 
-		void ILogger.Debug(string msg) => 
+		void ILogger.Debug(string msg) =>
 			outputHelper.WriteLine("[DEBUG] " + msg);
 
 		void ILogger.DebugFormat(string format, params object[] args) =>
@@ -26,7 +26,7 @@ namespace Confuser.UnitTest {
 			errorMessages.AppendLine(msg);
 		}
 
-		void ILogger.ErrorException(string msg, Exception ex) => 
+		void ILogger.ErrorException(string msg, Exception ex) =>
 			throw new Exception(msg, ex);
 
 		void ILogger.ErrorFormat(string format, params object[] args) {
