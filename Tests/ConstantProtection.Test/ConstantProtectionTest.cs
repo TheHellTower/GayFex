@@ -22,7 +22,7 @@ namespace CompressorWithResx.Test {
 		[Trait("Protection", "constants")]
 		public async Task ProtectAndExecuteTest(string framework, string modeKey, bool cfgKey, string elementsKey) {
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
-			var outputDir = Path.Combine(baseDir, "testtmp");
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "ConstantProtection.exe");
 			var outputFile = Path.Combine(outputDir, "ConstantProtection.exe");
 			FileUtilities.ClearOutput(outputFile);

@@ -22,7 +22,7 @@ namespace WpfRenaming.Test {
 		[Trait("Protection", "rename")]
 		public async Task ProcessWithoutObfuscationTest(string framework) {
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
-			var outputDir = Path.Combine(baseDir, "testtmp");
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "WpfRenaming.dll");
 			var outputFile = Path.Combine(outputDir, "WpfRenaming.dll");
 			FileUtilities.ClearOutput(outputFile);

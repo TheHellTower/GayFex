@@ -22,7 +22,7 @@ namespace CompressorWithResx.Test {
 		[Trait("Protection", "ref proxy")]
 		public async Task ProtectAndExecuteTest(string framework, string modeKey, string encodingKey, string internalKey, string typeErasureKey) {
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
-			var outputDir = Path.Combine(baseDir, "testtmp");
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "RefProxyProtection.exe");
 			var outputFile = Path.Combine(outputDir, "RefProxyProtection.exe");
 			FileUtilities.ClearOutput(outputFile);

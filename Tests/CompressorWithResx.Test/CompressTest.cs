@@ -23,7 +23,7 @@ namespace CompressorWithResx.Test {
 		[Trait("Packer", "compressor")]
 		public async Task CompressAndExecuteTest(string framework, string compatKey, string deriverKey, string resourceProtectionMode) {
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
-			var outputDir = Path.Combine(baseDir, "testtmp");
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "CompressorWithResx.exe");
 			var inputSatelliteFile = Path.Combine(baseDir, "de", "CompressorWithResx.resources.dll");
 			var outputFile = Path.Combine(outputDir, "CompressorWithResx.exe");
