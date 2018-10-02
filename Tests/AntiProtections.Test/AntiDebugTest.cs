@@ -20,7 +20,10 @@ namespace AntiProtections.Test {
 		public async Task ProtectAntiDebugAndExecute(string antiDebugMode, string framework) {
 			var proj = CreateProject(framework);
 			var inputFile = GetInputAssembly(proj, framework);
+			OutputHelper.WriteLine("Input file: {0}", inputFile);
+			Assert.True(File.Exists(inputFile));
 			var outputFile = Path.Combine(proj.OutputDirectory, GetExecutableName(framework));
+			OutputHelper.WriteLine("Output file: {0}", outputFile);
 			proj.Rules.Add(new Rule() {
 				new SettingItem<IProtection>("anti debug") {
 					{ "mode", antiDebugMode }

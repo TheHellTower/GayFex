@@ -11,15 +11,14 @@ using Xunit.Abstractions;
 
 namespace AntiProtections.Test {
 	public class AntiProtectionsTest {
-		private readonly ITestOutputHelper outputHelper;
+		protected ITestOutputHelper OutputHelper { get; }
 
 		protected AntiProtectionsTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+			OutputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		protected ILogger GetLogger() => new XunitLogger(outputHelper);
+		protected ILogger GetLogger() => new XunitLogger(OutputHelper);
 
-		protected ConfuserProject CreateProject(string framework)
-		{
+		protected ConfuserProject CreateProject(string framework) {
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			return new ConfuserProject {
@@ -28,8 +27,7 @@ namespace AntiProtections.Test {
 			};
 		}
 
-		protected async Task VerifyTestApplication(string inputFile, string outputFile)
-		{
+		protected async Task VerifyTestApplication(string inputFile, string outputFile) {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
@@ -43,6 +41,8 @@ namespace AntiProtections.Test {
 			}
 			else
 				info.FileName = outputFile;
+
+			OutputHelper.WriteLine("Executing test application: {0} {1}", info.FileName, info.Arguments);
 
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
