@@ -46,10 +46,16 @@ namespace AntiProtections.Test {
 
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
-				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("This is a test.", await stdout.ReadLineAsync());
-				Assert.Equal("END", await stdout.ReadLineAsync());
-				Assert.Empty(await stdout.ReadToEndAsync());
+				try {
+					Assert.Equal("START", await stdout.ReadLineAsync());
+					Assert.Equal("This is a test.", await stdout.ReadLineAsync());
+					Assert.Equal("END", await stdout.ReadLineAsync());
+					Assert.Empty(await stdout.ReadToEndAsync());
+				} catch {
+					OutputHelper.WriteLine("Remaining output: {0}", await stdout.ReadToEndAsync());
+					throw;
+				}
+
 				Assert.True(process.HasExited);
 				Assert.Equal(42, process.ExitCode);
 			}
