@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -55,8 +56,16 @@ namespace AntiProtections.Test {
 					Assert.Empty(await stdout.ReadToEndAsync());
 					Assert.Empty(await stderr.ReadToEndAsync());
 				} catch {
+					var cnt = 0;
+					while (!process.HasExited && ++cnt < 10) {
+						await Task.Delay(500);
+					}
 					OutputHelper.WriteLine("Remaining output: {0}", await stdout.ReadToEndAsync());
 					OutputHelper.WriteLine("Remaining error: {0}", await stderr.ReadToEndAsync());
+					if (process.HasExited)
+						OutputHelper.WriteLine("Process exit code: {0:d}", process.ExitCode);
+					else
+						OutputHelper.WriteLine("Process has not exited.");
 					throw;
 				}
 
