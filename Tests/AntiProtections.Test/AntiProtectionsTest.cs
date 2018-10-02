@@ -33,6 +33,7 @@ namespace AntiProtections.Test {
 
 			var info = new ProcessStartInfo() {
 				RedirectStandardOutput = true,
+				RedirectStandardError = true,
 				UseShellExecute = false
 			};
 			if (outputFile.EndsWith(".dll")) {
@@ -46,13 +47,16 @@ namespace AntiProtections.Test {
 
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
+				var stderr = process.StandardError;
 				try {
 					Assert.Equal("START", await stdout.ReadLineAsync());
 					Assert.Equal("This is a test.", await stdout.ReadLineAsync());
 					Assert.Equal("END", await stdout.ReadLineAsync());
 					Assert.Empty(await stdout.ReadToEndAsync());
+					Assert.Empty(await stderr.ReadToEndAsync());
 				} catch {
 					OutputHelper.WriteLine("Remaining output: {0}", await stdout.ReadToEndAsync());
+					OutputHelper.WriteLine("Remaining error: {0}", await stderr.ReadToEndAsync());
 					throw;
 				}
 
