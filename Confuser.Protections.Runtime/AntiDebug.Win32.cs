@@ -5,6 +5,22 @@ using System.Threading;
 
 namespace Confuser.Runtime {
 	public static class AntiDebugWin32 {
+#if DEBUG
+		private const string ManagedDebuggerActiveMsg = "Managed Debugger detected.";
+		private const string IsDebuggerPresentMsg = "IsDebuggerPresent";
+		private const string CurrentProcessMsg = "CurrentProcess";
+		private const string OutputDebugStringMsg = "OutputDebugString";
+		private const string CloseHandleMsg = "CloseHandle";
+		private const string ThreadNotAliveMsg = "Thread is not alive";
+#else
+		private const string ManagedDebuggerActiveMsg = "";
+		private const string IsDebuggerPresentMsg = "";
+		private const string CurrentProcessMsg = "";
+		private const string OutputDebugStringMsg = "";
+		private const string CloseHandleMsg = "";
+		private const string ThreadNotAliveMsg = "";
+#endif
+
 		public static void Initialize() {
 			const string x = "COR";
 			if (Environment.GetEnvironmentVariable(x + "_PROFILER") != null ||
@@ -33,23 +49,23 @@ namespace Confuser.Runtime {
 			while (true) {
 				// Managed
 				if (Debugger.IsAttached || Debugger.IsLogging())
-					Environment.FailFast("Managed Debugger detected.");
+					Environment.FailFast(ManagedDebuggerActiveMsg);
 
 				// IsDebuggerPresent
 				if (IsDebuggerPresent())
-					Environment.FailFast("IsDebuggerPresent");
+					Environment.FailFast(IsDebuggerPresentMsg);
 
 				// OpenProcess
 				using (var ps = Process.GetCurrentProcess()) {
 					if (ps.Handle == IntPtr.Zero)
-						Environment.FailFast("CurrentProcess");
+						Environment.FailFast(CurrentProcessMsg);
 				};
 
 #if !NET20
 				// OutputDebugString
 				OutputDebugString("");
 				if (Marshal.GetLastWin32Error() == 0)
-					Environment.FailFast("OutputDebugString");
+					Environment.FailFast(OutputDebugStringMsg);
 #endif
 
 				// CloseHandle
@@ -57,11 +73,11 @@ namespace Confuser.Runtime {
 					CloseHandle(IntPtr.Zero);
 				}
 				catch {
-					Environment.FailFast("CloseHandle");
+					Environment.FailFast(CloseHandleMsg);
 				}
 
 				if (!th.IsAlive)
-					Environment.FailFast("Thread is not alive");
+					Environment.FailFast(ThreadNotAliveMsg);
 
 				Thread.Sleep(1000);
 			}
