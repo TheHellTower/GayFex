@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal partial class RegexRunnerGoMethodCompiler {
-
 		// indices for unique code fragments
 		private const int stackpop = 0;    // pop one
 		private const int stackpop2 = 1;    // pop two
@@ -31,25 +30,30 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					UpdateCachedField(_regexRunnerDef.runtextposFieldDef); //update the runtextpos field
 					Ret();
 					break;
+
 				case RegexCode.Nothing:
 					//: break Backward;
 					Back();
 					break;
+
 				case RegexCode.Goto:
 					//: Goto(Operand(0));
 					Goto(code, Operand(0), codePos);
 					break;
+
 				case RegexCode.Testref:
 					//: if (!_match.IsMatched(Operand(0)))
 					//:     break Backward;
 					CallIsMatched(Operand(0));
 					Brfalse(BackwardLabel);
 					break;
+
 				case RegexCode.Lazybranch:
 					//: Track(Textpos());
 					PushTrack(_regexRunnerDef.runtextposFieldDef);
 					Track(codePos);
 					break;
+
 				case RegexCode.Lazybranch | RegexCode.Back:
 					//: Trackframe(1);
 					//: Textto(Tracked(0));
@@ -58,6 +62,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					StRunnerField(_regexRunnerDef.runtextposFieldDef);
 					Goto(code, Operand(0), codePos);
 					break;
+
 				case RegexCode.Nullmark:
 					//: Stack(-1);
 					//: Track();
@@ -72,6 +77,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					PushStack(_regexRunnerDef.runtextposFieldDef);
 					TrackUnique(stackpop, codePos);
 					break;
+
 				case RegexCode.Nullmark | RegexCode.Back:
 				case RegexCode.Setmark | RegexCode.Back:
 					//: Stackframe(1);
@@ -90,6 +96,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					DoPush();
 					Track(codePos);
 					break;
+
 				case RegexCode.Getmark | RegexCode.Back:
 					//: Trackframe(1);
 					//: Stack(Tracked(0));
@@ -99,6 +106,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					DoPush();
 					Back();
 					break;
+
 				case RegexCode.Capturemark: {
 					//: if (!IsMatched(Operand(1)))
 					//:     break Backward;
@@ -220,7 +228,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Back();
 					break;
 
-
 				case RegexCode.Lazybranchmark: {
 					//: StackPop();
 					//: int oldMarkPos = StackPeek();
@@ -333,7 +340,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					PopDiscardStack(2);
 					Back();
 					break;
-
 
 				case RegexCode.Branchcount: {
 					//: Stackframe(2);
@@ -576,7 +582,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Back();
 					break;
 
-
 				case RegexCode.Setjump:
 					//: Stack(Trackpos(), Crawlpos());
 					//: Track();
@@ -600,7 +605,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					PopDiscardStack(2);
 					Back();
 					break;
-
 
 				case RegexCode.Backjump: {
 					//: Stackframe(2);
@@ -694,7 +698,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Bne(BackwardLabel);
 					break;
 
-
 				case RegexCode.Eol:
 					//: if (Rightchars() > 0 && CharAt(Textpos()) != '\n')
 					//:     break Backward;
@@ -705,7 +708,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Ldc((int)'\n');
 					Bne(BackwardLabel);
 					break;
-
 
 				case RegexCode.Boundary:
 				case RegexCode.Nonboundary:
@@ -975,7 +977,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					break;
 				}
 
-
 				case RegexCode.Onerep:
 				case RegexCode.Notonerep:
 				case RegexCode.Setrep:
@@ -1066,7 +1067,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					FreeLocal(lenV);
 					break;
 				}
-
 
 				case RegexCode.Oneloop:
 				case RegexCode.Notoneloop:
