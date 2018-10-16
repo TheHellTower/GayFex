@@ -8,6 +8,10 @@ insert_final_newline = true
 indent_size = 2
 indent_style = space
 
+[*.json]
+indent_size = 2
+indent_style = space
+
 [*.{proj,csproj,vbproj,props,targets,resx,vsixmanifest}]
 indent_size = 2
 indent_style = space

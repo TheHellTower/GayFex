@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition.Hosting;
 using System.ComponentModel.Composition.Primitives;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using Confuser.Core.Project;
@@ -79,28 +80,26 @@ namespace Confuser.Core {
 
 			private AggregateCatalog GetDefaultPlugInsInternal(ILogger logger) {
 				var result = new List<ComposablePartCatalog>();
+
+				LoadAssemblyCatalog("Confuser.Optimizations", result);
+				LoadAssemblyCatalog("Confuser.Protections", result);
+				LoadAssemblyCatalog("Confuser.Renamer", result);
+				LoadAssemblyCatalog("Confuser.DynCipher", result);
+
+				return new AggregateCatalog(result);
+			}
+
+			private static void LoadAssemblyCatalog(string assemblyName, IList<ComposablePartCatalog> catalogs)
+			{
+				Debug.Assert(catalogs != null, $"{nameof(catalogs)} != null");
+				Debug.Assert(assemblyName != null, $"{nameof(assemblyName)} != null");
+
 				try {
-					result.Add(new AssemblyCatalog(Assembly.Load("Confuser.Protections")));
+					catalogs.Add(new AssemblyCatalog(Assembly.Load(assemblyName)));
 				}
 				catch (Exception) {
 					//logger.WarnException("Failed to load built-in protections.", ex);
 				}
-
-				try {
-					result.Add(new AssemblyCatalog(Assembly.Load("Confuser.Renamer")));
-				}
-				catch (Exception) {
-					//logger.WarnException("Failed to load renamer.", ex);
-				}
-
-				try {
-					result.Add(new AssemblyCatalog(Assembly.Load("Confuser.DynCipher")));
-				}
-				catch (Exception) {
-					//logger.WarnException("Failed to load dynamic cipher library.", ex);
-				}
-
-				return new AggregateCatalog(result);
 			}
 		}
 	}

@@ -195,6 +195,10 @@
       <Project>{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}</Project>
       <Name>Confuser.DynCipher</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Confuser.Optimizations\Confuser.Optimizations.csproj">
+      <Project>{1bb64400-0dec-47e2-96ab-2d9adf7ec422}</Project>
+      <Name>Confuser.Optimizations</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Confuser.Protections.Exports\Confuser.Protections.Exports.csproj">
       <Project>{03627089-a2ab-40e4-b22f-2262bed6753e}</Project>
       <Name>Confuser.Protections.Exports</Name>
