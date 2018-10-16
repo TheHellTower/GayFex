@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CompressorWithResx.Test {
+namespace CompileResx.Test {
 	public sealed class CompileRegexTest {
 		private readonly ITestOutputHelper outputHelper;
 
@@ -20,7 +20,7 @@ namespace CompressorWithResx.Test {
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", "compile regex")]
-		public async Task CompressAndExecuteTest() {
+		public async Task OptimizeAndExecuteTest() {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
 			var inputFile = Path.Combine(baseDir, "CompileRegex.exe");
