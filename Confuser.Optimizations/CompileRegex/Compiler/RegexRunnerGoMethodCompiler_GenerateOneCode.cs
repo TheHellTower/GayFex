@@ -612,8 +612,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					//: while (Crawlpos() != Stacked(1))
 					//:     Uncapture();
 					//: break Backward;
-					var l1 = CreateLabel();
-					var l2 = CreateLabel();
 
 					PopStack();
 					// TODO: Verify: Original implementation did a forced load of the field and did not use the cache variable. Not sure why. It needs to be verified why the field was used.
@@ -623,19 +621,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					PopStack();
 					Sub();
 					StRunnerField(_regexRunnerDef.runtrackposFieldDef);
-					Dup();
-					CallCrawlpos();
-					Beq(l2);
-
-					MarkLabel(l1);
-					CallUncapture();
-					Dup();
-					CallCrawlpos();
-					Bne(l1);
-
-					MarkLabel(l2);
-					Pop();
-					Back();
+					CrawlAndUncapture();
 					break;
 				}
 
@@ -670,20 +656,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					var l2 = CreateLabel();
 
 					PopTrack();
-
-					Dup();
-					CallCrawlpos();
-					Beq(l2);
-
-					MarkLabel(l1);
-					CallUncapture();
-					Dup();
-					CallCrawlpos();
-					Bne(l1);
-
-					MarkLabel(l2);
-					Pop();
-					Back();
+					CrawlAndUncapture();
 					break;
 				}
 
@@ -1360,6 +1333,31 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				default:
 					throw new NotImplementedException();
 			}
+		}
+		private void CrawlAndUncapture() {
+			// Creates something like this:
+			//: while (Crawlpos() != x)
+			//:     Uncapture();
+			//: break Backward;
+			// x in this case is what ever is on the stack. The value is kept on the
+			// via duplication.
+
+			var l1 = CreateLabel();
+			var l2 = CreateLabel();
+
+			Dup();
+			CallCrawlpos();
+			Beq(l2);
+
+			MarkLabel(l1);
+			CallUncapture();
+			Dup();
+			CallCrawlpos();
+			Bne(l1);
+
+			MarkLabel(l2);
+			Pop();
+			Back();
 		}
 	}
 }
