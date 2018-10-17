@@ -17,9 +17,7 @@ namespace Confuser.Protections {
 
 		public ProtectionPreset Preset => ProtectionPreset.Maximum;
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) {
-			//
-		}
+		void IConfuserComponent.Initialize(IServiceCollection services) => services.AddRuntime();
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new AntiDumpProtectionPhase(this));

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Confuser.Core;
@@ -9,6 +10,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Protections {
 	internal sealed class AntiDebugProtectionPhase : IProtectionPhase {
@@ -26,34 +28,14 @@ namespace Confuser.Protections {
 		public bool ProcessAll => false;
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
-			var rt = context.Registry.GetRequiredService<IRuntimeService>();
+			var rt = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var name = context.Registry.GetRequiredService<INameService>();
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(AntiDebugProtection._Id);
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
-				var mode = parameters.GetParameter(context, module, Parent.Parameters.Mode);
-
-				TypeDef rtType = null;
-				switch (mode) {
-					case AntiDebugMode.Safe:
-						rtType = rt.GetRuntimeType("Confuser.Runtime.AntiDebugSafe");
-						break;
-					case AntiDebugMode.Win32:
-						rtType = rt.GetRuntimeType("Confuser.Runtime.AntiDebugWin32");
-						break;
-					case AntiDebugMode.Antinet:
-						rtType = rt.GetRuntimeType("Confuser.Runtime.AntiDebugAntinet");
-						break;
-					default:
-						throw new UnreachableException();
-				}
-
-				var initMethod = rtType.FindMethod("Initialize");
-				if (initMethod == null) {
-					logger.LogError("Could not find \"Initialize\" for {0}", rtType.FullName);
-					continue;
-				}
+				var initMethod = GetInitMethod(module, context, parameters, rt, logger);
+				if (initMethod == null) continue;
 
 				var injectResult = InjectHelper.Inject(initMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 				var cctor = module.GlobalType.FindStaticConstructor();
@@ -62,6 +44,53 @@ namespace Confuser.Protections {
 				foreach (var dependencies in injectResult.InjectedDependencies)
 					marker.Mark(context, dependencies.Mapped, Parent);
 			}
+		}
+
+		private MethodDef GetInitMethod(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, IRuntimeModule runtimeModule, ILogger logger) {
+			Debug.Assert(module != null, $"{nameof(module)} != null");
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(parameters != null, $"{nameof(parameters)} != null");
+			Debug.Assert(runtimeModule != null, $"{nameof(runtimeModule)} != null");
+			Debug.Assert(logger != null, $"{nameof(logger)} != null");
+
+			var mode = parameters.GetParameter(context, module, Parent.Parameters.Mode);
+
+			string runtimeTypeName = null;
+			switch (mode) {
+				case AntiDebugMode.Safe:
+					runtimeTypeName = "Confuser.Runtime.AntiDebugSafe";
+					break;
+				case AntiDebugMode.Win32:
+					runtimeTypeName = "Confuser.Runtime.AntiDebugWin32";
+					break;
+				case AntiDebugMode.Antinet:
+					runtimeTypeName = "Confuser.Runtime.AntiDebugAntinet";
+					break;
+				default:
+					throw new UnreachableException();
+			}
+
+			TypeDef rtType = null;
+			try {
+				rtType = runtimeModule.GetRuntimeType(runtimeTypeName, module);
+			}
+			catch (ArgumentException ex) {
+				logger.LogError("Failed to load runtime: {0}", ex.Message);
+				return null;
+			}
+
+			if (rtType == null) {
+				logger.LogError("Failed to load runtime: {0}", runtimeTypeName);
+				return null;
+			}
+
+			var initMethod = rtType.FindMethod("Initialize");
+			if (initMethod == null) {
+				logger.LogError("Could not find \"Initialize\" for {0}", rtType.FullName);
+				return null;
+			}
+
+			return initMethod;
 		}
 	}
 }

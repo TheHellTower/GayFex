@@ -13,6 +13,8 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Protections.ReferenceProxy {
 	internal sealed class StrongMode : RPMode {
@@ -116,6 +118,9 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (proxy.Field == null)
 				proxy = (CreateField(ctx, delegateType), proxy.BridgeMethod);
 
+			if (proxy.Field == null)
+				return;
+
 			// Create proxy bridge
 			Debug.Assert(proxy.BridgeMethod == null);
 
@@ -147,6 +152,9 @@ namespace Confuser.Protections.ReferenceProxy {
 				proxy = (CreateField(ctx, delegateType), null);
 				fields[key] = proxy;
 			}
+
+			if (proxy.Field == null)
+				return;
 
 			// Insert field load & replace instruction
 			if (argBeginIndex == instrIndex) {
@@ -202,6 +210,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			TypeSig fieldType = new CModOptSig(randomType, delegateType.ToTypeSig());
 
+			var keyAttrType = GetKeyAttr(ctx);
+			if (keyAttrType == null) return null;
 			var field = new FieldDefUser("", new FieldSig(fieldType), FieldAttributes.Static | FieldAttributes.Assembly);
 			field.CustomAttributes.Add(new CustomAttribute(GetKeyAttr(ctx).FindInstanceConstructors().First()));
 			delegateType.Fields.Add(field);
@@ -218,9 +228,11 @@ namespace Confuser.Protections.ReferenceProxy {
 			int index = ctx.Random.NextInt32(keyAttrs.Length);
 			if (keyAttrs[index] == null) {
 				using (InjectHelper.CreateChildContext()) {
-					var rt = ctx.Context.Registry.GetRequiredService<IRuntimeService>();
 					var name = ctx.Context.Registry.GetService<INameService>();
 					var marker = ctx.Context.Registry.GetRequiredService<IMarkerService>();
+
+					var rtType = GetRuntimeType("Confuser.Runtime.RefProxyKey", ctx);
+					if (rtType == null) return null;
 
 					ctx.DynCipher.GenerateExpressionPair(
 						ctx.Random,
@@ -232,7 +244,6 @@ namespace Confuser.Protections.ReferenceProxy {
 						.GenerateCIL(expression)
 						.Compile<Func<int, int>>();
 
-					var rtType = rt.GetRuntimeType("Confuser.Runtime.RefProxyKey");
 
 					var injectResult = InjectHelper.Inject(rtType, ctx.Module,
 						InjectBehaviors.RenameAndNestBehavior(ctx.Context, rtType),
@@ -262,8 +273,8 @@ namespace Confuser.Protections.ReferenceProxy {
 			int index = ctx.Random.NextInt32(initDescs.Length);
 			if (initDescs[index] == null) {
 				using (InjectHelper.CreateChildContext()) {
-					var rtType = rt.GetRuntimeType("Confuser.Runtime.RefProxyStrong");
-					var rtInitMethod = rtType.FindMethod("Initialize");
+					var rtInitMethod = GetRuntimeInitMethod(ctx);
+					if (rtInitMethod == null) return null;
 
 					var desc = new InitMethodDesc();
 
@@ -302,9 +313,51 @@ namespace Confuser.Protections.ReferenceProxy {
 			return initDescs[index];
 		}
 
+		private static TypeDef GetRuntimeType(string fullName, RPContext ctx) {
+			Debug.Assert(fullName != null, $"{nameof(fullName)} != null");
+			Debug.Assert(ctx != null, $"{nameof(ctx)} != null");
+
+			var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ReferenceProxyProtection._Id);
+			return GetRuntimeType(fullName, ctx, logger);
+		}
+
+		private static TypeDef GetRuntimeType(string fullName, RPContext ctx, ILogger logger) {
+			Debug.Assert(fullName != null, $"{nameof(fullName)} != null");
+			Debug.Assert(ctx != null, $"{nameof(ctx)} != null");
+			Debug.Assert(logger != null, $"{nameof(logger)} != null");
+
+			var rt = ctx.Context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
+
+			try {
+				return rt.GetRuntimeType(fullName, ctx.Module);
+			}
+			catch (ArgumentException ex) {
+				logger.LogError("Failed to load runtime: {0}", ex.Message);
+			}
+			return null;
+		}
+
+		private static MethodDef GetRuntimeInitMethod(RPContext ctx) {
+			Debug.Assert(ctx != null, $"{nameof(ctx)} != null");
+
+			var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ReferenceProxyProtection._Id);
+			var rtType = GetRuntimeType("Confuser.Runtime.RefProxyStrong", ctx, logger);
+			if (rtType == null) return null;
+
+			var initMethod = rtType.FindMethod("Initialize");
+			if (initMethod == null) {
+				logger.LogError("Could not find \"Initialize\" for {0}", rtType.FullName);
+				return null;
+			}
+
+			return initMethod;
+		}
+
 		public override void Finalize(RPContext ctx) {
 			foreach (var field in fields) {
 				var init = GetInitMethod(ctx, field.Key.Encoding);
+				if (init == null) return;
+
 				byte opKey;
 				do {
 					// No zero bytes

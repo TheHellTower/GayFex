@@ -13,9 +13,13 @@ namespace AntiProtections {
 			Console.WriteLine(Regex.Match("Test 1234 Test", @".+?(\d+).+").Groups[1].Value);
 			Console.WriteLine(Regex.IsMatch("test@example.com", rfc822regEx) ? "valid mail" : "invalid mail");
 
+#if REGEX_TIMEOUT_UNSUPPORTED
+			Console.WriteLine("invalid mail");
+#else
 			var rnd = new Random();
 			var timeSpan = TimeSpan.FromSeconds(rnd.Next(1, 2));
 			Console.WriteLine(Regex.IsMatch("test@.com", rfc822regEx, RegexOptions.CultureInvariant, timeSpan) ? "valid mail" : "invalid mail");
+#endif
 			Console.WriteLine("END");
 			return 42;
 		}

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.Helpers;
@@ -16,6 +15,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Protections.Resources {
 	internal sealed class InjectPhase : IProtectionPhase {
@@ -66,7 +66,8 @@ namespace Confuser.Protections.Resources {
 					throw new UnreachableException();
 				}
 
-				InjectHelpers(context, moduleCtx);
+				if (!InjectHelpers(context, moduleCtx)) return;
+
 
 				var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, moduleCtx.InitMethod));
@@ -75,14 +76,18 @@ namespace Confuser.Protections.Resources {
 			}
 		}
 
-		private void InjectHelpers(IConfuserContext context, REContext moduleCtx) {
+		private bool InjectHelpers(IConfuserContext context, REContext moduleCtx) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(moduleCtx != null, $"{nameof(moduleCtx)} != null");
 
-			var rt = context.Registry.GetRequiredService<IRuntimeService>();
+			var rt = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
 			var name = context.Registry.GetRequiredService<INameService>();
 			var constant = context.Registry.GetRequiredService<IConstantService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ResourceProtection._Id);
+
+			var rtInitMethod = GetInitMethod(moduleCtx.Module, context, rt, logger);
+			if (rtInitMethod == null) return false;
 
 			var dataType = new TypeDefUser("", "ConfuserResourceData", context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
 				Layout = TypeAttributes.ExplicitLayout,
@@ -103,9 +108,6 @@ namespace Confuser.Protections.Resources {
 			context.CurrentModule.GlobalType.Fields.Add(moduleCtx.DataField);
 			name?.MarkHelper(context, moduleCtx.DataField, marker, Parent);
 
-			var rtName = context.Packer != null ? "Confuser.Runtime.Resource_Packer" : "Confuser.Runtime.Resource";
-			var rtType = rt.GetRuntimeType(rtName);
-			var rtInitMethod = rtType.FindMethod("Initialize");
 
 			var lateMutationKeys = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
 				.Add(MutationField.KeyI0, moduleCtx.loadSizeUpdate)
@@ -113,6 +115,7 @@ namespace Confuser.Protections.Resources {
 
 			var injectResult = InjectHelper.Inject(rtInitMethod, context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
+				new CompressionServiceProcessor(context, context.CurrentModule),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
 					PlaceholderProcessor = (module, method, arg) => {
@@ -132,6 +135,38 @@ namespace Confuser.Protections.Resources {
 				name?.MarkHelper(context, member.Mapped, marker, Parent);
 			}
 			constant.ExcludeMethod(context, injectResult.Requested.Mapped);
+			return true;
+		}
+
+		private static MethodDef GetInitMethod(ModuleDef module, IConfuserContext context, IRuntimeModule runtimeModule, ILogger logger) {
+			Debug.Assert(module != null, $"{nameof(module)} != null");
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(runtimeModule != null, $"{nameof(runtimeModule)} != null");
+			Debug.Assert(logger != null, $"{nameof(logger)} != null");
+
+			string runtimeTypeName = context.Packer != null ? "Confuser.Runtime.Resource_Packer" : "Confuser.Runtime.Resource"; ;
+
+			TypeDef rtType = null;
+			try {
+				rtType = runtimeModule.GetRuntimeType(runtimeTypeName, module);
+			}
+			catch (ArgumentException ex) {
+				logger.LogError("Failed to load runtime: {0}", ex.Message);
+				return null;
+			}
+
+			if (rtType == null) {
+				logger.LogError("Failed to load runtime: {0}", runtimeTypeName);
+				return null;
+			}
+
+			var initMethod = rtType.FindMethod("Initialize");
+			if (initMethod == null) {
+				logger.LogError("Could not find \"Initialize\" for {0}", rtType.FullName);
+				return null;
+			}
+
+			return initMethod;
 		}
 	}
 }

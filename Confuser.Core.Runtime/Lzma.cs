@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using SevenZip.Compression.LZMA;
 
-namespace Confuser.Runtime {
+namespace Confuser.Core.Runtime {
 	internal static partial class Lzma {
 		public static byte[] Decompress(byte[] data) {
 			var s = new MemoryStream(data);

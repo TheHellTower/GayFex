@@ -17,12 +17,13 @@ namespace CompileResx.Test {
 		public CompileRegexTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		[Fact]
+		[Theory]
+		[MemberData(nameof(OptimizeAndExecuteTestData))]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", "compile regex")]
-		public async Task OptimizeAndExecuteTest() {
-			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp");
+		public async Task OptimizeAndExecuteTest(string framework) {
+			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "CompileRegex.exe");
 			var outputFile = Path.Combine(outputDir, "CompileRegex.exe");
 			FileUtilities.ClearOutput(outputFile);
@@ -65,6 +66,11 @@ namespace CompileResx.Test {
 			}
 
 			FileUtilities.ClearOutput(outputFile);
+		}
+
+		public static IEnumerable<object[]> OptimizeAndExecuteTestData() {
+			foreach (var framework in new string[] { "net20", "net40", "net471" })
+					yield return new object[] { framework };
 		}
 	}
 }

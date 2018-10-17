@@ -21,9 +21,9 @@ namespace Confuser.Protections {
 
 		internal ResourceProtectionParameters Parameters { get; } = new ResourceProtectionParameters();
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) { }
+		void IConfuserComponent.Initialize(IServiceCollection services) => services.AddRuntime();
 
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new InjectPhase(this));
 	}
 }

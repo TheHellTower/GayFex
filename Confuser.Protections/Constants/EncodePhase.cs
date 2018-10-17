@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -75,7 +73,8 @@ namespace Confuser.Protections.Constants {
 					throw new UnreachableException();
 				token.ThrowIfCancellationRequested();
 			}
-			ReferenceReplacer.ReplaceReference(Parent, moduleCtx, parameters);
+
+			if (!ReferenceReplacer.ReplaceReference(Parent, moduleCtx, parameters)) return;
 
 			// compress
 			var encodedBuff = new byte[moduleCtx.EncodedBuffer.Count * 4];

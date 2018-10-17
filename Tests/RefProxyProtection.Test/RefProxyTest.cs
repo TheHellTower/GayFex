@@ -21,9 +21,9 @@ namespace CompressorWithResx.Test {
 		[MemberData(nameof(ProtectAndExecuteTestData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "ref proxy")]
-		public async Task ProtectAndExecuteTest(string modeKey, string encodingKey, string internalKey, string typeErasureKey) {
-			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp");
+		public async Task ProtectAndExecuteTest(string framework, string modeKey, string encodingKey, string internalKey, string typeErasureKey) {
+			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "RefProxyProtection.exe");
 			var outputFile = Path.Combine(outputDir, "RefProxyProtection.exe");
 			FileUtilities.ClearOutput(outputFile);
@@ -72,11 +72,12 @@ namespace CompressorWithResx.Test {
 		}
 
 		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
-			foreach (var mode in new string[] { "Mild", "Strong" })
-				foreach (var encoding in new string[] { "Normal", "Expression", "x86" })
-					foreach (var internalAlso in new string[] { "true", "false" })
-						foreach (var typeErasure in new string[] { "true", "false" })
-							yield return new object[] { mode, encoding, internalAlso, typeErasure };
+			foreach (var framework in new string[] { "net20", "net40", "net471" })
+				foreach (var mode in new string[] { "Mild", "Strong" })
+					foreach (var encoding in new string[] { "Normal", "Expression", "x86" })
+						foreach (var internalAlso in new string[] { "true", "false" })
+							foreach (var typeErasure in new string[] { "true", "false" })
+								yield return new object[] { framework, mode, encoding, internalAlso, typeErasure };
 		}
 	}
 }

@@ -17,6 +17,7 @@
   <ItemGroup Label="Nuget Dependencies">
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.*" />
+    <PackageReference Include="NuGet.Frameworks" Version="4.8.0" />
     <PackageReference Include="System.Threading" Version="4.*" />
     <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.*" />
@@ -27,6 +28,10 @@
     <ProjectReference Include="..\dnlib\src\dnlib.netstandard.csproj" />
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Runtime Project Dependencies">
+    <ConfuserRuntimeReference Include="..\Confuser.Core.Runtime\Confuser.Core.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
