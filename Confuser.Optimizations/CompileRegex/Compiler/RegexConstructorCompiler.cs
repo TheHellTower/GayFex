@@ -75,7 +75,13 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			// Set Options
 			Stfld(_roptionsFieldDef, () => Ldc((int)expression.Options));
 
-			if (expression.StaticTimeout && expression.Timeout.HasValue) {
+			if (_internalMatchTimeoutFieldDef == null) {
+				// This seems to be a .NET version prior to .NET 4.5
+				// This means that there is no timeout support at all.
+				Debug.Assert(expression.StaticTimeout, "Only static timeout supported for old .NET.");
+				Debug.Assert(!expression.Timeout.HasValue, "Timeout is not supported for old .NET.");
+			}
+			else if (expression.StaticTimeout && expression.Timeout.HasValue) {
 				var ticks = expression.Timeout.Value.Ticks;
 
 				// Set the timeout to the known static value.

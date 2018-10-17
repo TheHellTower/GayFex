@@ -53,7 +53,7 @@ namespace Confuser.Optimizations.CompileRegex {
 				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType))),
 				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType, regexOptionsType))),
 				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType, regexOptionsType, timeSpanType)))
-			);
+			).RemoveAll(m => m == null);
 		}
 
 		public IRegexTargetMethod GetMatchingMethod(IMethod method) {
@@ -70,7 +70,7 @@ namespace Confuser.Optimizations.CompileRegex {
 		}
 
 		private static RegexTargetMethod ScanMethod(MethodDef method) {
-			Debug.Assert(method != null, $"{nameof(method)} != null");
+			if (method == null) return null;
 
 			var patternIndex = method.Parameters.Where(p => p.Name == "pattern").Select(p => p.Index).First();
 			var optionsIndex = method.Parameters.Where(p => p.Name == "options").Select(p => p.Index).DefaultIfEmpty(-1).First();
