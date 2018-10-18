@@ -10,11 +10,11 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CompressorWithResx.Test {
-	public sealed class CompressTest {
+namespace RefProxyProtection.Test {
+	public sealed class RefProxyTest {
 		private readonly ITestOutputHelper outputHelper;
 
-		public CompressTest(ITestOutputHelper outputHelper) =>
+		public RefProxyTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		[Theory]

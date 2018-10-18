@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CompressorWithResx.Test {
+namespace ConstantProtection.Test {
 	public sealed class ConstantProtectionTest {
 		private readonly ITestOutputHelper outputHelper;
 
