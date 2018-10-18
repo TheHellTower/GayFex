@@ -236,14 +236,19 @@ namespace Confuser.Core.Services {
 
 				while (index != instrIndex && index < method.Body.Instructions.Count) {
 					var currentInstr = Instructions[index];
-					currentInstr.CalculateStackUsage(out push, out pop);
-					if (pop > evalStack.Count) return null; // something is wrong
-					for (var i = 0; i < pop; i++)
-						evalStack.Pop();
 
-					if (push > 0) {
-						Debug.Assert(push == 1); // i.e. push
+					currentInstr.CalculateStackUsage(out push, out pop);
+					int stackUsage = pop - push;
+					if (stackUsage < 0) {
+						Debug.Assert(stackUsage == -1); // i.e. push
 						evalStack.Push(index);
+					}
+					else {
+						if (evalStack.Count < stackUsage)
+							return null;
+
+						for (int i = 0; i < stackUsage; i++)
+							evalStack.Pop();
 					}
 
 					object instrOperand = currentInstr.Operand;

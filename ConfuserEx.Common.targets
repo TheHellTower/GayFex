@@ -14,6 +14,10 @@
       _ConfuserRuntimeBuildAndEmbedd;
     </BuildConfuserRuntimeDependsOn>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <ConfuserRuntimeConfiguration Condition="'$(ConfuserRuntimeConfiguration)' == ''">$(Configuration)</ConfuserRuntimeConfiguration>
+  </PropertyGroup>
 
   <Target Name="BuildConfuserRuntime"
           AfterTargets="PrepareForBuild"
@@ -24,7 +28,7 @@
     <MSBuild Projects="@(ConfuserRuntimeReference)"
              Targets="GetTargetFrameworks"
              BuildInParallel="$(BuildInParallel)"
-             Properties="Configuration=$(Configuration)"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration)"
              RemoveProperties="TargetFramework;RuntimeIdentifier"
              SkipNonexistentTargets="true">
       <Output TaskParameter="TargetOutputs" ItemName="_BuildConfuserRuntimeTargets" />
@@ -49,7 +53,7 @@
   <Target Name="_ConfuserRuntimeBuildAndEmbedd">
     <MSBuild Projects="%(_BuildConfuserRuntimeTargetFramework.MSBuildSourceProjectFile)"
              Targets="Build"
-             Properties="Configuration=$(Configuration);TargetFramework=%(_BuildConfuserRuntimeTargetFramework.Identity)"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration);TargetFramework=%(_BuildConfuserRuntimeTargetFramework.Identity)"
              RemoveProperties="TargetFrameworks;RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
              BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="_ConfuserCoreRuntimeBuildOutput" />
@@ -74,7 +78,7 @@
           Condition="'@(ConfuserRuntimeReference)' != ''">
     <MSBuild Projects="@(ConfuserRuntimeReference)"
              Targets="Clean"
-             Properties="Configuration=$(Configuration)"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration)"
              RemoveProperties="TargetFrameworks;TargetFramework;RuntimeIdentifier"
              BuildInParallel="$(BuildInParallel)" />
   </Target>
