@@ -216,7 +216,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		internal void Box(ITypeDefOrRef typeRef) {
 			Debug.Assert(typeRef != null, $"{nameof(typeRef)} != null");
 
-			Add(Instruction.Create(OpCodes.Box, typeRef));
+			Add(Instruction.Create(OpCodes.Box, (ITypeDefOrRef)_importer.Import(typeRef)));
 		}
 
 		internal void Callvirt(MethodDef method) {

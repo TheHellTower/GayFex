@@ -27,8 +27,10 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private readonly MethodDef _validateMatchTimeoutMethodDef;
 
 		private readonly ITypeDefOrRef _stringTypeRef;
+		private readonly ITypeDefOrRef _int32TypeRef;
 		private readonly TypeDef _timespanTypeDef;
 		private readonly TypeSig _timespanTypeSig;
+
 
 		private readonly MethodDef _timespanFromTicksMethodDef;
 
@@ -61,6 +63,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			_defaultMatchTimeoutFieldDef = _regexTypeDef.FindField("DefaultMatchTimeout", new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
 
 			_stringTypeRef = module.CorLibTypes.String.ToTypeDefOrRef();
+			_int32TypeRef = module.CorLibTypes.Int32.ToTypeDefOrRef();
 			_timespanFromTicksMethodDef = _timespanTypeDef.FindMethod("FromTicks", MethodSig.CreateStatic(_timespanTypeSig, module.CorLibTypes.Int64));
 		}
 
@@ -149,10 +152,9 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			Debug.Assert(field != null, $"{nameof(field)} != null");
 			Debug.Assert(ht != null, $"{nameof(ht)} != null");
 
-			var fieldTypeDef = field.FieldType.TryGetTypeDef();
-			if (fieldTypeDef == null) throw new InvalidOperationException("Failed to get the type of the field " + field.FullName);
+			var fieldTypeDef = field.FieldType.TryGetTypeRef().ResolveThrow();
 
-			var addMethod = fieldTypeDef.FindMethods("Add").Where(m => m.Parameters.Count == 2).FirstOrDefault();
+			var addMethod = fieldTypeDef.FindMethods("Add").Where(m => m.MethodSig.Params.Count == 2).FirstOrDefault();
 			if (addMethod == null) throw new InvalidOperationException("There is no add method for this list?!");
 
 			Stfld(field, () => Newobj(fieldTypeDef.FindDefaultConstructor()));
@@ -165,7 +167,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Ldc(intKey);
 
 					if (!addMethod.Parameters[0].Type.GetIsValueType()) {
-						Box(addMethod.Parameters[0].Type.ToTypeDefOrRef());
+						Box(_int32TypeRef);
 					}
 				}
 				else
@@ -173,7 +175,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 				Ldc((int)en.Value);
 				if (!addMethod.Parameters[1].Type.GetIsValueType()) {
-					Box(addMethod.Parameters[1].Type.ToTypeDefOrRef());
+					Box(_int32TypeRef);
 				}
 
 				Callvirt(addMethod);
