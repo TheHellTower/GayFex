@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Optimizations.Exports\Confuser.Optimizations.Exports.csproj" />
   </ItemGroup>
 
   <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
