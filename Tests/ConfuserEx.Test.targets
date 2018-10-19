@@ -15,6 +15,10 @@
     </ConfuserUnitTestAssemblyDependsOn>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <ConfuserUnitTestAssemblyConfiguration Condition="'$(ConfuserUnitTestAssemblyConfiguration=' == ''">$(Configuration)</ConfuserUnitTestAssemblyConfiguration>
+  </PropertyGroup>
+
   <Target Name="ConfuserUnitTestAssembly"
           AfterTargets="CopyFilesToOutputDirectory"
           DependsOnTargets="$(ConfuserUnitTestAssemblyDependsOn)"
@@ -38,7 +42,7 @@
     <MSBuild Projects="$(_ConfuserUnitTestTargetProject)"
              Targets="GetTargetFrameworks"
              BuildInParallel="$(BuildInParallel)"
-             Properties="Configuration=$(Configuration)"
+             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration)"
              RemoveProperties="TargetFramework;RuntimeIdentifier"
              SkipNonexistentTargets="true">
       <Output TaskParameter="TargetOutputs" ItemName="_ConfuserUnitTestAssemblyTargets" />
@@ -80,7 +84,7 @@
   <Target Name="_ConfuserUnitTestAssemblyBuildAndCopyToOutput">
     <MSBuild Projects="%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceProjectFile)"
              Targets="Build"
-             Properties="Configuration=$(Configuration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);OutDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName)"
+             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);OutDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName)"
              RemoveProperties="RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
              BuildInParallel="$(BuildInParallel)" />
   </Target>
@@ -88,7 +92,7 @@
   <Target Name="_ConfuserUnitTestAssemblyCleanupProjects">
     <MSBuild Projects="%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceProjectFile)"
              Targets="Clean"
-             Properties="Configuration=$(Configuration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);OutDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName)"
+             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);OutDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName)"
              RemoveProperties="RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
              BuildInParallel="$(BuildInParallel)" />
   </Target>
