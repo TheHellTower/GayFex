@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Optimizations.Services;
@@ -60,12 +57,12 @@ namespace Confuser.Optimizations.CompileRegex {
 						compileResult.StaticHelperMethods.TryGetValue(result.regexMethod, out newMethod);
 					}
 
-					method.Body.Instructions.Remove(result.patternInstr);
+					method.Body.RemoveInstruction(result.patternInstr);
 					if (result.optionsInstr != null)
-						method.Body.Instructions.Remove(result.optionsInstr);
+						method.Body.RemoveInstruction(result.optionsInstr);
 					if (result.compileDef.StaticTimeout && result.timeoutInstrs != null) {
 						foreach (var timeoutInstr in result.timeoutInstrs)
-							method.Body.Instructions.Remove(timeoutInstr);
+							method.Body.RemoveInstruction(timeoutInstr);
 					}
 
 					Debug.Assert(newMethod != null, $"{nameof(newMethod)} != null");

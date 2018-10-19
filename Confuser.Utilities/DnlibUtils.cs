@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.Pdb;
 using dnlib.IO;
 
 namespace Confuser {
@@ -375,6 +377,81 @@ namespace Confuser {
 							targets[i] = newInstr;
 				}
 			}
+		}
+
+		/// <summary>
+		/// This method removes an instruction from the body and fixes the the references to the removed instruction.
+		/// </summary>
+		/// <param name="body">The body to process</param>
+		/// <param name="instr">The instruction that is removed</param>
+		/// <remarks>This method fixes branch instructions, exception handlers and debug symbols.</remarks>
+		public static void RemoveInstruction(this CilBody body, Instruction instr) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (instr == null) throw new ArgumentNullException(nameof(instr));
+
+			if (!body.HasInstructions) {
+				Debug.Fail("No instructions in method?!");
+				return;
+			}
+
+			var indexOfInstr = body.Instructions.IndexOf(instr);
+			Debug.Assert(indexOfInstr >= 0, "Instruction not present in method.");
+			if (indexOfInstr < 0) return;
+
+			// Scan all other instructions for jumps and connect them to the next instruction.
+			foreach (var testInstr in body.Instructions) {
+				switch (testInstr.Operand) {
+					case Instruction opInstr:
+						if (instr.Equals(opInstr))
+							testInstr.Operand = body.Instructions[indexOfInstr + 1];
+						break;
+					case Instruction[] opInstrs:
+						for (var i = 0; i < opInstrs.Length; i++) {
+							if (instr.Equals(opInstrs[i]))
+								opInstrs[i] = body.Instructions[indexOfInstr + 1];
+						}
+						break;
+				}
+			}
+
+			// Now there also may be exception handlers starting or ending at the instruction we are deleting.
+			foreach (var exHandler in body.ExceptionHandlers) {
+				if (instr.Equals(exHandler.TryStart))
+					exHandler.TryStart = body.Instructions[indexOfInstr + 1];
+				if (instr.Equals(exHandler.TryEnd))
+					exHandler.TryEnd = body.Instructions[indexOfInstr - 1];
+
+				if (instr.Equals(exHandler.HandlerStart))
+					exHandler.HandlerStart = body.Instructions[indexOfInstr + 1];
+				if (instr.Equals(exHandler.HandlerEnd))
+					exHandler.HandlerEnd = body.Instructions[indexOfInstr - 1];
+			}
+
+			// Any finally there may be debug symbols that point to the instruction that is removed.
+			if (body.HasPdbMethod) {
+				Debug.Assert(body.PdbMethod != null, $"{nameof(body)}.PdbMethod != null");
+
+				var unprocessedScopes = new Queue<PdbScope>();
+				unprocessedScopes.Enqueue(body.PdbMethod.Scope);
+				while (unprocessedScopes.Any()) {
+					var currentScope = unprocessedScopes.Dequeue();
+
+					if (instr.Equals(currentScope.Start))
+						currentScope.Start = body.Instructions[indexOfInstr + 1];
+					if (instr.Equals(currentScope.End))
+						currentScope.End = body.Instructions[indexOfInstr - 1];
+
+					foreach (var scope in currentScope.Scopes)
+						unprocessedScopes.Enqueue(scope);
+				}
+			}
+
+			if (instr.SequencePoint != null && body.Instructions[indexOfInstr + 1].SequencePoint == null) {
+				body.Instructions[indexOfInstr + 1].SequencePoint = instr.SequencePoint;
+			}
+
+			// Any now we have fixed everything and we can finally safely delete the instruction!
+			body.Instructions.RemoveAt(indexOfInstr);
 		}
 
 		/// <summary>
