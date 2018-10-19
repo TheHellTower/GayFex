@@ -28,6 +28,9 @@ namespace CompileResx.Test {
 			var inputFile = Path.Combine(baseDir, "CompileRegex.exe");
 			var outputFile = Path.Combine(outputDir, "CompileRegex.exe");
 			FileUtilities.ClearOutput(outputFile);
+
+			var recordedResult = await ExecuteTestApplication(inputFile, RecordOutput);
+
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir
@@ -39,7 +42,6 @@ namespace CompileResx.Test {
 
 			proj.Add(new ProjectModule() { Path = inputFile });
 
-
 			var parameters = new ConfuserParameters {
 				Project = proj,
 				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper))
@@ -50,83 +52,60 @@ namespace CompileResx.Test {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var info = new ProcessStartInfo(outputFile) {
+			await ExecuteTestApplication(outputFile, async stdout => {
+				await VerifyOutput(recordedResult, stdout);
+				return true;
+			});
+
+			FileUtilities.ClearOutput(outputFile);
+		}
+
+		private async Task<TResult> ExecuteTestApplication<TResult>(string file, Func<StreamReader, Task<TResult>> outputHandler) {
+			var info = new ProcessStartInfo(file) {
 				RedirectStandardOutput = true,
 				StandardOutputEncoding = Encoding.UTF8,
 				UseShellExecute = false
 			};
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
-				foreach (var expectedLine in ExpectedOutput()) {
-					Assert.Equal(expectedLine, await stdout.ReadLineAsync());
-				}
+				var result = await outputHandler(stdout);
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);
 				Assert.Equal(42, process.ExitCode);
+
+				return result;
+			}
+		}
+
+		private async Task<IReadOnlyList<(string currentTest, string line)>> RecordOutput(StreamReader reader) {
+			var result = new List<(string currentTest, string line)>();
+
+			string line = null;
+			string currentTest = "";
+			while ((line = await reader.ReadLineAsync()) != null) {
+				if (line.StartsWith("START TEST: "))
+					currentTest = line.Substring(12);
+				else if (line.Equals("END"))
+					currentTest = "";
+
+				result.Add((currentTest, line));
 			}
 
-			FileUtilities.ClearOutput(outputFile);
+			return result;
 		}
 
-		private static IEnumerable<string> ExpectedOutput() {
-			yield return "START";
-			// EcmaMatchingTest
-			yield return "Canonical matching: 'äöü' matches the pattern.";
-			yield return "ECMAScript matching: 'äöü' does not match the pattern.";
-			yield return "";
-			yield return "Canonical matching: 'aou' matches the pattern.";
-			yield return "ECMAScript matching: 'aou' matches the pattern.";
-			yield return "";
-			// AnchorMatchingTest
-			yield return "The Brooklyn Dodgers played in the National League in 1911, 1912, 1932-1957.";
-			yield return "";
-			yield return "The Brooklyn Dodgers played in the National League in 1911, 1912, 1932-1957.";
-			yield return "The Chicago Cubs played in the National League in 1903-present.";
-			yield return "The Detroit Tigers played in the American League in 1901-present.";
-			yield return "The New York Giants played in the National League in 1885-1957.";
-			yield return "The Washington Senators played in the American League in 1901-1960.";
-			yield return "";
-			// MatchedSubexpressionTest
-			yield return "Duplicate 'that' found at positions 8 and 13.";
-			yield return "Duplicate 'the' found at positions 22 and 26.";
-			yield return "";
-			// NamedMatchedSubexpressionTest
-			yield return "A duplicate 'that' at position 8 is followed by 'was'.";
-			yield return "A duplicate 'the' at position 22 is followed by 'correct'.";
-			yield return "";
-			// BalancingGroupDefinitionTest
-			yield return "Input: \"<abc><mno<xyz>>\"";
-			yield return "Match: \"<abc><mno<xyz>>\"";
-			yield return "   Group 0: <abc><mno<xyz>>";
-			yield return "      Capture 0: <abc><mno<xyz>>";
-			yield return "   Group 1: <mno<xyz>>";
-			yield return "      Capture 0: <abc>";
-			yield return "      Capture 1: <mno<xyz>>";
-			yield return "   Group 2: <xyz";
-			yield return "      Capture 0: <abc";
-			yield return "      Capture 1: <mno";
-			yield return "      Capture 2: <xyz";
-			yield return "   Group 3: >";
-			yield return "      Capture 0: >";
-			yield return "      Capture 1: >";
-			yield return "      Capture 2: >";
-			yield return "   Group 4: ";
-			yield return "   Group 5: mno<xyz>";
-			yield return "      Capture 0: abc";
-			yield return "      Capture 1: xyz";
-			yield return "      Capture 2: mno<xyz>";
-			yield return "";
-			// NonCapturingGroupTest
-			yield return "Match: This is a short sentence.";
-			yield return "";
-			// GroupOptionsTest
-			yield return "'Dogs // found at index 0.";
-			yield return "'decidedly // found at index 9.";
-			yield return "";
-			yield return "END";
+		private async Task VerifyOutput(IReadOnlyList<(string currentTest, string line)> expected, StreamReader actual) {
+			foreach (var expectedResult in expected) {
+				try {
+					Assert.Equal(expectedResult.line, await actual.ReadLineAsync());
+				}
+				catch {
+					if (!string.IsNullOrWhiteSpace(expectedResult.currentTest))
+						outputHelper.WriteLine("Failure in test: " + expectedResult.currentTest);
+					throw;
+				}
+			}
 		}
-
-
 
 		public static IEnumerable<object[]> OptimizeAndExecuteTestData() {
 			foreach (var framework in new string[] { "net20", "net40", "net471" })
