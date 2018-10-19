@@ -348,29 +348,15 @@ namespace CompileRegex {
 		private static void OptionsCultureInvariantTest() {
 			Console.WriteLine("START TEST: " + nameof(OptionsCultureInvariantTest));
 
-			var defaultCulture = Thread.CurrentThread.CurrentCulture;
-			try {
-				Thread.CurrentThread.CurrentCulture = new CultureInfo("tr-TR");
+			string input = "file://c:/Documents.MyReport.doc";
+			const string pattern = "FILE://";
 
-				string input = "file://c:/Documents.MyReport.doc";
-				const string pattern = "FILE://";
+			Console.WriteLine("Culture-insensitive matching...");
+			if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+				Console.WriteLine("URLs that access files are not allowed.");
+			else
+				Console.WriteLine("Access to {0} is allowed.", input);
 
-				Console.WriteLine("Culture-sensitive matching ({0} culture)...", Thread.CurrentThread.CurrentCulture.Name);
-				if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase))
-					Console.WriteLine("URLs that access files are not allowed.");
-				else
-					Console.WriteLine("Access to {0} is allowed.", input);
-
-				Console.WriteLine("Culture-insensitive matching...");
-				if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-					Console.WriteLine("URLs that access files are not allowed.");
-				else
-					Console.WriteLine("Access to {0} is allowed.", input);
-
-			}
-			finally {
-				Thread.CurrentThread.CurrentCulture = defaultCulture;
-			}
 			Console.WriteLine();
 		}
 
