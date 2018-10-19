@@ -106,6 +106,11 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					foreach (var testInstr in _instructions) {
 						if (instr.Equals(testInstr.Operand))
 							testInstr.Operand = instruction;
+						else if (testInstr.Operand is Instruction[] instrs) {
+							for (var i = 0; i < instrs.Length; i++)
+								if (instr.Equals(instrs[i]))
+									instrs[i] = instruction;
+						}
 					}
 				}
 				_labels[label] = instruction;

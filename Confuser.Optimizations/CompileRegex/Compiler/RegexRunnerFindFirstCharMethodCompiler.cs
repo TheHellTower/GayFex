@@ -156,10 +156,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			// Compiled Boyer-Moore string matching
 			// <
-			var lDefaultAdvance = CreateLabel();
-			var lAdvance = CreateLabel();
 			var lFail = CreateLabel();
-			var lStart = CreateLabel();
 			var lPartialMatch = CreateLabel();
 
 			IList<RegexMethodCompilerLabel> table;
@@ -183,6 +180,10 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 
 			{
+				var lDefaultAdvance = CreateLabel();
+				var lAdvance = CreateLabel();
+				var lStart = CreateLabel();
+
 				var limitV = RequireLocalInt32();
 				Stloc(limitV);
 
@@ -218,118 +219,121 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 				Ldloc(limitV);
 
-				FreeLocal(limitV);
-			}
-			if (!rightToLeft)
-				Bge(lFail);
-			else
-				Blt(lFail);
+				if (!rightToLeft)
+					Bge(lFail);
+				else
+					Blt(lFail);
 
-			Rightchar();
-			if (bmPrefix._caseInsensitive)
-				CallToLower(options);
+				Rightchar();
+				if (bmPrefix._caseInsensitive)
+					CallToLower(options);
 
-			Dup();
-			{
-				var chV = RequireLocalInt32();
+				Dup();
+				{
+					var chV = RequireLocalInt32();
 
-				Stloc(chV);
-				Ldc(chLast);
-				Beq(lPartialMatch);
+					Stloc(chV);
+					Ldc(chLast);
+					Beq(lPartialMatch);
 
-				Ldloc(chV);
+					Ldloc(chV);
 
-				FreeLocal(chV);
-			}
-			Ldc(bmPrefix._lowASCII);
-			Sub();
-			Dup();
-			{
-				var chV = RequireLocalInt32();
+					FreeLocal(chV);
+				}
+				Ldc(bmPrefix._lowASCII);
+				Sub();
+				Dup();
+				{
+					var chV = RequireLocalInt32();
 
-				Stloc(chV);
-				Ldc(bmPrefix._highASCII - bmPrefix._lowASCII);
-				Bgtun(lDefaultAdvance);
+					Stloc(chV);
+					Ldc(bmPrefix._highASCII - bmPrefix._lowASCII);
+					Bgtun(lDefaultAdvance);
 
-				table = new RegexMethodCompilerLabel[bmPrefix._highASCII - bmPrefix._lowASCII + 1];
+					table = new RegexMethodCompilerLabel[bmPrefix._highASCII - bmPrefix._lowASCII + 1];
+
+					for (var i = bmPrefix._lowASCII; i <= bmPrefix._highASCII; i++) {
+						if (bmPrefix._negativeASCII[i] == beforefirst)
+							table[i - bmPrefix._lowASCII] = lDefaultAdvance;
+						else
+							table[i - bmPrefix._lowASCII] = CreateLabel();
+					}
+
+					Ldloc(chV);
+
+					FreeLocal(chV);
+				}
+				Add(Instruction.Create(OpCodes.Switch, table.Select(GetLabelInstruction).ToArray()));
 
 				for (var i = bmPrefix._lowASCII; i <= bmPrefix._highASCII; i++) {
 					if (bmPrefix._negativeASCII[i] == beforefirst)
-						table[i - bmPrefix._lowASCII] = lDefaultAdvance;
-					else
-						table[i - bmPrefix._lowASCII] = CreateLabel();
-				}
+						continue;
 
-				Ldloc(chV);
+					MarkLabel(table[i - bmPrefix._lowASCII]);
 
-				FreeLocal(chV);
-			}
-			Add(Instruction.Create(OpCodes.Switch, table.Select(GetLabelInstruction).ToArray()));
-
-			for (var i = bmPrefix._lowASCII; i <= bmPrefix._highASCII; i++) {
-				if (bmPrefix._negativeASCII[i] == beforefirst)
-					continue;
-
-				MarkLabel(table[i - bmPrefix._lowASCII]);
-
-				Ldc(bmPrefix._negativeASCII[i]);
-				Br(lAdvance);
-			}
-
-			MarkLabel(lPartialMatch);
-
-			LdRunnerField(_regexRunnerDef.runtextposFieldDef);
-			{
-				var testV = RequireLocalInt32();
-
-				Stloc(testV);
-
-				for (var i = bmPrefix._pattern.Length - 2; i >= 0; i--) {
-					var lNext = CreateLabel();
-					int charindex;
-
-					if (!rightToLeft)
-						charindex = i;
-					else
-						charindex = bmPrefix._pattern.Length - 1 - i;
-
-					LdRunnerField(_regexRunnerDef.runtextFieldDef);
-					Ldloc(testV);
-					Ldc(1);
-					Sub(rightToLeft);
-					Dup();
-					Stloc(testV);
-					CallStringGetChars();
-					if (bmPrefix._caseInsensitive)
-						CallToLower(options);
-
-					Ldc(bmPrefix._pattern[charindex]);
-					Beq(lNext);
-					Ldc(bmPrefix._positive[charindex]);
+					Ldc(bmPrefix._negativeASCII[i]);
 					Br(lAdvance);
-
-					MarkLabel(lNext);
 				}
 
-				StRunnerField(_regexRunnerDef.runtextposFieldDef, () => {
-					Ldloc(testV);
-					if (rightToLeft) {
-						Ldc(1);
-						Add();
-					}
-				});
+				MarkLabel(lPartialMatch);
 
-				FreeLocal(testV);
+				LdRunnerField(_regexRunnerDef.runtextposFieldDef);
+				{
+					var testV = RequireLocalInt32();
+
+					Stloc(testV);
+
+					for (var i = bmPrefix._pattern.Length - 2; i >= 0; i--) {
+						var lNext = CreateLabel();
+						int charindex;
+
+						if (!rightToLeft)
+							charindex = i;
+						else
+							charindex = bmPrefix._pattern.Length - 1 - i;
+
+						LdRunnerField(_regexRunnerDef.runtextFieldDef);
+						Ldloc(testV);
+						Ldc(1);
+						Sub(rightToLeft);
+						Dup();
+						Stloc(testV);
+						CallStringGetChars();
+						if (bmPrefix._caseInsensitive)
+							CallToLower(options);
+
+						Ldc(bmPrefix._pattern[charindex]);
+						Beq(lNext);
+						Ldc(bmPrefix._positive[charindex]);
+						Br(lAdvance);
+
+						MarkLabel(lNext);
+					}
+
+					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => {
+						Ldloc(testV);
+						if (rightToLeft) {
+							Ldc(1);
+							Add();
+						}
+					});
+
+					FreeLocal(testV);
+				}
+
+				FreeLocal(limitV);
 			}
+
 			GenerateExitSuccess();
 
 			MarkLabel(lFail);
 
-			if (!rightToLeft)
-				LdRunnerField(_regexRunnerDef.runtextendFieldDef);
-			else
-				LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
-			StRunnerField(_regexRunnerDef.runtextposFieldDef);
+			StRunnerField(_regexRunnerDef.runtextposFieldDef, () => {
+				if (!rightToLeft)
+					LdRunnerField(_regexRunnerDef.runtextendFieldDef);
+				else
+					LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
+			});
 			GenerateExitFail();
 		}
 
@@ -402,10 +406,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				FreeLocal(cV);
 			}
 			Ldc(0);
-			if (!RegexCharClass.IsSingleton(fcPrefix.Prefix))
-				Bgt(l1);
-			else
-				Bgt(l1);
+			Bgt(l1);
 
 			Br(endFoundFirstChar);
 

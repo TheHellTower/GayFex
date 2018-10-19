@@ -70,12 +70,14 @@ namespace CompileResx.Test {
 
 		private static IEnumerable<string> ExpectedOutput() {
 			yield return "START";
+			// EcmaMatchingTest
 			yield return "Canonical matching: 'äöü' matches the pattern.";
 			yield return "ECMAScript matching: 'äöü' does not match the pattern.";
 			yield return "";
 			yield return "Canonical matching: 'aou' matches the pattern.";
 			yield return "ECMAScript matching: 'aou' matches the pattern.";
 			yield return "";
+			// AnchorMatchingTest
 			yield return "The Brooklyn Dodgers played in the National League in 1911, 1912, 1932-1957.";
 			yield return "";
 			yield return "The Brooklyn Dodgers played in the National League in 1911, 1912, 1932-1957.";
@@ -84,12 +86,15 @@ namespace CompileResx.Test {
 			yield return "The New York Giants played in the National League in 1885-1957.";
 			yield return "The Washington Senators played in the American League in 1901-1960.";
 			yield return "";
+			// MatchedSubexpressionTest
 			yield return "Duplicate 'that' found at positions 8 and 13.";
 			yield return "Duplicate 'the' found at positions 22 and 26.";
 			yield return "";
+			// NamedMatchedSubexpressionTest
 			yield return "A duplicate 'that' at position 8 is followed by 'was'.";
 			yield return "A duplicate 'the' at position 22 is followed by 'correct'.";
 			yield return "";
+			// BalancingGroupDefinitionTest
 			yield return "Input: \"<abc><mno<xyz>>\"";
 			yield return "Match: \"<abc><mno<xyz>>\"";
 			yield return "   Group 0: <abc><mno<xyz>>";
@@ -110,6 +115,13 @@ namespace CompileResx.Test {
 			yield return "      Capture 0: abc";
 			yield return "      Capture 1: xyz";
 			yield return "      Capture 2: mno<xyz>";
+			yield return "";
+			// NonCapturingGroupTest
+			yield return "Match: This is a short sentence.";
+			yield return "";
+			// GroupOptionsTest
+			yield return "'Dogs // found at index 0.";
+			yield return "'decidedly // found at index 9.";
 			yield return "";
 			yield return "END";
 		}

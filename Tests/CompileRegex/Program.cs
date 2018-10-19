@@ -14,6 +14,8 @@ namespace AntiProtections {
 			MatchedSubexpressionTest();
 			NamedMatchedSubexpressionTest();
 			BalancingGroupDefinitionTest();
+			NonCapturingGroupTest();
+			GroupOptionsTest();
 			Console.WriteLine("END");
 			return 42;
 		}
@@ -129,6 +131,27 @@ namespace AntiProtections {
 			else {
 				Console.WriteLine("Match failed.");
 			}
+			Console.WriteLine();
+		}
+
+		private static void NonCapturingGroupTest() {
+			const string pattern = @"(?:\b(?:\w+)\W*)+\.";
+			string input = "This is a short sentence.";
+			var match = Regex.Match(input, pattern);
+			Console.WriteLine("Match: {0}", match.Value);
+			for (int ctr = 1; ctr < match.Groups.Count; ctr++)
+				Console.WriteLine("   Group {0}: {1}", ctr, match.Groups[ctr].Value);
+
+			Console.WriteLine();
+		}
+
+		private static void GroupOptionsTest() {
+			const string pattern = @"\b(?ix: d \w+)\s";
+			string input = "Dogs are decidedly good pets.";
+
+			foreach (Match match in Regex.Matches(input, pattern))
+				Console.WriteLine("'{0}// found at index {1}.", match.Value, match.Index);
+
 			Console.WriteLine();
 		}
 	}
