@@ -40,13 +40,20 @@ namespace Confuser.Optimizations.CompileRegex {
 				var moduleRegexMethods = regexService.GetRegexTargetMethods(modulesAndMethods.Key);
 				if (moduleRegexMethods == null) continue;
 
+
 				foreach (var method in modulesAndMethods) {
 					logger.LogMsgExtractFromMethod(method);
+
+					var onlyExplicit = parameters.GetParameter(context, method, Parent.Parameters.OnlyCompiled);
 
 					foreach (var result in MethodAnalyzer.GetRegexCalls(method, moduleRegexMethods, traceService)) {
 						logger.LogMsgFoundRegexReferenceInMethod(method, result.regexMethod);
 
-						regexService.RecordExpression(modulesAndMethods.Key, result.compileDef, result.regexMethod);
+						if (!onlyExplicit || result.explicitCompiled) {
+							regexService.RecordExpression(modulesAndMethods.Key, result.compileDef, result.regexMethod);
+						} else {
+							logger.LogMsgSkippedRegexNotCompiled(method);
+						}
 					}
 					token.ThrowIfCancellationRequested();
 				}

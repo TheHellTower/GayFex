@@ -42,8 +42,17 @@ namespace Confuser.Optimizations.CompileRegex {
 							var optionsInstr = method.Body.Instructions[argumentInstr[regexMethod.OptionsParameterIndex]];
 							if (optionsInstr.OpCode != OpCodes.Ldc_I4) continue;
 							options = (RegexOptions)optionsInstr.Operand;
-							options &= ~RegexOptions.Compiled;
+							
+							if ((options & RegexOptions.Compiled) != 0) {
+								options &= ~RegexOptions.Compiled;
+								result.explicitCompiled = true;
+							}
+							else
+								result.explicitCompiled = false;
+
 							result.optionsInstr = optionsInstr;
+						} else {
+							result.explicitCompiled = false;
 						}
 
 						TimeSpan? timeout = null;

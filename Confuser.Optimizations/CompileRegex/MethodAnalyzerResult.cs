@@ -15,5 +15,7 @@ namespace Confuser.Optimizations.CompileRegex {
 
 		internal IRegexTargetMethod regexMethod;
 		internal RegexCompileDef compileDef;
+
+		internal bool explicitCompiled;
 	}
 }

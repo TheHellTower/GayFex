@@ -9,6 +9,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		internal static readonly Type _realRegexTreeType;
 		internal static readonly FieldInfo _capnamesField;
 		internal static readonly FieldInfo _capslistField;
+		internal static readonly FieldInfo _rootField;
 
 		static RegexTree() {
 			var regexAssembly = typeof(Regex).Assembly;
@@ -16,6 +17,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			_capnamesField = _realRegexTreeType.GetField("_capnames", BindingFlags.Instance | BindingFlags.NonPublic);
 			_capslistField = _realRegexTreeType.GetField("_capslist", BindingFlags.Instance | BindingFlags.NonPublic);
+			_rootField = _realRegexTreeType.GetField("_root", BindingFlags.Instance | BindingFlags.NonPublic);
 		}
 
 		// System.Text.RegularExpressions.RegexTree
@@ -24,6 +26,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		// This may be a Hashtable or a Dictionary. Depends on the used framework. IDictionary is implemented by both.
 		internal IDictionary _capnames => (IDictionary)_capnamesField.GetValue(RealRegexTree);
 		internal string[] _capslist => (string[])_capslistField.GetValue(RealRegexTree);
+		internal RegexNode _root => RegexNode.Wrap(_rootField.GetValue(RealRegexTree));
 
 		internal RegexTree(object realRegexTree) {
 			if (realRegexTree == null) throw new ArgumentNullException(nameof(realRegexTree));

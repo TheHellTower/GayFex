@@ -48,9 +48,54 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			_regexRunnerFactoryTypeDef = regexModule.FindNormalThrow(CompileRegexProtection._RegexNamespace + ".RegexRunnerFactory");
 		}
 
+		internal static bool IsCultureUnsafe(RegexCompileDef expression) {
+			bool IsCultureInvariant(RegexOptions options) => (options & RegexOptions.CultureInvariant) != 0;
+			bool IsIgnoreCase(RegexOptions options) => (options & RegexOptions.IgnoreCase) != 0;
+
+			bool IsUnsafe(RegexOptions options) => !IsCultureInvariant(options) && IsIgnoreCase(options);
+
+			if (IsUnsafe(expression.Options)) return true;
+			RegexTree tree;
+			try {
+				tree = RegexParser.Parse(expression.Pattern, expression.Options);
+			}
+			catch (ArgumentException) {
+				return false;
+			}
+
+			if (tree._root != null) {
+				var uncheckedNodes = new Queue<RegexNode>();
+				var alreadyProcessed = new HashSet<RegexNode>();
+				uncheckedNodes.Enqueue(tree._root);
+				alreadyProcessed.Add(tree._root);
+				while (uncheckedNodes.Any()) {
+					var currentNode = uncheckedNodes.Dequeue();
+					if (IsUnsafe(currentNode._options)) return true;
+
+					var children = currentNode._children;
+					if (children != null)
+						foreach (var child in children)
+							if (alreadyProcessed.Add(child))
+								uncheckedNodes.Enqueue(child);
+
+					var nextNode = currentNode._next;
+					if (nextNode != null && alreadyProcessed.Add(nextNode))
+						uncheckedNodes.Enqueue(nextNode);
+				}
+			}
+
+			return false;
+		}
+
 		internal RegexCompilerResult Compile(RegexCompileDef expression) {
-			var tree = RegexParser.Parse(expression.Pattern, expression.Options);
-			var code = RegexWriter.Write(tree);
+			RegexTree tree;
+			RegexCode code;
+			try {
+				tree = RegexParser.Parse(expression.Pattern, expression.Options);
+				code = RegexWriter.Write(tree);
+			} catch (ArgumentException ex) {
+				throw new RegexCompilerException(expression, ex);
+			}
 
 			_compiledExpressions += 1;
 			var baseName = string.Format(BaseName + "{0:D" + ExpectedExpressions.ToString().Length.ToString() + "}", _compiledExpressions);
