@@ -38,6 +38,7 @@ namespace Confuser.Optimizations.CompileRegex {
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
 				var expressions = regexService.GetExpressions(module).ToImmutableArray();
+				if (!expressions.Any()) continue;
 
 				var skipBroken = parameters.GetParameter(context, module, Parent.Parameters.SkipBrokenExpressions);
 				var skipUnsafe = parameters.GetParameter(context, module, Parent.Parameters.I18nSafeMode);

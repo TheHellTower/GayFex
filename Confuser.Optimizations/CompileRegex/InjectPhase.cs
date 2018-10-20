@@ -39,6 +39,8 @@ namespace Confuser.Optimizations.CompileRegex {
 
 			foreach (var method in parameters.Targets.OfType<MethodDef>()) {
 				var moduleRegexMethods = regexService.GetRegexTargetMethods(method.Module);
+				if (moduleRegexMethods == null) continue;
+
 				// .ToArray is required because the instructions are modified.
 				foreach (var result in MethodAnalyzer.GetRegexCalls(method, moduleRegexMethods, traceService).ToArray()) {
 					var compileResult = regexService1.GetCompiledRegex(method.Module, result.compileDef);
