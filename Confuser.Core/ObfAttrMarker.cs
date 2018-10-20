@@ -309,7 +309,7 @@ namespace Confuser.Core {
 			if (proj.Packer != null) {
 				if (!packers.ContainsKey(proj.Packer.Id)) {
 					logger.LogCritical("Cannot find packer with ID '{0}'.", proj.Packer.Id);
-					throw new ConfuserException(null);
+					throw new ConfuserException();
 				}
 
 				packer = packers[proj.Packer.Id];

@@ -110,7 +110,7 @@ namespace Confuser.Core {
 			if (proj.Packer != null) {
 				if (!packers.ContainsKey(proj.Packer.Id)) {
 					logger.LogCritical("Cannot find packer with ID '{0}'.", proj.Packer.Id);
-					throw new ConfuserException(null);
+					throw new ConfuserException();
 				}
 				if (proj.Debug)
 					logger.LogWarning("Generated Debug symbols might not be usable with packers!");
@@ -195,7 +195,7 @@ namespace Confuser.Core {
 				foreach (var setting in rule) {
 					if (!protections.ContainsKey(setting.Id)) {
 						logger.LogCritical("Cannot find protection with ID '{0}'.", setting.Id);
-						throw new ConfuserException(null);
+						throw new ConfuserException();
 					}
 				}
 			}
