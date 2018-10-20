@@ -29,9 +29,7 @@ namespace Confuser.Core.Services {
 		}
 
 		/// <inheritdoc />
-		public bool IsMarked(IConfuserContext context, IDnlibDef def) {
-			return ProtectionParameters.GetParameters(context, def) != null;
-		}
+		public bool IsMarked(IConfuserContext context, IDnlibDef def) => ProtectionParameters.HasParameters(context, def);
 
 		/// <inheritdoc />
 		public IConfuserComponent GetHelperParent(IDnlibDef def) {

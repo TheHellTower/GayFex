@@ -73,8 +73,15 @@ namespace Confuser.Core {
 		/// <param name="context">The context.</param>
 		/// <param name="target">The protection target.</param>
 		/// <param name="parameters">The parameters.</param>
-		public static void SetParameters(
-			IConfuserContext context, IDnlibDef target, ProtectionSettings parameters) {
+		/// <exception cref="ArgumentNullException">
+		///     <paramref name="context"/> is <see langword="null" />
+		///     <br/>- or -<br/>
+		///     <paramref name="target"/> is <see langword="null" />
+		/// </exception>
+		public static void SetParameters(IConfuserContext context, IDnlibDef target, ProtectionSettings parameters) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (target == null) throw new ArgumentNullException(nameof(target));
+
 			context.Annotations.Set(target, ParametersKey, parameters);
 		}
 
@@ -84,13 +91,39 @@ namespace Confuser.Core {
 		/// <param name="context">The context.</param>
 		/// <param name="target">The protection target.</param>
 		/// <returns>The parameters.</returns>
+		/// <exception cref="ArgumentNullException">
+		///     <paramref name="context"/> is <see langword="null" />
+		///     <br/>- or -<br/>
+		///     <paramref name="target"/> is <see langword="null" />
+		/// </exception>
 		public static ProtectionSettings GetParameters(IConfuserContext context, IDnlibDef target) {
-			var result = context.Annotations.Get<ProtectionSettings>(target, ParametersKey);
-			if (result == null) {
-				result = new ProtectionSettings();
-				SetParameters(context, target, result);
-			}
-			return result;
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (target == null) throw new ArgumentNullException(nameof(target));
+
+			return context.Annotations.GetOrCreate(target, ParametersKey, (t) => new ProtectionSettings());
+		}
+
+		/// <summary>
+		///     Check if a specific target has already any protection parameters assigned to it.
+		/// </summary>
+		/// <param name="context">The context.</param>
+		/// <param name="target">The protection target.</param>
+		/// <returns><see langword="true"/> in case there are parameters; otherwise <see langword="false"/></returns>
+		/// <remarks>
+		///     Originally this way done by checking if <see cref="GetParameters(IConfuserContext, IDnlibDef)"/>
+		///     returned <see langword="null"/>. How ever the behavior of this function was changed any now it always
+		///     returns protection parameters by creating them if required.
+		/// </remarks>
+		/// <exception cref="ArgumentNullException">
+		///     <paramref name="context"/> is <see langword="null" />
+		///     <br/>- or -<br/>
+		///     <paramref name="target"/> is <see langword="null" />
+		/// </exception>
+		public static bool HasParameters(IConfuserContext context, IDnlibDef target) {
+			if (context == null) throw new ArgumentNullException(nameof(context));
+			if (target == null) throw new ArgumentNullException(nameof(target));
+
+			return context.Annotations.Get<ProtectionSettings>(target, ParametersKey) != null;
 		}
 	}
 }
