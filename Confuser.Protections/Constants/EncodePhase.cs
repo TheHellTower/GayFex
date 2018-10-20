@@ -233,8 +233,13 @@ namespace Confuser.Protections.Constants {
 			ILogger logger, CancellationToken token) {
 			var dataFields = new HashSet<FieldDef>();
 			var fieldRefs = new HashSet<Instruction>();
-			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>()) { //.WithProgress(logger)) {
+			foreach (var method in parameters.Targets.OfType<MethodDef>()) { //.WithProgress(logger)) {
 				if (!method.HasBody)
+					continue;
+
+				// Skip all members that were introduced for the constant encoding itself
+				// to avoid creating endless loops.
+				if (moduleCtx.Marker.GetHelperParent(method) == Parent)
 					continue;
 
 				moduleCtx.Elements = parameters.GetParameter(context, method, Parent.Parameters.Elements);
