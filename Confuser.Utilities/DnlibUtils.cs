@@ -62,6 +62,84 @@ namespace Confuser {
 		}
 
 		/// <summary>
+		///     Determines whether the specified method is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="methodDef">The method that is checked.</param>
+		/// <returns><see langword="true"/> in case the method is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="methodDef"/> is <see langword="null"/>.</exception>
+		/// <remarks>
+		///     The method is considered visible in case it is public or visible to sub-types (protected) and the
+		///     declaring type is also visible outside of the assembly.
+		/// </remarks>
+		public static bool IsVisibleOutside(this MethodDef methodDef) {
+			if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
+
+			switch (methodDef.Access) {
+				case MethodAttributes.Family:
+				case MethodAttributes.FamORAssem:
+				case MethodAttributes.Public:
+					return methodDef.DeclaringType.IsVisibleOutside();
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		///     Determines whether the specified field is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="fieldDef">The field that is checked.</param>
+		/// <returns><see langword="true"/> in case the field is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="fieldDef"/> is <see langword="null"/>.</exception>
+		/// <remarks>
+		///     The field is considered visible in case it is public or visible to sub-types (protected) and the
+		///     declaring type is also visible outside of the assembly.
+		/// </remarks>
+		public static bool IsVisibleOutside(this FieldDef fieldDef) {
+			if (fieldDef == null) throw new ArgumentNullException(nameof(fieldDef));
+
+			switch (fieldDef.Access) {
+				case FieldAttributes.Family:
+				case FieldAttributes.FamORAssem:
+				case FieldAttributes.Public:
+					return fieldDef.DeclaringType.IsVisibleOutside();
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		///     Determines whether the specified event is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="eventDef">The event that is checked.</param>
+		/// <returns><see langword="true"/> in case the event is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="eventDef"/> is <see langword="null"/>.</exception>
+		/// <remarks>
+		///     The event is considered visible in case any of the methods related to it is visible outside.
+		/// </remarks>
+		public static bool IsVisibleOutside(this EventDef eventDef) {
+			if (eventDef == null) throw new ArgumentNullException(nameof(eventDef));
+
+			return eventDef.AllMethods().Any(IsVisibleOutside);
+		}
+
+		/// <summary>
+		///     Determines whether the specified property is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="propertyDef">The event that is checked.</param>
+		/// <returns><see langword="true"/> in case the property is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException">
+		///     <paramref name="propertyDef"/> is <see langword="null"/>.
+		/// </exception>
+		/// <remarks>
+		///     The property is considered visible in case any of the getter or setter methods is visible outside.
+		/// </remarks>
+		public static bool IsVisibleOutside(this PropertyDef propertyDef) {
+			if (propertyDef == null) throw new ArgumentNullException(nameof(propertyDef));
+
+			return propertyDef.GetMethods.Any(IsVisibleOutside) || propertyDef.SetMethods.Any(IsVisibleOutside);
+		}
+
+		/// <summary>
 		///     Determines whether the specified type is visible outside the containing assembly.
 		/// </summary>
 		/// <param name="typeDef">The type.</param>
