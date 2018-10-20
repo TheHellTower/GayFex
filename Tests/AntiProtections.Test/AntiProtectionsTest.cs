@@ -32,46 +32,11 @@ namespace AntiProtections.Test {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var info = new ProcessStartInfo() {
-				RedirectStandardOutput = true,
-				RedirectStandardError = true,
-				UseShellExecute = false
-			};
-			if (outputFile.EndsWith(".dll")) {
-				info.FileName = "dotnet";
-				info.Arguments = '"' + outputFile + '"';
-			}
-			else
-				info.FileName = outputFile;
-
-			OutputHelper.WriteLine("Executing test application: {0} {1}", info.FileName, info.Arguments);
-
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
-				var stderr = process.StandardError;
-				try {
-					Assert.Equal("START", await stdout.ReadLineAsync());
-					Assert.Equal("This is a test.", await stdout.ReadLineAsync());
-					Assert.Equal("END", await stdout.ReadLineAsync());
-					Assert.Empty(await stdout.ReadToEndAsync());
-					Assert.Empty(await stderr.ReadToEndAsync());
-				} catch {
-					var cnt = 0;
-					while (!process.HasExited && ++cnt < 10) {
-						await Task.Delay(500);
-					}
-					OutputHelper.WriteLine("Remaining output: {0}", await stdout.ReadToEndAsync());
-					OutputHelper.WriteLine("Remaining error: {0}", await stderr.ReadToEndAsync());
-					if (process.HasExited)
-						OutputHelper.WriteLine("Process exit code: {0:d}", process.ExitCode);
-					else
-						OutputHelper.WriteLine("Process has not exited.");
-					throw;
-				}
-
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-			}
+			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async (stdout) => {
+				Assert.Equal("START", await stdout.ReadLineAsync());
+				Assert.Equal("This is a test.", await stdout.ReadLineAsync());
+				Assert.Equal("END", await stdout.ReadLineAsync());
+			}, OutputHelper);
 
 			FileUtilities.ClearOutput(outputFile);
 		}

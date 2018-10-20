@@ -54,19 +54,12 @@ namespace RefProxyProtection.Test {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var info = new ProcessStartInfo(outputFile) {
-				RedirectStandardOutput = true,
-				UseShellExecute = false
-			};
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
+			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async (stdout) => {
 				Assert.Equal("START", await stdout.ReadLineAsync());
 				Assert.Equal("dictTest[TestKey] = TestValue", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
-				Assert.Empty(await stdout.ReadToEndAsync());
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-			}
+			}, outputHelper);
+			Assert.Equal(42, result);
 
 			FileUtilities.ClearOutput(outputFile);
 		}

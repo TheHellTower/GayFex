@@ -17,12 +17,12 @@
   </PropertyGroup>
   
   <PropertyGroup Label="SourceLink">
-	<SourceLinkServerType>GitHub</SourceLinkServerType>
-	<SourceLinkOriginUrl>$(RepositoryUrl)</SourceLinkOriginUrl>
+    <SourceLinkServerType>GitHub</SourceLinkServerType>
+    <SourceLinkOriginUrl>$(RepositoryUrl)</SourceLinkOriginUrl>
   </PropertyGroup> 
   
   <PropertyGroup Label="Code Analysis">
-	<EnableCodeAnalysis>false</EnableCodeAnalysis>
+    <EnableCodeAnalysis>false</EnableCodeAnalysis>
   </PropertyGroup>
   
 </Project>

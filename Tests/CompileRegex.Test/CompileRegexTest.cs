@@ -29,7 +29,7 @@ namespace CompileResx.Test {
 			var outputFile = Path.Combine(outputDir, "CompileRegex.exe");
 			FileUtilities.ClearOutput(outputFile);
 
-			var recordedResult = await ExecuteTestApplication(inputFile, RecordOutput);
+			var recordedResult = await ProcessUtilities.ExecuteTestApplication(inputFile, RecordOutput, outputHelper);
 
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
@@ -52,29 +52,11 @@ namespace CompileResx.Test {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			await ExecuteTestApplication(outputFile, async stdout => {
-				await VerifyOutput(recordedResult, stdout);
-				return true;
-			});
+			await ProcessUtilities.ExecuteTestApplication(outputFile, async stdout => {
+				await VerifyOutput(recordedResult.Result, stdout);
+			}, outputHelper);
 
 			FileUtilities.ClearOutput(outputFile);
-		}
-
-		private async Task<TResult> ExecuteTestApplication<TResult>(string file, Func<StreamReader, Task<TResult>> outputHandler) {
-			var info = new ProcessStartInfo(file) {
-				RedirectStandardOutput = true,
-				StandardOutputEncoding = Encoding.UTF8,
-				UseShellExecute = false
-			};
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
-				var result = await outputHandler(stdout);
-				Assert.Empty(await stdout.ReadToEndAsync());
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-
-				return result;
-			}
 		}
 
 		private async Task<IReadOnlyList<(string currentTest, string line)>> RecordOutput(StreamReader reader) {
