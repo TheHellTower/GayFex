@@ -72,9 +72,9 @@ namespace Confuser.Optimizations.CompileRegex {
 		private static RegexTargetMethod ScanMethod(MethodDef method) {
 			if (method == null) return null;
 
-			var patternIndex = method.Parameters.Where(p => p.Name == "pattern").Select(p => p.Index).First();
-			var optionsIndex = method.Parameters.Where(p => p.Name == "options").Select(p => p.Index).DefaultIfEmpty(-1).First();
-			var timeoutIndex = method.Parameters.Where(p => p.Name == "matchTimeout").Select(p => p.Index).DefaultIfEmpty(-1).First();
+			var patternIndex = method.Parameters.Where(p => p.Name == "pattern").Select(p => p.MethodSigIndex).First();
+			var optionsIndex = method.Parameters.Where(p => p.Name == "options").Select(p => p.MethodSigIndex).DefaultIfEmpty(-1).First();
+			var timeoutIndex = method.Parameters.Where(p => p.Name == "matchTimeout").Select(p => p.MethodSigIndex).DefaultIfEmpty(-1).First();
 
 			MethodDef equivalent = null;
 			if (!method.IsInstanceConstructor) {
