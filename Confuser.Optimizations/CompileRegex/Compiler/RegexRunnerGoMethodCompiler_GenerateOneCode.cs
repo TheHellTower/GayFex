@@ -6,7 +6,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		// indices for unique code fragments
 		private const int stackpop = 0;    // pop one
 		private const int stackpop2 = 1;    // pop two
-		private const int stackpop3 = 2;    // pop three
 		private const int capback = 3;    // uncapture
 		private const int capback2 = 4;    // uncapture 2
 		private const int branchmarkback2 = 5;    // back2 part of branchmark

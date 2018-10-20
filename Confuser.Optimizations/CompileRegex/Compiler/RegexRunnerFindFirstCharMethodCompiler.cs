@@ -12,7 +12,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal void GenerateFindFirstChar(RegexOptions options, RegexCode code) {
 			if (IsAnchorFindFirstChar(code))
-				GenerateAnchorFindFirstChar(options, code);
+				GenerateAnchorFindFirstChar(code);
 			else if (IsBoyerMooreFindFirstChar(code))
 				GenerateBoyerMooreFindFirstChar(options, code);
 			else if (IsPrefixFindFirstChar(code))
@@ -31,7 +31,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		private static bool IsPrefixFindFirstChar(RegexCode code) => code._fcPrefix != null;
 
-		private void GenerateAnchorFindFirstChar(RegexOptions options, RegexCode code) {
+		private void GenerateAnchorFindFirstChar(RegexCode code) {
 			var anchors = code._anchors;
 			var rightToLeft = code._rightToLeft;
 			var bmPrefix = code._bmPrefix;

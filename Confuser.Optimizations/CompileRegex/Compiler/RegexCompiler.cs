@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -97,8 +96,13 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				throw new RegexCompilerException(expression, ex);
 			}
 
+			var ic = CultureInfo.InvariantCulture;
+
 			_compiledExpressions += 1;
-			var baseName = string.Format(BaseName + "{0:D" + ExpectedExpressions.ToString().Length.ToString() + "}", _compiledExpressions);
+			var baseName = string.Format(
+				ic,
+				BaseName + "{0:D" + ExpectedExpressions.ToString(ic).Length.ToString(ic) + "}", 
+				_compiledExpressions);
 
 			var compiledRegexRunnerTypeDef = CompileRegexRunner(baseName, expression, code);
 			var compiledRegexFactoryTypeDef = CompileRegexFactory(baseName, compiledRegexRunnerTypeDef);

@@ -6,9 +6,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal sealed class TypeRefFinder {
 		private readonly ModuleDef _module;
 
-		internal TypeRefFinder(ModuleDef module) {
+		internal TypeRefFinder(ModuleDef module) => 
 			_module = module ?? throw new ArgumentNullException(nameof(module));
-		}
 
 		internal ITypeDefOrRef FindType(string fullName) {
 			var processedModules = new HashSet<ModuleDef>() { _module };
@@ -22,7 +21,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					return definedInModule;
 
 				foreach (var typeRef in currentModule.GetTypeRefs()) {
-					if (typeRef.FullName.Equals(fullName))
+					if (typeRef.FullName.Equals(fullName, StringComparison.Ordinal))
 						return typeRef;
 
 					var resolvedType = typeRef.Resolve();

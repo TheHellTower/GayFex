@@ -32,7 +32,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			var regexService = context.Registry.GetRequiredService<ICompileRegexService>();
 			var regexService1 = regexService as CompileRegexService;
 			var traceService = context.Registry.GetRequiredService<ITraceService>();
-			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(CompileRegexProtection._Id);
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(CompileRegexProtection.Id);
 
 			Debug.Assert(regexService1 != null, $"{nameof(regexService1)} != null");
 			if (regexService1 == null) return;

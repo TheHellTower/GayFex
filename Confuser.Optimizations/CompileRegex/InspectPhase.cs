@@ -27,7 +27,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
 			var regexService = context.Registry.GetRequiredService<ICompileRegexService>();
-			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(CompileRegexProtection._Id);
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(CompileRegexProtection.Id);
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
 				logger.LogMsgInspectingModule(module);

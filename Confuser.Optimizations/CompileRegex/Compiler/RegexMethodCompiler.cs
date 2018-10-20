@@ -101,7 +101,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			foreach (var label in _labelsNextInstruction) {
 				if (_labels.TryGetValue(label, out var instr)) {
 					if (!_unknownLabels.Remove(label))
-						throw new ArgumentException("Label was marked more than once!", nameof(label));
+						throw new InvalidOperationException("Label was marked more than once!");
 
 					foreach (var testInstr in _instructions) {
 						if (instr.Equals(testInstr.Operand))

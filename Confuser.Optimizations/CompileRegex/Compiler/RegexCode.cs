@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal struct RegexCode {
@@ -73,58 +74,61 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		internal const int Ci = 512;    // bit to indicate that we're case-insensitive.
 
 
+		private static readonly Type _realRegexCodeType = RU.GetRegexType("RegexCode");
+		private static readonly FieldInfo _codesField = RU.GetInternalField(_realRegexCodeType, "_codes");
+		private static readonly FieldInfo _stringsField = RU.GetInternalField(_realRegexCodeType, "_strings");
+		private static readonly FieldInfo _trackcountField = RU.GetInternalField(_realRegexCodeType, "_trackcount");
+		private static readonly FieldInfo _capsField = RU.GetInternalField(_realRegexCodeType, "_caps");
+		private static readonly FieldInfo _capsizeField = RU.GetInternalField(_realRegexCodeType, "_capsize");
+		private static readonly FieldInfo _fcPrefixField = RU.GetInternalField(_realRegexCodeType, "_fcPrefix");
+		private static readonly FieldInfo _bmPrefixField = RU.GetInternalField(_realRegexCodeType, "_bmPrefix");
+		private static readonly FieldInfo _anchorsField = RU.GetInternalField(_realRegexCodeType, "_anchors");
+		private static readonly FieldInfo _rightToLeftField = RU.GetInternalField(_realRegexCodeType, "_rightToLeft");
+
+		private static readonly MethodInfo _opcodeBacktracksMethod =
+			RU.GetStaticInternalMethod(_realRegexCodeType, "OpcodeBacktracks", typeof(int));
+		private static readonly MethodInfo _opcodeSizeMethod =
+			RU.GetStaticInternalMethod(_realRegexCodeType, "OpcodeSize", typeof(int));
+
 		// System.Text.RegularExpressions.RegexCode
 		internal object RealRegexCode { get; }
 
-		internal int[] _codes => (int[])GetField("_codes").GetValue(RealRegexCode);
+		internal int[] _codes => (int[])_codesField.GetValue(RealRegexCode);
 
-		internal string[] _strings => (string[])GetField("_strings").GetValue(RealRegexCode);
+		internal string[] _strings => (string[])_stringsField.GetValue(RealRegexCode);
 
-		internal int _trackcount => (int)GetField("_trackcount").GetValue(RealRegexCode);
+		internal int _trackcount => (int)_trackcountField.GetValue(RealRegexCode);
 
 		// This may be a Hashtable or a Dictionary. Depends on the used framework. IDictionary is implemented by both.
-		internal IDictionary _caps => (IDictionary)GetField("_caps").GetValue(RealRegexCode);
+		internal IDictionary _caps => (IDictionary)_capsField.GetValue(RealRegexCode);
 
-		internal int _capsize => (int)GetField("_capsize").GetValue(RealRegexCode);
+		internal int _capsize => (int)_capsizeField.GetValue(RealRegexCode);
 
-		internal RegexPrefix _fcPrefix => RegexPrefix.Wrap(GetField("_fcPrefix").GetValue(RealRegexCode));
+		internal RegexPrefix _fcPrefix => RegexPrefix.Wrap(_fcPrefixField.GetValue(RealRegexCode));
 
 		// System.Text.RegularExpressions.RegexBoyerMoore
-		internal RegexBoyerMoore _bmPrefix => RegexBoyerMoore.Wrap(GetField("_bmPrefix").GetValue(RealRegexCode));
+		internal RegexBoyerMoore _bmPrefix => RegexBoyerMoore.Wrap(_bmPrefixField.GetValue(RealRegexCode));
 
-		internal int _anchors => (int)GetField("_anchors").GetValue(RealRegexCode);
+		internal int _anchors => (int)_anchorsField.GetValue(RealRegexCode);
 
-		internal bool _rightToLeft => (bool)GetField("_rightToLeft").GetValue(RealRegexCode);
+		internal bool _rightToLeft => (bool)_rightToLeftField.GetValue(RealRegexCode);
 
 		internal RegexCode(object realRegexCode) {
 			if (realRegexCode == null) throw new ArgumentNullException(nameof(realRegexCode));
-			Debug.Assert(realRegexCode.GetType().FullName == "System.Text.RegularExpressions.RegexCode");
+			Debug.Assert(realRegexCode.GetType() == _realRegexCodeType);
 
 			RealRegexCode = realRegexCode;
 		}
 
-		internal static bool OpcodeBacktracks(int Op) {
-			var opcodeBacktracksMethod = GetRegexCodeType().GetMethod("OpcodeBacktracks",
-				BindingFlags.Static | BindingFlags.NonPublic, null,
-				new Type[] { typeof(int) }, null);
+		internal static bool OpcodeBacktracks(int Op) =>
+			(bool)_opcodeBacktracksMethod.Invoke(null, new object[] { Op });
 
-			return (bool)opcodeBacktracksMethod.Invoke(null, new object[] { Op });
-		}
-
-		internal static int OpcodeSize(int Op) {
-			var opcodeBacktracksMethod = GetRegexCodeType().GetMethod("OpcodeSize",
-				BindingFlags.Static | BindingFlags.NonPublic, null,
-				new Type[] { typeof(int) }, null);
-
-			return (int)opcodeBacktracksMethod.Invoke(null, new object[] { Op });
-		}
+		internal static int OpcodeSize(int Op) =>
+			(int)_opcodeSizeMethod.Invoke(null, new object[] { Op });
 
 		private static Type GetRegexCodeType() {
 			var regexAssembly = typeof(Regex).Assembly;
 			return regexAssembly.GetType("System.Text.RegularExpressions.RegexCode", true, false);
 		}
-
-		private static FieldInfo GetField(string name) =>
-			GetRegexCodeType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
 	}
 }

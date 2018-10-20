@@ -2,24 +2,14 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text.RegularExpressions;
+using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal struct RegexTree {
-		internal static readonly Type _realRegexTreeType;
-		internal static readonly FieldInfo _capnamesField;
-		internal static readonly FieldInfo _capslistField;
-		internal static readonly FieldInfo _rootField;
-
-		static RegexTree() {
-			var regexAssembly = typeof(Regex).Assembly;
-			_realRegexTreeType = regexAssembly.GetType("System.Text.RegularExpressions.RegexTree", true, false);
-
-			_capnamesField = _realRegexTreeType.GetField("_capnames", BindingFlags.Instance | BindingFlags.NonPublic);
-			_capslistField = _realRegexTreeType.GetField("_capslist", BindingFlags.Instance | BindingFlags.NonPublic);
-			_rootField = _realRegexTreeType.GetField("_root", BindingFlags.Instance | BindingFlags.NonPublic);
-		}
-
+		internal static readonly Type _realRegexTreeType = RU.GetRegexType("RegexTree");
+		internal static readonly FieldInfo _capnamesField = RU.GetInternalField(_realRegexTreeType, "_capnames");
+		internal static readonly FieldInfo _capslistField = RU.GetInternalField(_realRegexTreeType, "_capslist");
+		internal static readonly FieldInfo _rootField = RU.GetInternalField(_realRegexTreeType, "_root");
 		// System.Text.RegularExpressions.RegexTree
 		internal object RealRegexTree { get; }
 
@@ -30,7 +20,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal RegexTree(object realRegexTree) {
 			if (realRegexTree == null) throw new ArgumentNullException(nameof(realRegexTree));
-			Debug.Assert(realRegexTree.GetType().FullName == "System.Text.RegularExpressions.RegexTree");
+			Debug.Assert(realRegexTree.GetType() == _realRegexTreeType);
 
 			RealRegexTree = realRegexTree;
 		}

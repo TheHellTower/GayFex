@@ -1,25 +1,15 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text.RegularExpressions;
+using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal sealed class RegexPrefix {
-		private static readonly Type _realRegexPrefixType;
-		private static readonly PropertyInfo _prefixProperty;
-		private static readonly PropertyInfo _caseInsensitiveProperty;
-
-		static RegexPrefix() {
-			var regexAssembly = typeof(Regex).Assembly;
-			_realRegexPrefixType = regexAssembly.GetType("System.Text.RegularExpressions.RegexPrefix", true, false);
-
-			_prefixProperty = _realRegexPrefixType.GetProperty("Prefix",
-				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetProperty, null,
-				typeof(string), Array.Empty<Type>(), null);
-			_caseInsensitiveProperty = _realRegexPrefixType.GetProperty("CaseInsensitive",
-				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetProperty, null,
-				typeof(bool), Array.Empty<Type>(), null);
-		}
+		private static readonly Type _realRegexPrefixType = RU.GetRegexType("RegexPrefix");
+		private static readonly PropertyInfo _prefixProperty = 
+			RU.GetInternalProperty(_realRegexPrefixType, "Prefix", typeof(string));
+		private static readonly PropertyInfo _caseInsensitiveProperty =
+			RU.GetInternalProperty(_realRegexPrefixType, "CaseInsensitive", typeof(bool));
 
 		internal static RegexPrefix Wrap(object realRegexPrefix) {
 			if (realRegexPrefix == null) return null;

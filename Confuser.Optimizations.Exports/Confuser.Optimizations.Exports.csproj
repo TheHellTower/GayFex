@@ -6,6 +6,7 @@
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
+    <EnableCodeAnalysis>true</EnableCodeAnalysis>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">

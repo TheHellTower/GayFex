@@ -3,12 +3,12 @@ using dnlib.DotNet;
 
 namespace Confuser.Optimizations.Services {
 	public interface ICompileRegexService {
-		IRegexTargetMethods GetRegexTargetMethods(ModuleDef module);
+		IRegexTargetMethods GetRegexTargetMethods(ModuleDef moduleDef);
 
-		bool AnalyzeModule(ModuleDef module);
+		bool AnalyzeModule(ModuleDef moduleDef);
 
-		void RecordExpression(ModuleDef module, RegexCompileDef compileDef, IRegexTargetMethod regexMethod);
+		void RecordExpression(ModuleDef moduleDef, RegexCompileDef compileDef, IRegexTargetMethod regexMethod);
 
-		IEnumerable<RegexCompileDef> GetExpressions(ModuleDef module);
+		IEnumerable<RegexCompileDef> GetExpressions(ModuleDef moduleDef);
 	}
 }

@@ -5,22 +5,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal sealed class RegexNode : IEquatable<RegexNode> {
-		internal static readonly Type _realRegexNodeType;
-		private static readonly FieldInfo _childrenField;
-		private static readonly FieldInfo _nextField;
-		private static readonly FieldInfo _optionsField;
-
-		static RegexNode() {
-			var regexAssembly = typeof(Regex).Assembly;
-			_realRegexNodeType = regexAssembly.GetType("System.Text.RegularExpressions.RegexNode", true, false);
-
-			_childrenField = _realRegexNodeType.GetField("_children", BindingFlags.NonPublic | BindingFlags.Instance);
-			_nextField = _realRegexNodeType.GetField("_next", BindingFlags.NonPublic | BindingFlags.Instance);
-			_optionsField = _realRegexNodeType.GetField("_options", BindingFlags.NonPublic | BindingFlags.Instance);
-		}
+		internal static readonly Type _realRegexNodeType = RU.GetRegexType("RegexNode");
+		private static readonly FieldInfo _childrenField = RU.GetInternalField(_realRegexNodeType, "_children");
+		private static readonly FieldInfo _nextField = RU.GetInternalField(_realRegexNodeType, "_next");
+		private static readonly FieldInfo _optionsField = RU.GetInternalField(_realRegexNodeType, "_options");
 
 		internal static RegexNode Wrap(object realRegexNode) {
 			if (realRegexNode == null) return null;

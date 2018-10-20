@@ -395,7 +395,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		 * Returns the position of the next operation in the regex code, taking
 		 * into account the different numbers of arguments taken by operations
 		 */
-		internal int NextCodepos(RegexCode code, int codePos) =>
+		internal static int NextCodepos(RegexCode code, int codePos) =>
 			codePos + RegexCode.OpcodeSize(code._codes[codePos]);
 
 

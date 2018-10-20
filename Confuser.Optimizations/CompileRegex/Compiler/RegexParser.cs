@@ -1,19 +1,13 @@
 ﻿using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal static class RegexParser {
-		private static readonly Type _realRegexParserType;
-		private static readonly MethodInfo _parseMethod;
-
-		static RegexParser() {
-			var regexAssembly = typeof(Regex).Assembly;
-			_realRegexParserType = regexAssembly.GetType("System.Text.RegularExpressions.RegexParser", true, false);
-			_parseMethod = _realRegexParserType.GetMethod("Parse",
-				BindingFlags.Static | BindingFlags.NonPublic, null,
-				new Type[] { typeof(string), typeof(RegexOptions) }, null);
-		}
+		private static readonly Type _realRegexParserType = RU.GetRegexType("RegexParser");
+		private static readonly MethodInfo _parseMethod = RU.GetStaticInternalMethod(
+			_realRegexParserType, "Parse", typeof(string), typeof(RegexOptions));
 
 		internal static RegexTree Parse(string pattern, RegexOptions options) {
 			var realRegexTree = _parseMethod.Invoke(null, new object[] { pattern, options });

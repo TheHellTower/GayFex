@@ -1,17 +1,16 @@
-﻿using System;
-using System.ComponentModel.Composition;
+﻿using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Optimizations.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Optimizations.CompileRegex {
 	[Export(typeof(IProtection))]
-	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
-	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	[ExportMetadata(nameof(IProtectionMetadata.Id), FullId)]
+	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), Id)]
 	[BeforeProtection("Ki.ControlFlow", "Ki.Resources")]
 	public sealed class CompileRegexProtection : IProtection {
-		public const string _Id = "compile regex";
-		public const string _FullId = "Cx2.CompileRegex";
+		public const string Id = "compile regex";
+		public const string FullId = "Cx2.CompileRegex";
 
 		internal const string _RegexNamespace = "System.Text.RegularExpressions";
 		internal const string _RegexTypeFullName = _RegexNamespace + ".Regex";

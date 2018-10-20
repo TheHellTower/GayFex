@@ -34,7 +34,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			var regexService1 = regexService as CompileRegexService;
 			var markerService = context.Registry.GetRequiredService<IMarkerService>();
 			var nameService = context.Registry.GetService<INameService>();
-			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(CompileRegexProtection._Id);
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(CompileRegexProtection.Id);
 
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
 				var expressions = regexService.GetExpressions(module).ToImmutableArray();

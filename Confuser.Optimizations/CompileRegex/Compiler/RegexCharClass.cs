@@ -1,24 +1,14 @@
 ﻿using System;
 using System.Reflection;
-using System.Text.RegularExpressions;
+using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal static class RegexCharClass {
-		private static readonly Type _realRegexCharClassType;
-		private static readonly MethodInfo _isSingletonMethod;
-		private static readonly MethodInfo _singletonCharMethod;
-
-		static RegexCharClass() {
-			var regexAssembly = typeof(Regex).Assembly;
-			_realRegexCharClassType = regexAssembly.GetType("System.Text.RegularExpressions.RegexCharClass", true, false);
-
-			_isSingletonMethod = _realRegexCharClassType.GetMethod("IsSingleton",
-				BindingFlags.Static | BindingFlags.NonPublic, null,
-				new Type[] { typeof(string) }, null);
-			_singletonCharMethod = _realRegexCharClassType.GetMethod("SingletonChar",
-				BindingFlags.Static | BindingFlags.NonPublic, null,
-				new Type[] { typeof(string) }, null);
-		}
+		private static readonly Type _realRegexCharClassType = RU.GetRegexType("RegexCharClass");
+		private static readonly MethodInfo _isSingletonMethod = 
+			RU.GetStaticInternalMethod(_realRegexCharClassType, "IsSingleton", typeof(string));
+		private static readonly MethodInfo _singletonCharMethod =
+			RU.GetStaticInternalMethod(_realRegexCharClassType, "SingletonChar", typeof(string));
 
 		internal static bool IsSingleton(string set) =>
 			(bool)_isSingletonMethod.Invoke(null, new object[] { set });
