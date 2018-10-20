@@ -24,8 +24,8 @@ namespace Confuser.Renamer.Analyzers {
 				string nameAsmName = asmName.Substring(0, asmName.Length - ".resources".Length);
 				ModuleDef mainModule = context.Modules.SingleOrDefault(mod => mod.Assembly.Name == nameAsmName);
 				if (mainModule == null) {
-					logger.LogError("Could not find main assembly of satellite assembly '{0}'.", module.Assembly.FullName);
-					throw new ConfuserException(null);
+					logger.LogCritical("Could not find main assembly of satellite assembly '{0}'.", module.Assembly.FullName);
+					throw new ConfuserException();
 				}
 
 				string format = "{0}." + module.Assembly.Culture + ".resources";

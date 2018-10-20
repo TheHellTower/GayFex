@@ -50,7 +50,7 @@ namespace Confuser.Protections {
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("compressor");
 			if (ctx == null) {
 				logger.LogCritical("No executable module!");
-				throw new ConfuserException(null);
+				throw new ConfuserException();
 			}
 
 			var originModule = context.Modules[ctx.ModuleIndex];
@@ -233,8 +233,8 @@ namespace Confuser.Protections {
 			var rtType = GetRuntimeType(stubModule, context, compCtx, logger);
 			var mainMethod = rtType?.FindMethod("Main");
 			if (mainMethod == null) {
-				logger.LogError("Runtime type for compressor not available. Packed assembly can't work.");
-				throw new ConfuserException(null);
+				logger.LogCritical("Runtime type for compressor not available. Packed assembly can't work.");
+				throw new ConfuserException();
 			}
 
 			uint seed = random.NextUInt32();

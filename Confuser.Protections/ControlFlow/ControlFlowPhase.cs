@@ -95,8 +95,8 @@ namespace Confuser.Protections.ControlFlow {
 			uint maxStack;
 			if (!MaxStackCalculator.GetMaxStack(body.Instructions, body.ExceptionHandlers, out maxStack)) {
 				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ControlFlowProtection._Id);
-				logger.LogError("Failed to calculate maxstack.");
-				throw new ConfuserException(null);
+				logger.LogCritical("Failed to calculate maxstack.");
+				throw new ConfuserException();
 			}
 			body.MaxStack = (ushort)maxStack;
 			ScopeBlock root = BlockParser.ParseBody(body);
