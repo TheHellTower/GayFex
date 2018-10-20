@@ -66,6 +66,10 @@ namespace Confuser.Protections {
 				ctx.Assembly.Modules.Insert(0, stubModule);
 				ImportAssemblyTypeReferences(originModule, stubModule);
 			}
+
+			stubModule.Context.AssemblyResolver = originModule.Context.AssemblyResolver;
+			stubModule.Context.Resolver = originModule.Context.Resolver;
+
 			stubModule.Characteristics = originModule.Characteristics;
 			stubModule.Cor20HeaderFlags = originModule.Cor20HeaderFlags;
 			stubModule.Cor20HeaderRuntimeVersion = originModule.Cor20HeaderRuntimeVersion;
@@ -188,6 +192,7 @@ namespace Confuser.Protections {
 			stubModule.UpdateRowId(dataType.ClassLayout);
 			stubModule.UpdateRowId(dataType);
 			name?.MarkHelper(context, dataType, marker, this);
+			marker.Mark(context, dataType, this);
 
 			var dataField = new FieldDefUser("DataField", new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
@@ -197,7 +202,9 @@ namespace Confuser.Protections {
 			};
 			stubModule.GlobalType.Fields.Add(dataField);
 			stubModule.UpdateRowId(dataField);
-			name?.MarkHelper(context, dataField, marker, this);
+			// Do not use the naming service. It renames the field and the StubProtection relies on the name of the
+			// data field as for right now to find the required field.
+			marker.Mark(context, dataField, this);
 
 			return (module, method, args) => {
 				var repl = new List<Instruction>(args.Count + 3);

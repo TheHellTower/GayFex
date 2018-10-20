@@ -288,9 +288,13 @@ namespace Confuser.Core {
 
 		/// <inheritdoc />
 		protected internal override void MarkMember(IDnlibDef member, IConfuserContext context) {
-			var module = ((IMemberRef)member).Module;
+			if (member == null) throw new ArgumentNullException(nameof(member));
+			if (context == null) throw new ArgumentNullException(nameof(context));
+
+			var module = (member as IMemberRef)?.Module;
+			if (module == null) return;
 			var stack = context.Annotations.Get<ProtectionSettingsStack>(module, ModuleSettingsKey);
-			using (stack.Apply(member, Enumerable.Empty<ProtectionSettingsInfo>()))
+			using (stack?.Apply(member, Enumerable.Empty<ProtectionSettingsInfo>()))
 				return;
 		}
 
