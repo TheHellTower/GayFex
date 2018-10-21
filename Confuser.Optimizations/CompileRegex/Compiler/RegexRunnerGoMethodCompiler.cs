@@ -52,12 +52,12 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		/// In the absence of backtracking, this is all we would need.
 		/// </summary>
 		internal void GenerateForwardSection(RegexOptions options, RegexCode code) {
-			var codes = code._codes;
+			var codes = code.Codes;
 
 			for (var codePos = 0; codePos < codes.Length; codePos += RegexCode.OpcodeSize(codes[codePos])) {
 				MarkLabel(CodePosLabel(codePos));
 
-				var regexOpCode = code._codes[codePos];
+				var regexOpCode = code.Codes[codePos];
 				GenerateOneCode(options, code, regexOpCode, codePos, -1);
 			}
 		}
@@ -97,7 +97,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				if (note._flags != 0) {
 					MarkLabel(note._label);
 
-					var regexOpCode = code._codes[note._codepos] | note._flags;
+					var regexOpCode = code.Codes[note._codepos] | note._flags;
 					GenerateOneCode(options, code, regexOpCode, note._codepos, backtrackCodePos);
 				}
 			}
@@ -365,10 +365,10 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 				// When going backwards, ensure enough space.
 				LdRunnerField(_regexRunnerDef.runtrackposFieldDef);
-				Ldc(code._trackcount * 4);
+				Ldc(code.TrackCount * 4);
 				Ble(l1);
 				LdRunnerField(_regexRunnerDef.runstackposFieldDef);
-				Ldc(code._trackcount * 3);
+				Ldc(code.TrackCount * 3);
 				Bgt(CodePosLabel(targetCodePos));
 				MarkLabel(l1);
 				ReadyPushTrack();
@@ -396,7 +396,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		 * into account the different numbers of arguments taken by operations
 		 */
 		internal static int NextCodepos(RegexCode code, int codePos) =>
-			codePos + RegexCode.OpcodeSize(code._codes[codePos]);
+			codePos + RegexCode.OpcodeSize(code.Codes[codePos]);
 
 
 		/*

@@ -33,7 +33,8 @@ namespace CompileResx.Test {
 
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
-				OutputDirectory = outputDir
+				OutputDirectory = outputDir,
+				Debug = true
 			};
 
 			proj.Rules.Add(new Rule() {

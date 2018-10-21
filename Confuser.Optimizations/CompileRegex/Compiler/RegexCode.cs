@@ -75,43 +75,43 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 
 		private static readonly Type _realRegexCodeType = RU.GetRegexType("RegexCode");
-		private static readonly FieldInfo _codesField = RU.GetInternalField(_realRegexCodeType, "_codes");
-		private static readonly FieldInfo _stringsField = RU.GetInternalField(_realRegexCodeType, "_strings");
-		private static readonly FieldInfo _trackcountField = RU.GetInternalField(_realRegexCodeType, "_trackcount");
-		private static readonly FieldInfo _capsField = RU.GetInternalField(_realRegexCodeType, "_caps");
-		private static readonly FieldInfo _capsizeField = RU.GetInternalField(_realRegexCodeType, "_capsize");
-		private static readonly FieldInfo _fcPrefixField = RU.GetInternalField(_realRegexCodeType, "_fcPrefix");
-		private static readonly FieldInfo _bmPrefixField = RU.GetInternalField(_realRegexCodeType, "_bmPrefix");
-		private static readonly FieldInfo _anchorsField = RU.GetInternalField(_realRegexCodeType, "_anchors");
-		private static readonly FieldInfo _rightToLeftField = RU.GetInternalField(_realRegexCodeType, "_rightToLeft");
+		private static readonly FieldInfo _codesField = RU.GetField(_realRegexCodeType, "_codes", "Codes");
+		private static readonly FieldInfo _stringsField = RU.GetField(_realRegexCodeType, "_strings", "Strings");
+		private static readonly FieldInfo _trackcountField = RU.GetField(_realRegexCodeType, "_trackcount", "TrackCount");
+		private static readonly FieldInfo _capsField = RU.GetField(_realRegexCodeType, "_caps", "Caps");
+		private static readonly FieldInfo _capsizeField = RU.GetField(_realRegexCodeType, "_capsize", "CapSize");
+		private static readonly FieldInfo _fcPrefixField = RU.GetField(_realRegexCodeType, "_fcPrefix", "FCPrefix");
+		private static readonly FieldInfo _bmPrefixField = RU.GetField(_realRegexCodeType, "_bmPrefix", "BMPrefix");
+		private static readonly FieldInfo _anchorsField = RU.GetField(_realRegexCodeType, "_anchors", "Anchors");
+		private static readonly FieldInfo _rightToLeftField = RU.GetField(_realRegexCodeType, "_rightToLeft", "RightToLeft");
 
 		private static readonly MethodInfo _opcodeBacktracksMethod =
-			RU.GetStaticInternalMethod(_realRegexCodeType, "OpcodeBacktracks", typeof(int));
+			RU.GetStaticMethod(_realRegexCodeType, "OpcodeBacktracks", typeof(int));
 		private static readonly MethodInfo _opcodeSizeMethod =
-			RU.GetStaticInternalMethod(_realRegexCodeType, "OpcodeSize", typeof(int));
+			RU.GetStaticMethod(_realRegexCodeType, "OpcodeSize", typeof(int));
 
 		// System.Text.RegularExpressions.RegexCode
 		internal object RealRegexCode { get; }
 
-		internal int[] _codes => (int[])_codesField.GetValue(RealRegexCode);
+		internal int[] Codes => (int[])_codesField.GetValue(RealRegexCode);
 
-		internal string[] _strings => (string[])_stringsField.GetValue(RealRegexCode);
+		internal string[] Strings => (string[])_stringsField.GetValue(RealRegexCode);
 
-		internal int _trackcount => (int)_trackcountField.GetValue(RealRegexCode);
+		internal int TrackCount => (int)_trackcountField.GetValue(RealRegexCode);
 
 		// This may be a Hashtable or a Dictionary. Depends on the used framework. IDictionary is implemented by both.
-		internal IDictionary _caps => (IDictionary)_capsField.GetValue(RealRegexCode);
+		internal IDictionary Caps => (IDictionary)_capsField.GetValue(RealRegexCode);
 
-		internal int _capsize => (int)_capsizeField.GetValue(RealRegexCode);
+		internal int CapSize => (int)_capsizeField.GetValue(RealRegexCode);
 
-		internal RegexPrefix _fcPrefix => RegexPrefix.Wrap(_fcPrefixField.GetValue(RealRegexCode));
+		internal RegexPrefix FCPrefix => RegexPrefix.Wrap(_fcPrefixField.GetValue(RealRegexCode));
 
 		// System.Text.RegularExpressions.RegexBoyerMoore
-		internal RegexBoyerMoore _bmPrefix => RegexBoyerMoore.Wrap(_bmPrefixField.GetValue(RealRegexCode));
+		internal RegexBoyerMoore BMPrefix => RegexBoyerMoore.Wrap(_bmPrefixField.GetValue(RealRegexCode));
 
-		internal int _anchors => (int)_anchorsField.GetValue(RealRegexCode);
+		internal int Anchors => (int)_anchorsField.GetValue(RealRegexCode);
 
-		internal bool _rightToLeft => (bool)_rightToLeftField.GetValue(RealRegexCode);
+		internal bool RightToLeft => (bool)_rightToLeftField.GetValue(RealRegexCode);
 
 		internal RegexCode(object realRegexCode) {
 			if (realRegexCode == null) throw new ArgumentNullException(nameof(realRegexCode));

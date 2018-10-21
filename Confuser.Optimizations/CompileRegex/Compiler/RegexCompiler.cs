@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal sealed class RegexCompiler {
@@ -62,11 +63,11 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				return false;
 			}
 
-			if (tree._root != null) {
+			if (tree.Root != null) {
 				var uncheckedNodes = new Queue<RegexNode>();
 				var alreadyProcessed = new HashSet<RegexNode>();
-				uncheckedNodes.Enqueue(tree._root);
-				alreadyProcessed.Add(tree._root);
+				uncheckedNodes.Enqueue(tree.Root);
+				alreadyProcessed.Add(tree.Root);
 				while (uncheckedNodes.Any()) {
 					var currentNode = uncheckedNodes.Dequeue();
 					if (IsUnsafe(currentNode._options)) return true;
@@ -91,7 +92,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			RegexCode code;
 			try {
 				tree = RegexParser.Parse(expression.Pattern, expression.Options);
-				code = RegexWriter.Write(tree);
+				code = GetRegexCode(expression, tree);
 			} catch (ArgumentException ex) {
 				throw new RegexCompilerException(expression, ex);
 			}
@@ -121,6 +122,18 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				compiledRegex.FactoryMethod, compiledRegex.FactoryTimeoutMethod,
 				staticHelperMethods
 			);
+		}
+
+		private static RegexCode GetRegexCode(RegexCompileDef compile, RegexTree tree) {
+			try {
+				return RegexWriter.Write(tree);
+			} catch (NotSupportedException) { }
+
+			// The NotSupportedException is thrown in case the .NET Core 2.1 runtime is used.
+			// Reflection on RegexWriter (ref struct) does not work in this case. So we'll need a workaround.
+			var regexInstance = new Regex(compile.Pattern, compile.Options);
+			var codeField = RU.GetInternalField(regexInstance.GetType(), "_code");
+			return new RegexCode(codeField.GetValue(regexInstance));
 		}
 
 		#region CompileRegexRunner
@@ -165,7 +178,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			};
 
 			compiler.StRunnerField(_regexRunnerDef.runtrackcountFieldDef, () => {
-				compiler.Ldc(code._trackcount);
+				compiler.Ldc(code.TrackCount);
 			});
 			compiler.Ret();
 

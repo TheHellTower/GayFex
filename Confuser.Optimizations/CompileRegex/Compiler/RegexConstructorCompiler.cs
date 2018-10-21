@@ -106,29 +106,29 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			Stfld(_regexFactoryFieldDef, () => Newobj(factory.FindDefaultConstructor()));
 
 			// set caps
-			if (code._caps != null)
-				GenerateCreateTable(_capsFieldDef, code._caps);
+			if (code.Caps != null)
+				GenerateCreateTable(_capsFieldDef, code.Caps);
 
 			// set capnames
-			if (tree._capnames != null)
-				GenerateCreateTable(_capnamesFieldDef, tree._capnames);
+			if (tree.CapNames != null)
+				GenerateCreateTable(_capnamesFieldDef, tree.CapNames);
 
 
 			// set capslist
-			if (tree._capslist != null) {
-				Stfld(_capslistFieldDef, () => Newarr(_stringTypeRef, tree._capslist.Length));
+			if (tree.CapsList != null) {
+				Stfld(_capslistFieldDef, () => Newarr(_stringTypeRef, tree.CapsList.Length));
 
-				for (int i = 0; i < tree._capslist.Length; i++) {
+				for (int i = 0; i < tree.CapsList.Length; i++) {
 					Ldfld(_capslistFieldDef);
 
 					Ldc(i);
-					Ldstr(tree._capslist[i]);
+					Ldstr(tree.CapsList[i]);
 					Add(Instruction.Create(OpCodes.Stelem_Ref));
 				}
 			}
 
 			// set capsize
-			Stfld(_capsizeFieldDef, () => Ldc(code._capsize));
+			Stfld(_capsizeFieldDef, () => Ldc(code.CapSize));
 
 			// set runnerref and replref by calling InitializeReferences()
 			Ldthis();

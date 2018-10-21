@@ -24,17 +24,17 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		}
 
 		private static bool IsAnchorFindFirstChar(RegexCode code) =>
-			(code._anchors & (RegexFCD.Beginning | RegexFCD.Start | RegexFCD.EndZ | RegexFCD.End)) != 0;
+			(code.Anchors & (RegexFCD.Beginning | RegexFCD.Start | RegexFCD.EndZ | RegexFCD.End)) != 0;
 
 		private static bool IsBoyerMooreFindFirstChar(RegexCode code) =>
-			code._bmPrefix != null && code._bmPrefix._negativeUnicode == null;
+			code.BMPrefix != null && code.BMPrefix.NegativeUnicode == null;
 
-		private static bool IsPrefixFindFirstChar(RegexCode code) => code._fcPrefix != null;
+		private static bool IsPrefixFindFirstChar(RegexCode code) => code.FCPrefix != null;
 
 		private void GenerateAnchorFindFirstChar(RegexCode code) {
-			var anchors = code._anchors;
-			var rightToLeft = code._rightToLeft;
-			var bmPrefix = code._bmPrefix;
+			var anchors = code.Anchors;
+			var rightToLeft = code.RightToLeft;
+			var bmPrefix = code.BMPrefix;
 
 			var endFoundNothing = CreateLabel();
 
@@ -151,8 +151,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		}
 
 		private void GenerateBoyerMooreFindFirstChar(RegexOptions options, RegexCode code) {
-			var rightToLeft = code._rightToLeft;
-			var bmPrefix = code._bmPrefix;
+			var rightToLeft = code.RightToLeft;
+			var bmPrefix = code.BMPrefix;
 
 			// Compiled Boyer-Moore string matching
 			// <
@@ -165,14 +165,14 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			int last;
 			if (!rightToLeft) {
 				beforefirst = -1;
-				last = bmPrefix._pattern.Length - 1;
+				last = bmPrefix.Pattern.Length - 1;
 			}
 			else {
-				beforefirst = bmPrefix._pattern.Length;
+				beforefirst = bmPrefix.Pattern.Length;
 				last = 0;
 			}
 
-			var chLast = bmPrefix._pattern[last];
+			var chLast = bmPrefix.Pattern[last];
 
 			if (!rightToLeft)
 				LdRunnerField(_regexRunnerDef.runtextendFieldDef);
@@ -190,11 +190,11 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				StRunnerField(_regexRunnerDef.runtextposFieldDef, () => {
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					if (!rightToLeft) {
-						Ldc(bmPrefix._pattern.Length - 1);
+						Ldc(bmPrefix.Pattern.Length - 1);
 						Add();
 					}
 					else {
-						Ldc(bmPrefix._pattern.Length);
+						Ldc(bmPrefix.Pattern.Length);
 						Sub();
 					}
 				});
@@ -203,9 +203,9 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				MarkLabel(lDefaultAdvance);
 
 				if (!rightToLeft)
-					Ldc(bmPrefix._pattern.Length);
+					Ldc(bmPrefix.Pattern.Length);
 				else
-					Ldc(-bmPrefix._pattern.Length);
+					Ldc(-bmPrefix.Pattern.Length);
 
 				MarkLabel(lAdvance);
 
@@ -225,7 +225,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Blt(lFail);
 
 				Rightchar();
-				if (bmPrefix._caseInsensitive)
+				if (bmPrefix.CaseInsensitive)
 					CallToLower(options);
 
 				Dup();
@@ -240,23 +240,23 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 					FreeLocal(chV);
 				}
-				Ldc(bmPrefix._lowASCII);
+				Ldc(bmPrefix.LowASCII);
 				Sub();
 				Dup();
 				{
 					var chV = RequireLocalInt32();
 
 					Stloc(chV);
-					Ldc(bmPrefix._highASCII - bmPrefix._lowASCII);
+					Ldc(bmPrefix.HighASCII - bmPrefix.LowASCII);
 					Bgtun(lDefaultAdvance);
 
-					table = new RegexMethodCompilerLabel[bmPrefix._highASCII - bmPrefix._lowASCII + 1];
+					table = new RegexMethodCompilerLabel[bmPrefix.HighASCII - bmPrefix.LowASCII + 1];
 
-					for (var i = bmPrefix._lowASCII; i <= bmPrefix._highASCII; i++) {
-						if (bmPrefix._negativeASCII[i] == beforefirst)
-							table[i - bmPrefix._lowASCII] = lDefaultAdvance;
+					for (var i = bmPrefix.LowASCII; i <= bmPrefix.HighASCII; i++) {
+						if (bmPrefix.NegativeASCII[i] == beforefirst)
+							table[i - bmPrefix.LowASCII] = lDefaultAdvance;
 						else
-							table[i - bmPrefix._lowASCII] = CreateLabel();
+							table[i - bmPrefix.LowASCII] = CreateLabel();
 					}
 
 					Ldloc(chV);
@@ -265,13 +265,13 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				}
 				Add(Instruction.Create(OpCodes.Switch, table.Select(GetLabelInstruction).ToArray()));
 
-				for (var i = bmPrefix._lowASCII; i <= bmPrefix._highASCII; i++) {
-					if (bmPrefix._negativeASCII[i] == beforefirst)
+				for (var i = bmPrefix.LowASCII; i <= bmPrefix.HighASCII; i++) {
+					if (bmPrefix.NegativeASCII[i] == beforefirst)
 						continue;
 
-					MarkLabel(table[i - bmPrefix._lowASCII]);
+					MarkLabel(table[i - bmPrefix.LowASCII]);
 
-					Ldc(bmPrefix._negativeASCII[i]);
+					Ldc(bmPrefix.NegativeASCII[i]);
 					Br(lAdvance);
 				}
 
@@ -283,14 +283,14 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 					Stloc(testV);
 
-					for (var i = bmPrefix._pattern.Length - 2; i >= 0; i--) {
+					for (var i = bmPrefix.Pattern.Length - 2; i >= 0; i--) {
 						var lNext = CreateLabel();
 						int charindex;
 
 						if (!rightToLeft)
 							charindex = i;
 						else
-							charindex = bmPrefix._pattern.Length - 1 - i;
+							charindex = bmPrefix.Pattern.Length - 1 - i;
 
 						LdRunnerField(_regexRunnerDef.runtextFieldDef);
 						Ldloc(testV);
@@ -299,12 +299,12 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						Dup();
 						Stloc(testV);
 						CallStringGetChars();
-						if (bmPrefix._caseInsensitive)
+						if (bmPrefix.CaseInsensitive)
 							CallToLower(options);
 
-						Ldc(bmPrefix._pattern[charindex]);
+						Ldc(bmPrefix.Pattern[charindex]);
 						Beq(lNext);
-						Ldc(bmPrefix._positive[charindex]);
+						Ldc(bmPrefix.Positive[charindex]);
 						Br(lAdvance);
 
 						MarkLabel(lNext);
@@ -338,8 +338,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		}
 
 		private void GeneratePrefixFindFirstChar(RegexOptions options, RegexCode code) {
-			var rightToLeft = code._rightToLeft;
-			var fcPrefix = code._fcPrefix;
+			var rightToLeft = code.RightToLeft;
+			var fcPrefix = code.FCPrefix;
 
 			var endFoundNothing = CreateLabel();
 			var endFoundFirstChar = CreateLabel();

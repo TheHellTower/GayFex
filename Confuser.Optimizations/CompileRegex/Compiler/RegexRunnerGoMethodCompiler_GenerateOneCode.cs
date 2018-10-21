@@ -15,7 +15,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private const int forejumpback = 9;    // back part of forejump
 
 		private void GenerateOneCode(RegexOptions options, RegexCode code, int regexOpCode, int codePos, int backtrackCodePos) {
-			int Operand(int i) => code._codes[codePos + i + 1];
+			int Operand(int i) => code.Codes[codePos + i + 1];
 			int Code = regexOpCode & RegexCode.Mask;
 			bool IsRtl = (regexOpCode & RegexCode.Rtl) != 0;
 			bool IsCi = (regexOpCode & RegexCode.Ci) != 0;
@@ -775,7 +775,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						CallToLower(options);
 
 					if (Code == RegexCode.Set) {
-						CallCharInClass(code._strings[Operand(0)]);
+						CallCharInClass(code.Strings[Operand(0)]);
 						Brfalse(BackwardLabel);
 					}
 					else {
@@ -796,7 +796,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					//: for (i = 0; c > 0; i++, c--)
 					//:     if (Str[i] != Rightcharnext())
 					//:         break Backward;
-					var str = code._strings[Operand(0)];
+					var str = code.Strings[Operand(0)];
 
 					Ldc(str.Length);
 					LdRunnerField(_regexRunnerDef.runtextendFieldDef);
@@ -831,7 +831,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					//: while (c > 0)
 					//:     if (Str[--c] != Leftcharnext())
 					//:         break Backward;
-					var str = code._strings[Operand(0)];
+					var str = code.Strings[Operand(0)];
 
 					Ldc(str.Length);
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
@@ -1019,7 +1019,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						CallToLower(options);
 
 					if (Code == RegexCode.Setrep) {
-						CallCharInClass(code._strings[Operand(0)]);
+						CallCharInClass(code.Strings[Operand(0)]);
 						Brfalse(BackwardLabel);
 					}
 					else {
@@ -1120,7 +1120,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						CallToLower(options);
 
 					if (Code == RegexCode.Setloop) {
-						CallCharInClass(code._strings[Operand(0)]);
+						CallCharInClass(code.Strings[Operand(0)]);
 
 						Brtrue(l1);
 					}
@@ -1302,7 +1302,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						CallToLower(options);
 
 					if (Code == RegexCode.Setlazy) {
-						CallCharInClass(code._strings[Operand(0)]);
+						CallCharInClass(code.Strings[Operand(0)]);
 						Brfalse(BackwardLabel);
 					}
 					else {
