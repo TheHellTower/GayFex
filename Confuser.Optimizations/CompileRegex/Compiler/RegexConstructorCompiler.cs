@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -30,7 +26,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private readonly ITypeDefOrRef _int32TypeRef;
 		private readonly TypeDef _timespanTypeDef;
 		private readonly TypeSig _timespanTypeSig;
-
 
 		private readonly MethodDef _timespanFromTicksMethodDef;
 
@@ -58,8 +53,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			_capsizeFieldDef = _regexTypeDef.FindField("capsize", new FieldSig(module.CorLibTypes.Int32), SigComparerOptions.PrivateScopeFieldIsComparable);
 			_internalMatchTimeoutFieldDef = _regexTypeDef.FindField("internalMatchTimeout", new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
 			_validateMatchTimeoutMethodDef = _regexTypeDef.FindMethod("ValidateMatchTimeout", MethodSig.CreateStatic(module.CorLibTypes.Void, _timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
-
-
+			
 			_defaultMatchTimeoutFieldDef = _regexTypeDef.FindField("DefaultMatchTimeout", new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
 
 			_stringTypeRef = module.CorLibTypes.String.ToTypeDefOrRef();
@@ -101,7 +95,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Stfld(_internalMatchTimeoutFieldDef, () => Ldfld(_defaultMatchTimeoutFieldDef));
 			}
 
-
 			// set factory
 			Stfld(_regexFactoryFieldDef, () => Newobj(factory.FindDefaultConstructor()));
 
@@ -112,7 +105,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			// set capnames
 			if (tree.CapNames != null)
 				GenerateCreateTable(_capnamesFieldDef, tree.CapNames);
-
 
 			// set capslist
 			if (tree.CapsList != null) {
@@ -146,7 +138,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			Stfld(_internalMatchTimeoutFieldDef, () => Ldarg(Method.Parameters[1]));
 			Ret();
 		}
-
 
 		internal void GenerateCreateTable(FieldDef field, IDictionary ht) {
 			Debug.Assert(field != null, $"{nameof(field)} != null");
