@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
@@ -59,7 +58,7 @@ namespace CompressorWithResx.Test {
 
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
-			
+
 			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async (stdout) => {
 				Assert.Equal("START", await stdout.ReadLineAsync());
 				Assert.Equal("Test (fallback)", await stdout.ReadLineAsync());

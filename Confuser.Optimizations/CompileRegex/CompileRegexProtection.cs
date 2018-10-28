@@ -20,7 +20,7 @@ namespace Confuser.Optimizations.CompileRegex {
 		public string Name => "Compile Regular Expressions";
 
 		public string Description => "This optimization will search uses of regular expressions and create the compiled code for the expression if possible.";
-		
+
 		internal CompileRegexProtectionParameters Parameters { get; } = new CompileRegexProtectionParameters();
 
 		public void Initialize(IServiceCollection collection) =>

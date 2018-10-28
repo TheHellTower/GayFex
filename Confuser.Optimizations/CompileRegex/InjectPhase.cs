@@ -59,6 +59,11 @@ namespace Confuser.Optimizations.CompileRegex {
 						compileResult.StaticHelperMethods.TryGetValue(result.regexMethod, out newMethod);
 					}
 
+					if (newMethod == null) {
+						logger.LogMsgNoMatchingTargetMethod(result.regexMethod, compileResult);
+						continue;
+					}
+
 					method.Body.RemoveInstruction(result.patternInstr);
 					if (result.optionsInstr != null)
 						method.Body.RemoveInstruction(result.optionsInstr);
@@ -68,9 +73,11 @@ namespace Confuser.Optimizations.CompileRegex {
 					}
 
 					Debug.Assert(newMethod != null, $"{nameof(newMethod)} != null");
+					Debug.Assert(method.Body.Instructions.Contains(result.mainInstruction), "Method does not contain main instruction?");
 
 					result.mainInstruction.OpCode = OpCodes.Call;
 					result.mainInstruction.Operand = newMethod;
+					logger.LogMsgInjectSuccessful(compileResult, method);
 				}
 				token.ThrowIfCancellationRequested();
 			}

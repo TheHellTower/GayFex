@@ -32,7 +32,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			_FoundRegexReferenceInMethod(logger, method, targetMethod.Method, null);
 
 		private static readonly Action<ILogger, MethodDef, Exception> _SkippedRegexNotCompiled = LoggerMessage.Define<MethodDef>(
-			LogLevel.Trace, new EventId(20006, "opti-6"), "Skipped the regex call in {Method}, because it is not marked with RegexOptions.Compiled.");
+			LogLevel.Trace, new EventId(20006, "opti-6"), "Skipped the RegEx call in {Method}, because it is not marked with RegexOptions.Compiled.");
 		internal static void LogMsgSkippedRegexNotCompiled(this ILogger logger, MethodDef method) =>
 			_SkippedRegexNotCompiled(logger, method, null);
 
@@ -42,7 +42,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			_regexCompilingForModule(logger, expressionCount, module, null);
 
 		private static readonly Action<ILogger, TypeDef, Exception> _regexFinishedCompiling = LoggerMessage.Define<TypeDef>(
-			LogLevel.Trace, new EventId(20008, "opti-8"), "Compiled regex expression to: {TypeDef}");
+			LogLevel.Trace, new EventId(20008, "opti-8"), "Compiled regular expression to: {TypeDef}");
 		internal static void LogMsgRegexFinishedCompiling(this ILogger logger, RegexCompilerResult compilerResult) =>
 			_regexFinishedCompiling(logger, compilerResult.RegexTypeDef, null);
 
@@ -52,7 +52,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			_regexSkippedBroken(logger, compileDef.Pattern, null);
 
 		private static readonly Action<ILogger, Exception> _regexInvalidPattern = LoggerMessage.Define(
-			LogLevel.Critical, new EventId(20010, "opti-10"), "Invalid regex pattern found.");
+			LogLevel.Critical, new EventId(20010, "opti-10"), "Invalid regular expression pattern found.");
 		internal static void LogMsgInvalidRegexPatternFound(this ILogger logger, RegexCompilerException ex) =>
 			_regexInvalidPattern(logger, ex);
 
@@ -60,5 +60,15 @@ namespace Confuser.Optimizations.CompileRegex {
 			LogLevel.Debug, new EventId(20011, "opti-11"), "Skipped compilation of culture unsafe expression: {Pattern}");
 		internal static void LogMsgSkippedUnsafe(this ILogger logger, RegexCompileDef compileDef) =>
 			_regexSkippedUnsafe(logger, compileDef.Pattern, null);
+
+		private static readonly Action<ILogger, string, MethodDef, Exception> _noMatchingTargetMethod = LoggerMessage.Define<string, MethodDef>(
+			LogLevel.Warning, new EventId(20012, "opti-12"), "The regular expression \"{Pattern}\" was compiled, but the required target method for \"{TargetMethod}\" was not found.");
+		internal static void LogMsgNoMatchingTargetMethod(this ILogger logger, IRegexTargetMethod targetMethod, RegexCompilerResult compilerResult) =>
+			_noMatchingTargetMethod(logger, compilerResult.CompileDef.Pattern, targetMethod.Method, null);
+
+		private static readonly Action<ILogger, string, MethodDef, Exception> _injectionDone = LoggerMessage.Define<string, MethodDef>(
+			LogLevel.Trace, new EventId(20013, "opti-13"), "The compiled regular expression \"{Pattern}\", was injected into \"{InjectionTargetMethod}\".");
+		internal static void LogMsgInjectSuccessful(this ILogger logger, RegexCompilerResult compilerResult, MethodDef targetMethod) =>
+			_injectionDone(logger, compilerResult.CompileDef.Pattern, targetMethod, null);
 	}
 }
