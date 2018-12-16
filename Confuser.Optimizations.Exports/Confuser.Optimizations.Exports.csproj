@@ -1,11 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
-
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
+    <RootNamespace>Confuser.Optimizations</RootNamespace>
     <EnableCodeAnalysis>true</EnableCodeAnalysis>
   </PropertyGroup>
 
@@ -13,12 +10,6 @@
     <Title>ConfuserEx Optimizations - Exports</Title>
     <Description>Exports of the Optimizations of ConfuserEx</Description>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <RootNamespace>Confuser.Optimizations</RootNamespace>
-  </PropertyGroup>
-
-  <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
 
   <ItemGroup>
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />

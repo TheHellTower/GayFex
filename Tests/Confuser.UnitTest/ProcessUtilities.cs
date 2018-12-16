@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,9 +13,9 @@ namespace Confuser.UnitTest {
 	public static class ProcessUtilities {
 		public static async Task<int> ExecuteTestApplication(string file, OutputHandler outputHandler, ITestOutputHelper outputHelper) {
 			var result = await ExecuteTestApplication(file, async (stdout) => {
-				await outputHandler(stdout);
+				await outputHandler(stdout).ConfigureAwait(false);
 				return true;
-			}, outputHelper);
+			}, outputHelper).ConfigureAwait(false);
 			return result.ExitCode;
 		}
 
@@ -28,7 +29,7 @@ namespace Confuser.UnitTest {
 				WindowStyle = ProcessWindowStyle.Hidden,
 				CreateNoWindow = true
 			};
-			if (file.EndsWith(".dll")) {
+			if (file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)) {
 				info.FileName = "dotnet";
 				info.Arguments = '"' + file + '"';
 			}
@@ -44,17 +45,17 @@ namespace Confuser.UnitTest {
 				var stderr = process.StandardError;
 				TResult result;
 				try {
-					result = await outputHandler(stdout);
-					Assert.Empty(await stdout.ReadToEndAsync());
-					Assert.Empty(await stderr.ReadToEndAsync());
+					result = await outputHandler(stdout).ConfigureAwait(false);
+					Assert.Empty(await stdout.ReadToEndAsync().ConfigureAwait(false));
+					Assert.Empty(await stderr.ReadToEndAsync().ConfigureAwait(false));
 				}
 				catch {
 					var cnt = 0;
 					while (!process.HasExited && ++cnt < 10) {
-						await Task.Delay(500);
+						await Task.Delay(500).ConfigureAwait(false);
 					}
-					outputHelper.WriteLine("Remaining output: {0}", await stdout.ReadToEndAsync());
-					outputHelper.WriteLine("Remaining error: {0}", await stderr.ReadToEndAsync());
+					outputHelper.WriteLine("Remaining output: {0}", await stdout.ReadToEndAsync().ConfigureAwait(false));
+					outputHelper.WriteLine("Remaining error: {0}", await stderr.ReadToEndAsync().ConfigureAwait(false));
 					if (process.HasExited)
 						outputHelper.WriteLine("Process exit code: {0:d}", process.ExitCode);
 					else

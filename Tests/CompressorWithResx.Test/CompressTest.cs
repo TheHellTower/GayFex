@@ -22,11 +22,14 @@ namespace CompressorWithResx.Test {
 		[Trait("Category", "Packer")]
 		[Trait("Packer", "compressor")]
 		public async Task CompressAndExecuteTest(string framework, string compatKey, string deriverKey, string resourceProtectionMode) {
+			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "CompressorWithResx.exe");
 			var inputSatelliteFile = Path.Combine(baseDir, "de", "CompressorWithResx.resources.dll");
 			var outputFile = Path.Combine(outputDir, "CompressorWithResx.exe");
+
+			Assert.True(File.Exists(key));
 			FileUtilities.ClearOutput(outputFile);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
@@ -45,8 +48,8 @@ namespace CompressorWithResx.Test {
 				});
 			}
 
-			proj.Add(new ProjectModule() { Path = inputFile });
-			proj.Add(new ProjectModule() { Path = inputSatelliteFile });
+			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = key });
+			proj.Add(new ProjectModule() { Path = inputSatelliteFile, SNKeyPath = key });
 
 
 			var parameters = new ConfuserParameters {

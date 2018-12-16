@@ -349,8 +349,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="property">The property.</param>
 		/// <returns><c>true</c> if the specified property is public; otherwise, <c>false</c>.</returns>
-		public static bool IsPublic(this PropertyDef property)
-		{
+		public static bool IsPublic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsPublic);
 		}
 
@@ -359,8 +358,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="property">The property.</param>
 		/// <returns><c>true</c> if the specified property is static; otherwise, <c>false</c>.</returns>
-		public static bool IsStatic(this PropertyDef property)
-		{
+		public static bool IsStatic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsStatic);
 		}
 
@@ -369,8 +367,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified event is public; otherwise, <c>false</c>.</returns>
-		public static bool IsPublic(this EventDef evt)
-		{
+		public static bool IsPublic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsPublic);
 		}
 
@@ -379,8 +376,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified event is static; otherwise, <c>false</c>.</returns>
-		public static bool IsStatic(this EventDef evt)
-		{
+		public static bool IsStatic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsStatic);
 		}
 
@@ -389,8 +385,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="method">The method.</param>
 		/// <returns><c>true</c> if the specified method is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this MethodDef method)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this MethodDef method) {
 			return method.IsFinal && method.IsPrivate;
 		}
 
@@ -399,8 +394,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="property">The method.</param>
 		/// <returns><c>true</c> if the specified property is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this PropertyDef property)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this PropertyDef property) {
 			return property.AllMethods().Any(IsExplicitlyImplementedInterfaceMember);
 		}
 
@@ -409,21 +403,18 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified eve is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this EventDef evt)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this EventDef evt) {
 			return evt.AllMethods().Any(IsExplicitlyImplementedInterfaceMember);
 		}
 
-		private static IEnumerable<MethodDef> AllMethods(this EventDef evt)
-		{
-			return new [] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
+		private static IEnumerable<MethodDef> AllMethods(this EventDef evt) {
+			return new[] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
 				.Concat(evt.OtherMethods)
 				.Where(m => m != null);
 		}
 
-		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property)
-		{
-			return new [] { property.GetMethod, property.SetMethod }
+		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property) {
+			return new[] { property.GetMethod, property.SetMethod }
 				.Concat(property.OtherMethods)
 				.Where(m => m != null);
 		}
@@ -435,30 +426,117 @@ namespace Confuser {
 		/// <param name="target">The instruction to replace.</param>
 		/// <param name="newInstr">The new instruction.</param>
 		public static void ReplaceReference(this CilBody body, Instruction target, Instruction newInstr) {
-			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
-				if (eh.TryStart == target)
-					eh.TryStart = newInstr;
-				if (eh.TryEnd == target)
-					eh.TryEnd = newInstr;
-				if (eh.HandlerStart == target)
-					eh.HandlerStart = newInstr;
-				if (eh.HandlerEnd == target)
-					eh.HandlerEnd = newInstr;
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (target == null) throw new ArgumentNullException(nameof(target));
+			if (newInstr == null) throw new ArgumentNullException(nameof(newInstr));
+
+			body.UpdateReference(target, newInstr);
+
+			body.FixScopeStarts(target, newInstr);
+			body.FixScopeEnds(target, newInstr);
+
+			if (target.SequencePoint != null && newInstr.SequencePoint == null) {
+				newInstr.SequencePoint = target.SequencePoint;
 			}
-			foreach (Instruction instr in body.Instructions) {
-				if (instr.Operand == target)
-					instr.Operand = newInstr;
-				else if (instr.Operand is Instruction[]) {
-					var targets = (Instruction[])instr.Operand;
-					for (int i = 0; i < targets.Length; i++)
-						if (targets[i] == target)
-							targets[i] = newInstr;
+		}
+
+		private static void UpdateReference(this CilBody body, Instruction oldInstr, Instruction newInstr) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (oldInstr == null) throw new ArgumentNullException(nameof(oldInstr));
+			if (newInstr == null) throw new ArgumentNullException(nameof(newInstr));
+
+			foreach (var instr in body.Instructions) {
+				switch (instr.Operand) {
+					case Instruction opInstr:
+						if (oldInstr.Equals(opInstr))
+							instr.Operand = newInstr;
+						break;
+					case Instruction[] opInstrs:
+						for (var i = 0; i < opInstrs.Length; i++)
+							if (oldInstr.Equals(opInstrs[i]))
+								opInstrs[i] = newInstr;
+
+						break;
 				}
+			}
+		}
+		public static void InsertPrefixInstructions(this CilBody body, Instruction instr, params Instruction[] newInstrs) =>
+			InsertPrefixInstructions(body, instr, newInstrs.AsEnumerable());
+
+		public static void InsertPrefixInstructions(this CilBody body, Instruction instr, IEnumerable<Instruction> newInstrs) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (instr == null) throw new ArgumentNullException(nameof(instr));
+			if (newInstrs == null) throw new ArgumentNullException(nameof(newInstrs));
+
+			if (!body.HasInstructions) {
+				Debug.Fail("No instructions in method?!");
+				return;
+			}
+
+			var indexOfInstr = body.Instructions.IndexOf(instr);
+			Debug.Assert(indexOfInstr >= 0, "Instruction not present in method.");
+			if (indexOfInstr < 0) return;
+
+			int index = 0;
+			foreach (var newInstr in newInstrs)
+				body.Instructions.Insert(indexOfInstr + (index++), newInstr);
+
+			body.UpdateReference(instr, body.Instructions[indexOfInstr]);
+			body.FixScopeStarts(instr, body.Instructions[indexOfInstr]);
+		}
+
+		private static void FixScopeStarts(this CilBody body, Instruction oldInstr, Instruction newInstr) {
+			Debug.Assert(body != null, $"{nameof(body)} != null");
+			Debug.Assert(oldInstr != null, $"{nameof(oldInstr)} != null");
+			Debug.Assert(newInstr != null, $"{nameof(newInstr)} != null");
+
+			foreach (var exHandler in body.ExceptionHandlers) {
+				if (oldInstr.Equals(exHandler.TryStart))
+					exHandler.TryStart = newInstr;
+
+				if (oldInstr.Equals(exHandler.HandlerStart))
+					exHandler.HandlerStart = newInstr;
+			}
+
+			foreach (var currentScope in body.GetPdbScopes()) {
+				if (oldInstr.Equals(currentScope.Start))
+					currentScope.Start = newInstr;
+			}
+		}
+
+		private static void FixScopeEnds(this CilBody body, Instruction oldInstr, Instruction newInstr) {
+			Debug.Assert(body != null, $"{nameof(body)} != null");
+			Debug.Assert(oldInstr != null, $"{nameof(oldInstr)} != null");
+			Debug.Assert(newInstr != null, $"{nameof(newInstr)} != null");
+
+			foreach (var exHandler in body.ExceptionHandlers) {
+				if (oldInstr.Equals(exHandler.TryEnd))
+					exHandler.TryEnd = newInstr;
+
+				if (oldInstr.Equals(exHandler.HandlerEnd))
+					exHandler.HandlerEnd = newInstr;
+			}
+
+			foreach (var currentScope in body.GetPdbScopes()) {
+				if (oldInstr.Equals(currentScope.End))
+					currentScope.End = newInstr;
+			}
+		}
+
+		private static IEnumerable<PdbScope> GetPdbScopes(this CilBody body) {
+			if (body.HasPdbMethod) {
+				Debug.Assert(body.PdbMethod != null, $"{nameof(body)}.PdbMethod != null");
+
+				var unprocessedScopes = new Queue<PdbScope>();
+				unprocessedScopes.Enqueue(body.PdbMethod.Scope);
+
+				while (unprocessedScopes.Any())
+					yield return unprocessedScopes.Dequeue();
 			}
 		}
 
 		/// <summary>
-		/// This method removes an instruction from the body and fixes the the references to the removed instruction.
+		/// This method removes an instruction from the body and fixes the references to the removed instruction.
 		/// </summary>
 		/// <param name="body">The body to process</param>
 		/// <param name="instr">The instruction that is removed</param>
@@ -476,56 +554,24 @@ namespace Confuser {
 			Debug.Assert(indexOfInstr >= 0, "Instruction not present in method.");
 			if (indexOfInstr < 0) return;
 
-			// Scan all other instructions for jumps and connect them to the next instruction.
-			foreach (var testInstr in body.Instructions) {
-				switch (testInstr.Operand) {
-					case Instruction opInstr:
-						if (instr.Equals(opInstr))
-							testInstr.Operand = body.Instructions[indexOfInstr + 1];
-						break;
-					case Instruction[] opInstrs:
-						for (var i = 0; i < opInstrs.Length; i++) {
-							if (instr.Equals(opInstrs[i]))
-								opInstrs[i] = body.Instructions[indexOfInstr + 1];
-						}
-						break;
+			if (indexOfInstr < body.Instructions.Count - 1) {
+				body.UpdateReference(instr, body.Instructions[indexOfInstr + 1]);
+				body.FixScopeStarts(instr, body.Instructions[indexOfInstr + 1]);
+			}
+			else if(indexOfInstr > 0) {
+				body.UpdateReference(instr, body.Instructions[indexOfInstr - 1]);
+				body.FixScopeStarts(instr, body.Instructions[indexOfInstr - 1]);
+			}
+
+			if (indexOfInstr > 0)
+				body.FixScopeEnds(instr, body.Instructions[indexOfInstr - 1]);
+			else if (indexOfInstr < body.Instructions.Count - 1)
+				body.FixScopeEnds(instr, body.Instructions[indexOfInstr + 1]);
+
+			if (indexOfInstr < body.Instructions.Count) {
+				if (instr.SequencePoint != null && body.Instructions[indexOfInstr + 1].SequencePoint == null) {
+					body.Instructions[indexOfInstr + 1].SequencePoint = instr.SequencePoint;
 				}
-			}
-
-			// Now there also may be exception handlers starting or ending at the instruction we are deleting.
-			foreach (var exHandler in body.ExceptionHandlers) {
-				if (instr.Equals(exHandler.TryStart))
-					exHandler.TryStart = body.Instructions[indexOfInstr + 1];
-				if (instr.Equals(exHandler.TryEnd))
-					exHandler.TryEnd = body.Instructions[indexOfInstr - 1];
-
-				if (instr.Equals(exHandler.HandlerStart))
-					exHandler.HandlerStart = body.Instructions[indexOfInstr + 1];
-				if (instr.Equals(exHandler.HandlerEnd))
-					exHandler.HandlerEnd = body.Instructions[indexOfInstr - 1];
-			}
-
-			// Any finally there may be debug symbols that point to the instruction that is removed.
-			if (body.HasPdbMethod) {
-				Debug.Assert(body.PdbMethod != null, $"{nameof(body)}.PdbMethod != null");
-
-				var unprocessedScopes = new Queue<PdbScope>();
-				unprocessedScopes.Enqueue(body.PdbMethod.Scope);
-				while (unprocessedScopes.Any()) {
-					var currentScope = unprocessedScopes.Dequeue();
-
-					if (instr.Equals(currentScope.Start))
-						currentScope.Start = body.Instructions[indexOfInstr + 1];
-					if (instr.Equals(currentScope.End))
-						currentScope.End = body.Instructions[indexOfInstr - 1];
-
-					foreach (var scope in currentScope.Scopes)
-						unprocessedScopes.Enqueue(scope);
-				}
-			}
-
-			if (instr.SequencePoint != null && body.Instructions[indexOfInstr + 1].SequencePoint == null) {
-				body.Instructions[indexOfInstr + 1].SequencePoint = instr.SequencePoint;
 			}
 
 			// Any now we have fixed everything and we can finally safely delete the instruction!

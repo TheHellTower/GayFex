@@ -39,7 +39,7 @@ namespace Confuser.UnitTest {
 			if (file == null) throw new ArgumentNullException(nameof(file));
 			if (!File.Exists(file)) throw new FileNotFoundException($"File: {file}");
 
-			using (var checksum = SHA1.Create()) {
+			using (var checksum = SHA256.Create()) {
 				using (var fs = File.OpenRead(file)) {
 					return checksum.ComputeHash(fs);
 				}

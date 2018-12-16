@@ -1,5 +1,12 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Confuser.Test.snk" Link="Confuser.Test.snk">
+      <Visible>False</Visible>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <PropertyGroup>
     <_ConfuserUnitTestTargetProjectName>$(MSBuildProjectName.Replace('.Test', ''))</_ConfuserUnitTestTargetProjectName>
     <_ConfuserUnitTestTargetProject>..\$(_ConfuserUnitTestTargetProjectName)\$(_ConfuserUnitTestTargetProjectName).csproj</_ConfuserUnitTestTargetProject>

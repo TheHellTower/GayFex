@@ -1,11 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
-
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Label="Nuget Package Settings">
@@ -37,7 +33,7 @@
   <ItemGroup>
     <None Remove="build\Confuser.MSBuild.targets" />
   </ItemGroup>
-  
+
   <Target Name="IncludeConfuserDependencyFiles" DependsOnTargets="IncludeConfuserFrameworkDependencyFiles;IncludeConfuserStandardDependencyFiles" />
 
   <Target Name="IncludeConfuserFrameworkDependencyFiles" Condition="'$(TargetFramework)' == 'net461'">
@@ -59,7 +55,5 @@
       <Output TaskParameter="Include" ItemName="TfmSpecificPackageFile" />
     </CreateItem>
   </Target>
-
-  <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
 
 </Project>

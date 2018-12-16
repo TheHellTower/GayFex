@@ -82,4 +82,6 @@
              RemoveProperties="TargetFrameworks;TargetFramework;RuntimeIdentifier"
              BuildInParallel="$(BuildInParallel)" />
   </Target>
+  
+  <Import Project="$(MSBuildThisFileDirectory)Confuser.Build/GenerateInternalsVisibleTo.targets" />
 </Project>
