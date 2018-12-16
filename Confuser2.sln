@@ -85,6 +85,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MSBuild", "MSBuild", "{3BC0
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Optimizations.Exports", "Confuser.Optimizations.Exports\Confuser.Optimizations.Exports.csproj", "{C41A9AFB-294A-40EA-8970-2E4A272CE051}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Optimizations.Test", "Tests\Confuser.Optimizations.Test\Confuser.Optimizations.Test.csproj", "{4CF623D7-1963-4A9A-8753-4540C895E614}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -215,6 +217,10 @@ Global
 		{C41A9AFB-294A-40EA-8970-2E4A272CE051}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C41A9AFB-294A-40EA-8970-2E4A272CE051}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C41A9AFB-294A-40EA-8970-2E4A272CE051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CF623D7-1963-4A9A-8753-4540C895E614}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CF623D7-1963-4A9A-8753-4540C895E614}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CF623D7-1963-4A9A-8753-4540C895E614}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CF623D7-1963-4A9A-8753-4540C895E614}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -234,6 +240,7 @@ Global
 		{C0B34195-43A5-4AA7-B916-B3B2ADCE2ADE} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{5C808CD6-CA4E-44C9-8A83-244D05114FC9} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{3BC0BDD7-9843-4305-A785-1F22A31FE872} = {B26E932E-3EEB-41A4-9EDF-B02CAFA43DF4}
+		{4CF623D7-1963-4A9A-8753-4540C895E614} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}
