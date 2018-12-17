@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using dnlib.DotNet.Writer;
@@ -204,8 +205,12 @@ namespace Confuser.Core.Services {
 		public void Shuffle<T>(MDTable<T> table) where T : struct {
 			if (table.IsEmpty) return;
 
-			for (uint i = (uint)(table.Rows - 1); i > 1; i--) {
-				uint k = NextUInt32(i + 1);
+			for (uint i = (uint)(table.Rows); i > 2; i--) {
+				uint k = NextUInt32(i - 1) + 1;
+				Debug.Assert(k >= 1, $"{nameof(k)} >= 1");
+				Debug.Assert(k < i, $"{nameof(k)} < {nameof(i)}");
+				Debug.Assert(k <= table.Rows, $"{nameof(k)} <= {nameof(table)}.Rows");
+
 				var tmp = table[k];
 				table[k] = table[i];
 				table[i] = tmp;

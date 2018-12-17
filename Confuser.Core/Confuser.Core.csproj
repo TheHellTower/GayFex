@@ -20,8 +20,9 @@
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
-    <ProjectReference Include="..\dnlib\src\dnlib.netstandard.csproj" />
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
   </ItemGroup>
+
 
   <ItemGroup>
     <EmbeddedResource Include="Project\ConfuserPrj.xsd">
