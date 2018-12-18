@@ -86,8 +86,6 @@ namespace ConfuserEx.ViewModel {
 
 			try {
 				for (; ; ) {
-					token.ThrowIfCancellationRequested();
-
 					var newMessages = 0;
 					while (UnpublishedMessage.TryDequeue(out var log)) {
 						var messageRun = new Run(log.message) { Foreground = GetLogLevelForeground(log.level) };
@@ -99,7 +97,10 @@ namespace ConfuserEx.ViewModel {
 						if (newMessages >= 10) break;
 					}
 
-					await Task.Delay(200).ConfigureAwait(true);
+					if (token.IsCancellationRequested && newMessages < 10)
+						return;
+
+					await Task.Delay(80).ConfigureAwait(true);
 				}
 			}
 			catch (OperationCanceledException) { }
