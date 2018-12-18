@@ -11,10 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="System.Text.RegularExpressions" />
+    <PackageReference Include="System.ValueTuple" />
+    <PackageReference Include="System.ComponentModel.Composition" />
   </ItemGroup>
 
   <ItemGroup>

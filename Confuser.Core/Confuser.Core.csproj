@@ -11,13 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.*" />
-    <PackageReference Include="NuGet.Frameworks" Version="4.8.0" />
-    <PackageReference Include="System.Threading" Version="4.*" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.*" />
-    <PackageReference Include="System.Security.Cryptography.Primitives" Version="4.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Win32.Registry" />
+    <PackageReference Include="NuGet.Frameworks" />
+    <PackageReference Include="System.ComponentModel.Composition" />
+    <PackageReference Include="System.Security.Cryptography.Primitives" />
+    <PackageReference Include="System.Threading" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
@@ -43,6 +43,14 @@
     <Compile Remove="LZMA\Common\CommandLineParser.cs" />
     <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.csproj" />
     <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.sln" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="SourceLink.Create.CommandLine" Version="2.8.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Nerdbank.GitVersioning" Version="2.3.38" />
   </ItemGroup>
 
 </Project>

@@ -7,14 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
-    <PackageReference Include="xunit" Version="2.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="xunit" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
   </ItemGroup>
 
+  <Import Project="..\ConfuserEx.Test.targets" Condition="Exists('..\ConfuserEx.Test.targets')" />
   <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
 
 </Project>

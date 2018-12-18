@@ -103,4 +103,14 @@
              RemoveProperties="RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
              BuildInParallel="$(BuildInParallel)" />
   </Target>
+
+  <ItemGroup Label="Nuget Dependency Versions">
+    <PackageReference Update="@(PackageReference)">
+      <Version Condition="'%(Identity)' == 'ApprovalTests'">3.0.18</Version>
+      <Version Condition="'%(Identity)' == 'Microsoft.NET.Test.Sdk'">15.9.0</Version>
+      <Version Condition="'%(Identity)' == 'xunit'">2.4.1</Version>
+      <Version Condition="'%(Identity)' == 'xunit.runner.visualstudio'">2.4.1</Version>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>
