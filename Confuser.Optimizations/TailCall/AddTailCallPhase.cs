@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Confuser.Core;
+using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,10 +31,11 @@ namespace Confuser.Optimizations.TailCall {
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(TailCallProtection.Id);
+			var trace = context.Registry.GetRequiredService<ITraceService>();
 
 			var modifiedMethods = 0;
 			foreach (var method in parameters.Targets.OfType<MethodDef>())
-				if (ProcessMethod(method, logger))
+				if (ProcessMethod(method, logger, trace))
 					modifiedMethods++;
 
 			if (modifiedMethods > 0)
@@ -41,17 +43,20 @@ namespace Confuser.Optimizations.TailCall {
 		}
 
 		/// <remarks>Internal for unit testing.</remarks>
-		internal static bool ProcessMethod(MethodDef method, ILogger logger) {
+		internal static bool ProcessMethod(MethodDef method, ILogger logger, ITraceService traceService) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(traceService != null, $"{nameof(traceService)} != null");
 
-			if (method.HasBody && method.Body.HasInstructions) {
+			if (!method.IsConstructor && method.HasBody && method.Body.HasInstructions) {
 				logger?.LogMsgScanningForTailCall(method);
+
+				var trace = traceService.Trace(method);
 
 				var instructions = method.Body.Instructions;
 				var instructionCount = instructions.Count;
 				var modified = false;
 				for (var i = 0; i < instructionCount; i++) {
-					if (IsUnoptimizedTailCall(method, i)) {
+					if (IsUnoptimizedTailCall(method, i, trace)) {
 						logger?.LogMsgFoundTailCallInMethod(method, instructions[i]);
 
 						method.Body.InsertPrefixInstructions(instructions[i], Instruction.Create(OpCodes.Tailcall));
@@ -75,13 +80,33 @@ namespace Confuser.Optimizations.TailCall {
 			return false;
 		}
 
-		private static bool IsUnoptimizedTailCall(MethodDef method, int i) {
+		private static bool IsUnoptimizedTailCall(MethodDef method, int i, IMethodTrace trace) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(method.HasBody, $"{nameof(method)}.HasBody");
 			Debug.Assert(method.Body.HasInstructions, $"{nameof(method)}.Body.HasInstructions");
 			Debug.Assert(i >= 0, $"{nameof(i)} >= 0");
+			Debug.Assert(trace != null, $"{nameof(trace)} != null");
 
 			if (TailCallUtils.IsTailCall(method, i)) {
+				var parameters = trace.TraceArguments(method.Body.Instructions[i]) ?? Array.Empty<int>();
+
+				// Some instructions place a reference to a value on the stack. The Tailcall opcode can't handle those
+				// so there is no reason to put a tail call in those calls.
+				foreach (var pIndex in parameters) {
+					var paramInstr = method.Body.Instructions[pIndex];
+					switch (paramInstr.OpCode.Code) {
+						case Code.Ldflda:
+						case Code.Ldsflda:
+						case Code.Ldelema:
+						case Code.Ldarga:
+						case Code.Ldarga_S:
+						case Code.Ldloca:
+						case Code.Ldloca_S:
+							// These opcodes place a pointer on the stack. Tailcall aren't compatible with those.
+							return false;
+					}
+				}
+
 				return !(i > 1 && method.Body.Instructions[i - 1].OpCode == OpCodes.Tailcall);
 			}
 			return false;

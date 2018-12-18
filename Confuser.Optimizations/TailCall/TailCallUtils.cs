@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -69,7 +70,7 @@ namespace Confuser.Optimizations.TailCall {
 			var instruction = method.Body.Instructions[i];
 
 			// Methods that involve some reference stuff won't be optimized, because that just breaks all things.
-			var targetMethod = (instruction.Operand as IMethodDefOrRef);
+			var targetMethod = (instruction.Operand as IMethod);
 			if (targetMethod == null) {
 				Debug.Fail("Call instruction does not point to a method?!");
 				return false;
@@ -101,7 +102,7 @@ namespace Confuser.Optimizations.TailCall {
 					if (instructions[i].OpCode == OpCodes.Ret || instructions[i].OpCode == OpCodes.Br) {
 						for (i++; i < instructionCount; i++) {
 							var nextInstruction = instructions[i];
-							if (!instructions.Any(instr => instr.Operand == nextInstruction)) {
+							if (!instructions.Any(instr => IsBranchTo(instr, nextInstruction))) {
 								method.Body.RemoveInstruction(nextInstruction);
 								i--;
 								instructionCount--;
@@ -130,6 +131,18 @@ namespace Confuser.Optimizations.TailCall {
 				}
 
 			}
+		}
+
+		private static bool IsBranchTo(Instruction testInstr, Instruction targetInstr) {
+			if (testInstr.Operand is Instruction testInstrTarget)
+				return targetInstr == testInstrTarget;
+
+			if (testInstr.Operand is Instruction[] branchTargetInstrs)
+				foreach (var branchTargetInstr in branchTargetInstrs)
+					if (targetInstr == branchTargetInstr)
+						return true;
+
+			return false;
 		}
 	}
 }

@@ -4,8 +4,10 @@ using ApprovalTests.Core;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using ApprovalTests.Writers;
+using Confuser.Core.Services;
 using Confuser.UnitTest;
 using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using Xunit;
 using Xunit.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -28,7 +30,11 @@ namespace Confuser.Optimizations.TailCall {
 
 		public static double TailCallMethod(double value) => Math.Abs(value);
 
-		private void TestTailCallMethod(string testMethod, Func<MethodDef, ILogger, bool> processMethod) {
+
+		private void TestTailCallMethod(string testMethod, Func<MethodDef, ILogger, bool> processMethod) =>
+			TestTailCallMethod(testMethod, (m, l, ts) => processMethod(m, l));
+
+		private void TestTailCallMethod(string testMethod, Func<MethodDef, ILogger, ITraceService, bool> processMethod) {
 			var thisModule = ModuleDefMD.Load(ThisType.Module, new ModuleCreationOptions() {
 				TryToLoadPdbFromDisk = false
 			});
@@ -41,7 +47,7 @@ namespace Confuser.Optimizations.TailCall {
 			testMethodDef.Body.SimplifyMacros(testMethodDef.Parameters);
 			testMethodDef.Body.SimplifyBranches();
 
-			Assert.True(processMethod(testMethodDef, new XunitLogger(OutputHelper)));
+			Assert.True(processMethod(testMethodDef, new XunitLogger(OutputHelper), new TestTraceService()));
 
 			testMethodDef.Body.OptimizeBranches();
 			testMethodDef.Body.OptimizeMacros();
@@ -71,6 +77,12 @@ namespace Confuser.Optimizations.TailCall {
 #if DEBUG
 			public override string Name => base.Name + ".Debug";
 #endif
+		}
+
+		private sealed class TestTraceService : ITraceService, IMethodTrace {
+			public int[] TraceArguments(Instruction instr) => Array.Empty<int>();
+
+			IMethodTrace ITraceService.Trace(MethodDef method) => this;
 		}
 	}
 }
