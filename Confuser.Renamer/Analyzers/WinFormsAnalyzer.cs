@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.Services;
@@ -20,8 +22,7 @@ namespace Confuser.Renamer.Analyzers {
 				return;
 			}
 
-			var method = def as MethodDef;
-			if (method == null || !method.HasBody)
+			if (!(def is MethodDef method) || !method.HasBody)
 				return;
 
 			AnalyzeMethod(context, service, method);
@@ -29,23 +30,36 @@ namespace Confuser.Renamer.Analyzers {
 
 		void AnalyzeMethod(IConfuserContext context, INameService service, MethodDef method) {
 			var binding = new List<Tuple<bool, Instruction>>();
-			foreach (Instruction instr in method.Body.Instructions) {
-				if ((instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt)) {
-					var target = (IMethod)instr.Operand;
+			var dataPropertyName = new List<Instruction>();
+			foreach (var instr in method.Body.Instructions) {
+				var target = instr.Operand as IMethod;
+				switch (instr.OpCode.Code) {
+					case Code.Call:
+					case Code.Callvirt:
+						Debug.Assert(target != null);
 
-					if ((target.DeclaringType.FullName == "System.Windows.Forms.ControlBindingsCollection" ||
-					     target.DeclaringType.FullName == "System.Windows.Forms.BindingsCollection") &&
-					    target.Name == "Add" && target.MethodSig.Params.Count != 1) {
-						binding.Add(Tuple.Create(true, instr));
-					}
-					else if (target.DeclaringType.FullName == "System.Windows.Forms.Binding" &&
-					         target.Name.String == ".ctor") {
-						binding.Add(Tuple.Create(false, instr));
-					}
+						if ((target.DeclaringType.FullName == "System.Windows.Forms.ControlBindingsCollection" ||
+							 target.DeclaringType.FullName == "System.Windows.Forms.BindingsCollection") &&
+							target.Name == "Add" && target.MethodSig.Params.Count != 1) {
+							binding.Add(Tuple.Create(true, instr));
+						}
+						else if (target.DeclaringType.FullName == "System.Windows.Forms.DataGridViewColumn" &&
+							target.Name == "set_DataPropertyName" &&
+							target.MethodSig.Params.Count == 1) {
+							dataPropertyName.Add(instr);
+						}
+						break;
+					case Code.Newobj:
+						Debug.Assert(target != null);
+						if (target.DeclaringType.FullName == "System.Windows.Forms.Binding" &&
+								target.Name.String == ".ctor") {
+							binding.Add(Tuple.Create(false, instr));
+						}
+						break;
 				}
 			}
 
-			if (binding.Count == 0)
+			if (binding.Count == 0 && dataPropertyName.Count == 0)
 				return;
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
@@ -63,7 +77,8 @@ namespace Confuser.Renamer.Analyzers {
 					continue;
 				}
 
-				Instruction propertyName = method.Body.Instructions[args[0 + (instrInfo.Item1 ? 1 : 0)]];
+				var argumentIndex = (instrInfo.Item1 ? 1 : 0);
+				var propertyName = ResolveNameInstruction(method, args, ref argumentIndex);
 				if (propertyName.OpCode.Code != Code.Ldstr) {
 					if (!erred)
 						logger.LogWarning("Failed to extract binding property name in '{0}'.", method.FullName);
@@ -82,7 +97,8 @@ namespace Confuser.Renamer.Analyzers {
 					}
 				}
 
-				Instruction dataMember = method.Body.Instructions[args[2 + (instrInfo.Item1 ? 1 : 0)]];
+				argumentIndex += 2;
+				var dataMember = ResolveNameInstruction(method, args, ref argumentIndex);
 				if (dataMember.OpCode.Code != Code.Ldstr) {
 					if (!erred)
 						logger.LogWarning("Failed to extract binding property name in '{0}'.", method.FullName);
@@ -101,6 +117,46 @@ namespace Confuser.Renamer.Analyzers {
 					}
 				}
 			}
+
+			foreach (var instrInfo in dataPropertyName) {
+				int[] args = trace.TraceArguments(instrInfo);
+				if (args == null) {
+					if (!erred)
+						logger.LogWarning("Failed to extract binding property name in '{0}'.", method.FullName);
+					erred = true;
+					continue;
+				}
+
+				var argumentIndex = 0;
+				var propertyName = ResolveNameInstruction(method, args, ref argumentIndex);
+				if (propertyName.OpCode.Code != Code.Ldstr) {
+					if (!erred)
+						logger.LogWarning("Failed to extract binding property name in '{0}'.", method.FullName);
+					erred = true;
+				}
+				else {
+					if (!properties.TryGetValue((string)propertyName.Operand, out var props)) {
+						if (!erred)
+							logger.LogWarning("Failed to extract target property in '{0}'.", method.FullName);
+						erred = true;
+					}
+					else {
+						foreach (var property in props)
+							service.SetCanRename(context, property, false);
+					}
+				}
+			}
+		}
+
+		private static Instruction ResolveNameInstruction(MethodDef method, int[] tracedArguments, ref int argumentIndex) {
+			Instruction propertyName = null;
+			for (; ; ) {
+				propertyName = method.Body.Instructions[tracedArguments[argumentIndex]];
+				if (propertyName.OpCode.Code == Code.Dup)
+					argumentIndex++;
+				else break;
+			}
+			return propertyName;
 		}
 
 

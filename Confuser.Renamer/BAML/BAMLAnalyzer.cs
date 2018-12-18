@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Packaging;
 using System.Linq;
+using System.Net;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
@@ -27,6 +28,8 @@ namespace Confuser.Renamer.BAML {
 		readonly Dictionary<ushort, StringInfoRecord> strings = new Dictionary<ushort, StringInfoRecord>();
 		readonly Dictionary<ushort, TypeSig> typeRefs = new Dictionary<ushort, TypeSig>();
 		readonly Dictionary<string, List<Tuple<AssemblyDef, string>>> xmlns = new Dictionary<string, List<Tuple<AssemblyDef, string>>>();
+
+		private PropertyPathParser PathParser { get; } = new PropertyPathParser();
 
 		readonly string packScheme = PackUriHelper.UriSchemePack + "://";
 
@@ -516,8 +519,11 @@ namespace Confuser.Renamer.BAML {
 					if (src.EndsWith(".BAML") || src.EndsWith(".XAML")) {
 						var match = WPFAnalyzer.UriPattern.Match(src);
 						if (match.Success) {
-							var resourceAssemblyName = match.Groups[1].Value;
-							if (resourceAssemblyName != null && !resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+							var resourceAssemblyName = match.Groups[1].Success ? match.Groups[1].Value : string.Empty;
+							// Check if the expression contains a resource name (group 1)
+							// If it does, check if it is this assembly.
+							if (!string.IsNullOrWhiteSpace(resourceAssemblyName) &&
+								!resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
 								// This resource points to another assembly.
 								// Leave it alone!
 								return;
@@ -533,7 +539,7 @@ namespace Confuser.Renamer.BAML {
 							src = rel.LocalPath;
 						}
 						var reference = new BAMLPropertyReference(rec);
-						src = src.TrimStart('/');
+						src = WebUtility.UrlDecode(src.TrimStart('/'));
 						var baml = src.Substring(0, src.Length - 5) + ".BAML";
 						var xaml = src.Substring(0, src.Length - 5) + ".XAML";
 						var bamlRefs = service.FindRenamer<WPFAnalyzer>().bamlRefs;
@@ -576,38 +582,47 @@ namespace Confuser.Renamer.BAML {
 		}
 
 		void AnalyzePropertyPath(string path) {
-			var propertyPath = new PropertyPath(path);
-			foreach (PropertyPathPart part in propertyPath.Parts) {
-				if (part.IsAttachedDP()) {
-					string type, property;
-					part.ExtractAttachedDP(out type, out property);
-					if (type != null) {
-						string prefix;
-						TypeSig sig = ResolveType(type, out prefix);
-						if (sig != null && Context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-							var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
-							AddTypeSigReference(sig, reference);
-						}
-					}
-				}
-				else {
-					List<PropertyDef> candidates;
-					if (properties.TryGetValue(part.Name, out candidates))
-						foreach (PropertyDef property in candidates) {
-							service.SetCanRename(Context, property, false);
-						}
-				}
+			var parsedPath = PathParser.Parse(path);
+			foreach (var part in parsedPath) {
+				switch (part.type) {
+					case SourceValueType.Property:
+						// This is a property reference. This may be directly the name of a property or a reference by
+						// with the type to the property
+						// Simple Property:    "TestProperty"
+						// Property with Type: "(local:DataClass.TestProperty)"
 
-				if (part.IndexerArguments != null) {
-					foreach (PropertyPathIndexer indexer in part.IndexerArguments)
-						if (!string.IsNullOrEmpty(indexer.Type)) {
-							string prefix;
-							TypeSig sig = ResolveType(indexer.Type, out prefix);
+						var typeName = part.GetTypeName();
+						var propertyName = part.GetPropertyName();
+						if (!string.IsNullOrWhiteSpace(typeName)) {
+							var sig = ResolveType(typeName, out var prefix);
 							if (sig != null && Context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
 								var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
 								AddTypeSigReference(sig, reference);
+								break;
 							}
 						}
+
+						// Reaching this point means that the type reference was either not present or failed to
+						// resolve. In this case every property with the matching name will be flagged so it does not
+						// get renamed.
+						if (properties.TryGetValue(propertyName, out var candidates))
+							foreach (var property in candidates)
+								service.SetCanRename(Context, property, false);
+
+						break;
+					case SourceValueType.Indexer:
+						// This is the indexer part of a property reference.
+						foreach (var indexerArg in part.paramList) {
+							if (!string.IsNullOrWhiteSpace(indexerArg.parenString)) {
+								var sig = ResolveType(indexerArg.parenString, out var prefix);
+								if (sig != null && Context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
+									var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
+									AddTypeSigReference(sig, reference);
+									break;
+								}
+							}
+						}
+						break;
 				}
 			}
 		}

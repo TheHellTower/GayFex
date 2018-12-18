@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.DynCipher", "Confu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfuserEx", "ConfuserEx\ConfuserEx.csproj", "{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib.netstandard", "dnlib\src\dnlib.netstandard.csproj", "{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib", "dnlib\src\dnlib.csproj", "{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{356BDB31-853E-43BB-8F9A-D8AC08F69EBB}"
 	ProjectSection(SolutionItems) = preProject
