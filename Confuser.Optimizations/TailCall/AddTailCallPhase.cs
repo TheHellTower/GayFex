@@ -47,7 +47,7 @@ namespace Confuser.Optimizations.TailCall {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(traceService != null, $"{nameof(traceService)} != null");
 
-			if (!method.IsConstructor && method.HasBody && method.Body.HasInstructions) {
+			if (method.HasBody && method.Body.HasInstructions) {
 				logger?.LogMsgScanningForTailCall(method);
 
 				var trace = traceService.Trace(method);
