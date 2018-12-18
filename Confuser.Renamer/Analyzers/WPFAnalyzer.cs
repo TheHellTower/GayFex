@@ -182,8 +182,11 @@ namespace Confuser.Renamer.Analyzers {
 					if (operand.EndsWith(".BAML") || operand.EndsWith(".XAML")) {
 						var match = UriPattern.Match(operand);
 						if (match.Success) {
-							var resourceAssemblyName = match.Groups[1].Value;
-							if (resourceAssemblyName != null && !resourceAssemblyName.Equals(method.Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+							var resourceAssemblyName = match.Groups[1].Success ? match.Groups[1].Value : string.Empty;
+							// Check if the expression contains a resource name (group 1)
+							// If it does, check if it is this assembly.
+							if (!string.IsNullOrWhiteSpace(resourceAssemblyName) &&
+								!resourceAssemblyName.Equals(method.Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
 								// This resource points to another assembly.
 								// Leave it alone!
 								return;

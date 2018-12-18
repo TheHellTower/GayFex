@@ -514,8 +514,11 @@ namespace Confuser.Renamer.BAML {
 					if (src.EndsWith(".BAML") || src.EndsWith(".XAML")) {
 						var match = WPFAnalyzer.UriPattern.Match(src);
 						if (match.Success) {
-							var resourceAssemblyName = match.Groups[1].Value;
-							if (resourceAssemblyName != null && !resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+							var resourceAssemblyName = match.Groups[1].Success ? match.Groups[1].Value : string.Empty;
+							// Check if the expression contains a resource name (group 1)
+							// If it does, check if it is this assembly.
+							if (!string.IsNullOrWhiteSpace(resourceAssemblyName) &&
+								!resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
 								// This resource points to another assembly.
 								// Leave it alone!
 								return;
