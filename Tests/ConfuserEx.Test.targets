@@ -7,7 +7,7 @@
     </None>
   </ItemGroup>
 
-  <PropertyGroup>
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Test'))">
     <_ConfuserUnitTestTargetProjectName>$(MSBuildProjectName.Replace('.Test', ''))</_ConfuserUnitTestTargetProjectName>
     <_ConfuserUnitTestTargetProject>..\$(_ConfuserUnitTestTargetProjectName)\$(_ConfuserUnitTestTargetProjectName).csproj</_ConfuserUnitTestTargetProject>
     <_ConfuserUnitTestTargetProject Condition="!Exists('$(_ConfuserUnitTestTargetProject)')"></_ConfuserUnitTestTargetProject>
@@ -51,7 +51,7 @@
              BuildInParallel="$(BuildInParallel)"
              Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration)"
              RemoveProperties="TargetFramework;RuntimeIdentifier"
-             SkipNonexistentTargets="true">
+             SkipNonExistentTargets="true">
       <Output TaskParameter="TargetOutputs" ItemName="_ConfuserUnitTestAssemblyTargets" />
     </MSBuild>
     <ItemGroup>
