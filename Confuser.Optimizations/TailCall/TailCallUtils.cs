@@ -40,9 +40,21 @@ namespace Confuser.Optimizations.TailCall {
 				// IL_0008: Ldloc.1
 				// IL_0009: Ret
 
+				// Additional known patters:
+				// (appear when writing the recursive instruction with a ternary operator)
+				// IL_0000: Call    Method()
+				// IL_0005: Br      IL_xxxx
+				// …
+				// IL_xxxx: Ret
+
 				// Lets first check for the optimized build. It's easier. ;-)
 				var nextInstruction = instructions[i + 1];
 				if (nextInstruction.OpCode == OpCodes.Ret) return IsCompatibleCall(method, i);
+
+				// Next thing: Check if we have a ternary pattern (Call, followed by a branch instruction to a return)
+				if (nextInstruction.OpCode == OpCodes.Br && 
+				    (nextInstruction.Operand as Instruction)?.OpCode == OpCodes.Ret) return IsCompatibleCall(method, i);
+
 
 				// So it's not a optimized build. Maybe a debug build.
 				if (nextInstruction.OpCode == OpCodes.Stloc) {

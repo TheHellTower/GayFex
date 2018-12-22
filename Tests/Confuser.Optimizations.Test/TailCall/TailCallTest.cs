@@ -12,22 +12,30 @@ using Xunit;
 using Xunit.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-[assembly: UseReporter(typeof(DiffReporter), typeof(AppVeyorReporter), typeof(XUnit2Reporter))]
+[assembly: UseReporter(typeof(VisualStudioReporter), typeof(AppVeyorReporter), typeof(XUnit2Reporter))]
 
 namespace Confuser.Optimizations.TailCall {
 	public class TailCallTest {
-		private Type ThisType => typeof(TailCallTest);
+		private static Type ThisType => typeof(TailCallTest);
 
 		private ITestOutputHelper OutputHelper { get; }
 
 		public TailCallTest(ITestOutputHelper outputHelper) =>
 			OutputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
+		// ReSharper disable once TailRecursiveCall
+		// ReSharper disable once MemberCanBePrivate.Global
+		public static int RecursiveSumTernary(int n, int sum) => n == 0 ? sum : RecursiveSumTernary(n - 1, sum + n);
+
+		// ReSharper disable once TailRecursiveCall
+		// ReSharper disable once MemberCanBePrivate.Global
+		// ReSharper disable once ConvertIfStatementToReturnStatement
 		public static int RecursiveSum(int n, int sum) {
 			if (n == 0) return sum;
-			else return RecursiveSum(n - 1, sum + n);
+			return RecursiveSum(n - 1, sum + n);
 		}
 
+		// ReSharper disable once MemberCanBePrivate.Global
 		public static double TailCallMethod(double value) => Math.Abs(value);
 
 
@@ -66,12 +74,22 @@ namespace Confuser.Optimizations.TailCall {
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", TailCallProtection.Id)]
+		public void RecursiveSumTernaryTailCallTest() => TestTailCallMethod(nameof(RecursiveSumTernary), AddTailCallPhase.ProcessMethod);
+
+		[Fact]
+		[Trait("Category", "Optimization")]
+		[Trait("Optimization", TailCallProtection.Id)]
 		public void TailCallMethodTest() => TestTailCallMethod(nameof(TailCallMethod), AddTailCallPhase.ProcessMethod);
 
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", TailCallProtection.Id)]
 		public void RecursiveSumRecurseTest() => TestTailCallMethod(nameof(RecursiveSum), OptimizeRecursionPhase.ProcessMethod);
+
+		[Fact]
+		[Trait("Category", "Optimization")]
+		[Trait("Optimization", TailCallProtection.Id)]
+		public void RecursiveSumTernaryRecurseTest() => TestTailCallMethod(nameof(RecursiveSumTernary), OptimizeRecursionPhase.ProcessMethod);
 
 		private sealed class ApprovalNamer : UnitTestFrameworkNamer {
 #if DEBUG
