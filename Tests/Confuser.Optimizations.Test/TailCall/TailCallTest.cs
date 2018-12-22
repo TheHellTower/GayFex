@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using ApprovalTests;
 using ApprovalTests.Core;
 using ApprovalTests.Namers;
@@ -69,26 +70,31 @@ namespace Confuser.Optimizations.TailCall {
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", TailCallProtection.Id)]
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void RecursiveSumTailCallTest() => TestTailCallMethod(nameof(RecursiveSum), AddTailCallPhase.ProcessMethod);
 
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", TailCallProtection.Id)]
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void RecursiveSumTernaryTailCallTest() => TestTailCallMethod(nameof(RecursiveSumTernary), AddTailCallPhase.ProcessMethod);
 
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", TailCallProtection.Id)]
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void TailCallMethodTest() => TestTailCallMethod(nameof(TailCallMethod), AddTailCallPhase.ProcessMethod);
 
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", TailCallProtection.Id)]
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void RecursiveSumRecurseTest() => TestTailCallMethod(nameof(RecursiveSum), OptimizeRecursionPhase.ProcessMethod);
 
 		[Fact]
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", TailCallProtection.Id)]
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void RecursiveSumTernaryRecurseTest() => TestTailCallMethod(nameof(RecursiveSumTernary), OptimizeRecursionPhase.ProcessMethod);
 
 		private sealed class ApprovalNamer : UnitTestFrameworkNamer {
