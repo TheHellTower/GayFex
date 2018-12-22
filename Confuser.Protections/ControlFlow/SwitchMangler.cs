@@ -114,7 +114,7 @@ namespace Confuser.Protections.ControlFlow {
 			}
 		}
 
-		LinkedList<Instruction[]> SpiltStatements(InstrBlock block, Trace trace, CFContext ctx) {
+		private static LinkedList<Instruction[]> SplitStatements(InstrBlock block, Trace trace, CFContext ctx) {
 			var statements = new LinkedList<Instruction[]>();
 			var currentStatement = new List<Instruction>();
 
@@ -122,31 +122,34 @@ namespace Confuser.Protections.ControlFlow {
 			// branches have stack = 0
 			var requiredInstr = new HashSet<Instruction>();
 
-			for (int i = 0; i < block.Instructions.Count; i++) {
-				Instruction instr = block.Instructions[i];
+			for (var i = 0; i < block.Instructions.Count; i++) {
+				var instr = block.Instructions[i];
 				currentStatement.Add(instr);
 
-				bool shouldSpilt = i + 1 < block.Instructions.Count && trace.HasMultipleSources(block.Instructions[i + 1].Offset);
+				var shouldSplit = i + 1 < block.Instructions.Count && trace.HasMultipleSources(block.Instructions[i + 1].Offset);
+				// ReSharper disable once SwitchStatementMissingSomeCases
 				switch (instr.OpCode.FlowControl) {
 					case FlowControl.Branch:
 					case FlowControl.Cond_Branch:
 					case FlowControl.Return:
 					case FlowControl.Throw:
-						shouldSpilt = true;
+						shouldSplit = true;
 						if (trace.AfterStack[instr.Offset] != 0) {
-							if (instr.Operand is Instruction)
-								requiredInstr.Add((Instruction)instr.Operand);
-							else if (instr.Operand is Instruction[]) {
-								foreach (var target in (Instruction[])instr.Operand)
+							if (instr.Operand is Instruction targetInstr)
+								requiredInstr.Add(targetInstr);
+							else if (instr.Operand is Instruction[] targetInstrs) {
+								foreach (var target in targetInstrs)
 									requiredInstr.Add(target);
 							}
 						}
 						break;
 				}
 				requiredInstr.Remove(instr);
-				if ((instr.OpCode.OpCodeType != OpCodeType.Prefix && trace.AfterStack[instr.Offset] == 0 &&
-				     requiredInstr.Count == 0) &&
-				    (shouldSpilt || ctx.Intensity > ctx.Random.NextDouble())) {
+				if ((instr.OpCode.OpCodeType != OpCodeType.Prefix &&
+					 trace.AfterStack[instr.Offset] == 0 &&
+					 requiredInstr.Count == 0) &&
+					(shouldSplit || ctx.Intensity > ctx.Random.NextDouble()) &&
+					(i == 0 || block.Instructions[i - 1].OpCode.Code != Code.Tailcall)) {
 					statements.AddLast(currentStatement.ToArray());
 					currentStatement.Clear();
 				}
@@ -207,7 +210,7 @@ namespace Confuser.Protections.ControlFlow {
 			}
 
 			foreach (InstrBlock block in GetAllBlocks(root)) {
-				LinkedList<Instruction[]> statements = SpiltStatements(block, trace, ctx);
+				LinkedList<Instruction[]> statements = SplitStatements(block, trace, ctx);
 
 				// Make sure .ctor is executed before switch
 				if (ctx.Method.IsInstanceConstructor) {
@@ -258,7 +261,7 @@ namespace Confuser.Protections.ControlFlow {
 
 						// Not within current instruction block / targeted in first statement
 						if (srcs.Any(src => src.Offset <= statements.First.Value.Last().Offset ||
-						                    src.Offset >= block.Instructions.Last().Offset))
+											src.Offset >= block.Instructions.Last().Offset))
 							return true;
 
 						// Not targeted by the last of statements
@@ -305,7 +308,7 @@ namespace Confuser.Protections.ControlFlow {
 							var target = (Instruction)newStatement.Last().Operand;
 							int brKey;
 							if (!trace.IsBranchTarget(newStatement.Last().Offset) &&
-							    statementKeys.TryGetValue(target, out brKey)) {
+								statementKeys.TryGetValue(target, out brKey)) {
 								var targetKey = predicate != null ? predicate.GetSwitchKey(brKey) : brKey;
 								var unkSrc = hasUnknownSource(newStatement);
 
@@ -336,7 +339,7 @@ namespace Confuser.Protections.ControlFlow {
 							var target = (Instruction)newStatement.Last().Operand;
 							int brKey;
 							if (!trace.IsBranchTarget(newStatement.Last().Offset) &&
-							    statementKeys.TryGetValue(target, out brKey)) {
+								statementKeys.TryGetValue(target, out brKey)) {
 								bool unkSrc = hasUnknownSource(newStatement);
 								int nextKey = key[i + 1];
 								OpCode condBr = newStatement.Last().OpCode;

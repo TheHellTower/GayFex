@@ -24,7 +24,7 @@ namespace Confuser.Protections.ControlFlow {
 				}
 
 				if (block.Instructions[i].OpCode.OpCodeType == OpCodeType.Prefix) {
-					skipCount = 1;
+					skipCount = block.Instructions[i].OpCode.Code == Code.Tailcall ? 2 : 1;
 					currentFragment.Add(block.Instructions[i]);
 				}
 				if (i + 2 < block.Instructions.Count &&
