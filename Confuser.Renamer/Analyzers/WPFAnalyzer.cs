@@ -17,6 +17,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.Renamer.Analyzers {
 	internal sealed class WPFAnalyzer : IRenamer {
+		private const string URISCHEME_PACK = "pack";
+
 		static readonly object BAMLKey = new object();
 
 		internal static readonly Regex ResourceNamePattern = new Regex("^.*\\.g\\.resources$");
@@ -31,6 +33,13 @@ namespace Confuser.Renamer.Analyzers {
 	    internal WPFAnalyzer(NameProtection protection) {
 			Protection = protection ?? throw new ArgumentNullException(nameof(protection));
 			bamlRefs = new Dictionary<string, List<IBAMLReference>>(StringComparer.OrdinalIgnoreCase);
+
+			// To make sure that the URI class understands the pack URI,
+			// we need to ensure that the schema is registered.
+			// This is already done in case WPF is active in the environment, if it's not, we'll do it now.
+			if (!UriParser.IsKnownScheme(URISCHEME_PACK)) {
+				UriParser.Register(new GenericUriParser(GenericUriParserOptions.GenericAuthority), URISCHEME_PACK, -1);
+			}
 		}
 
 		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
