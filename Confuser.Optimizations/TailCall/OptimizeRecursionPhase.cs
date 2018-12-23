@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,6 +42,7 @@ namespace Confuser.Optimizations.TailCall {
 		}
 
 		/// <remarks>Internal for unit testing.</remarks>
+		// ReSharper disable once MemberCanBePrivate.Global
 		internal static bool ProcessMethod(MethodDef method, ILogger logger) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 
