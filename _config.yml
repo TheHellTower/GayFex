@@ -25,3 +25,4 @@ JB :
   archive_path: /archive/
   atom_path : /atom.xml
   rss_path : /rss.xml
+theme: jekyll-theme-slate
