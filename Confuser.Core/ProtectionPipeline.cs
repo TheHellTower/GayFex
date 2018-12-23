@@ -121,7 +121,7 @@ namespace Confuser.Core {
 				if (parameters == null) {
 					var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 					logger.LogCritical("'{0}' not marked for obfuscation, possibly a bug.", def);
-					throw new ConfuserException(null);
+					throw new ConfuserException();
 				}
 				return parameters.ContainsKey(phase.Parent);
 			}).ToImmutableArray();

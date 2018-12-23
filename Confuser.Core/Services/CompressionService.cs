@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Confuser.Core.Helpers;
 using Confuser.Helpers;
-using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
 using SevenZip;
@@ -35,10 +32,10 @@ namespace Confuser.Core.Services {
 		/// <inheritdoc />
 		public MethodDef GetRuntimeDecompressor(IConfuserContext context, ModuleDef module, Action<IDnlibDef> init) {
 			var injectResult = context.Annotations.GetOrCreate(module, Decompressor, m => {
-				var rt = serviceProvider.GetRequiredService<IRuntimeService>();
+				var rt = serviceProvider.GetRequiredService<CoreRuntimeService>().GetRuntimeModule();
 				var marker = context.Registry.GetRequiredService<IMarkerService>();
 
-				var decompressMethod = rt.GetRuntimeType("Confuser.Runtime.Lzma").Methods.Where(method => method.Name == "Decompress").Single();
+				var decompressMethod = rt.GetRuntimeType("Confuser.Core.Runtime.Lzma", module).Methods.Where(method => method.Name == "Decompress").Single();
 				return InjectHelper.Inject(decompressMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 			});
 			init(injectResult.Requested.Mapped);

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Assembly Settings">
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <EnableCodeAnalysis>true</EnableCodeAnalysis>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Assembly Information">
+    <Title>ConfuserEx Optimizations</Title>
+    <Description>Optimizations of ConfuserEx</Description>
+  </PropertyGroup>
+
+  <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="System.Text.RegularExpressions" />
+    <PackageReference Include="System.ValueTuple" />
+    <PackageReference Include="System.ComponentModel.Composition" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Optimizations.Exports\Confuser.Optimizations.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleToTest Include="Confuser.Optimizations.Test" />
+  </ItemGroup>
+
+</Project>

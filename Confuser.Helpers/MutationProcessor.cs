@@ -14,9 +14,8 @@ namespace Confuser.Helpers {
 	public delegate IReadOnlyList<Instruction> CryptProcessor(ModuleDef module, MethodDef method, Local block, Local key);
 
 	public class MutationProcessor : IMethodInjectProcessor {
-		private const string MutationClassName = "Mutation";
+		private const string MutationClassName = "Confuser.Mutation";
 
-		private TypeDef MutationTypeDef { get; }
 		private ITraceService TraceService { get; }
 		private ModuleDef TargetModule { get; }
 		public IReadOnlyDictionary<MutationField, int> KeyFieldValues { get; set; }
@@ -26,29 +25,29 @@ namespace Confuser.Helpers {
 
 		public MutationProcessor(IServiceProvider services, ModuleDef targetModule) {
 			if (services == null) throw new ArgumentNullException(nameof(services));
-			var runtimeService = services.GetRequiredService<IRuntimeService>();
-			TraceService = services.GetRequiredService<ITraceService>();
 			TargetModule = targetModule ?? throw new ArgumentNullException(nameof(targetModule));
 
-			MutationTypeDef = runtimeService.GetRuntimeType(MutationClassName);
+			TraceService = services.GetRequiredService<ITraceService>();
 		}
 
 		void IMethodInjectProcessor.Process(MethodDef method) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(method.HasBody, $"{nameof(method)}.HasBody");
 
+			if (method == null || !method.HasBody || !method.Body.HasInstructions) return;
+
 			var instructions = method.Body.Instructions;
 			for (var i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
 
 				if (instr.OpCode == OpCodes.Ldsfld) {
-					if (instr.Operand is IField loadedField && loadedField.DeclaringType == MutationTypeDef) {
+					if (instr.Operand is IField loadedField && loadedField.DeclaringType.FullName == MutationClassName) {
 						if (!ProcessKeyField(method, instr, loadedField))
 							throw new InvalidOperationException("Unexpected load field operation to Mutation class!");
 					}
 				}
 				else if (instr.OpCode == OpCodes.Call) {
-					if (instr.Operand is IMethod calledMethod && calledMethod.DeclaringType == MutationTypeDef) {
+					if (instr.Operand is IMethod calledMethod && calledMethod.DeclaringType.FullName == MutationClassName) {
 						if (!ReplacePlaceholder(method, instr, calledMethod, ref i) && !ReplaceCrypt(method, instr, calledMethod, ref i))
 							throw new InvalidOperationException("Unexpected call operation to Mutation class!");
 					}

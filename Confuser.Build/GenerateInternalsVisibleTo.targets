@@ -1,0 +1,72 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GeneratedInternalsVisibleToFile>$(IntermediateOutputPath)GeneratedInternalsVisibleTo$(DefaultLanguageSourceExtension)</GeneratedInternalsVisibleToFile>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <PublicKey>0024000004800000940000000602000000240000525341310004000001000100a573e33d3fc09b3edf6ec27baf5c43e04766358bb011b3d037eefd386ef96d950b50bfd2a8d3c715a2f2ae4f6ee53dff9495ec32c6ec37d4856f1bee70259ceb013d945f19b7983d373ad85b9baa52c65585dd242d7195068757ace8f4144fa0897c07f058899e3026cc725f14e17287df8eaf4b6b3ae25fa40d7b61d9440ac8</PublicKey>
+    <TestsKey>00240000048000009400000006020000002400005253413100040000010001004d5e884ffed473e44e5aad75d0050bf96627c04b32c6131c74616d38737a44d3b1e2b3e11ba1ff2f02c1c8e499488d17e8d5ce450e2069ece08155feb1eb0a727e04f3df886f861392121d272e409eabe34b5ce7a3c79dfc9ccdf44b3b674279f7333c508733ca169f32a2e5f071603ad812bd3242f8c1fba600e609598f97b4</TestsKey>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <InternalsVisibleTo>
+      <Visible>false</Visible>
+    </InternalsVisibleTo>
+    <InternalsVisibleToTest>
+      <Visible>false</Visible>
+    </InternalsVisibleToTest>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup Condition="'$(PublicKey)' != '' and '$(SignAssembly)' == 'True'">
+    <InternalsVisibleToSuffix>, PublicKey=$(PublicKey)</InternalsVisibleToSuffix>
+    <InternalsVisibleToTestSuffix>, PublicKey=$(TestsKey)</InternalsVisibleToTestSuffix>
+  </PropertyGroup>
+
+  <!-- Dependency on PrepareForBuild is necessary so that we don't accidentally get ordered before it.
+  We rely on PrepareForBuild to create the IntermediateOutputDirectory if it doesn't exist. -->
+  <Target Name="GenerateInternalsVisibleToFile"
+          Inputs="$(MSBuildThisFileFullPath);$(MSBuildProjectFile)"
+          Outputs="$(GeneratedInternalsVisibleToFile)"
+          AfterTargets="BeforeCompile"
+          DependsOnTargets="PrepareForBuild"
+          Condition="'@(InternalsVisibleTo)' != '' OR '@(InternalsVisibleToTest)' != ''">
+
+    <!--
+         This is a slightly evil trick. What we have is a group of InternalsVisibleTo items which
+         we need to convert to the items that the WriteCodeFragment expects. They look like this:
+         
+         <InternalsVisibleTo Include="Foo" />
+         
+         And need to convert it to:
+         
+         <InternalsVisibleToAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+           <_Parameter1>Foo</Parameter1>
+         </InternalsVisibleToAttribute>
+         
+         One way (although a bit evil) is to use the old CreateItem task. Since we use the well-defined
+         "Identity" metadata on each of our itemgroups, MSBuild batching will take effect and this task
+         will be invoked once for each InternalsVisibleTo item.
+    -->
+    <CreateItem Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+                AdditionalMetadata="_Parameter1=%(InternalsVisibleTo.Identity)$(InternalsVisibleToSuffix)"
+                Condition="'@(InternalsVisibleTo)' != ''">
+      <Output TaskParameter="Include" ItemName="InternalsVisibleToAttribute" />
+    </CreateItem>
+    <CreateItem Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+                AdditionalMetadata="_Parameter1=%(InternalsVisibleToTest.Identity)$(InternalsVisibleToTestSuffix)"
+                Condition="'@(InternalsVisibleToTest)' != ''">
+      <Output TaskParameter="Include" ItemName="InternalsVisibleToAttribute" />
+    </CreateItem>
+    
+    <WriteCodeFragment AssemblyAttributes="@(InternalsVisibleToAttribute)"
+                       Language="$(Language)"
+                       OutputFile="$(GeneratedInternalsVisibleToFile)">
+      <Output TaskParameter="OutputFile" ItemName="Compile" />
+      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
+    </WriteCodeFragment>
+  </Target>
+</Project>

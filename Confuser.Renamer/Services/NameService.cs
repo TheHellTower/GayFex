@@ -42,7 +42,7 @@ namespace Confuser.Renamer.Services {
 			);
 		}
 
-		public IImmutableList<IRenamer> Renamers { get; }
+		public IImmutableList<IRenamer> Renamers { get; private set; }
 
 		public VTableStorage GetVTables() {
 			return storage;
@@ -234,7 +234,7 @@ namespace Confuser.Renamer.Services {
 		}
 
 		public void RegisterRenamer(IRenamer renamer) {
-			Renamers.Add(renamer);
+			Renamers = Renamers.Add(renamer);
 		}
 
 		public T FindRenamer<T>() {

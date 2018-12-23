@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.Composition;
+﻿using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.ReferenceProxy;
 using Confuser.Protections.Services;
@@ -27,20 +26,21 @@ namespace Confuser.Protections {
 
 		internal ReferenceProxyProtectionParameters Parameters { get; } = new ReferenceProxyProtectionParameters();
 
-		void IReferenceProxyService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
+		void IReferenceProxyService.ExcludeMethod(IConfuserContext context, MethodDef method) =>
 			context.GetParameters(method).RemoveParameters(this);
 
-		void IReferenceProxyService.ExcludeTarget(IConfuserContext context, MethodDef method) => 
+		void IReferenceProxyService.ExcludeTarget(IConfuserContext context, MethodDef method) =>
 			context.Annotations.Set(method, TargetExcluded, TargetExcluded);
 
 		bool IReferenceProxyService.IsTargeted(IConfuserContext context, MethodDef method) =>
 			context.Annotations.Get<object>(method, Targeted) != null;
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) {
-			collection.AddSingleton(typeof(IReferenceProxyService), this);
-		}
+		void IConfuserComponent.Initialize(IServiceCollection services) =>
+			services
+				.AddSingleton(typeof(IReferenceProxyService), this)
+				.AddRuntime();
 
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new ReferenceProxyPhase(this));
 	}
 }

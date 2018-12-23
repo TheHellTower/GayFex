@@ -195,6 +195,10 @@
       <Project>{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}</Project>
       <Name>Confuser.DynCipher</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Confuser.Optimizations\Confuser.Optimizations.csproj">
+      <Project>{1bb64400-0dec-47e2-96ab-2d9adf7ec422}</Project>
+      <Name>Confuser.Optimizations</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Confuser.Protections.Exports\Confuser.Protections.Exports.csproj">
       <Project>{03627089-a2ab-40e4-b22f-2262bed6753e}</Project>
       <Name>Confuser.Protections.Exports</Name>
@@ -210,10 +214,6 @@
     <ProjectReference Include="..\Confuser.Renamer\Confuser.Renamer.csproj">
       <Project>{862DA0DA-52E1-47CD-B9C2-46B106031B28}</Project>
       <Name>Confuser.Renamer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Confuser.Runtime\Confuser.Runtime.csproj">
-      <Project>{A45C184F-F98F-4258-A928-BFF437034791}</Project>
-      <Name>Confuser.Runtime</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -231,7 +231,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions">
-      <Version>2.1.1</Version>
+      <Version>2.2.0</Version>
     </PackageReference>
     <PackageReference Include="MvvmLightLibs">
       <Version>5.4.1</Version>

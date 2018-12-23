@@ -1,0 +1,16 @@
+﻿// Header Size: 1 bytes
+.maxstack 8
+
+IL_0000: ldarg.0
+IL_0001: brtrue.s  IL_0005
+IL_0003: ldarg.1
+IL_0004: ret
+IL_0005: ldarg.0
+IL_0006: ldc.i4.1
+IL_0007: sub
+IL_0008: ldarg.1
+IL_0009: ldarg.0
+IL_000A: add
+IL_000B: starg.s   sum
+IL_000D: starg.s   n
+IL_000F: br.s      IL_0000

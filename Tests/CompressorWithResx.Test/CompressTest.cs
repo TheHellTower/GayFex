@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
@@ -19,14 +18,18 @@ namespace CompressorWithResx.Test {
 
 		[Theory]
 		[MemberData(nameof(CompressAndExecuteTestData))]
+		[MemberData(nameof(CompressAndExecuteSkippedTestData), Skip = ".NET Framework 2.0 is not properly supported by the compressor.")]
 		[Trait("Category", "Packer")]
 		[Trait("Packer", "compressor")]
-		public async Task CompressAndExecuteTest(string compatKey, string deriverKey, string resourceProtectionMode) {
-			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp");
+		public async Task CompressAndExecuteTest(string framework, string compatKey, string deriverKey, string resourceProtectionMode) {
+			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
+			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "CompressorWithResx.exe");
 			var inputSatelliteFile = Path.Combine(baseDir, "de", "CompressorWithResx.resources.dll");
 			var outputFile = Path.Combine(outputDir, "CompressorWithResx.exe");
+
+			Assert.True(File.Exists(key));
 			FileUtilities.ClearOutput(outputFile);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
@@ -45,8 +48,8 @@ namespace CompressorWithResx.Test {
 				});
 			}
 
-			proj.Add(new ProjectModule() { Path = inputFile });
-			proj.Add(new ProjectModule() { Path = inputSatelliteFile });
+			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = key });
+			proj.Add(new ProjectModule() { Path = inputSatelliteFile, SNKeyPath = key });
 
 
 			var parameters = new ConfuserParameters {
@@ -59,29 +62,34 @@ namespace CompressorWithResx.Test {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var info = new ProcessStartInfo(outputFile) {
-				RedirectStandardOutput = true,
-				UseShellExecute = false
-			};
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
+			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async (stdout) => {
 				Assert.Equal("START", await stdout.ReadLineAsync());
 				Assert.Equal("Test (fallback)", await stdout.ReadLineAsync());
 				Assert.Equal("Test (deutsch)", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
-				Assert.Empty(await stdout.ReadToEndAsync());
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-			}
+			}, outputHelper);
+			Assert.Equal(42, result);
 
 			FileUtilities.ClearOutput(outputFile);
 		}
 
 		public static IEnumerable<object[]> CompressAndExecuteTestData() {
+			foreach (var framework in new string[] { "net40", "net471" })
+				foreach (var data in CompressorParameterData(framework))
+					yield return data;
+		}
+
+		public static IEnumerable<object[]> CompressAndExecuteSkippedTestData() {
+			foreach (var framework in new string[] { "net20" })
+				foreach (var data in CompressorParameterData(framework))
+					yield return data;
+		}
+
+		private static IEnumerable<object[]> CompressorParameterData(string framework) {
 			foreach (var compressorCompatKey in new string[] { "true", "false" })
 				foreach (var compressorDeriveKey in new string[] { "normal", "dynamic" })
 					foreach (var resourceProtectionMode in new string[] { "none", "normal", "dynamic" })
-						yield return new object[] { compressorCompatKey, compressorDeriveKey, resourceProtectionMode };
+						yield return new object[] { framework, compressorCompatKey, compressorDeriveKey, resourceProtectionMode };
 		}
 	}
 }

@@ -1,0 +1,11 @@
+﻿<Project Sdk="MSBuild.Sdk.Extras">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <ExtrasEnableWinFormsProjectSetup>true</ExtrasEnableWinFormsProjectSetup>
+    <ExtrasEnableUserControlDesigner>true</ExtrasEnableUserControlDesigner>
+    <MyType>Windows</MyType>
+    <DefineConstants>_MYFORMS=True</DefineConstants>
+  </PropertyGroup>
+
+</Project>

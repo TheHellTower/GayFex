@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Assembly Settings">
+    <TargetFrameworks>net20;net40;netstandard1.0;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Assembly Information">
+    <Title>ConfuserEx Core Runtime</Title>
+    <Description>Runtime library of ConfuserEx Core</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Confuser.Core\LZMA\**\*.cs">
+      <Link>LZMA\%(RecursiveDir)\%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Remove="..\Confuser.Core\LZMA\Common\CommandLineParser.cs" />
+    <Compile Remove="..\Confuser.Core\LZMA\Compress\LzmaAlone\**\*.cs" />
+    <Compile Remove="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
+    <None Include="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
+  </ItemGroup>
+
+</Project>

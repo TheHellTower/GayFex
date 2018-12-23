@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -11,17 +12,15 @@ using Xunit.Abstractions;
 
 namespace AntiProtections.Test {
 	public class AntiProtectionsTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		protected const string ExecutableFile = "AntiProtections.exe";
+		protected ITestOutputHelper OutputHelper { get; }
 
 		protected AntiProtectionsTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+			OutputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		protected Action<ILoggingBuilder> ConfigureLogging() => builder => builder.AddProvider(new XunitLogger(outputHelper));
+		protected Action<ILoggingBuilder> ConfigureLogging() => builder => builder.AddProvider(new XunitLogger(OutputHelper));
 
-		protected ConfuserProject CreateProject() {
-			var baseDir = Environment.CurrentDirectory;
+		protected ConfuserProject CreateProject(string framework) {
+			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			return new ConfuserProject {
 				BaseDirectory = baseDir,
@@ -33,21 +32,22 @@ namespace AntiProtections.Test {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var info = new ProcessStartInfo(outputFile) {
-				RedirectStandardOutput = true,
-				UseShellExecute = false
-			};
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
+			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async (stdout) => {
 				Assert.Equal("START", await stdout.ReadLineAsync());
 				Assert.Equal("This is a test.", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
-				Assert.Empty(await stdout.ReadToEndAsync());
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-			}
+			}, OutputHelper);
 
 			FileUtilities.ClearOutput(outputFile);
 		}
+
+		protected static string GetExecutableName(string targetFramework) =>
+			targetFramework.StartsWith("netstandard") || targetFramework.StartsWith("netcoreapp") ? "AntiProtections.dll" : "AntiProtections.exe";
+
+
+		protected static string GetInputAssembly(ConfuserProject project, string targetFramework) =>
+			Path.Combine(project.BaseDirectory, GetExecutableName(targetFramework));
+
+		protected static IEnumerable<string> GetTargetFrameworks() => new string[] { "net20", "net40", "net471" };
 	}
 }

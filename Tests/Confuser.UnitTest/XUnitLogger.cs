@@ -37,6 +37,11 @@ namespace Confuser.UnitTest {
 			textBuilder.Append(" ");
 			textBuilder.Append(formatter(state, exception));
 
+			if (exception != null) {
+				textBuilder.AppendLine();
+				textBuilder.Append(exception.ToString());
+			}
+
 			var result = textBuilder.ToString();
 			switch (logLevel) {
 				case LogLevel.Critical:

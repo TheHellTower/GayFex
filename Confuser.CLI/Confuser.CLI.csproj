@@ -87,10 +87,6 @@
       <Project>{862DA0DA-52E1-47CD-B9C2-46B106031B28}</Project>
       <Name>Confuser.Renamer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Confuser.Runtime\Confuser.Runtime.csproj">
-      <Project>{A45C184F-F98F-4258-A928-BFF437034791}</Project>
-      <Name>Confuser.Runtime</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ConfuserEx.snk">
@@ -105,10 +101,12 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Console">
-      <Version>2.1.1</Version>
+      <Version>2.2.0</Version>
     </PackageReference>
     <PackageReference Include="Nerdbank.GitVersioning">
-      <Version>2.1.65</Version>
+      <Version>2.3.38</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

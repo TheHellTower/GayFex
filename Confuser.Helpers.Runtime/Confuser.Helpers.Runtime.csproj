@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Assembly Settings">
+    <TargetFrameworks>net20;net40;netstandard1.0;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Assembly Information">
+    <Title>ConfuserEx Helpers Runtime</Title>
+    <Description>Runtime definitions for the ConfuserEx Helpers</Description>
+  </PropertyGroup>
+
+</Project>

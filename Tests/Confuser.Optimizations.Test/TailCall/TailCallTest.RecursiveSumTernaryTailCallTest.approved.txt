@@ -1,0 +1,16 @@
+﻿// Header Size: 1 bytes
+.maxstack 8
+
+IL_0000: ldarg.0
+IL_0001: brfalse.s IL_0011
+IL_0003: ldarg.0
+IL_0004: ldc.i4.1
+IL_0005: sub
+IL_0006: ldarg.1
+IL_0007: ldarg.0
+IL_0008: add
+IL_0009: tail.
+IL_000B: call      System.Int32 Confuser.Optimizations.TailCall.TailCallTest::RecursiveSumTernary(System.Int32,System.Int32)
+IL_0010: ret
+IL_0011: ldarg.1
+IL_0012: ret

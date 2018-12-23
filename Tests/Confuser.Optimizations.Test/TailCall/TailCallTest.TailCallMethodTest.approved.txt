@@ -1,0 +1,7 @@
+﻿// Header Size: 1 bytes
+.maxstack 8
+
+IL_0000: ldarg.0
+IL_0001: tail.
+IL_0003: call      System.Double System.Math::Abs(System.Double)
+IL_0008: ret

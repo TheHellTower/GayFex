@@ -13,7 +13,6 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
-using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
 namespace Confuser.Protections.AntiTamper {
 	internal sealed class AntiMode : IModeHandler {
@@ -55,12 +54,13 @@ namespace Confuser.Protections.AntiTamper {
 				.Add(MutationField.KeyI3, (int)c)
 				.Add(MutationField.KeyI4, (int)v);
 
-			var rt = context.Registry.GetRequiredService<IRuntimeService>();
 			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
 
-			var antiTamperInit = rt.GetRuntimeType("Confuser.Runtime.AntiTamperAnti").FindMethod("Initialize");
+			var antiTamperInit = context.GetInitMethod("Confuser.Runtime.AntiTamperAnti", context.CurrentModule);
+			if (antiTamperInit == null) return;
+
 			var injectResult = InjectHelper.Inject(antiTamperInit, context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new MutationProcessor(context.Registry, context.CurrentModule) {

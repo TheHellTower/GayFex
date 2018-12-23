@@ -88,7 +88,6 @@ namespace Confuser.Core {
 
 			bool ok = false;
 			try {
-
 				Marker marker = parameters.GetMarker();
 
 				// 2. Discover plugins
@@ -211,7 +210,7 @@ namespace Confuser.Core {
 				// Exception is already handled/logged, so just ignore and report failure
 			}
 			catch (Exception ex) {
-				logger.LogCritical("Unknown error occurred.", ex);
+				logger.LogCritical(ex, "Unknown error occurred.");
 			}
 			return ok;
 		}

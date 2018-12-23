@@ -10,7 +10,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Confuser.Core;
-using Confuser.Core.Helpers;
 using Confuser.Core.Services;
 using Confuser.Helpers;
 using Confuser.Protections.Compress;
@@ -51,7 +50,7 @@ namespace Confuser.Protections {
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("compressor");
 			if (ctx == null) {
 				logger.LogCritical("No executable module!");
-				throw new ConfuserException(null);
+				throw new ConfuserException();
 			}
 
 			var originModule = context.Modules[ctx.ModuleIndex];
@@ -67,6 +66,10 @@ namespace Confuser.Protections {
 				ctx.Assembly.Modules.Insert(0, stubModule);
 				ImportAssemblyTypeReferences(originModule, stubModule);
 			}
+
+			stubModule.Context.AssemblyResolver = originModule.Context.AssemblyResolver;
+			stubModule.Context.Resolver = originModule.Context.Resolver;
+
 			stubModule.Characteristics = originModule.Characteristics;
 			stubModule.Cor20HeaderFlags = originModule.Cor20HeaderFlags;
 			stubModule.Cor20HeaderRuntimeVersion = originModule.Cor20HeaderRuntimeVersion;
@@ -189,6 +192,7 @@ namespace Confuser.Protections {
 			stubModule.UpdateRowId(dataType.ClassLayout);
 			stubModule.UpdateRowId(dataType);
 			name?.MarkHelper(context, dataType, marker, this);
+			marker.Mark(context, dataType, this);
 
 			var dataField = new FieldDefUser("DataField", new FieldSig(dataType.ToTypeSig())) {
 				IsStatic = true,
@@ -198,7 +202,9 @@ namespace Confuser.Protections {
 			};
 			stubModule.GlobalType.Fields.Add(dataField);
 			stubModule.UpdateRowId(dataField);
-			name?.MarkHelper(context, dataField, marker, this);
+			// Do not use the naming service. It renames the field and the StubProtection relies on the name of the
+			// data field as for right now to find the required field.
+			marker.Mark(context, dataField, this);
 
 			return (module, method, args) => {
 				var repl = new List<Instruction>(args.Count + 3);
@@ -231,8 +237,12 @@ namespace Confuser.Protections {
 			}
 			compCtx.Deriver.Init(context, random);
 
-			var rtType = rt.GetRuntimeType(compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
-			var mainMethod = rtType.FindMethod("Main");
+			var rtType = GetRuntimeType(stubModule, context, compCtx, logger);
+			var mainMethod = rtType?.FindMethod("Main");
+			if (mainMethod == null) {
+				logger.LogCritical("Runtime type for compressor not available. Packed assembly can't work.");
+				throw new ConfuserException();
+			}
 
 			uint seed = random.NextUInt32();
 			compCtx.OriginModule = context.OutputModules[compCtx.ModuleIndex];
@@ -252,6 +262,7 @@ namespace Confuser.Protections {
 
 			var injectResult = InjectHelper.Inject(mainMethod, stubModule,
 				InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType),
+				new CompressionServiceProcessor(context, stubModule),
 				new MutationProcessor(context.Registry, stubModule) {
 					KeyFieldValues = mutationKeys,
 					LateKeyFieldValues = lateMutationKeys,
@@ -343,6 +354,33 @@ namespace Confuser.Protections {
 					//  }
 				}
 			}
+		}
+
+		private static TypeDef GetRuntimeType(ModuleDef module, IConfuserContext context, CompressorContext compCtx, ILogger logger) {
+			Debug.Assert(module != null, $"{nameof(module)} != null");
+			Debug.Assert(context != null, $"{nameof(context)} != null");
+			Debug.Assert(compCtx != null, $"{nameof(compCtx)} != null");
+			Debug.Assert(logger != null, $"{nameof(logger)} != null");
+
+			var rt = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
+
+			string runtimeTypeName = (compCtx.CompatMode ? "Confuser.Runtime.CompressorCompat" : "Confuser.Runtime.Compressor");
+
+			TypeDef rtType = null;
+			try {
+				rtType = rt.GetRuntimeType(runtimeTypeName, module);
+			}
+			catch (ArgumentException ex) {
+				logger.LogError("Failed to load runtime: {0}", ex.Message);
+				return null;
+			}
+
+			if (rtType == null) {
+				logger.LogError("Failed to load runtime: {0}", runtimeTypeName);
+				return null;
+			}
+
+			return rtType;
 		}
 	}
 }

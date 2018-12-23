@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.Pdb;
 using dnlib.IO;
 
 namespace Confuser {
@@ -57,6 +59,84 @@ namespace Confuser {
 
 			foreach (EventDef evt in typeDef.Events)
 				yield return evt;
+		}
+
+		/// <summary>
+		///     Determines whether the specified method is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="methodDef">The method that is checked.</param>
+		/// <returns><see langword="true"/> in case the method is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="methodDef"/> is <see langword="null"/>.</exception>
+		/// <remarks>
+		///     The method is considered visible in case it is public or visible to sub-types (protected) and the
+		///     declaring type is also visible outside of the assembly.
+		/// </remarks>
+		public static bool IsVisibleOutside(this MethodDef methodDef) {
+			if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
+
+			switch (methodDef.Access) {
+				case MethodAttributes.Family:
+				case MethodAttributes.FamORAssem:
+				case MethodAttributes.Public:
+					return methodDef.DeclaringType.IsVisibleOutside();
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		///     Determines whether the specified field is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="fieldDef">The field that is checked.</param>
+		/// <returns><see langword="true"/> in case the field is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="fieldDef"/> is <see langword="null"/>.</exception>
+		/// <remarks>
+		///     The field is considered visible in case it is public or visible to sub-types (protected) and the
+		///     declaring type is also visible outside of the assembly.
+		/// </remarks>
+		public static bool IsVisibleOutside(this FieldDef fieldDef) {
+			if (fieldDef == null) throw new ArgumentNullException(nameof(fieldDef));
+
+			switch (fieldDef.Access) {
+				case FieldAttributes.Family:
+				case FieldAttributes.FamORAssem:
+				case FieldAttributes.Public:
+					return fieldDef.DeclaringType.IsVisibleOutside();
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		///     Determines whether the specified event is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="eventDef">The event that is checked.</param>
+		/// <returns><see langword="true"/> in case the event is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="eventDef"/> is <see langword="null"/>.</exception>
+		/// <remarks>
+		///     The event is considered visible in case any of the methods related to it is visible outside.
+		/// </remarks>
+		public static bool IsVisibleOutside(this EventDef eventDef) {
+			if (eventDef == null) throw new ArgumentNullException(nameof(eventDef));
+
+			return eventDef.AllMethods().Any(IsVisibleOutside);
+		}
+
+		/// <summary>
+		///     Determines whether the specified property is visible outside the containing assembly.
+		/// </summary>
+		/// <param name="propertyDef">The event that is checked.</param>
+		/// <returns><see langword="true"/> in case the property is visible outside of the assembly.</returns>
+		/// <exception cref="ArgumentNullException">
+		///     <paramref name="propertyDef"/> is <see langword="null"/>.
+		/// </exception>
+		/// <remarks>
+		///     The property is considered visible in case any of the getter or setter methods is visible outside.
+		/// </remarks>
+		public static bool IsVisibleOutside(this PropertyDef propertyDef) {
+			if (propertyDef == null) throw new ArgumentNullException(nameof(propertyDef));
+
+			return propertyDef.GetMethods.Any(IsVisibleOutside) || propertyDef.SetMethods.Any(IsVisibleOutside);
 		}
 
 		/// <summary>
@@ -269,8 +349,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="property">The property.</param>
 		/// <returns><c>true</c> if the specified property is public; otherwise, <c>false</c>.</returns>
-		public static bool IsPublic(this PropertyDef property)
-		{
+		public static bool IsPublic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsPublic);
 		}
 
@@ -279,8 +358,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="property">The property.</param>
 		/// <returns><c>true</c> if the specified property is static; otherwise, <c>false</c>.</returns>
-		public static bool IsStatic(this PropertyDef property)
-		{
+		public static bool IsStatic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsStatic);
 		}
 
@@ -289,8 +367,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified event is public; otherwise, <c>false</c>.</returns>
-		public static bool IsPublic(this EventDef evt)
-		{
+		public static bool IsPublic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsPublic);
 		}
 
@@ -299,8 +376,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified event is static; otherwise, <c>false</c>.</returns>
-		public static bool IsStatic(this EventDef evt)
-		{
+		public static bool IsStatic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsStatic);
 		}
 
@@ -309,8 +385,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="method">The method.</param>
 		/// <returns><c>true</c> if the specified method is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this MethodDef method)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this MethodDef method) {
 			return method.IsFinal && method.IsPrivate;
 		}
 
@@ -319,8 +394,7 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="property">The method.</param>
 		/// <returns><c>true</c> if the specified property is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this PropertyDef property)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this PropertyDef property) {
 			return property.AllMethods().Any(IsExplicitlyImplementedInterfaceMember);
 		}
 
@@ -329,21 +403,18 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified eve is an explicitly implemented interface member; otherwise, <c>false</c>.</returns>
-		public static bool IsExplicitlyImplementedInterfaceMember(this EventDef evt)
-		{
+		public static bool IsExplicitlyImplementedInterfaceMember(this EventDef evt) {
 			return evt.AllMethods().Any(IsExplicitlyImplementedInterfaceMember);
 		}
 
-		private static IEnumerable<MethodDef> AllMethods(this EventDef evt)
-		{
-			return new [] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
+		private static IEnumerable<MethodDef> AllMethods(this EventDef evt) {
+			return new[] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
 				.Concat(evt.OtherMethods)
 				.Where(m => m != null);
 		}
 
-		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property)
-		{
-			return new [] { property.GetMethod, property.SetMethod }
+		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property) {
+			return new[] { property.GetMethod, property.SetMethod }
 				.Concat(property.OtherMethods)
 				.Where(m => m != null);
 		}
@@ -355,26 +426,156 @@ namespace Confuser {
 		/// <param name="target">The instruction to replace.</param>
 		/// <param name="newInstr">The new instruction.</param>
 		public static void ReplaceReference(this CilBody body, Instruction target, Instruction newInstr) {
-			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
-				if (eh.TryStart == target)
-					eh.TryStart = newInstr;
-				if (eh.TryEnd == target)
-					eh.TryEnd = newInstr;
-				if (eh.HandlerStart == target)
-					eh.HandlerStart = newInstr;
-				if (eh.HandlerEnd == target)
-					eh.HandlerEnd = newInstr;
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (target == null) throw new ArgumentNullException(nameof(target));
+			if (newInstr == null) throw new ArgumentNullException(nameof(newInstr));
+
+			body.UpdateReference(target, newInstr);
+
+			body.FixScopeStarts(target, newInstr);
+			body.FixScopeEnds(target, newInstr);
+
+			if (target.SequencePoint != null && newInstr.SequencePoint == null) {
+				newInstr.SequencePoint = target.SequencePoint;
 			}
-			foreach (Instruction instr in body.Instructions) {
-				if (instr.Operand == target)
-					instr.Operand = newInstr;
-				else if (instr.Operand is Instruction[]) {
-					var targets = (Instruction[])instr.Operand;
-					for (int i = 0; i < targets.Length; i++)
-						if (targets[i] == target)
-							targets[i] = newInstr;
+		}
+
+		private static void UpdateReference(this CilBody body, Instruction oldInstr, Instruction newInstr) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (oldInstr == null) throw new ArgumentNullException(nameof(oldInstr));
+			if (newInstr == null) throw new ArgumentNullException(nameof(newInstr));
+
+			foreach (var instr in body.Instructions) {
+				switch (instr.Operand) {
+					case Instruction opInstr:
+						if (oldInstr.Equals(opInstr))
+							instr.Operand = newInstr;
+						break;
+					case Instruction[] opInstrs:
+						for (var i = 0; i < opInstrs.Length; i++)
+							if (oldInstr.Equals(opInstrs[i]))
+								opInstrs[i] = newInstr;
+
+						break;
 				}
 			}
+		}
+		public static void InsertPrefixInstructions(this CilBody body, Instruction instr, params Instruction[] newInstrs) =>
+			InsertPrefixInstructions(body, instr, newInstrs.AsEnumerable());
+
+		public static void InsertPrefixInstructions(this CilBody body, Instruction instr, IEnumerable<Instruction> newInstrs) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (instr == null) throw new ArgumentNullException(nameof(instr));
+			if (newInstrs == null) throw new ArgumentNullException(nameof(newInstrs));
+
+			if (!body.HasInstructions) {
+				Debug.Fail("No instructions in method?!");
+				return;
+			}
+
+			var indexOfInstr = body.Instructions.IndexOf(instr);
+			Debug.Assert(indexOfInstr >= 0, "Instruction not present in method.");
+			if (indexOfInstr < 0) return;
+
+			int index = 0;
+			foreach (var newInstr in newInstrs)
+				body.Instructions.Insert(indexOfInstr + (index++), newInstr);
+
+			body.UpdateReference(instr, body.Instructions[indexOfInstr]);
+			body.FixScopeStarts(instr, body.Instructions[indexOfInstr]);
+		}
+
+		private static void FixScopeStarts(this CilBody body, Instruction oldInstr, Instruction newInstr) {
+			Debug.Assert(body != null, $"{nameof(body)} != null");
+			Debug.Assert(oldInstr != null, $"{nameof(oldInstr)} != null");
+			Debug.Assert(newInstr != null, $"{nameof(newInstr)} != null");
+
+			foreach (var exHandler in body.ExceptionHandlers) {
+				if (oldInstr.Equals(exHandler.TryStart))
+					exHandler.TryStart = newInstr;
+
+				if (oldInstr.Equals(exHandler.HandlerStart))
+					exHandler.HandlerStart = newInstr;
+			}
+
+			foreach (var currentScope in body.GetPdbScopes()) {
+				if (oldInstr.Equals(currentScope.Start))
+					currentScope.Start = newInstr;
+			}
+		}
+
+		private static void FixScopeEnds(this CilBody body, Instruction oldInstr, Instruction newInstr) {
+			Debug.Assert(body != null, $"{nameof(body)} != null");
+			Debug.Assert(oldInstr != null, $"{nameof(oldInstr)} != null");
+			Debug.Assert(newInstr != null, $"{nameof(newInstr)} != null");
+
+			foreach (var exHandler in body.ExceptionHandlers) {
+				if (oldInstr.Equals(exHandler.TryEnd))
+					exHandler.TryEnd = newInstr;
+
+				if (oldInstr.Equals(exHandler.HandlerEnd))
+					exHandler.HandlerEnd = newInstr;
+			}
+
+			foreach (var currentScope in body.GetPdbScopes()) {
+				if (oldInstr.Equals(currentScope.End))
+					currentScope.End = newInstr;
+			}
+		}
+
+		private static IEnumerable<PdbScope> GetPdbScopes(this CilBody body) {
+			if (body.HasPdbMethod) {
+				Debug.Assert(body.PdbMethod != null, $"{nameof(body)}.PdbMethod != null");
+
+				var unprocessedScopes = new Queue<PdbScope>();
+				unprocessedScopes.Enqueue(body.PdbMethod.Scope);
+
+				while (unprocessedScopes.Any())
+					yield return unprocessedScopes.Dequeue();
+			}
+		}
+
+		/// <summary>
+		/// This method removes an instruction from the body and fixes the references to the removed instruction.
+		/// </summary>
+		/// <param name="body">The body to process</param>
+		/// <param name="instr">The instruction that is removed</param>
+		/// <remarks>This method fixes branch instructions, exception handlers and debug symbols.</remarks>
+		public static void RemoveInstruction(this CilBody body, Instruction instr) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (instr == null) throw new ArgumentNullException(nameof(instr));
+
+			if (!body.HasInstructions) {
+				Debug.Fail("No instructions in method?!");
+				return;
+			}
+
+			var indexOfInstr = body.Instructions.IndexOf(instr);
+			Debug.Assert(indexOfInstr >= 0, "Instruction not present in method.");
+			if (indexOfInstr < 0) return;
+
+			if (indexOfInstr < body.Instructions.Count - 1) {
+				body.UpdateReference(instr, body.Instructions[indexOfInstr + 1]);
+				body.FixScopeStarts(instr, body.Instructions[indexOfInstr + 1]);
+			}
+			else if(indexOfInstr > 0) {
+				body.UpdateReference(instr, body.Instructions[indexOfInstr - 1]);
+				body.FixScopeStarts(instr, body.Instructions[indexOfInstr - 1]);
+			}
+
+			if (indexOfInstr > 0)
+				body.FixScopeEnds(instr, body.Instructions[indexOfInstr - 1]);
+			else if (indexOfInstr < body.Instructions.Count - 1)
+				body.FixScopeEnds(instr, body.Instructions[indexOfInstr + 1]);
+
+			if (indexOfInstr < body.Instructions.Count) {
+				if (instr.SequencePoint != null && body.Instructions[indexOfInstr + 1].SequencePoint == null) {
+					body.Instructions[indexOfInstr + 1].SequencePoint = instr.SequencePoint;
+				}
+			}
+
+			// Any now we have fixed everything and we can finally safely delete the instruction!
+			body.Instructions.RemoveAt(indexOfInstr);
 		}
 
 		/// <summary>

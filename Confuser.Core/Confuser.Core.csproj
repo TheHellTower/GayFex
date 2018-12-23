@@ -1,12 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
-
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
@@ -15,19 +11,26 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.*" />
-    <PackageReference Include="System.Threading" Version="4.*" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.*" />
-    <PackageReference Include="System.Security.Cryptography.Primitives" Version="4.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Win32.Registry" />
+    <PackageReference Include="NuGet.Frameworks" />
+    <PackageReference Include="System.ComponentModel.Composition" />
+    <PackageReference Include="System.Security.Cryptography.Primitives" />
+    <PackageReference Include="System.Threading" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
-    <ProjectReference Include="..\dnlib\src\dnlib.netstandard.csproj" />
+    <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
   </ItemGroup>
+
+  <ItemGroup Label="Runtime Project Dependencies">
+    <ConfuserRuntimeReference Include="..\Confuser.Core.Runtime\Confuser.Core.Runtime.csproj" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <EmbeddedResource Include="Project\ConfuserPrj.xsd">
@@ -42,6 +45,12 @@
     <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.sln" />
   </ItemGroup>
 
-  <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
+  <ItemGroup>
+    <PackageReference Update="SourceLink.Create.CommandLine" Version="2.8.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Nerdbank.GitVersioning" Version="2.3.38" />
+  </ItemGroup>
 
 </Project>

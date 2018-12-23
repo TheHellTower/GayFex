@@ -1,0 +1,87 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="*" PrivateAssets="all" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="*" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="*" PrivateAssets="all"
+            Condition="'$(EnableCodeAnalysis)' != 'false'" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <BuildConfuserRuntimeDependsOn>
+      _ConfuserRuntimeGetTargetFrameworks;
+      _ConfuserRuntimeCreateTargetFrameworkList;
+      _ConfuserRuntimeBuildAndEmbedd;
+    </BuildConfuserRuntimeDependsOn>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <ConfuserRuntimeConfiguration Condition="'$(ConfuserRuntimeConfiguration)' == ''">$(Configuration)</ConfuserRuntimeConfiguration>
+  </PropertyGroup>
+
+  <Target Name="BuildConfuserRuntime"
+          AfterTargets="PrepareForBuild"
+          DependsOnTargets="$(BuildConfuserRuntimeDependsOn)"
+          Condition="'@(ConfuserRuntimeReference)' != ''" />
+
+  <Target Name="_ConfuserRuntimeGetTargetFrameworks">
+    <MSBuild Projects="@(ConfuserRuntimeReference)"
+             Targets="GetTargetFrameworks"
+             BuildInParallel="$(BuildInParallel)"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration)"
+             RemoveProperties="TargetFramework;RuntimeIdentifier"
+             SkipNonexistentTargets="true">
+      <Output TaskParameter="TargetOutputs" ItemName="_BuildConfuserRuntimeTargets" />
+    </MSBuild>
+    <ItemGroup>
+      <_BuildConfuserRuntimeTargetFrameworks Include="@(_BuildConfuserRuntimeTargets->'%(TargetFrameworks)')" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_ConfuserRuntimeCreateTargetFrameworkList">
+    <PropertyGroup>
+      <_BuildConfuserRuntimeTargetFrameworks2>@(_BuildConfuserRuntimeTargetFrameworks)</_BuildConfuserRuntimeTargetFrameworks2>
+      <_BuildConfuserRuntimeProjectFile>%(_BuildConfuserRuntimeTargetFrameworks.MSBuildSourceProjectFile)</_BuildConfuserRuntimeProjectFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BuildConfuserRuntimeTargetFramework Include="$(_BuildConfuserRuntimeTargetFrameworks2.Split(';'))">
+        <MSBuildSourceProjectFile>$(_BuildConfuserRuntimeProjectFile)</MSBuildSourceProjectFile>
+      </_BuildConfuserRuntimeTargetFramework>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_ConfuserRuntimeBuildAndEmbedd">
+    <MSBuild Projects="%(_BuildConfuserRuntimeTargetFramework.MSBuildSourceProjectFile)"
+             Targets="Build"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration);TargetFramework=%(_BuildConfuserRuntimeTargetFramework.Identity)"
+             RemoveProperties="TargetFrameworks;RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
+             BuildInParallel="$(BuildInParallel)">
+      <Output TaskParameter="TargetOutputs" ItemName="_ConfuserCoreRuntimeBuildOutput" />
+    </MSBuild>
+    <ItemGroup>
+      <_ConfuserRuntimeEmbeddedResource Include="@(_ConfuserCoreRuntimeBuildOutput)">
+        <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETFramework'">%(Filename).net$([System.String]::Copy('%(TargetFrameworkVersion)').Replace('.', ''))%(Extension)</Link>
+        <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETStandard'">%(Filename).netstandard%(TargetFrameworkVersion)%(Extension)</Link>
+      </_ConfuserRuntimeEmbeddedResource>
+      <_ConfuserRuntimeEmbeddedResource Include="@(_ConfuserCoreRuntimeBuildOutput->'%(RootDir)%(Directory)%(Filename).pdb')">
+        <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETFramework'">%(Filename).net$([System.String]::Copy('%(TargetFrameworkVersion)').Replace('.', '')).pdb</Link>
+        <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETStandard'">%(Filename).netstandard%(TargetFrameworkVersion).pdb</Link>
+      </_ConfuserRuntimeEmbeddedResource>
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Include="@(_ConfuserRuntimeEmbeddedResource)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CleanConfuserRuntime"
+          AfterTargets="CleanReferencedProjects"
+          Condition="'@(ConfuserRuntimeReference)' != ''">
+    <MSBuild Projects="@(ConfuserRuntimeReference)"
+             Targets="Clean"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration)"
+             RemoveProperties="TargetFrameworks;TargetFramework;RuntimeIdentifier"
+             BuildInParallel="$(BuildInParallel)" />
+  </Target>
+  
+  <Import Project="$(MSBuildThisFileDirectory)Confuser.Build/GenerateInternalsVisibleTo.targets" />
+</Project>

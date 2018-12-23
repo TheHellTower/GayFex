@@ -94,29 +94,29 @@ namespace Confuser.Renamer {
 			if (wpf) {
 				var wpfAnalyzer = new WPFAnalyzer(Parent);
 				logger.LogDebug("WPF found, enabling compatibility.");
-				service.Renamers.Add(wpfAnalyzer);
+				service.RegisterRenamer(wpfAnalyzer);
 				if (caliburn) {
 					logger.LogDebug("Caliburn.Micro found, enabling compatibility.");
-					service.Renamers.Add(new CaliburnAnalyzer(context, wpfAnalyzer));
+					service.RegisterRenamer(new CaliburnAnalyzer(context, wpfAnalyzer));
 				}
 			}
 
 			if (winforms) {
 				var winformsAnalyzer = new WinFormsAnalyzer();
 				logger.LogDebug("WinForms found, enabling compatibility.");
-				service.Renamers.Add(winformsAnalyzer);
+				service.RegisterRenamer(winformsAnalyzer);
 			}
 
 			if (json) {
 				var jsonAnalyzer = new JsonAnalyzer();
 				logger.LogDebug("Newtonsoft.Json found, enabling compatibility.");
-				service.Renamers.Add(jsonAnalyzer);
+				service.RegisterRenamer(jsonAnalyzer);
 			}
 
 			if (visualBasic) {
 				var vbAnalyzer = new VisualBasicRuntimeAnalyzer();
 				logger.LogDebug("Visual Basic Embedded Runtime found, enabling compatibility.");
-				service.Renamers.Add(vbAnalyzer);
+				service.RegisterRenamer(vbAnalyzer);
 			}
 		}
 

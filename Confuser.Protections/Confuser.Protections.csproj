@@ -1,12 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
-
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
@@ -15,9 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="4.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="System.ComponentModel.Composition" />
+    <PackageReference Include="System.ValueTuple" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
@@ -25,9 +21,10 @@
     <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
     <ProjectReference Include="..\Confuser.Protections.Exports\Confuser.Protections.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
-    <ProjectReference Include="..\Confuser.Runtime\Confuser.Runtime.csproj" Condition="'$(TargetFramework)' == 'net461'" />
   </ItemGroup>
 
-  <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
+  <ItemGroup Label="Runtime Project Dependencies">
+    <ConfuserRuntimeReference Include="..\Confuser.Protections.Runtime\Confuser.Protections.Runtime.csproj" />
+  </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Resources;
 using System.Text.RegularExpressions;
 using Confuser.Core;
@@ -19,7 +20,7 @@ namespace Confuser.Renamer.Analyzers {
 		static readonly object BAMLKey = new object();
 
 		internal static readonly Regex ResourceNamePattern = new Regex("^.*\\.g\\.resources$");
-		internal static readonly Regex UriPattern = new Regex("^(?:PACK\\://(?:COMPONENT|APPLICATION)\\:,,,)*(?:/(.+?)(?:;V\\d+\\.\\d+\\.\\d+\\.\\d+)?;COMPONENT)*(/.+\\.[BX]AML)$");
+		internal static readonly Regex UriPattern = new Regex("^(?:PACK\\://(?:COMPONENT|APPLICATION)\\:,,,)?(?:/(.+?)(?:;V\\d+\\.\\d+\\.\\d+\\.\\d+)?;COMPONENT)?(/?[^/].*\\.[BX]AML)$");
 		BAMLAnalyzer analyzer;
 
 		internal Dictionary<string, List<IBAMLReference>> bamlRefs;
@@ -193,8 +194,11 @@ namespace Confuser.Renamer.Analyzers {
 					if (operand.EndsWith(".BAML") || operand.EndsWith(".XAML")) {
 						var match = UriPattern.Match(operand);
 						if (match.Success) {
-							var resourceAssemblyName = match.Groups[1].Value;
-							if (resourceAssemblyName != null && !resourceAssemblyName.Equals(method.Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+							var resourceAssemblyName = match.Groups[1].Success ? match.Groups[1].Value : string.Empty;
+							// Check if the expression contains a resource name (group 1)
+							// If it does, check if it is this assembly.
+							if (!string.IsNullOrWhiteSpace(resourceAssemblyName) &&
+								!resourceAssemblyName.Equals(method.Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
 								// This resource points to another assembly.
 								// Leave it alone!
 								return;
@@ -205,7 +209,7 @@ namespace Confuser.Renamer.Analyzers {
 							logger.LogWarning("Fail to extract XAML name from '{0}'.", instr.Operand);
 
 						var reference = new BAMLStringReference(instr);
-						operand = operand.TrimStart('/');
+						operand = WebUtility.UrlDecode(operand.TrimStart('/'));
 						var baml = operand.Substring(0, operand.Length - 5) + ".BAML";
 						var xaml = operand.Substring(0, operand.Length - 5) + ".XAML";
 						bamlRefs.AddListEntry(baml, reference);

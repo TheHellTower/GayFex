@@ -36,7 +36,7 @@ namespace Confuser.Protections.Compress {
 			if (context.Annotations.Get<CompressorContext>(context, Compressor.ContextKey) != null) {
 				if (isExe) {
 					logger.LogCritical("Too many executable modules!");
-					throw new ConfuserException(null);
+					throw new ConfuserException();
 				}
 				return;
 			}

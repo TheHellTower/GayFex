@@ -105,7 +105,7 @@ namespace Confuser.Renamer {
 				foreach (var refer in references.ToList()) {
 					if (!refer.UpdateNameReference(context, service)) {
 						logger.LogCritical("Failed to update name reference on '{0}'.", def);
-						throw new ConfuserException(null);
+						throw new ConfuserException();
 					}
 				}
 				token.ThrowIfCancellationRequested();

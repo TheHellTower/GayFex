@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CompressorWithResx.Test {
+namespace ConstantProtection.Test {
 	public sealed class ConstantProtectionTest {
 		private readonly ITestOutputHelper outputHelper;
 
@@ -21,9 +21,9 @@ namespace CompressorWithResx.Test {
 		[MemberData(nameof(ProtectAndExecuteTestData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "constants")]
-		public async Task ProtectAndExecuteTest(string modeKey, bool cfgKey, string elementsKey) {
-			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp");
+		public async Task ProtectAndExecuteTest(string framework, string modeKey, bool cfgKey, string elementsKey) {
+			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "ConstantProtection.exe");
 			var outputFile = Path.Combine(outputDir, "ConstantProtection.exe");
 			FileUtilities.ClearOutput(outputFile);
@@ -53,33 +53,27 @@ namespace CompressorWithResx.Test {
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var info = new ProcessStartInfo(outputFile) {
-				RedirectStandardOutput = true,
-				UseShellExecute = false
-			};
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
+			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async (stdout) => {
 				Assert.Equal("START", await stdout.ReadLineAsync());
 				Assert.Equal("123456", await stdout.ReadLineAsync());
 				Assert.Equal("3", await stdout.ReadLineAsync());
 				Assert.Equal("Test3", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
-				Assert.Empty(await stdout.ReadToEndAsync());
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-			}
+			}, outputHelper);
+			Assert.Equal(42, result);
 
 			FileUtilities.ClearOutput(outputFile);
 		}
 
 		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
-			foreach (var mode in new string[] { "Normal", "Dynamic", "x86" })
-				foreach (var cfg in new bool[] { false, true })
-					foreach (var encodeStrings in new string[] { "", "S" })
-						foreach (var encodeNumbers in new string[] { "", "N" })
-							foreach (var encodePrimitives in new string[] { "", "P" })
-								foreach (var encodeInitializers in new string[] { "", "I" })
-									yield return new object[] { mode, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
+			foreach (var framework in new string[] { "net20", "net40", "net471" })
+				foreach (var mode in new string[] { "Normal", "Dynamic", "x86" })
+					foreach (var cfg in new bool[] { false, true })
+						foreach (var encodeStrings in new string[] { "", "S" })
+							foreach (var encodeNumbers in new string[] { "", "N" })
+								foreach (var encodePrimitives in new string[] { "", "P" })
+									foreach (var encodeInitializers in new string[] { "", "I" })
+										yield return new object[] { framework, mode, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
 		}
 	}
 }
