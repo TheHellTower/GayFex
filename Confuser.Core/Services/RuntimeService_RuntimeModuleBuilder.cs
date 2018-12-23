@@ -5,7 +5,7 @@ using System.IO;
 using NuGet.Frameworks;
 
 namespace Confuser.Core.Services {
-	partial class RuntimeService {
+	internal partial class RuntimeService {
 		private sealed class RuntimeModuleBuilder : IRuntimeModuleBuilder {
 			private ImmutableDictionary<NuGetFramework, Implementation> _implementationFactories
 				= ImmutableDictionary.Create<NuGetFramework, Implementation>();

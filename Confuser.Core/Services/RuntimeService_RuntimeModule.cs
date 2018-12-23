@@ -6,7 +6,7 @@ using dnlib.DotNet;
 using NuGet.Frameworks;
 
 namespace Confuser.Core.Services {
-	partial class RuntimeService {
+	internal partial class RuntimeService {
 		private sealed class RuntimeModule : IRuntimeModule {
 			private RuntimeModuleBuilder Builder { get; }
 
@@ -27,7 +27,7 @@ namespace Confuser.Core.Services {
 				return runtimeModule.Find(fullName, false);
 			}
 
-			ModuleDef GetRuntimeModule(ModuleDef targetModule) {
+			private ModuleDef GetRuntimeModule(ModuleDef targetModule) {
 				Debug.Assert(targetModule != null, $"{nameof(targetModule)} != null");
 
 				var moduleFramework = IdentifyFramework(targetModule);
