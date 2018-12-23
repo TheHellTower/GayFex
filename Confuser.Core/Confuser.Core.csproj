@@ -31,26 +31,12 @@
     <ConfuserRuntimeReference Include="..\Confuser.Core.Runtime\Confuser.Core.Runtime.csproj" />
   </ItemGroup>
 
-
   <ItemGroup>
     <EmbeddedResource Include="Project\ConfuserPrj.xsd">
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup Label="LZMA">
-    <Compile Remove="LZMA\Compress\LzmaAlone\**\*.cs" />
-    <Compile Remove="LZMA\Common\CommandLineParser.cs" />
-    <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.csproj" />
-    <None Remove="LZMA\Compress\LzmaAlone\LzmaAlone.sln" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="SourceLink.Create.CommandLine" Version="2.8.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Nerdbank.GitVersioning" Version="2.3.38" />
-  </ItemGroup>
+  <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />
 
 </Project>

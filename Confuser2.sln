@@ -87,7 +87,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Optimizations.Expo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Optimizations.Test", "Tests\Confuser.Optimizations.Test\Confuser.Optimizations.Test.csproj", "{4CF623D7-1963-4A9A-8753-4540C895E614}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SevenZip", "SevenZip\SevenZip.shproj", "{7477AE82-D0BE-4C24-91C1-6ABCB6C18B8F}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		SevenZip\SevenZip.projitems*{7477ae82-d0be-4c24-91c1-6abcb6c18b8f}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>7477ae82-d0be-4c24-91c1-6abcb6c18b8f</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>SevenZip</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory).editorconfig" />
+    <None Include="$(MSBuildThisFileDirectory)README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Common\CRC.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Common\InBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Common\OutBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\LZMA\LzmaBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\LZMA\LzmaDecoder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\LZMA\LzmaEncoder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\LZ\IMatchFinder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\LZ\LzBinTree.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\LZ\LzInWindow.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\LZ\LzOutWindow.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\RangeCoder\RangeCoder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\RangeCoder\RangeCoderBit.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compress\RangeCoder\RangeCoderBitTree.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ICoder.cs" />
+  </ItemGroup>
+</Project>
