@@ -48,7 +48,7 @@ namespace ConfuserEx.ViewModel {
 		private async void DoProtect() {
 			var parameters = new ConfuserParameters {
 				Project = ((IViewModel<ConfuserProject>)App.Project).Model,
-				ConfigureLogging = builder => builder.AddProvider(new UiLoggerProvider(SendLogMessage)).SetMinimumLevel(LogLevel.Debug)
+				ConfigureLogging = builder => builder.AddProvider(new UiLoggerProvider(SendLogMessage)).SetMinimumLevel(LogLevel.Information)
 			};
 			if (File.Exists(App.FileName))
 				Environment.CurrentDirectory = Path.GetDirectoryName(App.FileName);
