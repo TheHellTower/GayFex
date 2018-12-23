@@ -59,5 +59,143 @@ namespace Confuser.CLI.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Either a single project file or the assemblies for obfuscation ähnelt.
+        /// </summary>
+        internal static string ArgumentFilesDescription {
+            get {
+                return ResourceManager.GetString("ArgumentFilesDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ConfuserEx ähnelt.
+        /// </summary>
+        internal static string ConsoleTitle {
+            get {
+                return ResourceManager.GetString("ConsoleTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ConfuserEx - Running… ähnelt.
+        /// </summary>
+        internal static string ConsoleTitleRunning {
+            get {
+                return ResourceManager.GetString("ConsoleTitleRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Error loading project:
+        ///{0} ähnelt.
+        /// </summary>
+        internal static string ErrorLoadingProjectFailed {
+            get {
+                return ResourceManager.GetString("ErrorLoadingProjectFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Required output directory was not specified. ähnelt.
+        /// </summary>
+        internal static string ErrorNoOutputSpecified {
+            get {
+                return ResourceManager.GetString("ErrorNoOutputSpecified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Unexpected error:
+        ///{0} ähnelt.
+        /// </summary>
+        internal static string ErrorUnexpected {
+            get {
+                return ResourceManager.GetString("ErrorUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die In case only one ConfuserEx project file is supplied as file, the project is used as is for the execution.
+        ///In case multiple files are used, all ConfuserEx projects are used for it&apos;s rules and the other files are used as assemblies to obfuscate. ähnelt.
+        /// </summary>
+        internal static string ExtendedHelpText {
+            get {
+                return ResourceManager.GetString("ExtendedHelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Enables the generation of debug symbols. ähnelt.
+        /// </summary>
+        internal static string OptionDebugDescription {
+            get {
+                return ResourceManager.GetString("OptionDebugDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die No pause after finishing protection. ähnelt.
+        /// </summary>
+        internal static string OptionNoPauseDescription {
+            get {
+                return ResourceManager.GetString("OptionNoPauseDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Specifies output directory. ähnelt.
+        /// </summary>
+        internal static string OptionOutDirDescription {
+            get {
+                return ResourceManager.GetString("OptionOutDirDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Specifies plugin path. ähnelt.
+        /// </summary>
+        internal static string OptionPluginDescription {
+            get {
+                return ResourceManager.GetString("OptionPluginDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Specifies probe directory. ähnelt.
+        /// </summary>
+        internal static string OptionProbeDescription {
+            get {
+                return ResourceManager.GetString("OptionProbeDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Press any key to continue… ähnelt.
+        /// </summary>
+        internal static string PressAnyKeyToContinue {
+            get {
+                return ResourceManager.GetString("PressAnyKeyToContinue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ConfuserEx - Command Line Interface - {0} ähnelt.
+        /// </summary>
+        internal static string VersionLong {
+            get {
+                return ResourceManager.GetString("VersionLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ConfuserEx 2 ähnelt.
+        /// </summary>
+        internal static string VersionShort {
+            get {
+                return ResourceManager.GetString("VersionShort", resourceCulture);
+            }
+        }
     }
 }
