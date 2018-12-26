@@ -6,35 +6,35 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Optimizations.CompileRegex {
 	internal static class LoggerExtensions {
-		private static readonly Action<ILogger, ModuleDef, Exception> _InspectingModule = LoggerMessage.Define<ModuleDef>(
+		private static readonly Action<ILogger, ModuleDef, Exception> _inspectingModule = LoggerMessage.Define<ModuleDef>(
 			LogLevel.Debug, new EventId(20001, "opti-1"), "Inspecting {Module} for regular expressions reference.");
 		internal static void LogMsgInspectingModule(this ILogger logger, ModuleDef module) =>
-			_InspectingModule(logger, module, null);
+			_inspectingModule(logger, module, null);
 
-		private static readonly Action<ILogger, ModuleDef, Exception> _RegexReferencesFound = LoggerMessage.Define<ModuleDef>(
+		private static readonly Action<ILogger, ModuleDef, Exception> _regexReferencesFound = LoggerMessage.Define<ModuleDef>(
 			LogLevel.Trace, new EventId(20002, "opti-2"), "Found regular expression references in {Module}.");
 		internal static void LogMsgRegexReferencesFound(this ILogger logger, ModuleDef module) =>
-			_RegexReferencesFound(logger, module, null);
+			_regexReferencesFound(logger, module, null);
 
-		private static readonly Action<ILogger, ModuleDef, Exception> _NoRegexReferencesFound = LoggerMessage.Define<ModuleDef>(
+		private static readonly Action<ILogger, ModuleDef, Exception> _noRegexReferencesFound = LoggerMessage.Define<ModuleDef>(
 			LogLevel.Trace, new EventId(20003, "opti-3"), "No regular expression references found in {Module}.");
 		internal static void LogMsgNoRegexReferencesFound(this ILogger logger, ModuleDef module) =>
-			_NoRegexReferencesFound(logger, module, null);
+			_noRegexReferencesFound(logger, module, null);
 
-		private static readonly Action<ILogger, MethodDef, Exception> _ExtracingFromMethod = LoggerMessage.Define<MethodDef>(
+		private static readonly Action<ILogger, MethodDef, Exception> _extracingFromMethod = LoggerMessage.Define<MethodDef>(
 			LogLevel.Trace, new EventId(20004, "opti-4"), "Trying to extract regular expressions from the method {Method}.");
 		internal static void LogMsgExtractFromMethod(this ILogger logger, MethodDef method) =>
-			_ExtracingFromMethod(logger, method, null);
+			_extracingFromMethod(logger, method, null);
 
-		private static readonly Action<ILogger, MethodDef, MethodDef, Exception> _FoundRegexReferenceInMethod = LoggerMessage.Define<MethodDef, MethodDef>(
+		private static readonly Action<ILogger, MethodDef, MethodDef, Exception> _foundRegexReferenceInMethod = LoggerMessage.Define<MethodDef, MethodDef>(
 			LogLevel.Debug, new EventId(20005, "opti-5"), "Found reference to regular expression in method {ScannedMethod}: {RegexMethod}");
 		internal static void LogMsgFoundRegexReferenceInMethod(this ILogger logger, MethodDef method, IRegexTargetMethod targetMethod) =>
-			_FoundRegexReferenceInMethod(logger, method, targetMethod.Method, null);
+			_foundRegexReferenceInMethod(logger, method, targetMethod.Method, null);
 
-		private static readonly Action<ILogger, MethodDef, Exception> _SkippedRegexNotCompiled = LoggerMessage.Define<MethodDef>(
+		private static readonly Action<ILogger, MethodDef, Exception> _skippedRegexNotCompiled = LoggerMessage.Define<MethodDef>(
 			LogLevel.Trace, new EventId(20006, "opti-6"), "Skipped the RegEx call in {Method}, because it is not marked with RegexOptions.Compiled.");
 		internal static void LogMsgSkippedRegexNotCompiled(this ILogger logger, MethodDef method) =>
-			_SkippedRegexNotCompiled(logger, method, null);
+			_skippedRegexNotCompiled(logger, method, null);
 
 		private static readonly Action<ILogger, int, ModuleDef, Exception> _regexCompilingForModule = LoggerMessage.Define<int, ModuleDef>(
 			LogLevel.Debug, new EventId(20007, "opti-7"), "Compiling {Count} expressions in module {Module}");

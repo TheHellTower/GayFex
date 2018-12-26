@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Optimizations.Services;
 using dnlib.DotNet;
-using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

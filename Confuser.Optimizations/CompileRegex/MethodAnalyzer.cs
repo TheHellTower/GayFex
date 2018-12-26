@@ -89,7 +89,7 @@ namespace Confuser.Optimizations.CompileRegex {
 						var paramInstr = method.Body.Instructions[timeoutParameters[0]];
 						if (paramInstr.OpCode == OpCodes.Ldc_R8) {
 							instr.Add(paramInstr);
-							timeout = (TimeSpan)creationMethod.Invoke(null, new object[] { paramInstr.Operand });
+							timeout = (TimeSpan)creationMethod.Invoke(null, new[] { paramInstr.Operand });
 							staticTimeout = true;
 						}
 					}
