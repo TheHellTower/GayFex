@@ -22,7 +22,7 @@ namespace AntiProtections.Test {
 			proj.Rules.Add(new Rule() {
 				new SettingItem<IProtection>("anti dump")
 			});
-			proj.Add(new ProjectModule() { Path = inputFile });
+			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = GetKeyFile() });
 
 			var parameters = new ConfuserParameters {
 				Project = proj,

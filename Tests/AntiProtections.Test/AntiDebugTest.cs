@@ -27,7 +27,7 @@ namespace AntiProtections.Test {
 					{ "mode", antiDebugMode }
 				}
 			});
-			proj.Add(new ProjectModule() { Path = inputFile });
+			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = GetKeyFile() });
 
 			var parameters = new ConfuserParameters {
 				Project = proj,

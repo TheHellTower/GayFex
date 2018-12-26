@@ -44,6 +44,12 @@ namespace AntiProtections.Test {
 		protected static string GetExecutableName(string targetFramework) =>
 			targetFramework.StartsWith("netstandard") || targetFramework.StartsWith("netcoreapp") ? "AntiProtections.dll" : "AntiProtections.exe";
 
+		protected static string GetKeyFile() {
+			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
+			Assert.True(File.Exists(key));
+			return key;
+		}
+
 
 		protected static string GetInputAssembly(ConfuserProject project, string targetFramework) =>
 			Path.Combine(project.BaseDirectory, GetExecutableName(targetFramework));

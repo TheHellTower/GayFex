@@ -22,10 +22,13 @@ namespace RefProxyProtection.Test {
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "ref proxy")]
 		public async Task ProtectAndExecuteTest(string framework, string modeKey, string encodingKey, string internalKey, string typeErasureKey) {
+			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "RefProxyProtection.exe");
 			var outputFile = Path.Combine(outputDir, "RefProxyProtection.exe");
+
+			Assert.True(File.Exists(key));
 			FileUtilities.ClearOutput(outputFile);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
@@ -41,7 +44,7 @@ namespace RefProxyProtection.Test {
 				}
 			});
 
-			proj.Add(new ProjectModule() { Path = inputFile });
+			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = key });
 
 
 			var parameters = new ConfuserParameters {

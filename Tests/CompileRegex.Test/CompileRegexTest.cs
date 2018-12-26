@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -23,10 +21,13 @@ namespace CompileResx.Test {
 		[Trait("Category", "Optimization")]
 		[Trait("Optimization", "compile regex")]
 		public async Task OptimizeAndExecuteTest(string framework) {
+			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "CompileRegex.exe");
 			var outputFile = Path.Combine(outputDir, "CompileRegex.exe");
+
+			Assert.True(File.Exists(key));
 			FileUtilities.ClearOutput(outputFile);
 
 			var recordedResult = await ProcessUtilities.ExecuteTestApplication(inputFile, RecordOutput, outputHelper);
@@ -41,7 +42,7 @@ namespace CompileResx.Test {
 				new SettingItem<IProtection>("compile regex")
 			});
 
-			proj.Add(new ProjectModule() { Path = inputFile });
+			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = key });
 
 			var parameters = new ConfuserParameters {
 				Project = proj,

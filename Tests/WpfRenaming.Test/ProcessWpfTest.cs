@@ -22,16 +22,19 @@ namespace WpfRenaming.Test {
 		[Trait("Category", "Analysis")]
 		[Trait("Protection", "rename")]
 		public async Task ProcessWithoutObfuscationTest(string framework) {
+			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "WpfRenaming.dll");
 			var outputFile = Path.Combine(outputDir, "WpfRenaming.dll");
+
+			Assert.True(File.Exists(key));
 			FileUtilities.ClearOutput(outputFile);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir
 			};
-			proj.Add(new ProjectModule() { Path = inputFile });
+			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = key });
 
 
 			var parameters = new ConfuserParameters {
