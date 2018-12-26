@@ -17,18 +17,6 @@ namespace Confuser.Core.Services {
 		internal CompressionService(IServiceProvider provider) =>
 			serviceProvider = provider ?? throw new ArgumentNullException(nameof(provider));
 
-
-		/// <inheritdoc />
-		public MethodDef TryGetRuntimeDecompressor(IConfuserContext context, ModuleDef module, Action<IDnlibDef> init) {
-			var decompressor = context.Annotations.Get<Tuple<MethodDef, List<IDnlibDef>>>(module, Decompressor);
-			if (decompressor == null)
-				return null;
-
-			foreach (IDnlibDef member in decompressor.Item2)
-				init(member);
-			return decompressor.Item1;
-		}
-
 		/// <inheritdoc />
 		public MethodDef GetRuntimeDecompressor(IConfuserContext context, ModuleDef module, Action<IDnlibDef> init) {
 			var injectResult = context.Annotations.GetOrCreate(module, Decompressor, m => {
@@ -72,10 +60,9 @@ namespace Confuser.Core.Services {
 			var encoder = new Encoder();
 			encoder.SetCoderProperties(propIDs, properties);
 			encoder.WriteCoderProperties(x);
-			Int64 fileSize;
-			fileSize = data.Length;
+			var fileSize = data.LongLength;
 			for (int i = 0; i < 8; i++)
-				x.WriteByte((Byte)(fileSize >> (8 * i)));
+				x.WriteByte((byte)(fileSize >> (8 * i)));
 
 			ICodeProgress progress = null;
 			if (progressFunc != null)
