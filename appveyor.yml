@@ -22,10 +22,10 @@ build:
   verbosity: minimal
 
 after_test:
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=linux-x64 -p:RestoreRecursive=false -p:PublishDir=Publish/linux-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=osx-x64 -p:RestoreRecursive=false -p:PublishDir=Publish/osx-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=win-x64 -p:RestoreRecursive=false -p:PublishDir=Publish/win-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=win-x86 -p:RestoreRecursive=false -p:PublishDir=Publish/win-x86 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=linux-x64 -p:RestoreRecursive=false -p:PublishDir=Publish/linux-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=osx-x64 -p:RestoreRecursive=false -p:PublishDir=Publish/osx-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=win-x64 -p:RestoreRecursive=false -p:PublishDir=Publish/win-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=win-x86 -p:RestoreRecursive=false -p:PublishDir=Publish/win-x86 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 artifacts:
 - path: Release/bin
