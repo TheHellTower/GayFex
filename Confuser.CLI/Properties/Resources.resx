@@ -165,4 +165,7 @@ In case multiple files are used, all ConfuserEx projects are used for it's rules
     <value>Unexpected error:
 {0}</value>
   </data>
+  <data name="OptionVerbosityDescription" xml:space="preserve">
+    <value>Specifies the output verbosity.</value>
+  </data>
 </root>

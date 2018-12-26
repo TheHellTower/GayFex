@@ -172,6 +172,15 @@ namespace Confuser.CLI.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Specifies the output verbosity. ähnelt.
+        /// </summary>
+        internal static string OptionVerbosityDescription {
+            get {
+                return ResourceManager.GetString("OptionVerbosityDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Press any key to continue… ähnelt.
         /// </summary>
         internal static string PressAnyKeyToContinue {

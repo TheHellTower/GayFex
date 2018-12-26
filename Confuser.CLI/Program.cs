@@ -37,13 +37,17 @@ namespace Confuser.CLI {
 				"-debug",
 				Resources.OptionDebugDescription,
 				CommandOptionType.NoValue);
+			var verbosity = cmd.Option(
+				"-v|-verbosity <verbosity>",
+				Resources.OptionVerbosityDescription,
+				CommandOptionType.SingleValue);
 			var files = cmd.Argument(
 				"files",
 				Resources.ArgumentFilesDescription,
 				true);
 
 			cmd.HelpOption("-?|-h|-help");
-			cmd.VersionOption("-v|-version", Resources.VersionShort,
+			cmd.VersionOption("-version", Resources.VersionShort,
 				string.Format(Resources.Culture, Resources.VersionLong, ThisAssembly.AssemblyVersion));
 
 			cmd.OnExecute(async () => {
@@ -105,6 +109,8 @@ namespace Confuser.CLI {
 					proj.Debug = debug.HasValue();
 					parameters.Project = proj;
 				}
+				
+				parameters.ConfigureLogging = builder => builder.AddConsole(b => b.IncludeScopes = false).SetMinimumLevel(GetLogLevel(verbosity));
 
 				int retVal = await RunProject(parameters);
 
@@ -152,10 +158,37 @@ namespace Confuser.CLI {
 		}
 
 		private static async Task<int> RunProject(ConfuserParameters parameters) {
-			parameters.ConfigureLogging = builder => builder.AddConsole();
-
 			Console.Title = Resources.ConsoleTitleRunning;
 			return (await ConfuserEngine.Run(parameters)) ? 0 : -1;
+		}
+
+		private static LogLevel GetLogLevel(CommandOption verbosityOption) {
+			if (!verbosityOption.HasValue()) return LogLevel.Information;
+
+			switch (verbosityOption.Value()) {
+				case "t":
+				case "trace":
+					return LogLevel.Trace;
+				case "d":
+				case "debug":
+					return LogLevel.Debug;
+				case "i":
+				case "info":
+					return LogLevel.Information;
+				case "w":
+				case "warn":
+				case "warning":
+					return LogLevel.Warning;
+				case "e":
+				case "error":
+					return LogLevel.Error;
+				case "c":
+				case "critical":
+					return LogLevel.Critical;
+				default:
+					return LogLevel.Information;
+			}
+
 		}
 
 		private static bool NeedPause() =>
