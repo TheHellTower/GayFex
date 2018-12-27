@@ -16,6 +16,7 @@
     <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.ComponentModel.Composition" />
     <PackageReference Include="System.IO.Packaging" />
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">

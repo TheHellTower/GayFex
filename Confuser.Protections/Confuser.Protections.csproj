@@ -11,8 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="System.Buffers" />
+    <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.ComponentModel.Composition" />
+    <PackageReference Include="System.Memory" />
     <PackageReference Include="System.ValueTuple" />
   </ItemGroup>
 

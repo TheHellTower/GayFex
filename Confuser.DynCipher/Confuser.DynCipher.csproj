@@ -11,7 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="System.ComponentModel.Composition" />
+    <PackageReference Include="System.Reflection.Emit.ILGeneration" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
