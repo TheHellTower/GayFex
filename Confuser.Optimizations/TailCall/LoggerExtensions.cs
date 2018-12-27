@@ -37,5 +37,15 @@ namespace Confuser.Optimizations.TailCall {
 			LogLevel.Information, new EventId(20113, "opti-113"), "Optimized {Count} tail recursions.");
 		internal static void LogMsgTotalInjectedTailRecursions(this ILogger logger, int count) =>
 			_totalInjectedTailRecursions(logger, count, null);
+
+		private static readonly Func<ILogger, MethodDef, IDisposable> _addTailCallScope = LoggerMessage.DefineScope<MethodDef>(
+				"Adding tail calls: {Method}");
+		internal static IDisposable LogBeginTailCallsScope(this ILogger logger, MethodDef method) =>
+			_addTailCallScope(logger, method);
+
+		private static readonly Func<ILogger, MethodDef, IDisposable> _optimizeRecursionScope = LoggerMessage.DefineScope<MethodDef>(
+			"Optimizing recursion calls: {Method}");
+		internal static IDisposable LogBeginOptimizeRecursionScope(this ILogger logger, MethodDef method) =>
+			_optimizeRecursionScope(logger, method);
 	}
 }

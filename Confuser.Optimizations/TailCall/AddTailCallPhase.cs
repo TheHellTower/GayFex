@@ -47,7 +47,9 @@ namespace Confuser.Optimizations.TailCall {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(traceService != null, $"{nameof(traceService)} != null");
 
-			if (method.HasBody && method.Body.HasInstructions) {
+			if (!method.HasBody || !method.Body.HasInstructions) return false;
+
+			using (logger?.LogBeginTailCallsScope(method)) {
 				logger?.LogMsgScanningForTailCall(method);
 
 				var trace = traceService.Trace(method);
@@ -56,28 +58,29 @@ namespace Confuser.Optimizations.TailCall {
 				var instructionCount = instructions.Count;
 				var modified = false;
 				for (var i = 0; i < instructionCount; i++) {
-					if (IsUnoptimizedTailCall(method, i, trace)) {
-						logger?.LogMsgFoundTailCallInMethod(method, instructions[i]);
+					if (!IsUnoptimizedTailCall(method, i, trace)) continue;
 
-						method.Body.InsertPrefixInstructions(instructions[i], Instruction.Create(OpCodes.Tailcall));
+					logger?.LogMsgFoundTailCallInMethod(method, instructions[i]);
+
+					method.Body.InsertPrefixInstructions(instructions[i], Instruction.Create(OpCodes.Tailcall));
+					i++;
+					instructionCount++;
+					if (instructions[i + 1].OpCode != OpCodes.Ret) {
+						// This is likely a debug build. Lets insert a return and check for dead code later.
+						instructions.Insert(i + 1, Instruction.Create(OpCodes.Ret));
 						i++;
 						instructionCount++;
-						if (instructions[i + 1].OpCode != OpCodes.Ret) {
-							// This is likely a debug build. Lets insert a return and check for dead code later.
-							instructions.Insert(i + 1, Instruction.Create(OpCodes.Ret));
-							i++;
-							instructionCount++;
-						}
-						modified = true;
 					}
+
+					modified = true;
 				}
 
 				if (modified) {
 					TailCallUtils.RemoveUnreachableInstructions(method);
-					return true;
 				}
+
+				return modified;
 			}
-			return false;
 		}
 
 		private static bool IsUnoptimizedTailCall(MethodDef method, int i, IMethodTrace trace) {

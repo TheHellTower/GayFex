@@ -87,7 +87,7 @@ namespace Confuser.Optimizations.TailCall {
 				return false;
 			}
 
-			if (targetMethod.MethodSig.Params.Where(p => p.IsByRef).Any())
+			if (targetMethod.MethodSig.Params.Any(p => p.IsByRef))
 				return false;
 
 			var voidType = method.Module.CorLibTypes.Void;
@@ -134,7 +134,7 @@ namespace Confuser.Optimizations.TailCall {
 					var variables = method.Body.Variables;
 					for (var localI = 0; localI < variables.Count; localI++) {
 						var variable = variables[localI];
-						if (!instructions.Any(i => i.Operand == variable)) {
+						if (instructions.All(i => i.Operand != variable)) {
 							variables.RemoveAt(localI);
 							localI--;
 						}

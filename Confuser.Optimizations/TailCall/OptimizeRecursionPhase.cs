@@ -52,36 +52,38 @@ namespace Confuser.Optimizations.TailCall {
 
 			logger?.LogMsgScanningForTailRecursion(method);
 
-			if (method.HasBody && method.Body.HasInstructions) {
+			if (!method.HasBody || !method.Body.HasInstructions) return false;
+
+			using (logger?.LogBeginOptimizeRecursionScope(method)) {
 				var instructions = method.Body.Instructions;
 				var instructionCount = instructions.Count;
 				var modified = false;
 				for (var i = 0; i < instructionCount; i++) {
-					if (IsRecursiveTailCall(method, i)) {
-						logger?.LogMsgFoundTailRecursionInMethod(method, instructions[i]);
+					if (!IsRecursiveTailCall(method, i)) continue;
 
-						// So we do have a recursive tail call we can turn into a loop.
-						// At the point of the method call, the variables required are on the stack. So we fill
-						// the local parameters in reverse order.
-						method.Body.InsertPrefixInstructions(instructions[i],
-							method.Parameters.Reverse().Select(v => OpCodes.Starg.ToInstruction(v)));
+					logger?.LogMsgFoundTailRecursionInMethod(method, instructions[i]);
 
-						i += method.Parameters.Count;
-						instructionCount += method.Parameters.Count;
+					// So we do have a recursive tail call we can turn into a loop.
+					// At the point of the method call, the variables required are on the stack. So we fill
+					// the local parameters in reverse order.
+					method.Body.InsertPrefixInstructions(instructions[i],
+						method.Parameters.Reverse().Select(v => OpCodes.Starg.ToInstruction(v)));
 
-						instructions[i].OpCode = OpCodes.Br;
-						instructions[i].Operand = instructions[0];
+					i += method.Parameters.Count;
+					instructionCount += method.Parameters.Count;
 
-						modified = true;
-					}
+					instructions[i].OpCode = OpCodes.Br;
+					instructions[i].Operand = instructions[0];
+
+					modified = true;
 				}
 
 				if (modified) {
 					TailCallUtils.RemoveUnreachableInstructions(method);
-					return true;
 				}
+
+				return modified;
 			}
-			return false;
 		}
 
 		private static bool IsRecursiveTailCall(MethodDef method, int i) {
