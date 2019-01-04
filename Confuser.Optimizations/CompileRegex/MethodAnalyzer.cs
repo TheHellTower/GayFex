@@ -26,6 +26,9 @@ namespace Confuser.Optimizations.CompileRegex {
 
 						var argumentInstr = methodTrace.TraceArguments(instr);
 
+						// Check if tracing the method arguments was successful
+						if (argumentInstr == null) continue;
+
 						var result = new MethodAnalyzerResult {
 							mainInstruction = instr,
 							regexMethod = regexMethod
