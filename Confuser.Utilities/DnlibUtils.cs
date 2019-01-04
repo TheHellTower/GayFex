@@ -568,11 +568,16 @@ namespace Confuser {
 			else if (indexOfInstr < body.Instructions.Count - 1)
 				body.FixScopeEnds(instr, body.Instructions[indexOfInstr + 1]);
 
-			if (indexOfInstr < body.Instructions.Count) {
+			if (indexOfInstr + 1 < body.Instructions.Count) {
 				if (instr.SequencePoint != null && body.Instructions[indexOfInstr + 1].SequencePoint == null) {
 					body.Instructions[indexOfInstr + 1].SequencePoint = instr.SequencePoint;
 				}
+			} else if (indexOfInstr > 0) {
+				if (instr.SequencePoint != null && body.Instructions[indexOfInstr - 1].SequencePoint == null) {
+					body.Instructions[indexOfInstr - 1].SequencePoint = instr.SequencePoint;
+				}
 			}
+
 
 			// Any now we have fixed everything and we can finally safely delete the instruction!
 			body.Instructions.RemoveAt(indexOfInstr);
