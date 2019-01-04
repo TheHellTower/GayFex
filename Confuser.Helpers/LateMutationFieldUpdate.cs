@@ -19,7 +19,6 @@ namespace Confuser.Helpers {
 					if (method.Body.Instructions.Contains(instr)) {
 						instr.OpCode = OpCodes.Ldc_I4;
 						instr.Operand = value;
-						method.Body.OptimizeMacros();
 					}
 					else {
 						Debug.Fail("Instruction is not in method anymore?!");

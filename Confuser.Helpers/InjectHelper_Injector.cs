@@ -322,9 +322,6 @@ namespace Confuser.Helpers {
 
 					foreach (var processor in methodInjectProcessors)
 						processor.Process(newMethodDef);
-
-					newMethodDef.Body.OptimizeMacros();
-					newMethodDef.Body.OptimizeBranches();
 				}
 
 				InjectBehavior.Process(methodDef, newMethodDef, importer);
