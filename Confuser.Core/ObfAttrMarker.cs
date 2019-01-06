@@ -282,7 +282,6 @@ namespace Confuser.Core {
 		ConfuserProject project;
 		IPacker packer;
 		Dictionary<string, string> packerParams;
-		List<byte[]> extModules;
 
 		static readonly object ModuleSettingsKey = new object();
 
@@ -302,7 +301,7 @@ namespace Confuser.Core {
 		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
 			this.context = context ?? throw new ArgumentNullException(nameof(context));
 			project = proj ?? throw new ArgumentNullException(nameof(proj));
-			extModules = new List<byte[]>();
+			var extModules = new List<ReadOnlyMemory<byte>>();
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
@@ -338,7 +337,7 @@ namespace Confuser.Core {
 				logger.LogInformation("Loading '{0}'...", module.Item1.Path);
 
 				var rules = ParseRules(proj, module.Item1, context);
-				MarkModule(module.Item1, module.Item2, rules, module == modules[0]);
+				MarkModule(module.Item1, module.Item2, rules, module == modules[0], extModules);
 
 				context.Annotations.Set(module.Item2, RulesKey, rules);
 
@@ -391,7 +390,7 @@ namespace Confuser.Core {
 			return info;
 		}
 
-		void MarkModule(ProjectModule projModule, ModuleDefMD module, Rules rules, bool isMain) {
+		void MarkModule(ProjectModule projModule, ModuleDefMD module, Rules rules, bool isMain, ICollection<ReadOnlyMemory<byte>> extModules) {
 			string snKeyPath = projModule.SNKeyPath, snKeyPass = projModule.SNKeyPassword;
 			var stack = new ProtectionSettingsStack(context, protections);
 
