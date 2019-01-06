@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.Resources;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,8 @@ namespace Confuser.Protections {
 		public string Description => "This protection encodes and compresses the embedded resources.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal ResourceProtectionParameters Parameters { get; } = new ResourceProtectionParameters();
 

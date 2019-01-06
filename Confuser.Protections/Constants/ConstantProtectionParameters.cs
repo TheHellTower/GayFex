@@ -3,7 +3,7 @@ using System.Text;
 using Confuser.Core;
 
 namespace Confuser.Protections.Constants {
-	internal sealed class ConstantProtectionParameters {
+	internal sealed class ConstantProtectionParameters : ProtectionParametersBase {
 		internal IProtectionParameter<bool> ControlFlowGraphReplacement { get; } = ProtectionParameter.Boolean("cfg", false);
 		internal IProtectionParameter<Mode> Mode { get; } = ProtectionParameter.Enum("mode", Constants.Mode.Normal);
 		internal IProtectionParameter<uint> DecoderCount { get; } = ProtectionParameter.UInteger("decoderCount", 5);

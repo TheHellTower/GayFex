@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.ReferenceProxy;
 using Confuser.Protections.Services;
@@ -23,6 +24,8 @@ namespace Confuser.Protections {
 		public string Description => "This protection encodes and hides references to type/method/fields.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal ReferenceProxyProtectionParameters Parameters { get; } = new ReferenceProxyProtectionParameters();
 

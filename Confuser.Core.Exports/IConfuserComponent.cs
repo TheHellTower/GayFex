@@ -5,6 +5,10 @@ namespace Confuser.Core {
 	/// <summary>
 	///     Represent a component in Confuser
 	/// </summary>
+	/// <remarks>
+	///     The components are discovered using MEF (Managed Extensibility Framework)
+	/// </remarks>
+	/// <seealso cref="!:https://docs.microsoft.com/dotnet/framework/mef/"/>
 	public interface IConfuserComponent {
 		/// <summary>
 		///     Gets the name of component.

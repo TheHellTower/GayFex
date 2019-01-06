@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Renamer.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,8 @@ namespace Confuser.Renamer {
 			"This protection obfuscate the symbols' name so the decompiled source code can neither be compiled nor read.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal NameProtectionParameters Parameters { get; } = new NameProtectionParameters();
 

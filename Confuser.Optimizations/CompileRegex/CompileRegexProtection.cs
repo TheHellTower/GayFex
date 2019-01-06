@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Optimizations.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,8 @@ namespace Confuser.Optimizations.CompileRegex {
 		public string Name => "Compile Regular Expressions";
 
 		public string Description => "This optimization will search uses of regular expressions and create the compiled code for the expression if possible.";
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal CompileRegexProtectionParameters Parameters { get; } = new CompileRegexProtectionParameters();
 

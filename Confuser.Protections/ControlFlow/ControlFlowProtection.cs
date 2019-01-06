@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.ControlFlow;
 using Confuser.Protections.Services;
@@ -18,6 +19,8 @@ namespace Confuser.Protections {
 		public string Description => "This protection mangles the code in the methods so that decompilers cannot decompile the methods.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal ControlFlowProtectionParameters Parameters { get; } = new ControlFlowProtectionParameters();
 

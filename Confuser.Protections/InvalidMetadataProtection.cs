@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +21,8 @@ namespace Confuser.Protections {
 		public string FullId => _FullId;
 
 		public ProtectionPreset Preset => ProtectionPreset.None;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => ProtectionParameter.EmptyDictionary;
 
 		void IConfuserComponent.Initialize(IServiceCollection collection) {
 			//

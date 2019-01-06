@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.AntiTamper;
 using Confuser.Protections.Services;
@@ -20,6 +21,8 @@ namespace Confuser.Protections {
 		public string Description => "This protection ensures the integrity of application.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Maximum;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal AntiTamperProtectionParameters Parameters { get; } = new AntiTamperProtectionParameters();
 

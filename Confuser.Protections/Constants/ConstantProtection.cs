@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.Constants;
@@ -22,6 +23,8 @@ namespace Confuser.Protections {
 		public string Description => "This protection encodes and compresses constants in the code.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal ConstantProtectionParameters Parameters { get; } = new ConstantProtectionParameters();
 

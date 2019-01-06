@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Confuser.Protections.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,8 @@ namespace Confuser.Protections.TypeScramble {
 		public string Name => "Type Scrambler";
 
 		public string Description => "Replaces types with generics";
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => ProtectionParameter.EmptyDictionary;
 
 		void IConfuserComponent.Initialize(IServiceCollection collection) => 
 			collection.AddSingleton(typeof(ITypeScrambleService), (p) => new TypeService());

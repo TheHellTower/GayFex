@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,8 @@ namespace Confuser.Optimizations.TailCall {
 		public string Name => "Tail Call Optimization";
 
 		public string Description => "This optimization optimizes methods with tail calls and tail recursions.";
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 
 		internal TailCallProtectionParameters Parameters { get; } = new TailCallProtectionParameters();
 

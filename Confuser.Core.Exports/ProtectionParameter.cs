@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Immutable;
 using Confuser.Core.Parameter;
 
 namespace Confuser.Core {
 	public static class ProtectionParameter {
+		public static IReadOnlyDictionary<string, IProtectionParameter> EmptyDictionary =>
+			ImmutableDictionary.Create<string, IProtectionParameter>(StringComparer.OrdinalIgnoreCase);
+
 		public static IProtectionParameter<bool> Boolean(string name, bool defaultValue) {
 			CheckName(name);
 

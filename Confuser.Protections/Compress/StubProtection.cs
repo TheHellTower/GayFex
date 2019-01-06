@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Security.Cryptography;
@@ -29,6 +30,8 @@ namespace Confuser.Protections.Compress {
 		public string Description => "Do some extra works on the protected stub.";
 
 		public ProtectionPreset Preset => ProtectionPreset.None;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => ProtectionParameter.EmptyDictionary;
 
 		void IConfuserComponent.Initialize(IServiceCollection collection) {
 			//

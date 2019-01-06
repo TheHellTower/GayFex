@@ -52,7 +52,7 @@ namespace Confuser.Renamer {
 							param.Name = null;
 					}
 
-					if (parameters.GetParameter(context, def, Parent.Parameters.RenamePDB) && method.HasBody) {
+					if (parameters.GetParameter(context, def, Parent.Parameters.RenamePdb) && method.HasBody) {
 						foreach (var instr in method.Body.Instructions) {
 							if (instr.SequencePoint != null && !pdbDocs.Contains(instr.SequencePoint.Document.Url)) {
 								instr.SequencePoint.Document.Url = service.ObfuscateName(method.Module, instr.SequencePoint.Document.Url, mode);

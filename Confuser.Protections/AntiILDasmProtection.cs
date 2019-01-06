@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,8 @@ namespace Confuser.Protections {
 		public string Description => "This protection marks the module with a attribute that discourage ILDasm from disassembling it.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => ProtectionParameter.EmptyDictionary;
 
 		void IConfuserComponent.Initialize(IServiceCollection collection) {
 			//

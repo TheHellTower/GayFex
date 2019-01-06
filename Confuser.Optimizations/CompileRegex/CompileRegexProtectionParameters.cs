@@ -1,7 +1,7 @@
 ﻿using Confuser.Core;
 
 namespace Confuser.Optimizations.CompileRegex {
-	internal sealed class CompileRegexProtectionParameters {
+	internal sealed class CompileRegexProtectionParameters : ProtectionParametersBase {
 		/// <summary>
 		/// If enabled, only compile regular expressions that are explicitly marked with RegexOptions.Compiled
 		/// </summary>
@@ -9,7 +9,7 @@ namespace Confuser.Optimizations.CompileRegex {
 
 		/// <summary>
 		/// Expressions that use the case insensitive mode and not the culture invariant mode, may yield incorrect
-		/// results for some cultures. Enableing this option will disable the compilation of those expressions.
+		/// results for some cultures. Enabling this option will disable the compilation of those expressions.
 		/// </summary>
 		internal IProtectionParameter<bool> I18nSafeMode { get; } = ProtectionParameter.Boolean("i18nSafe", false);
 

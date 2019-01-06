@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using Confuser.Core;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,8 @@ namespace Confuser.Protections {
 		public string Description => "This protection prevents the assembly from being dumped from memory.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Maximum;
+
+		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => ProtectionParameter.EmptyDictionary;
 
 		void IConfuserComponent.Initialize(IServiceCollection services) => services.AddRuntime();
 
