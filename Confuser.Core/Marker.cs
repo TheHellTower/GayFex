@@ -120,7 +120,7 @@ namespace Confuser.Core {
 			}
 
 			var modules = new List<Tuple<ProjectModule, ModuleDefMD>>();
-			var extModules = ImmutableArray.CreateBuilder<byte[]>();
+			var extModules = ImmutableArray.CreateBuilder<ReadOnlyMemory<byte>>();
 			foreach (ProjectModule module in proj) {
 				if (module.IsExternal) {
 					extModules.Add(module.LoadRaw(proj.BaseDirectory));

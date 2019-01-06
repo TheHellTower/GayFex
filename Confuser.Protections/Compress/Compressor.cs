@@ -103,8 +103,8 @@ namespace Confuser.Protections {
 			}
 		}
 
-		private static string GetId(byte[] module) {
-			var md = MetadataFactory.CreateMetadata(new PEImage(module));
+		private static string GetId(ReadOnlyMemory<byte> module) {
+			var md = MetadataFactory.CreateMetadata(new PEImage(module.ToArray()));
 			var assembly = new AssemblyNameInfo();
 			if (md.TablesStream.TryReadAssemblyRow(1, out var assemblyRow)) {
 				assembly.Name = md.StringsStream.ReadNoNull(assemblyRow.Name);
@@ -122,7 +122,7 @@ namespace Confuser.Protections {
 
 		private void PackModules(IConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, IRandomGenerator random, ILogger logger, CancellationToken token) {
 			int maxLen = 0;
-			var modules = new Dictionary<string, byte[]>();
+			var modules = new Dictionary<string, ReadOnlyMemory<byte>>();
 			for (int i = 0; i < context.OutputModules.Count; i++) {
 				if (i == compCtx.ModuleIndex)
 					continue;
@@ -155,14 +155,14 @@ namespace Confuser.Protections {
 
 			int moduleIndex = 0;
 			foreach (var entry in modules) {
-				byte[] name = Encoding.UTF8.GetBytes(entry.Key);
+				var name = Encoding.UTF8.GetBytes(entry.Key);
 				for (int i = 0; i < name.Length; i++)
 					name[i] *= keySpan[i + 4];
 
 				uint state = 0x6fff61;
 				foreach (byte chr in name)
 					state = state * 0x5e3f1f + chr;
-				var encrypted = compCtx.Encrypt(comp, new ReadOnlyMemory<byte>(entry.Value), state, progress => {
+				var encrypted = compCtx.Encrypt(comp, entry.Value, state, progress => {
 					progress = (progress + moduleIndex) / modules.Count;
 					//logger.Progress((int)(progress * 10000), 10000);
 				});

@@ -57,7 +57,7 @@ namespace Confuser.Core {
 		///     Gets the external modules.
 		/// </summary>
 		/// <value>The external modules.</value>
-		public IImmutableList<byte[]> ExternalModules { get; internal set; }
+		public IImmutableList<ReadOnlyMemory<byte>> ExternalModules { get; internal set; }
 
 		/// <summary>
 		///     Gets the base directory.

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Collections.Immutable;
 using dnlib.DotNet;
 
@@ -13,7 +13,7 @@ namespace Confuser.Core {
 		/// <param name="modules">The modules.</param>
 		/// <param name="packer">The packer.</param>
 		/// <param name="extModules">The external modules.</param>
-		public MarkerResult(IImmutableList<ModuleDefMD> modules, IPacker packer, IImmutableList<byte[]> extModules) {
+		public MarkerResult(IImmutableList<ModuleDefMD> modules, IPacker packer, IImmutableList<ReadOnlyMemory<byte>> extModules) {
 			Modules = modules;
 			Packer = packer;
 			ExternalModules = extModules;
@@ -29,7 +29,7 @@ namespace Confuser.Core {
 		///     Gets a list of external modules.
 		/// </summary>
 		/// <value>The list of external modules.</value>
-		public IImmutableList<byte[]> ExternalModules { get; }
+		public IImmutableList<ReadOnlyMemory<byte>> ExternalModules { get; }
 
 		/// <summary>
 		///     Gets the packer if exists.

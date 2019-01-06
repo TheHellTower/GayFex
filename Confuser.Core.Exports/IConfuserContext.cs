@@ -43,7 +43,7 @@ namespace Confuser.Core {
 		///     Gets the external modules.
 		/// </summary>
 		/// <value>The external modules.</value>
-		IImmutableList<byte[]> ExternalModules { get; }
+		IImmutableList<ReadOnlyMemory<byte>> ExternalModules { get; }
 
 		/// <summary>
 		///     Gets the packer.

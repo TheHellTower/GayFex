@@ -69,7 +69,7 @@ namespace Confuser.Core.Project {
 		///     or null if the module path is absolute or relative to current directory.
 		/// </param>
 		/// <returns>The loaded module.</returns>
-		public byte[] LoadRaw(string basePath) {
+		public Memory<byte> LoadRaw(string basePath) {
 			if (basePath == null)
 				return File.ReadAllBytes(Path);
 			return File.ReadAllBytes(System.IO.Path.Combine(basePath, Path));
