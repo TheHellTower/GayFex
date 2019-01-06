@@ -70,5 +70,9 @@ namespace Confuser.Optimizations.CompileRegex {
 			LogLevel.Trace, new EventId(20013, "opti-13"), "The compiled regular expression \"{Pattern}\", was injected into \"{InjectionTargetMethod}\".");
 		internal static void LogMsgInjectSuccessful(this ILogger logger, RegexCompilerResult compilerResult, MethodDef targetMethod) =>
 			_injectionDone(logger, compilerResult.CompileDef.Pattern, targetMethod, null);
+		private static readonly Action<ILogger, int, ModuleDef, Exception> _compileSummary = LoggerMessage.Define<int, ModuleDef>(
+			LogLevel.Information, new EventId(20014, "opti-14"), "Compiled {Count} regular expressions in module \"{Module}\".");
+		internal static void LogMsgCompileSummary(this ILogger logger, int count, ModuleDef module) =>
+			_compileSummary(logger, count, module, null);
 	}
 }

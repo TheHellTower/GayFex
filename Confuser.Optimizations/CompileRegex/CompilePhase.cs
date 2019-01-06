@@ -49,6 +49,8 @@ namespace Confuser.Optimizations.CompileRegex {
 					ExpectedExpressions = expressions.Length
 				};
 
+				int compiledExpressions = 0;
+
 				foreach (var expression in expressions) {
 					if (skipUnsafe && Compiler.RegexCompiler.IsCultureUnsafe(expression)) {
 						logger.LogMsgSkippedUnsafe(expression);
@@ -63,6 +65,7 @@ namespace Confuser.Optimizations.CompileRegex {
 							MarkType(result.RegexTypeDef, context, markerService, nameService);
 
 							logger.LogMsgRegexFinishedCompiling(result);
+							compiledExpressions += 1;
 							token.ThrowIfCancellationRequested();
 						}
 						catch (Compiler.RegexCompilerException ex) {
@@ -75,6 +78,9 @@ namespace Confuser.Optimizations.CompileRegex {
 						}
 					}
 				}
+
+				if (compiledExpressions > 0)
+					logger.LogMsgCompileSummary(compiledExpressions, module);
 			}
 		}
 

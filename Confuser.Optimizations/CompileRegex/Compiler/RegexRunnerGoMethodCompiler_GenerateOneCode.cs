@@ -478,8 +478,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					var count = RequireLocalInt32();
 					var mark = RequireLocalInt32();
 					var l1 = CreateLabel();
-					var l2 = CreateLabel();
-					var l3 = CodePosLabel(NextCodepos(code, codePos));
 
 					PopStack();
 					Stloc(count);                           // count -> temp
@@ -651,9 +649,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					//: while (Crawlpos() != Tracked(0))
 					//:     Uncapture();
 					//: break Backward;
-					var l1 = CreateLabel();
-					var l2 = CreateLabel();
-
 					PopTrack();
 					CrawlAndUncapture();
 					break;
@@ -666,7 +661,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 					Ble(CodePosLabel(NextCodepos(code, codePos)));
 					Leftchar();
-					Ldc((int)'\n');
+					Ldc('\n');
 					Bne(BackwardLabel);
 					break;
 
@@ -677,7 +672,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextendFieldDef);
 					Bge(CodePosLabel(NextCodepos(code, codePos)));
 					Rightchar();
-					Ldc((int)'\n');
+					Ldc('\n');
 					Bne(BackwardLabel);
 					break;
 
@@ -731,7 +726,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextendFieldDef);
 					Bge(CodePosLabel(NextCodepos(code, codePos)));
 					Rightchar();
-					Ldc((int)'\n');
+					Ldc('\n');
 					Bne(BackwardLabel);
 					break;
 
@@ -810,7 +805,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						if (IsCi)
 							CallToLower(options);
 
-						Ldc((int)str[i]);
+						Ldc(str[i]);
 						Bne(BackwardLabel);
 					}
 
@@ -845,7 +840,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						if (IsCi)
 							CallToLower(options);
 
-						Ldc((int)str[i]);
+						Ldc(str[i]);
 						Bne(BackwardLabel);
 					}
 
@@ -900,7 +895,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					CallMatchIndex(Operand(0));
 					if (!IsRtl) {
 						Ldloc(lenV);
-						Add(IsRtl);
+						Add(false);
 					}
 					Stloc(indexV);              // index += len
 
