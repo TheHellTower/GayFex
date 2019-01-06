@@ -40,7 +40,7 @@ artifacts:
 - path: Publish/win-x64
   name: ConfuserEx (Windows x64)
   type: zip
-- path: Publish/win-x32
+- path: Publish/win-x86
   name: ConfuserEx (Windows x32)
   type: zip
   
