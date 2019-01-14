@@ -91,8 +91,8 @@
 
   <Target Name="_ConfuserUnitTestAssemblyBuildAndCopyToOutput">
     <MSBuild Projects="%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceProjectFile)"
-             Targets="Build"
-             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);OutDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName)"
+             Targets="Publish"
+             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);PublishDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName);SelfContained=false"
              RemoveProperties="RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
              BuildInParallel="$(BuildInParallel)" />
   </Target>
