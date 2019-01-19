@@ -14,6 +14,9 @@ using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Protections.Constants {
+	using ReferenceList = List<(MethodDef, Instruction)>;
+	using ReferenceEnumerable = IEnumerable<(MethodDef, Instruction)>;
+
 	internal class EncodePhase : IProtectionPhase {
 		public EncodePhase(ConstantProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
@@ -33,8 +36,8 @@ namespace Confuser.Protections.Constants {
 			if (!parameters.Targets.Any() || moduleCtx == null)
 				return;
 
-			var ldc = new Dictionary<object, List<Tuple<MethodDef, Instruction>>>();
-			var ldInit = new Dictionary<byte[], List<Tuple<MethodDef, Instruction>>>(new ByteArrayComparer());
+			var ldc = new Dictionary<object, ReferenceList>();
+			var ldInit = new Dictionary<byte[], ReferenceList>(new ByteArrayComparer());
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("constants");
 
@@ -42,7 +45,7 @@ namespace Confuser.Protections.Constants {
 			ExtractConstants(context, parameters, moduleCtx, ldc, ldInit, logger, token);
 
 			// Encode constants
-			moduleCtx.ReferenceRepl = new Dictionary<MethodDef, List<Tuple<Instruction, uint, IMethod>>>();
+			moduleCtx.ReferenceRepl = new Dictionary<MethodDef, List<(Instruction, uint, IMethod)>>();
 			moduleCtx.EncodedBuffer = new List<uint>();
 			foreach (var entry in ldInit) //.WithProgress(logger)) // Ensure the array length haven't been encoded yet
 			{
@@ -125,13 +128,13 @@ namespace Confuser.Protections.Constants {
 			moduleCtx.KeySeedUpdate.ApplyValue((int)keySeed);
 		}
 
-		void EncodeString(CEContext moduleCtx, string value, List<Tuple<MethodDef, Instruction>> references) {
+		void EncodeString(CEContext moduleCtx, string value, ReferenceEnumerable references) {
 			int buffIndex = EncodeByteArray(moduleCtx, Encoding.UTF8.GetBytes(value));
 
 			UpdateReference(moduleCtx, moduleCtx.Module.CorLibTypes.String, references, buffIndex, desc => desc.StringID);
 		}
 
-		void EncodeConstant32(CEContext moduleCtx, uint value, TypeSig valueType, List<Tuple<MethodDef, Instruction>> references) {
+		void EncodeConstant32(CEContext moduleCtx, uint value, TypeSig valueType, ReferenceEnumerable references) {
 			int buffIndex = moduleCtx.EncodedBuffer.IndexOf(value);
 			if (buffIndex == -1) {
 				buffIndex = moduleCtx.EncodedBuffer.Count;
@@ -141,7 +144,7 @@ namespace Confuser.Protections.Constants {
 			UpdateReference(moduleCtx, valueType, references, buffIndex, desc => desc.NumberID);
 		}
 
-		void EncodeConstant64(CEContext moduleCtx, uint hi, uint lo, TypeSig valueType, List<Tuple<MethodDef, Instruction>> references) {
+		void EncodeConstant64(CEContext moduleCtx, uint hi, uint lo, TypeSig valueType, ReferenceEnumerable references) {
 			int buffIndex = -1;
 			do {
 				buffIndex = moduleCtx.EncodedBuffer.IndexOf(lo, buffIndex + 1);
@@ -158,7 +161,7 @@ namespace Confuser.Protections.Constants {
 			UpdateReference(moduleCtx, valueType, references, buffIndex, desc => desc.NumberID);
 		}
 
-		void EncodeInitializer(CEContext moduleCtx, byte[] init, List<Tuple<MethodDef, Instruction>> references) {
+		void EncodeInitializer(CEContext moduleCtx, byte[] init, ReferenceEnumerable references) {
 			int buffIndex = -1;
 
 			foreach (var instr in references) {
@@ -168,14 +171,14 @@ namespace Confuser.Protections.Constants {
 				if (buffIndex == -1)
 					buffIndex = EncodeByteArray(moduleCtx, init);
 
-				Tuple<MethodDef, DecoderDesc> decoder = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
-				uint id = (uint)buffIndex | (uint)(decoder.Item2.InitializerID << 30);
-				id = moduleCtx.ModeHandler.Encode(decoder.Item2.Data, moduleCtx, id);
+				var (method, decoderDesc) = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
+				uint id = (uint)buffIndex | (uint)(decoderDesc.InitializerID << 30);
+				id = moduleCtx.ModeHandler.Encode(decoderDesc.Data, moduleCtx, id);
 
 				instrs[i - 4].Operand = (int)id;
 				instrs[i - 3].OpCode = OpCodes.Call;
 				var arrType = new SZArraySig(((ITypeDefOrRef)instrs[i - 3].Operand).ToTypeSig());
-				instrs[i - 3].Operand = new MethodSpecUser(decoder.Item1, new GenericInstMethodSig(arrType));
+				instrs[i - 3].Operand = new MethodSpecUser(method, new GenericInstMethodSig(arrType));
 				instrs.RemoveAt(i - 2);
 				instrs.RemoveAt(i - 2);
 				instrs.RemoveAt(i - 2);
@@ -202,14 +205,22 @@ namespace Confuser.Protections.Constants {
 			return buffIndex;
 		}
 
-		void UpdateReference(CEContext moduleCtx, TypeSig valueType, List<Tuple<MethodDef, Instruction>> references, int buffIndex, Func<DecoderDesc, byte> typeID) {
+		void UpdateReference(CEContext moduleCtx, TypeSig valueType, ReferenceEnumerable references, int buffIndex, Func<DecoderDesc, byte> typeID) {
 			foreach (var instr in references) {
-				Tuple<MethodDef, DecoderDesc> decoder = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
-				uint id = (uint)buffIndex | (uint)(typeID(decoder.Item2) << 30);
-				id = moduleCtx.ModeHandler.Encode(decoder.Item2.Data, moduleCtx, id);
+				var (method, decoderDesc) = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
+				uint id = (uint)buffIndex | (uint)(typeID(decoderDesc) << 30);
+				id = moduleCtx.ModeHandler.Encode(decoderDesc.Data, moduleCtx, id);
 
-				var targetDecoder = new MethodSpecUser(decoder.Item1, new GenericInstMethodSig(valueType));
-				moduleCtx.ReferenceRepl.AddListEntry(instr.Item1, Tuple.Create(instr.Item2, id, (IMethod)targetDecoder));
+				Debug.Assert((method.ReturnType as GenericSig)?.Number == 0);
+				var targetDecoder = new MethodSpecUser(method, new GenericInstMethodSig(valueType));
+
+				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldc_I4 || valueType == method.Module.CorLibTypes.Int32);
+				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldc_I8 || valueType == method.Module.CorLibTypes.Int64);
+				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldc_R4 || valueType == method.Module.CorLibTypes.Single);
+				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldc_R8 || valueType == method.Module.CorLibTypes.Double);
+				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldstr || valueType == method.Module.CorLibTypes.String);
+
+				moduleCtx.ReferenceRepl.AddListEntry(instr.Item1, (instr.Item2, id, targetDecoder));
 			}
 		}
 
@@ -228,8 +239,8 @@ namespace Confuser.Protections.Constants {
 
 		void ExtractConstants(
 			IConfuserContext context, IProtectionParameters parameters, CEContext moduleCtx,
-			Dictionary<object, List<Tuple<MethodDef, Instruction>>> ldc,
-			Dictionary<byte[], List<Tuple<MethodDef, Instruction>>> ldInit,
+			Dictionary<object, ReferenceList> ldc,
+			Dictionary<byte[], ReferenceList> ldInit,
 			ILogger logger, CancellationToken token) {
 			var dataFields = new HashSet<FieldDef>();
 			var fieldRefs = new HashSet<Instruction>();
@@ -276,7 +287,7 @@ namespace Confuser.Protections.Constants {
 							// Prevent array length from being encoded
 							var arrLen = (int)instrs[i - 4].Operand;
 							if (ldc.ContainsKey(arrLen)) {
-								List<Tuple<MethodDef, Instruction>> list = ldc[arrLen];
+								var list = ldc[arrLen];
 								list.RemoveWhere(entry => entry.Item2 == instrs[i - 4]);
 								if (list.Count == 0)
 									ldc.Remove(arrLen);
@@ -291,7 +302,7 @@ namespace Confuser.Protections.Constants {
 							value[2] = (byte)(arrLen >> 16);
 							value[3] = (byte)(arrLen >> 24);
 							Buffer.BlockCopy(dataField.InitialValue, 0, value, 4, dataField.InitialValue.Length);
-							ldInit.AddListEntry(value, Tuple.Create(method, instr));
+							ldInit.AddListEntry(value, (method, instr));
 						}
 					}
 					else if ((moduleCtx.Elements & EncodeElements.Numbers) != 0) {
@@ -322,7 +333,7 @@ namespace Confuser.Protections.Constants {
 					}
 
 					if (eligible)
-						ldc.AddListEntry(instr.Operand, Tuple.Create(method, instr));
+						ldc.AddListEntry(instr.Operand, (method, instr));
 				}
 
 				token.ThrowIfCancellationRequested();

@@ -102,7 +102,7 @@ namespace Confuser.Protections.Constants {
 
 			var decoder = constantRuntime.FindMethod("Get");
 
-			moduleCtx.Decoders = new List<Tuple<MethodDef, DecoderDesc>>();
+			moduleCtx.Decoders = new List<(MethodDef, DecoderDesc)>();
 			for (int i = 0; i < moduleCtx.DecoderCount; i++) {
 				Span<byte> ids = stackalloc byte[3] { 0, 1, 2 };
 				moduleCtx.Random.Shuffle(ids);
@@ -132,7 +132,7 @@ namespace Confuser.Protections.Constants {
 					name?.MarkHelper(context, decoderInst, moduleCtx.Marker, Parent);
 					context.GetParameters(decoderInst).RemoveParameters(Parent);
 					decoderDesc.Data = decoderImpl.Data;
-					moduleCtx.Decoders.Add(Tuple.Create(decoderInst, decoderDesc));
+					moduleCtx.Decoders.Add((decoderInst, decoderDesc));
 				}
 			}
 		}

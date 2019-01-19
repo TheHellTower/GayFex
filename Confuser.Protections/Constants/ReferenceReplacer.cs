@@ -25,16 +25,31 @@ namespace Confuser.Protections.Constants {
 			return true;
 		}
 
-		private static bool ReplaceNormal(MethodDef method, List<Tuple<Instruction, uint, IMethod>> instrs) {
-			foreach (var instr in instrs) {
-				int i = method.Body.Instructions.IndexOf(instr.Item1);
-				instr.Item1.OpCode = OpCodes.Ldc_I4;
-				instr.Item1.Operand = (int)instr.Item2;
-				var callInstr = Instruction.Create(OpCodes.Call, instr.Item3);
-				method.Body.Instructions.Insert(i + 1, callInstr);
-				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Br_S, callInstr));
+		private static bool ReplaceNormal(MethodDef method, IEnumerable<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)> instrs) {
+			foreach (var (targetInstruction, argument, decoderMethod) in instrs) {
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_I4 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Int32);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_I8 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Int64);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_R4 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Single);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_R8 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Double);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldstr || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.String);
+
+				int i = method.Body.Instructions.IndexOf(targetInstruction);
+				targetInstruction.OpCode = OpCodes.Ldc_I4;
+				targetInstruction.Operand = (int)argument;
+
+				method.Body.Instructions.Insert(i + 1, OpCodes.Call.ToInstruction(decoderMethod));
 			}
 			return true;
+		}
+
+		private static TypeSig GetReturnTypeSig(this IMethod method) {
+			if (method.MethodSig.RetType.IsGenericParameter) {
+				var genericReturn = (GenericSig)method.MethodSig.RetType;
+				var genericMethod = (MethodSpec)method;
+				return ((GenericInstMethodSig)genericMethod.Instantiation).GenericArguments[(int)genericReturn.Number];
+			}
+
+			return method.MethodSig.RetType;
 		}
 
 		struct CFGContext {
@@ -369,7 +384,7 @@ namespace Confuser.Protections.Constants {
 			}
 		}
 
-		private static bool ReplaceCFG(MethodDef method, List<Tuple<Instruction, uint, IMethod>> instrs, CEContext ctx) {
+		private static bool ReplaceCFG(MethodDef method, List<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)> instrs, CEContext ctx) {
 			if (!InjectStateType(ctx)) return false;
 
 			var graph = ControlFlowGraph.Construct(method.Body);
@@ -387,14 +402,13 @@ namespace Confuser.Protections.Constants {
 			method.Body.Variables.Add(cfgCtx.StateVariable);
 			method.Body.InitLocals = true;
 
-			var blockReferences = new Dictionary<int, SortedList<int, Tuple<Instruction, uint, IMethod>>>();
+			var blockReferences = new Dictionary<int, SortedList<int, (Instruction, uint, IMethod)>>();
 			foreach (var instr in instrs) {
 				var index = graph.IndexOf(instr.Item1);
 				var block = graph.GetContainingBlock(index);
 
-				SortedList<int, Tuple<Instruction, uint, IMethod>> list;
-				if (!blockReferences.TryGetValue(block.Id, out list))
-					list = blockReferences[block.Id] = new SortedList<int, Tuple<Instruction, uint, IMethod>>();
+				if (!blockReferences.TryGetValue(block.Id, out var list))
+					list = blockReferences[block.Id] = new SortedList<int, (Instruction, uint, IMethod)>();
 
 				list.Add(index, instr);
 			}

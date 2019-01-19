@@ -19,7 +19,7 @@ namespace Confuser.Protections.Constants {
 		internal MethodDef InitMethod;
 
 		internal uint DecoderCount;
-		internal List<Tuple<MethodDef, DecoderDesc>> Decoders;
+		internal List<(MethodDef Method, DecoderDesc DecoderDesc)> Decoders;
 
 		internal EncodeElements Elements;
 		internal List<uint> EncodedBuffer;
@@ -36,7 +36,7 @@ namespace Confuser.Protections.Constants {
 		internal TypeDef CfgCtxType;
 		internal MethodDef CfgCtxCtor;
 		internal MethodDef CfgCtxNext;
-		internal Dictionary<MethodDef, List<Tuple<Instruction, uint, IMethod>>> ReferenceRepl;
+		internal Dictionary<MethodDef, List<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)>> ReferenceRepl;
 
 		internal readonly LateMutationFieldUpdate EncodingBufferSizeUpdate = new LateMutationFieldUpdate();
 		internal readonly LateMutationFieldUpdate KeySeedUpdate = new LateMutationFieldUpdate();
