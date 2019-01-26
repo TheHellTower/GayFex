@@ -71,7 +71,7 @@ namespace Confuser.Core {
 		///     it is a pfx file; otherwise, <c>null</c>.
 		/// </param>
 		/// <returns>The loaded Strong Name Key.</returns>
-		public static StrongNameKey LoadSNKey(ConfuserContext context, string path, string pass) {
+		public static StrongNameKey LoadSNKey(IConfuserContext context, string path, string pass) {
 			if (path == null) return null;
 
 			try {

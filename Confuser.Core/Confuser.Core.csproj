@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="Antlr4" Version="4.6.6" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Win32.Registry" />
@@ -38,6 +39,23 @@
     <EmbeddedResource Include="Project\ConfuserPrj.xsd">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Antlr4 Update="ObfAttrLexer.g4">
+      <Listener>false</Listener>
+      <Visitor>false</Visitor>
+    </Antlr4>
+    <Antlr4 Update="ObfAttrPackerParser.g4">
+      <Listener>false</Listener>
+    </Antlr4>
+    <Antlr4 Update="ObfAttrProtectionParser.g4">
+      <Listener>false</Listener>
+    </Antlr4>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleToTest Include="Confuser.Core.Test" />
   </ItemGroup>
 
   <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />

@@ -1,313 +1,164 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
+using Antlr4.Runtime.Tree;
+using Confuser.Core.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {
-	internal struct ObfAttrParser {
-		readonly IDictionary items;
+	using ISettingsDictionary = IDictionary<IConfuserComponent, IDictionary<string, string>>;
 
-		string str;
-		int index;
+	internal static class ObfAttrParser {
+		public static bool TryParse(IReadOnlyDictionary<string, IProtection> items, string str, ILogger logger) {
+			var inputStream = new AntlrInputStream(str);
+			var lexer = new ObfAttrLexer(inputStream);
+			var stream = new CommonTokenStream(lexer);
+			var parser = new ObfAttrProtectionParser(stream);
+			parser.SetupLogger(logger);
 
-		public ObfAttrParser(IDictionary items) {
-			this.items = items;
-			str = null;
-			index = -1;
+			var visitor = new ValidateProtectionNamesVisitor(items);
+			return visitor.Visit(parser.protectionString());
 		}
 
-		enum ParseState {
-			Init,
-			ReadPreset,
-			ReadItemName,
-			ProcessItemName,
-			ReadParam,
-			EndItem,
-			End
+		public static ISettingsDictionary ParseProtection(IReadOnlyDictionary<string, IProtection> items, 
+			ISettingsDictionary settings, string str, ILogger logger) {
+			var inputStream = new AntlrInputStream(str);
+			var lexer = new ObfAttrLexer(inputStream);
+			var stream = new CommonTokenStream(lexer);
+			var parser = new ObfAttrProtectionParser(stream);
+			parser.SetupLogger(logger);
+
+			var expr = parser.protectionString();
+			var visitor = new ObfProtectionAttrParser(items, settings);
+			
+			return visitor.Visit(expr);
+		}
+		
+		private static void SetupLogger<TSymbol, TAtnInterpreter>(this Recognizer<TSymbol, TAtnInterpreter> recognizer,
+			ILogger logger) where TAtnInterpreter : ATNSimulator {
+			#if NETFRAMEWORK
+			recognizer.RemoveErrorListener(ConsoleErrorListener<TSymbol>.Instance);
+			#endif
+			recognizer.AddErrorListener(new LoggerAntlrErrorListener<TSymbol>(logger));
+
 		}
 
-		bool ReadId(StringBuilder sb) {
-			while (index < str.Length) {
-				switch (str[index]) {
-					case '(':
-					case ')':
-					case '+':
-					case '-':
-					case '=':
-					case ';':
-					case ',':
-						return true;
-					default:
-						sb.Append(str[index++]);
-						break;
-				}
+		public static (IPacker Packer, IDictionary<string, string> PackerParams) ParsePacker(
+			IReadOnlyDictionary<string, IPacker> packers, string attrFeatureValue, ILogger logger) {
+			var inputStream = new AntlrInputStream(attrFeatureValue);
+			var lexer = new ObfAttrLexer(inputStream);
+			var stream = new CommonTokenStream(lexer);
+			var parser = new ObfAttrPackerParser(stream);
+			parser.SetupLogger(logger);
+
+			var expr = parser.packerString();
+			var visitor = new ObfPackerAttrVisitor(packers);
+			
+			return visitor.Visit(expr);
+		}
+
+		private sealed class ValidateProtectionNamesVisitor : ObfAttrProtectionParserBaseVisitor<bool> {
+
+			private IReadOnlyDictionary<string, IProtection> Items { get; }
+
+			protected override bool DefaultResult => true;
+			public ValidateProtectionNamesVisitor(IReadOnlyDictionary<string, IProtection> items) => Items = items;
+
+			protected override bool AggregateResult(bool aggregate, bool nextResult) => aggregate && nextResult;
+
+			public override bool VisitItemName(ObfAttrProtectionParser.ItemNameContext context) {
+				var itemName = context.GetText();
+				return Items.ContainsKey(itemName);
 			}
-			return false;
 		}
 
-		bool ReadString(StringBuilder sb) {
-			Expect('\'');
-			while (index < str.Length) {
-				switch (str[index]) {
-					case '\\':
-						sb.Append(str[++index]);
-						break;
-					case '\'':
-						index++;
-						return true;
-					default:
-						sb.Append(str[index]);
-						break;
-				}
-				index++;
+		private sealed class ObfProtectionAttrParser : ObfAttrProtectionParserBaseVisitor<ISettingsDictionary> {
+			private IReadOnlyDictionary<string, IProtection> Items { get; }
+
+			private ISettingsDictionary Settings { get; }
+
+			protected override ISettingsDictionary DefaultResult => Settings;
+
+			public ObfProtectionAttrParser(IReadOnlyDictionary<string, IProtection> items, ISettingsDictionary settings) {
+				Items = items;
+				Settings = settings;
 			}
-			return false;
-		}
 
-		void Expect(char chr) {
-			if (str[index] != chr)
-				throw new ArgumentException("Expect '" + chr + "' at position " + (index + 1) + ".");
-			index++;
-		}
+			public override ISettingsDictionary Visit(IParseTree tree) {
+				base.Visit(tree);
+				return Settings;
+			}
 
-		char Peek() {
-			return str[index];
-		}
+			public override ISettingsDictionary VisitPresetValue(ObfAttrProtectionParser.PresetValueContext context) {
+				if (Enum.TryParse(context.GetText(), true, out ProtectionPreset preset)) {
+					foreach (var item in Items.Values.Where(prot => prot.Preset <= preset)) {
+						if (item.Preset != ProtectionPreset.None && !Settings.ContainsKey(item))
+							Settings.Add(item, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+					}
+				}
 
-		void Next() {
-			index++;
-		}
+				return Settings;
+			}
 
-		bool IsEnd() {
-			return index == str.Length;
-		}
+			public override ISettingsDictionary VisitItem(ObfAttrProtectionParser.ItemContext context) {
+				var disable = (context.itemEnable()?.MINUS() != null);
+				var itemName = context.itemName().GetText();
+				var itemValues = context.itemValues();
 
-		public void ParseProtectionString(IDictionary<IConfuserComponent, Dictionary<string, string>> settings, string str) {
-			if (str == null)
-				return;
-
-			this.str = str;
-			index = 0;
-
-			var state = ParseState.Init;
-			var buffer = new StringBuilder();
-
-			bool protAct = true;
-			string protId = null;
-			var protParams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-			while (state != ParseState.End) {
-				switch (state) {
-					case ParseState.Init:
-						ReadId(buffer);
-						if (buffer.ToString().Equals("preset", StringComparison.OrdinalIgnoreCase)) {
-							if (IsEnd())
-								throw new ArgumentException("Unexpected end of string in Init state.");
-							Expect('(');
-							buffer.Length = 0;
-							state = ParseState.ReadPreset;
-						}
-						else if (buffer.Length == 0) {
-							if (IsEnd())
-								throw new ArgumentException("Unexpected end of string in Init state.");
-							state = ParseState.ReadItemName;
-						}
-						else {
-							protAct = true;
-							state = ParseState.ProcessItemName;
-						}
-						break;
-
-					case ParseState.ReadPreset:
-						if (!ReadId(buffer))
-							throw new ArgumentException("Unexpected end of string in ReadPreset state.");
-						Expect(')');
-
-						var preset = (ProtectionPreset)Enum.Parse(typeof(ProtectionPreset), buffer.ToString(), true);
-						foreach (var item in items.Values.OfType<IProtection>().Where(prot => prot.Preset <= preset)) {
-							if (item.Preset != ProtectionPreset.None && settings != null && !settings.ContainsKey(item))
-								settings.Add(item, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
-						}
-						buffer.Length = 0;
-
-						if (IsEnd())
-							state = ParseState.End;
-						else {
-							Expect(';');
-							if (IsEnd())
-								state = ParseState.End;
-							else
-								state = ParseState.ReadItemName;
-						}
-						break;
-
-					case ParseState.ReadItemName:
-						protAct = true;
-						if (Peek() == '+') {
-							protAct = true;
-							Next();
-						}
-						else if (Peek() == '-') {
-							protAct = false;
-							Next();
-						}
-						ReadId(buffer);
-						state = ParseState.ProcessItemName;
-						break;
-
-					case ParseState.ProcessItemName:
-						protId = buffer.ToString();
-						buffer.Length = 0;
-						if (IsEnd() || Peek() == ';')
-							state = ParseState.EndItem;
-						else if (Peek() == '(') {
-							if (!protAct)
-								throw new ArgumentException("No parameters is allowed when removing protection.");
-							Next();
-							state = ParseState.ReadParam;
-						}
-						else
-							throw new ArgumentException("Unexpected character in ProcessItemName state at " + index + ".");
-						break;
-
-					case ParseState.ReadParam:
-						string paramName, paramValue;
-
-						if (!ReadId(buffer))
-							throw new ArgumentException("Unexpected end of string in ReadParam state.");
-						paramName = buffer.ToString();
-						buffer.Length = 0;
-
-						Expect('=');
-						if (!(Peek() == '\'' ? ReadString(buffer) : ReadId(buffer)))
-							throw new ArgumentException("Unexpected end of string in ReadParam state.");
-
-						paramValue = buffer.ToString();
-						buffer.Length = 0;
-
-						protParams.Add(paramName, paramValue);
-
-						if (Peek() == ',') {
-							Next();
-							state = ParseState.ReadParam;
-						}
-						else if (Peek() == ')') {
-							Next();
-							state = ParseState.EndItem;
-						}
-						else
-							throw new ArgumentException("Unexpected character in ReadParam state at " + index + ".");
-						break;
-
-					case ParseState.EndItem:
-						if (settings != null) {
-							if (!items.Contains(protId))
-								throw new KeyNotFoundException("Cannot find protection with id '" + protId + "'.");
-
-							if (protAct) {
-								if (settings.ContainsKey((IProtection)items[protId])) {
-									var p = settings[(IProtection)items[protId]];
-									foreach (var kvp in protParams)
-										p[kvp.Key] = kvp.Value;
-								}
-								else
-									settings[(IProtection)items[protId]] = protParams;
+				if (Items.TryGetValue(itemName, out var protection)) {
+					if (disable) {
+						if (itemValues == null)
+							Settings.Remove(protection);
+						else if (Settings.TryGetValue(protection, out var protectionSettings)) {
+							foreach (var name in itemValues.itemValue().Select(v => v.itemValueName().GetText())) {
+								protectionSettings.Remove(name);
 							}
-							else
-								settings.Remove((IProtection)items[protId]);
 						}
-						protParams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-						if (IsEnd())
-							state = ParseState.End;
+					}
+					else {
+						if (itemValues == null) {
+							if (!Settings.ContainsKey((protection)))
+								Settings.Add(protection, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+						}
 						else {
-							Expect(';');
-							if (IsEnd())
-								state = ParseState.End;
-							else
-								state = ParseState.ReadItemName;
+							if (!Settings.TryGetValue(protection, out var protectionSettings))
+								protectionSettings = Settings[protection] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+							foreach (var itemValue in itemValues.itemValue()) {
+								protectionSettings.Add(itemValue.itemValueName().GetText(), itemValue.itemValueValue().GetText().Trim('\''));
+							}
 						}
-						break;
+					}
 				}
+
+				return Settings;
 			}
 		}
 
-		public void ParsePackerString(string str, out IPacker packer, out Dictionary<string, string> packerParams) {
-			packer = null;
-			packerParams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		private sealed class ObfPackerAttrVisitor : ObfAttrPackerParserBaseVisitor<(IPacker, IDictionary<string, string>)> {
+			private IReadOnlyDictionary<string, IPacker> Packers { get; }
+			private IPacker Packer { get; set; }
+			private IDictionary<string, string> PackerParameter { get; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
-			if (str == null)
-				return;
+			internal ObfPackerAttrVisitor(IReadOnlyDictionary<string, IPacker> packers) => 
+				Packers = packers ?? throw new ArgumentNullException(nameof(packers));
 
-			this.str = str;
-			index = 0;
+			protected override (IPacker, IDictionary<string, string>) DefaultResult => (Packer, PackerParameter);
 
-			var state = ParseState.ReadItemName;
-			var buffer = new StringBuilder();
-			var ret = new ProtectionSettings();
+			public override (IPacker, IDictionary<string, string>) VisitPacker(ObfAttrPackerParser.PackerContext context) {
+				var packerName = context.itemName().GetText();
+				if (Packers.TryGetValue(packerName, out var packer))
+					Packer = packer;
 
-			while (state != ParseState.End) {
-				switch (state) {
-					case ParseState.ReadItemName:
-						ReadId(buffer);
+				base.VisitPacker(context);
+				return DefaultResult;
+			}
 
-						var packerId = buffer.ToString();
-						if (!items.Contains(packerId))
-							throw new KeyNotFoundException("Cannot find packer with id '" + packerId + "'.");
-
-						packer = (IPacker)items[packerId];
-						buffer.Length = 0;
-
-						if (IsEnd() || Peek() == ';')
-							state = ParseState.EndItem;
-						else if (Peek() == '(') {
-							Next();
-							state = ParseState.ReadParam;
-						}
-						else
-							throw new ArgumentException("Unexpected character in ReadItemName state at " + index + ".");
-						break;
-
-					case ParseState.ReadParam:
-						string paramName, paramValue;
-
-						if (!ReadId(buffer))
-							throw new ArgumentException("Unexpected end of string in ReadParam state.");
-						paramName = buffer.ToString();
-						buffer.Length = 0;
-
-						Expect('=');
-						if (!ReadId(buffer))
-							throw new ArgumentException("Unexpected end of string in ReadParam state.");
-						paramValue = buffer.ToString();
-						buffer.Length = 0;
-
-						packerParams.Add(paramName, paramValue);
-
-						if (Peek() == ',') {
-							Next();
-							state = ParseState.ReadParam;
-						}
-						else if (Peek() == ')') {
-							Next();
-							state = ParseState.EndItem;
-						}
-						else
-							throw new ArgumentException("Unexpected character in ReadParam state at " + index + ".");
-						break;
-
-					case ParseState.EndItem:
-						if (IsEnd())
-							state = ParseState.End;
-						else {
-							Expect(';');
-							if (!IsEnd())
-								throw new ArgumentException("Unexpected character in EndItem state at " + index + ".");
-							state = ParseState.End;
-						}
-						break;
-				}
+			public override (IPacker, IDictionary<string, string>) VisitItemValue(ObfAttrPackerParser.ItemValueContext context) {
+				PackerParameter[context.itemValueName().GetText()] = context.itemValueValue().GetText();
+				return DefaultResult;
 			}
 		}
 	}

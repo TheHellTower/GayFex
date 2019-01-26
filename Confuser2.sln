@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core", "Confuser.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Protections", "Confuser.Protections\Confuser.Protections.csproj", "{3EAB01B5-9B49-48D8-BFA1-5493B26CCB71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.CLI", "Confuser.CLI\Confuser.CLI.csproj", "{CE61ADEE-C032-43EC-ACD8-E4A742F894A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.CLI", "Confuser.CLI\Confuser.CLI.csproj", "{CE61ADEE-C032-43EC-ACD8-E4A742F894A3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer", "Confuser.Renamer\Confuser.Renamer.csproj", "{862DA0DA-52E1-47CD-B9C2-46B106031B28}"
 EndProject
@@ -88,6 +88,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Optimizations.Test", "Tests\Confuser.Optimizations.Test\Confuser.Optimizations.Test.csproj", "{4CF623D7-1963-4A9A-8753-4540C895E614}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SevenZip", "SevenZip\SevenZip.shproj", "{7477AE82-D0BE-4C24-91C1-6ABCB6C18B8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Core.Test", "Tests\Confuser.Core.Test\Confuser.Core.Test.csproj", "{BD5ED48A-68B6-485D-84F7-13CBFDF3B193}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -226,6 +228,10 @@ Global
 		{4CF623D7-1963-4A9A-8753-4540C895E614}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4CF623D7-1963-4A9A-8753-4540C895E614}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4CF623D7-1963-4A9A-8753-4540C895E614}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD5ED48A-68B6-485D-84F7-13CBFDF3B193}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD5ED48A-68B6-485D-84F7-13CBFDF3B193}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD5ED48A-68B6-485D-84F7-13CBFDF3B193}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD5ED48A-68B6-485D-84F7-13CBFDF3B193}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -246,6 +252,7 @@ Global
 		{5C808CD6-CA4E-44C9-8A83-244D05114FC9} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{3BC0BDD7-9843-4305-A785-1F22A31FE872} = {B26E932E-3EEB-41A4-9EDF-B02CAFA43DF4}
 		{4CF623D7-1963-4A9A-8753-4540C895E614} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{BD5ED48A-68B6-485D-84F7-13CBFDF3B193} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}

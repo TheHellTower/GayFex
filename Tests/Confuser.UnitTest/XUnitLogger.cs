@@ -4,6 +4,7 @@ using System.Text;
 using Confuser.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions.Internal;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Confuser.UnitTest {
@@ -14,6 +15,11 @@ namespace Confuser.UnitTest {
 		public XunitLogger(ITestOutputHelper outputHelper) {
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 			errorMessages = new StringBuilder();
+		}
+
+		public void CheckErrors() {
+			if (errorMessages.Length > 0)
+				Assert.True(false, errorMessages.ToString());
 		}
 
 		public ILogger CreateLogger(string categoryName) => this;

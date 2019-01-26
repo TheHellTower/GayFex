@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -12,6 +13,7 @@ using Confuser.Core.Project.Patterns;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Core {
 	using Rules = Dictionary<Rule, PatternExpression>;
@@ -19,8 +21,8 @@ namespace Confuser.Core {
 	/// <summary>
 	/// Obfuscation Attribute Marker
 	/// </summary>
-	public class ObfAttrMarker : Marker {
-		struct ObfuscationAttributeInfo {
+	public partial class ObfAttrMarker : Marker {
+		private struct ObfuscationAttributeInfo {
 			public IHasCustomAttribute Owner;
 			public bool? ApplyToMembers;
 			public bool? Exclude;
@@ -28,7 +30,7 @@ namespace Confuser.Core {
 			public string FeatureValue;
 		}
 
-		struct ProtectionSettingsInfo {
+		private struct ProtectionSettingsInfo {
 			public bool ApplyToMember;
 			public bool Exclude;
 
@@ -36,174 +38,80 @@ namespace Confuser.Core {
 			public string Settings;
 		}
 
-		class ProtectionSettingsStack {
-			readonly ConfuserContext context;
-			readonly Stack<Tuple<ProtectionSettings, ProtectionSettingsInfo[]>> stack;
-			readonly ObfAttrParser parser;
-			ProtectionSettings settings;
+		private static readonly Regex _featurePattern = new Regex("^(?:(\\d+)\\.\\s+)?([^:]+)(?:\\:(.+))?$", RegexOptions.CultureInvariant);
 
-			enum ApplyInfoType {
-				CurrentInfoOnly,
-				CurrentInfoInherits,
-				ParentInfo
-			}
-
-			class PopHolder : IDisposable {
-				ProtectionSettingsStack parent;
-
-				public PopHolder(ProtectionSettingsStack parent) {
-					this.parent = parent;
-				}
-
-				public void Dispose() {
-					parent.Pop();
-				}
-			}
-
-			public ProtectionSettingsStack(ConfuserContext context, Dictionary<string, IProtection> protections) {
-				this.context = context;
-				stack = new Stack<Tuple<ProtectionSettings, ProtectionSettingsInfo[]>>();
-				parser = new ObfAttrParser(protections);
-			}
-
-			public ProtectionSettingsStack(ProtectionSettingsStack copy) {
-				context = copy.context;
-				stack = new Stack<Tuple<ProtectionSettings, ProtectionSettingsInfo[]>>(copy.stack);
-				parser = copy.parser;
-			}
-
-			void Pop() {
-				settings = stack.Pop().Item1;
-			}
-
-			public IDisposable Apply(IDnlibDef target, IEnumerable<ProtectionSettingsInfo> infos) {
-				ProtectionSettings settings;
-				if (this.settings == null)
-					settings = new ProtectionSettings();
-				else
-					settings = new ProtectionSettings(this.settings);
-
-				var infoArray = infos.ToArray();
-
-				if (stack.Count > 0) {
-					foreach (var i in stack.Reverse())
-						ApplyInfo(target, settings, i.Item2, ApplyInfoType.ParentInfo);
-				}
-
-				IDisposable result;
-				if (infoArray.Length != 0) {
-					var originalSettings = this.settings;
-
-					// the settings that would apply to members
-					ApplyInfo(target, settings, infoArray, ApplyInfoType.CurrentInfoInherits);
-					this.settings = new ProtectionSettings(settings);
-
-					// the settings that would apply to itself
-					ApplyInfo(target, settings, infoArray, ApplyInfoType.CurrentInfoOnly);
-					stack.Push(Tuple.Create(originalSettings, infoArray));
-
-					result = new PopHolder(this);
-				}
-				else
-					result = null;
-
-				ProtectionParameters.SetParameters(context, target, settings);
-				return result;
-			}
-
-			void ApplyInfo(IDnlibDef context, ProtectionSettings settings, IEnumerable<ProtectionSettingsInfo> infos, ApplyInfoType type) {
-				foreach (var info in infos) {
-					if (info.Condition != null && !(bool)info.Condition.Evaluate(context))
-						continue;
-
-					if (info.Condition == null && info.Exclude) {
-						if (type == ApplyInfoType.CurrentInfoOnly ||
-							(type == ApplyInfoType.CurrentInfoInherits && info.ApplyToMember)) {
-							settings.Clear();
-						}
-					}
-					if (!string.IsNullOrEmpty(info.Settings)) {
-						if ((type == ApplyInfoType.ParentInfo && info.Condition != null && info.ApplyToMember) ||
-							type == ApplyInfoType.CurrentInfoOnly ||
-							(type == ApplyInfoType.CurrentInfoInherits && info.Condition == null && info.ApplyToMember)) {
-							parser.ParseProtectionString(settings, info.Settings);
-						}
-					}
-				}
-			}
-		}
-
-		static readonly Regex OrderPattern = new Regex("^(\\d+)\\. (.+)$");
-
-		static IEnumerable<ObfuscationAttributeInfo> ReadObfuscationAttributes(IHasCustomAttribute item) {
-			var ret = new List<Tuple<int?, ObfuscationAttributeInfo>>();
+		private static IEnumerable<ObfuscationAttributeInfo> ReadObfuscationAttributes(IHasCustomAttribute item, ILogger logger) {
+			var ret = new List<(int? Order, ObfuscationAttributeInfo Info)>();
 			for (int i = item.CustomAttributes.Count - 1; i >= 0; i--) {
 				var ca = item.CustomAttributes[i];
-				if (ca.TypeFullName != "System.Reflection.ObfuscationAttribute")
+				if (ca.TypeFullName != typeof(ObfuscationAttribute).FullName)
 					continue;
 
-				var info = new ObfuscationAttributeInfo();
-				int? order = null;
+				var (info, order, strip) = CreateObfuscationAttributeInfo(item, ca, logger);
+				if (strip)
+					item.CustomAttributes.RemoveAt(i);
 
-				info.Owner = item;
-				bool strip = true;
-				foreach (var prop in ca.Properties) {
-					switch (prop.Name) {
-					case "ApplyToMembers":
+				ret.Add((order, info));
+			}
+			ret.Sort((x, y) => Nullable.Compare(x.Order, y.Order));
+			return ret.Select(pair => pair.Info);
+		}
+
+		private static (ObfuscationAttributeInfo Info, int? Order, bool Strip) CreateObfuscationAttributeInfo(IHasCustomAttribute owner, ICustomAttribute ca, ILogger logger) {
+			Debug.Assert(ca.TypeFullName == typeof(ObfuscationAttribute).FullName);
+
+			var info = new ObfuscationAttributeInfo();
+			int? order = null;
+
+			info.Owner = owner;
+			bool strip = true;
+			foreach (var prop in ca.Properties) {
+				switch (prop.Name) {
+					case nameof(ObfuscationAttribute.ApplyToMembers):
 						Debug.Assert(prop.Type.ElementType == ElementType.Boolean);
 						info.ApplyToMembers = (bool)prop.Value;
 						break;
 
-					case "Exclude":
+					case nameof(ObfuscationAttribute.Exclude):
 						Debug.Assert(prop.Type.ElementType == ElementType.Boolean);
 						info.Exclude = (bool)prop.Value;
 						break;
 
-					case "StripAfterObfuscation":
+					case nameof(ObfuscationAttribute.StripAfterObfuscation):
 						Debug.Assert(prop.Type.ElementType == ElementType.Boolean);
 						strip = (bool)prop.Value;
 						break;
 
-					case "Feature":
+					case nameof(ObfuscationAttribute.Feature):
 						Debug.Assert(prop.Type.ElementType == ElementType.String);
 						string feature = (UTF8String)prop.Value;
 
-						var match = OrderPattern.Match(feature);
+						var match = _featurePattern.Match(feature);
 						if (match.Success) {
-							var orderStr = match.Groups[1].Value;
-							var f = match.Groups[2].Value;
-							int o;
-							if (!int.TryParse(orderStr, out o))
-								throw new NotSupportedException(string.Format("Failed to parse feature '{0}' in {1} ", feature, item));
-							order = o;
-							feature = f;
-						}
+							if (match.Groups[1].Success) {
+								var orderStr = match.Groups[1].Value;
+								if (!int.TryParse(orderStr, out int o))
+									logger.LogWarning("Failed to parse obfuscation attribute feature '{0}' in {1}", feature, owner);
+								else
+									order = o;
+							}
 
-						int sepIndex = feature.IndexOf(':');
-						if (sepIndex == -1) {
-							info.FeatureName = "";
-							info.FeatureValue = feature;
-						}
-						else {
-							info.FeatureName = feature.Substring(0, sepIndex);
-							info.FeatureValue = feature.Substring(sepIndex + 1);
+							info.FeatureName = match.Groups[2].Value;
+							if (match.Groups[3].Success)
+								info.FeatureValue = match.Groups[3].Value;
 						}
 						break;
 
 					default:
-						throw new NotSupportedException("Unsupported property: " + prop.Name);
-					}
+						logger.LogError("Unexpected property in obfuscation attribute: ", prop.Name);
+						break;
 				}
-				if (strip)
-					item.CustomAttributes.RemoveAt(i);
-
-				ret.Add(Tuple.Create(order, info));
 			}
-			ret.Reverse();
-			return ret.OrderBy(pair => pair.Item1).Select(pair => pair.Item2);
+
+			return (info, order, strip);
 		}
 
-		bool ToInfo(ObfuscationAttributeInfo attr, out ProtectionSettingsInfo info) {
+		private bool ToInfo(IConfuserContext context, ObfuscationAttributeInfo attr, out ProtectionSettingsInfo info) {
 			info = new ProtectionSettingsInfo {
 				Condition = null,
 
@@ -213,16 +121,9 @@ namespace Confuser.Core {
 			};
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
-
-			bool ok = true;
-			try {
-				logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
-				new ObfAttrParser(protections).ParseProtectionString(null, info.Settings);
-			}
-			catch {
-				ok = false;
-			}
-
+			
+			logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
+			bool ok = ObfAttrParser.TryParse(protections, info.Settings, logger);
 			if (!ok) {
 				logger.LogWarning("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
 				return false;
@@ -236,7 +137,7 @@ namespace Confuser.Core {
 			return true;
 		}
 
-		ProtectionSettingsInfo ToInfo(Rule rule, PatternExpression expr) {
+		private ProtectionSettingsInfo ToInfo(Rule rule, PatternExpression expr) {
 			var info = new ProtectionSettingsInfo();
 
 			info.Condition = expr;
@@ -268,23 +169,21 @@ namespace Confuser.Core {
 			return info;
 		}
 
-		IEnumerable<ProtectionSettingsInfo> ReadInfos(IHasCustomAttribute item) {
-			foreach (var attr in ReadObfuscationAttributes(item)) {
-				ProtectionSettingsInfo info;
+		private IEnumerable<ProtectionSettingsInfo> ReadInfos(IHasCustomAttribute item, IConfuserContext context, ILogger logger) {
+			foreach (var attr in ReadObfuscationAttributes(item, logger)) {
 				if (!string.IsNullOrEmpty(attr.FeatureName))
-					yield return AddRule(attr, null);
-				else if (ToInfo(attr, out info))
+					yield return AddRule(context, attr, null);
+				else if (ToInfo(context, attr, out var info))
 					yield return info;
 			}
 		}
 
-		ConfuserContext context;
-		ConfuserProject project;
-		IPacker packer;
-		Dictionary<string, string> packerParams;
-		List<byte[]> extModules;
+		//private ConfuserContext context;
+		private ConfuserProject project;
+		private IPacker packer;
+		private IDictionary<string, string> packerParams;
 
-		static readonly object ModuleSettingsKey = new object();
+		private static readonly object ModuleSettingsKey = new object();
 
 		/// <inheritdoc />
 		protected internal override void MarkMember(IDnlibDef member, IConfuserContext context) {
@@ -294,15 +193,15 @@ namespace Confuser.Core {
 			var module = (member as IMemberRef)?.Module;
 			if (module == null) return;
 			var stack = context.Annotations.Get<ProtectionSettingsStack>(module, ModuleSettingsKey);
-			using (stack?.Apply(member, Enumerable.Empty<ProtectionSettingsInfo>()))
-				return;
+
+			stack?.Apply(member);
 		}
 
 		/// <inheritdoc />
 		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
-			this.context = context ?? throw new ArgumentNullException(nameof(context));
+			//this.context = context ?? throw new ArgumentNullException(nameof(context));
 			project = proj ?? throw new ArgumentNullException(nameof(proj));
-			extModules = new List<byte[]>();
+			var extModules = ImmutableArray.CreateBuilder<ReadOnlyMemory<byte>>();
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
@@ -316,7 +215,7 @@ namespace Confuser.Core {
 				packerParams = new Dictionary<string, string>(proj.Packer, StringComparer.OrdinalIgnoreCase);
 			}
 
-			var modules = new List<Tuple<ProjectModule, ModuleDefMD>>();
+			var modules = new List<(ProjectModule ProjModule, ModuleDefMD ModuleDef)>();
 			foreach (var module in proj) {
 				if (module.IsExternal) {
 					extModules.Add(module.LoadRaw(proj.BaseDirectory));
@@ -326,34 +225,37 @@ namespace Confuser.Core {
 				var modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
 				foreach (var method in modDef.FindDefinitions().OfType<MethodDef>()) {
 					logger.LogTrace("Loading custom debug infos for '{0}'.", method);
-					var a = method.CustomDebugInfos;
+					logger.LogTrace(
+						method.HasCustomDebugInfos
+							? "Custom debug infos for '{0}' loaded."
+							: "Method '{0}' has no custom debug infos.", method);
 					token.ThrowIfCancellationRequested();
 				}
 				token.ThrowIfCancellationRequested();
 
 				context.Resolver.AddToCache(modDef);
-				modules.Add(Tuple.Create(module, modDef));
+				modules.Add((module, modDef));
 			}
 			foreach (var module in modules) {
-				logger.LogInformation("Loading '{0}'...", module.Item1.Path);
+				logger.LogInformation("Loading '{0}'...", module.ProjModule.Path);
 
-				var rules = ParseRules(proj, module.Item1, context);
-				MarkModule(module.Item1, module.Item2, rules, module == modules[0]);
+				var rules = ParseRules(proj, module.ProjModule, context);
+				MarkModule(context, module.ProjModule, module.ModuleDef, rules, module == modules[0], logger, extModules);
 
-				context.Annotations.Set(module.Item2, RulesKey, rules);
+				context.Annotations.Set(module.ModuleDef, RulesKey, rules);
 
 				// Packer parameters are stored in modules
 				if (packer != null)
-					ProtectionParameters.GetParameters(context, module.Item2)[packer] = packerParams;
+					ProtectionParameters.GetParameters(context, module.ModuleDef)[packer] = packerParams;
 			}
 
 			if (proj.Debug && proj.Packer != null)
 				logger.LogWarning("Generated Debug symbols might not be usable with packers!");
 
-			return new MarkerResult(modules.Select(module => module.Item2).ToImmutableArray(), packer, extModules.ToImmutableArray());
+			return new MarkerResult(modules.Select(module => module.ModuleDef).ToImmutableArray(), packer, extModules.ToImmutable());
 		}
 
-		ProtectionSettingsInfo AddRule(ObfuscationAttributeInfo attr, List<ProtectionSettingsInfo> infos) {
+		private ProtectionSettingsInfo AddRule(IConfuserContext context, ObfuscationAttributeInfo attr, ICollection<ProtectionSettingsInfo> infos) {
 			Debug.Assert(attr.FeatureName != null);
 
 			var pattern = attr.FeatureName;
@@ -374,24 +276,19 @@ namespace Confuser.Core {
 			};
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
-
-			bool ok = true;
-			try {
-				logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
-				new ObfAttrParser(protections).ParseProtectionString(null, info.Settings);
-			}
-			catch {
-				ok = false;
-			}
+			
+			logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
+			bool ok = ObfAttrParser.TryParse(protections, info.Settings, logger);
 
 			if (!ok)
 				logger.LogWarning("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
-			else if (infos != null)
-				infos.Add(info);
+			else
+				infos?.Add(info);
+
 			return info;
 		}
 
-		void MarkModule(ProjectModule projModule, ModuleDefMD module, Rules rules, bool isMain) {
+		private void MarkModule(IConfuserContext context, ProjectModule projModule, ModuleDefMD module, Rules rules, bool isMain, ILogger logger, ICollection<ReadOnlyMemory<byte>> extModules) {
 			string snKeyPath = projModule.SNKeyPath, snKeyPass = projModule.SNKeyPassword;
 			var stack = new ProtectionSettingsStack(context, protections);
 
@@ -401,11 +298,9 @@ namespace Confuser.Core {
 				layer.Add(ToInfo(rule.Key, rule.Value));
 
 			// Add obfuscation attributes
-			foreach (var attr in ReadObfuscationAttributes(module.Assembly)) {
-				if (string.IsNullOrEmpty(attr.FeatureName)) {
-					ProtectionSettingsInfo info;
-					if (ToInfo(attr, out info))
-						layer.Add(info);
+			foreach (var attr in ReadObfuscationAttributes(module.Assembly, logger)) {
+				if (string.IsNullOrEmpty(attr.FeatureName) && ToInfo(context, attr, out var info)) {
+					layer.Add(info);
 				}
 				else if (attr.FeatureName.Equals("generate debug symbol", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
@@ -426,7 +321,7 @@ namespace Confuser.Core {
 				else if (attr.FeatureName.Equals("packer", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
 						throw new ArgumentException("Only main module can set 'packer'.");
-					new ObfAttrParser(packers).ParsePackerString(attr.FeatureValue, out packer, out packerParams);
+				    (packer, packerParams) = ObfAttrParser.ParsePacker(packers, attr.FeatureValue, logger);
 				}
 				else if (attr.FeatureName.Equals("external module", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
@@ -435,7 +330,7 @@ namespace Confuser.Core {
 					extModules.Add(rawModule);
 				}
 				else {
-					AddRule(attr, layer);
+					AddRule(context, attr, layer);
 				}
 			}
 
@@ -448,78 +343,86 @@ namespace Confuser.Core {
 			context.Annotations.Set(module, SNKey, snKey);
 
 			using (stack.Apply(module, layer))
-				ProcessModule(module, stack);
+				ProcessModule(module, stack, context, logger);
 		}
 
-		void ProcessModule(ModuleDefMD module, ProtectionSettingsStack stack) {
+		private void ProcessModule(ModuleDef module, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
 			context.Annotations.Set(module, ModuleSettingsKey, new ProtectionSettingsStack(stack));
-			foreach (var type in module.Types) {
-				using (stack.Apply(type, ReadInfos(type)))
-					ProcessTypeMembers(type, stack);
-			}
+			foreach (var type in module.Types)
+				ProcessTypeMembers(type, stack, context, logger);
 		}
 
-		void ProcessTypeMembers(TypeDef type, ProtectionSettingsStack stack) {
-			foreach (var nestedType in type.NestedTypes) {
-				using (stack.Apply(nestedType, ReadInfos(nestedType)))
-					ProcessTypeMembers(nestedType, stack);
-			}
+		private void ProcessTypeMembers(TypeDef type, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+			using (stack.Apply(type, ReadInfos(type, context, logger))) {
+				foreach (var nestedType in type.NestedTypes)
+					ProcessTypeMembers(nestedType, stack, context, logger);
 
-			foreach (var property in type.Properties) {
-				using (stack.Apply(property, ReadInfos(property))) {
-					if (property.GetMethod != null)
-						ProcessMember(property.GetMethod, stack);
+				foreach (var property in type.Properties)
+					ProcessMember(property, stack, context, logger);
 
-					if (property.SetMethod != null)
-						ProcessMember(property.SetMethod, stack);
+				foreach (var evt in type.Events)
+					ProcessMember(evt, stack, context, logger);
 
-					foreach (var m in property.OtherMethods)
-						ProcessMember(m, stack);
+				foreach (var method in type.Methods) {
+					if (method.SemanticsAttributes == MethodSemanticsAttributes.None)
+						ProcessMember(method, stack, context, logger);
 				}
-			}
 
-			foreach (var evt in type.Events) {
-				using (stack.Apply(evt, ReadInfos(evt))) {
-					if (evt.AddMethod != null)
-						ProcessMember(evt.AddMethod, stack);
-
-					if (evt.RemoveMethod != null)
-						ProcessMember(evt.RemoveMethod, stack);
-
-					if (evt.InvokeMethod != null)
-						ProcessMember(evt.InvokeMethod, stack);
-
-					foreach (var m in evt.OtherMethods)
-						ProcessMember(m, stack);
-				}
-			}
-
-			foreach (var method in type.Methods) {
-				if (method.SemanticsAttributes == 0)
-					ProcessMember(method, stack);
-			}
-
-			foreach (var field in type.Fields) {
-				ProcessMember(field, stack);
+				foreach (var field in type.Fields)
+					ProcessMember(field, stack, context, logger);
 			}
 		}
 
-		void ProcessMember(IDnlibDef member, ProtectionSettingsStack stack) {
-			using (stack.Apply(member, ReadInfos(member)))
-				ProcessBody(member as MethodDef, stack);
+		private void ProcessMember(PropertyDef property, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+			using (stack.Apply(property, ReadInfos(property, context, logger))) {
+				if (property.GetMethod != null)
+					ProcessMember(property.GetMethod, stack, context, logger);
+
+				if (property.SetMethod != null)
+					ProcessMember(property.SetMethod, stack, context, logger);
+
+				foreach (var m in property.OtherMethods)
+					ProcessMember(m, stack, context, logger);
+			}
 		}
 
-		void ProcessBody(MethodDef method, ProtectionSettingsStack stack) {
-			if (method == null || method.Body == null)
+		private void ProcessMember(EventDef evt, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+			using (stack.Apply(evt, ReadInfos(evt, context, logger))) {
+				if (evt.AddMethod != null)
+					ProcessMember(evt.AddMethod, stack, context, logger);
+
+				if (evt.RemoveMethod != null)
+					ProcessMember(evt.RemoveMethod, stack, context, logger);
+
+				if (evt.InvokeMethod != null)
+					ProcessMember(evt.InvokeMethod, stack, context, logger);
+
+				foreach (var m in evt.OtherMethods)
+					ProcessMember(m, stack, context, logger);
+			}
+		}
+
+		private void ProcessMember(MethodDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+			using (stack.Apply(method, ReadInfos(method, context, logger)))
+				ProcessBody(method, stack, context, logger);
+		}
+
+		private void ProcessMember(IDnlibDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) => 
+			stack.Apply(method, ReadInfos(method, context, logger)).Dispose();
+
+		private void ProcessBody(MethodDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+			if (method?.Body == null)
 				return;
 
 			var declType = method.DeclaringType;
 			foreach (var instr in method.Body.Instructions)
-				if (instr.Operand is MethodDef) {
-					var cgType = ((MethodDef)instr.Operand).DeclaringType;
+				if (instr.Operand is MethodDef targetMethod) {
+					var cgType = targetMethod.DeclaringType;
+
+					// Check if this is a lambda method.
 					if (cgType.DeclaringType == declType && cgType.IsCompilerGenerated()) {
-						using (stack.Apply(cgType, ReadInfos(cgType)))
-							ProcessTypeMembers(cgType, stack);
+						using (stack.Apply(cgType, ReadInfos(cgType, context, logger)))
+							ProcessTypeMembers(cgType, stack, context, logger);
 					}
 				}
 		}
