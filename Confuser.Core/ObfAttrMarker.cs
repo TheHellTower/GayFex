@@ -9,14 +9,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Confuser.Core.Project;
-using Confuser.Core.Project.Patterns;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Core {
-	using Rules = Dictionary<Rule, PatternExpression>;
+	using Rules = Dictionary<Rule, IPattern>;
 
 	/// <summary>
 	/// Obfuscation Attribute Marker
@@ -34,7 +33,7 @@ namespace Confuser.Core {
 			public bool ApplyToMember;
 			public bool Exclude;
 
-			public PatternExpression Condition;
+			public IPattern Condition;
 			public string Settings;
 		}
 
@@ -137,7 +136,7 @@ namespace Confuser.Core {
 			return true;
 		}
 
-		private ProtectionSettingsInfo ToInfo(Rule rule, PatternExpression expr) {
+		private ProtectionSettingsInfo ToInfo(Rule rule, IPattern expr) {
 			var info = new ProtectionSettingsInfo();
 
 			info.Condition = expr;
@@ -258,10 +257,12 @@ namespace Confuser.Core {
 		private ProtectionSettingsInfo AddRule(IConfuserContext context, ObfuscationAttributeInfo attr, ICollection<ProtectionSettingsInfo> infos) {
 			Debug.Assert(attr.FeatureName != null);
 
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+
 			var pattern = attr.FeatureName;
-			PatternExpression expr;
+			IPattern expr;
 			try {
-				expr = new PatternParser().Parse(pattern);
+				expr = PatternParser.Parse(pattern, logger);
 			}
 			catch (Exception ex) {
 				throw new Exception("Error when parsing pattern " + pattern + " in ObfuscationAttribute. Owner=" + attr.Owner, ex);
@@ -274,8 +275,6 @@ namespace Confuser.Core {
 				ApplyToMember = (attr.ApplyToMembers ?? true),
 				Settings = attr.FeatureValue
 			};
-
-			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 			
 			logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
 			bool ok = ObfAttrParser.TryParse(protections, info.Settings, logger);

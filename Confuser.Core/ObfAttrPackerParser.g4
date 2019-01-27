@@ -10,7 +10,7 @@ packerString : packer EOL ;
 packer : itemName ( itemValues )?;
 
 itemName       : WS* IDENTIFIER WS* ;
-itemValues     : BRACE_OPEN WS* itemValue ( SEP itemValue )* WS* BRACE_CLOSE;
+itemValues     : PAREN_OPEN WS* itemValue ( SEP itemValue )* WS* PAREN_CLOSE;
 itemValue      : itemValueName WS* EQUAL WS* itemValueValue WS*;
 itemValueName  : IDENTIFIER;
 itemValueValue : IDENTIFIER;

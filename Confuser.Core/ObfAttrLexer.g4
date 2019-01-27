@@ -30,8 +30,8 @@ fragment Z : ( 'z' | 'Z' );
 fragment F_PLUS        : '+';
 fragment F_MINUS       : '-';
 fragment F_EQUAL       : '=';
-fragment F_BRACE_OPEN  : '(';
-fragment F_BRACE_CLOSE : ')';
+fragment F_PAREN_OPEN  : '(';
+fragment F_PAREN_CLOSE : ')';
 
 fragment F_COMMA       : ',';
 fragment F_SEMICOLON   : ';';
@@ -49,8 +49,8 @@ fragment F_ESCAPED_STRING : F_SINGLE_QUOTE ( ( F_ESCAPE_CHAR F_SINGLE_QUOTE ) | 
 PLUS        : F_PLUS;
 MINUS       : F_MINUS;
 EQUAL       : F_EQUAL;
-BRACE_OPEN  : F_BRACE_OPEN;
-BRACE_CLOSE : F_BRACE_CLOSE;
+PAREN_OPEN  : F_PAREN_OPEN;
+PAREN_CLOSE : F_PAREN_CLOSE;
 
 PRESET     : P R E S E T;
 IDENTIFIER : F_ID_STRING | F_ESCAPED_STRING;

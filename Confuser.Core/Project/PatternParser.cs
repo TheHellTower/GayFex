@@ -1,203 +1,266 @@
 ﻿using System;
-using System.Collections.Generic;
-using Confuser.Core.Project.Patterns;
+using System.Text;
+using System.Text.RegularExpressions;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
+using dnlib.DotNet;
 
 namespace Confuser.Core.Project {
+	using ILogger = Microsoft.Extensions.Logging.ILogger;
+
 	/// <summary>
 	///     Parser of pattern expressions.
 	/// </summary>
-	public class PatternParser {
-		static readonly Dictionary<string, Func<PatternFunction>> fns;
-		static readonly Dictionary<string, Func<PatternOperator>> ops;
-		readonly PatternTokenizer tokenizer = new PatternTokenizer();
-		PatternToken? lookAhead;
+	public partial class PatternParser {
+		public static IPattern Parse(string str, ILogger logger) {
+			var inputStream = new AntlrInputStream(str);
+			var lexer = new PatternLexer(inputStream);
+			var stream = new CommonTokenStream(lexer);
+			var parser = new PatternParser(stream);
+			SetupLogger(parser, logger);
 
-		static PatternParser() {
-			fns = new Dictionary<string, Func<PatternFunction>>(StringComparer.OrdinalIgnoreCase);
-			fns.Add(ModuleFunction.FnName, () => new ModuleFunction());
-			fns.Add(DeclTypeFunction.FnName, () => new DeclTypeFunction());
-			fns.Add(NamespaceFunction.FnName, () => new NamespaceFunction());
-			fns.Add(NameFunction.FnName, () => new NameFunction());
-			fns.Add(FullNameFunction.FnName, () => new FullNameFunction());
-			fns.Add(MatchFunction.FnName, () => new MatchFunction());
-			fns.Add(MatchNameFunction.FnName, () => new MatchNameFunction());
-			fns.Add(MatchTypeNameFunction.FnName, () => new MatchTypeNameFunction());
-			fns.Add(MemberTypeFunction.FnName, () => new MemberTypeFunction());
-			fns.Add(IsPublicFunction.FnName, () => new IsPublicFunction());
-			fns.Add(InheritsFunction.FnName, () => new InheritsFunction());
-			fns.Add(IsTypeFunction.FnName, () => new IsTypeFunction());
-			fns.Add(HasAttrFunction.FnName, () => new HasAttrFunction());
-
-			ops = new Dictionary<string, Func<PatternOperator>>(StringComparer.OrdinalIgnoreCase);
-			ops.Add(AndOperator.OpName, () => new AndOperator());
-			ops.Add(OrOperator.OpName, () => new OrOperator());
-			ops.Add(NotOperator.OpName, () => new NotOperator());
+			return parser.pattern();
 		}
 
-		/// <summary>
-		///     Parses the specified pattern into expression.
-		/// </summary>
-		/// <param name="pattern">The pattern to parse.</param>
-		/// <returns>The parsed expression.</returns>
-		/// <exception cref="InvalidPatternException">
-		///     The pattern is invalid.
-		/// </exception>
-		public PatternExpression Parse(string pattern) {
-			if (pattern == null)
-				throw new ArgumentNullException("pattern");
+		private static void SetupLogger<TSymbol, TAtnInterpreter>(Recognizer<TSymbol, TAtnInterpreter> recognizer,
+			ILogger logger) where TAtnInterpreter : ATNSimulator {
+#if NETFRAMEWORK
+			recognizer.RemoveErrorListener(ConsoleErrorListener<TSymbol>.Instance);
+#endif
+			recognizer.AddErrorListener(new LoggerAntlrErrorListener<TSymbol>(logger));
+		}
 
-			try {
-				tokenizer.Initialize(pattern);
-				lookAhead = tokenizer.NextToken();
-				PatternExpression ret = ParseExpression(true);
-				if (PeekToken() != null)
-					throw new InvalidPatternException("Extra tokens beyond the end of pattern.");
-				return ret;
-			}
-			catch (Exception ex) {
-				if (ex is InvalidPatternException)
-					throw;
-				throw new InvalidPatternException("Invalid pattern.", ex);
+		public partial class PatternContext : IPattern {
+			public bool Evaluate(IDnlibDef definition) {
+				var visitor = new EvaluationVisitor(definition);
+				return visitor.Visit(this);
 			}
 		}
 
-		static bool IsFunction(PatternToken token) {
-			if (token.Type != TokenType.Identifier)
-				return false;
-			return fns.ContainsKey(token.Value);
+		public partial class LiteralExpressionContext {
+			public string GetCleanedText() {
+				var text = GetText();
+				if (text[0] == '\'')
+					return text.Substring(1, text.Length - 2).Replace("\\'", "'");
+				if (text[0] == '"')
+					return text.Substring(1, text.Length - 2).Replace("\\\"", "\"");
+				throw new InvalidPatternException("Unexpected quoting of literal expression.");
+			}
 		}
 
-		static bool IsOperator(PatternToken token) {
-			if (token.Type != TokenType.Identifier)
-				return false;
-			return ops.ContainsKey(token.Value);
-		}
+		private sealed class EvaluationVisitor : PatternParserBaseVisitor<bool> {
+			private readonly IDnlibDef _def;
 
-		Exception UnexpectedEnd() {
-			throw new InvalidPatternException("Unexpected end of pattern.");
-		}
+			public EvaluationVisitor(IDnlibDef def) => 
+				_def = def ?? throw new ArgumentNullException(nameof(def));
 
-		Exception MismatchParens(int position) {
-			throw new InvalidPatternException(string.Format("Mismatched parentheses at position {0}.", position));
-		}
+			public override bool VisitPattern(PatternContext context) {
+				var childPattern = context.pattern();
 
-		Exception UnknownToken(PatternToken token) {
-			throw new InvalidPatternException(string.Format("Unknown token '{0}' at position {1}.", token.Value, token.Position));
-		}
+				switch (childPattern.Length) {
+					case 0: 
+						return base.VisitPattern(context);
 
-		Exception UnexpectedToken(PatternToken token) {
-			throw new InvalidPatternException(string.Format("Unexpected token '{0}' at position {1}.", token.Value, token.Position));
-		}
-
-		Exception UnexpectedToken(PatternToken token, char expect) {
-			throw new InvalidPatternException(string.Format("Unexpected token '{0}' at position {1}. Expected '{2}'.", token.Value, token.Position, expect));
-		}
-
-		Exception BadArgCount(PatternToken token, int expected) {
-			throw new InvalidPatternException(string.Format("Invalid argument count for '{0}' at position {1}. Expected {2}", token.Value, token.Position, expected));
-		}
-
-		PatternToken ReadToken() {
-			if (lookAhead == null)
-				throw UnexpectedEnd();
-			PatternToken ret = lookAhead.Value;
-			lookAhead = tokenizer.NextToken();
-			return ret;
-		}
-
-		PatternToken? PeekToken() {
-			return lookAhead;
-		}
-
-		PatternExpression ParseExpression(bool readBinOp = false) {
-			PatternExpression ret;
-			PatternToken token = ReadToken();
-			switch (token.Type) {
-				case TokenType.Literal:
-					ret = new LiteralExpression(token.Value);
-					break;
-				case TokenType.LParens: {
-					ret = ParseExpression(true);
-					PatternToken parens = ReadToken();
-					if (parens.Type != TokenType.RParens)
-						throw MismatchParens(token.Position.Value);
-				}
-					break;
-				case TokenType.Identifier:
-					if (IsOperator(token)) {
-						// unary operator
-						PatternOperator op = ops[token.Value]();
-						if (!op.IsUnary)
-							throw UnexpectedToken(token);
-						op.OperandA = ParseExpression();
-						ret = op;
-					}
-					else if (IsFunction(token)) {
-						// function
-						PatternFunction fn = fns[token.Value]();
-
-						PatternToken parens = ReadToken();
-						if (parens.Type != TokenType.LParens)
-							throw UnexpectedToken(parens, '(');
-
-						fn.Arguments = new List<PatternExpression>(fn.ArgumentCount);
-						for (int i = 0; i < fn.ArgumentCount; i++) {
-							if (PeekToken() == null)
-								throw UnexpectedEnd();
-							if (PeekToken().Value.Type == TokenType.RParens)
-								throw BadArgCount(token, fn.ArgumentCount);
-							if (i != 0) {
-								PatternToken comma = ReadToken();
-								if (comma.Type != TokenType.Comma)
-									throw UnexpectedToken(comma, ',');
-							}
-							fn.Arguments.Add(ParseExpression());
-						}
-
-						parens = ReadToken();
-						if (parens.Type == TokenType.Comma)
-							throw BadArgCount(token, fn.ArgumentCount);
-						if (parens.Type != TokenType.RParens)
-							throw MismatchParens(parens.Position.Value);
-
-						ret = fn;
-					}
-					else {
-						bool boolValue;
-						if (bool.TryParse(token.Value, out boolValue))
-							ret = new LiteralExpression(boolValue);
+					case 1:
+						if (context.NOT() != null)
+							return !Visit(childPattern[0]);
+						else if (context.PAREN_OPEN() != null && context.PAREN_CLOSE() != null)
+							return Visit(childPattern[0]);
 						else
-							throw UnknownToken(token);
+							throw new InvalidPatternException("Unexpected nested pattern!?");
+
+					case 2:
+						if (context.AND() != null)
+							return Visit(childPattern[0]) && Visit(childPattern[1]);
+						else if (context.OR() != null)
+							return Visit(childPattern[0]) || Visit(childPattern[1]);
+						else
+							throw new InvalidPatternException("Unexpected nested pattern!?");
+
+					default:
+						throw new InvalidPatternException("More than 2 child patterns?!");
+				}
+			}
+
+			public override bool VisitDeclTypeFunction(DeclTypeFunctionContext context) {
+				if (!(_def is IMemberDef memberDef) || memberDef.DeclaringType == null)
+					return false;
+				
+				var fullName = context.literalExpression().GetCleanedText();
+				return string.Equals(memberDef.DeclaringType.FullName, fullName, StringComparison.Ordinal);
+			}
+
+			public override bool VisitFalseLiteral(FalseLiteralContext context) => false;
+
+			public override bool VisitFullNameFunction(FullNameFunctionContext context) {
+				var fullName = context.literalExpression().GetCleanedText();
+				return string.Equals(_def.FullName, fullName, StringComparison.Ordinal);
+			}
+
+			public override bool VisitHasAttrFunction(HasAttrFunctionContext context) {
+				var attrName = context.literalExpression().GetCleanedText();
+				return _def.CustomAttributes.IsDefined(attrName);
+			}
+
+			public override bool VisitInheritsFunction(InheritsFunctionContext context) {
+				var name = context.literalExpression().GetCleanedText();
+
+				var type = (_def as IMemberDef)?.DeclaringType ?? _def as TypeDef;
+				return type != null && (type.InheritsFrom(name) || type.Implements(name));
+			}
+
+			public override bool VisitIsPublicFunction(IsPublicFunctionContext context) {
+				if (!(_def is IMemberDef memberDef))
+					return false;
+
+				var declType = memberDef.DeclaringType;
+				while (declType != null) {
+					if (!declType.IsPublic) return false;
+					declType = declType.DeclaringType;
+				}
+
+				if (memberDef is MethodDef methodDef)
+					return methodDef.IsVisibleOutside();
+				if (memberDef is FieldDef fieldDef)
+					return fieldDef.IsVisibleOutside();
+				if (memberDef is PropertyDef propertyDef)
+					return propertyDef.IsVisibleOutside();
+				if (memberDef is EventDef eventDef)
+					return eventDef.IsVisibleOutside();
+				if (memberDef is TypeDef typeDef)
+					return typeDef.IsVisibleOutside();
+
+				return false;
+			}
+
+			public override bool VisitIsTypeFunction(IsTypeFunctionContext context) {
+				var type = (_def as IMemberDef)?.DeclaringType ?? _def as TypeDef;
+				if (type == null)
+					return false;
+
+				string typeRegex = context.literalExpression().GetCleanedText();
+
+				var typeType = new StringBuilder();
+
+				if (type.IsEnum)
+					typeType.Append("enum ");
+
+				if (type.IsInterface)
+					typeType.Append("interface ");
+
+				if (type.IsValueType)
+					typeType.Append("valuetype ");
+
+				if (type.IsDelegate())
+					typeType.Append("delegate ");
+
+				if (type.IsAbstract)
+					typeType.Append("abstract ");
+
+				if (type.IsNested)
+					typeType.Append("nested ");
+
+				if (type.IsSerializable)
+					typeType.Append("serializable ");
+
+				return Regex.IsMatch(typeType.ToString(), typeRegex);
+			}
+
+			public override bool VisitMatchFunction(MatchFunctionContext context) {
+				string regex = context.literalExpression().GetCleanedText();
+				return Regex.IsMatch(_def.FullName, regex);
+			}
+
+			public override bool VisitMatchNameFunction(MatchNameFunctionContext context) {
+				string regex = context.literalExpression().GetCleanedText();
+				return Regex.IsMatch(_def.Name, regex);
+			}
+
+			public override bool VisitMatchTypeNameFunction(MatchTypeNameFunctionContext context) {
+				string regex = context.literalExpression().GetCleanedText();
+				switch (_def)
+				{
+					case TypeDef _:
+						return Regex.IsMatch(_def.Name, regex);
+					case IMemberDef memberDef when memberDef.DeclaringType != null:
+						return Regex.IsMatch(memberDef.DeclaringType.Name, regex);
+					default:
+						return false;
+				}
+			}
+
+			public override bool VisitMemberTypeFunction(MemberTypeFunctionContext context) {
+				string typeRegex = context.literalExpression().GetCleanedText();
+
+				var memberType = new StringBuilder();
+
+				switch (_def)
+				{
+					case TypeDef _:
+						memberType.Append("type ");
+						break;
+					case MethodDef method:
+					{
+						memberType.Append("method ");
+						
+						if (method.IsGetter)
+							memberType.Append("propertym getter ");
+						else if (method.IsSetter)
+							memberType.Append("propertym setter ");
+						else if (method.IsAddOn)
+							memberType.Append("eventm add ");
+						else if (method.IsRemoveOn)
+							memberType.Append("eventm remove ");
+						else if (method.IsFire)
+							memberType.Append("eventm fire ");
+						else if (method.IsOther)
+							memberType.Append("other ");
+						break;
 					}
+					case FieldDef _:
+						memberType.Append("field ");
+						break;
+					case PropertyDef _:
+						memberType.Append("property ");
+						break;
+					case EventDef _:
+						memberType.Append("event ");
+						break;
+					case ModuleDef _:
+						memberType.Append("module ");
+						break;
+				}
 
-					break;
-				default:
-					throw UnexpectedToken(token);
+				return Regex.IsMatch(memberType.ToString(), typeRegex);
 			}
 
-			if (!readBinOp)
-				return ret;
-
-			// binary operator
-			PatternToken? peek = PeekToken();
-			while (peek != null) {
-				if (peek.Value.Type != TokenType.Identifier)
-					break;
-				if (!IsOperator(peek.Value))
-					break;
-
-				PatternToken binOpToken = ReadToken();
-				PatternOperator binOp = ops[binOpToken.Value]();
-				if (binOp.IsUnary)
-					throw UnexpectedToken(binOpToken);
-				binOp.OperandA = ret;
-				binOp.OperandB = ParseExpression();
-				ret = binOp;
-
-				peek = PeekToken();
+			public override bool VisitModuleFunction(ModuleFunctionContext context) {
+				if (!(_def is IOwnerModule) && !(_def is IModule))
+					return false;
+				var name = context.literalExpression().GetCleanedText();
+				if (_def is IModule moduleDef)
+					return string.Equals(moduleDef.Name, name, StringComparison.Ordinal);
+				return string.Equals(((IOwnerModule)_def).Module.Name,name, StringComparison.Ordinal);
 			}
 
-			return ret;
+			public override bool VisitNameFunction(NameFunctionContext context) {
+				var name = context.literalExpression().GetCleanedText();
+				return string.Equals(_def.Name, name, StringComparison.Ordinal);
+			}
+
+			public override bool VisitNamespaceFunction(NamespaceFunctionContext context) {
+				var type = (_def as IMemberDef)?.DeclaringType ?? _def as TypeDef;
+				if (type == null) return false;
+
+				var ns = "^" + context.literalExpression().GetCleanedText() + "$";
+
+				while (type.IsNested)
+					type = type.DeclaringType;
+
+				return Regex.IsMatch(type.Namespace ?? "", ns);
+			}
+
+			public override bool VisitTrueLiteral(TrueLiteralContext context) => true;
 		}
 	}
 }

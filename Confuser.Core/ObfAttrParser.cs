@@ -35,15 +35,6 @@ namespace Confuser.Core {
 			
 			return visitor.Visit(expr);
 		}
-		
-		private static void SetupLogger<TSymbol, TAtnInterpreter>(this Recognizer<TSymbol, TAtnInterpreter> recognizer,
-			ILogger logger) where TAtnInterpreter : ATNSimulator {
-			#if NETFRAMEWORK
-			recognizer.RemoveErrorListener(ConsoleErrorListener<TSymbol>.Instance);
-			#endif
-			recognizer.AddErrorListener(new LoggerAntlrErrorListener<TSymbol>(logger));
-
-		}
 
 		public static (IPacker Packer, IDictionary<string, string> PackerParams) ParsePacker(
 			IReadOnlyDictionary<string, IPacker> packers, string attrFeatureValue, ILogger logger) {
@@ -57,6 +48,14 @@ namespace Confuser.Core {
 			var visitor = new ObfPackerAttrVisitor(packers);
 			
 			return visitor.Visit(expr);
+		}
+
+		private static void SetupLogger<TSymbol, TAtnInterpreter>(this Recognizer<TSymbol, TAtnInterpreter> recognizer,
+			ILogger logger) where TAtnInterpreter : ATNSimulator {
+#if NETFRAMEWORK
+			recognizer.RemoveErrorListener(ConsoleErrorListener<TSymbol>.Instance);
+#endif
+			recognizer.AddErrorListener(new LoggerAntlrErrorListener<TSymbol>(logger));
 		}
 
 		private sealed class ValidateProtectionNamesVisitor : ObfAttrProtectionParserBaseVisitor<bool> {

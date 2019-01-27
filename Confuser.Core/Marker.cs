@@ -7,14 +7,12 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using Confuser.Core.Project;
-using Confuser.Core.Project.Patterns;
-using Confuser.Core.Services;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {
-	using Rules = Dictionary<Rule, PatternExpression>;
+	using Rules = Dictionary<Rule, IPattern>;
 
 	/// <summary>
 	///     Resolves and marks the modules with protection settings according to the rules.
@@ -183,10 +181,9 @@ namespace Confuser.Core {
 		protected Rules ParseRules(ConfuserProject proj, ProjectModule module, ConfuserContext context) {
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 			var ret = new Rules();
-			var parser = new PatternParser();
 			foreach (Rule rule in proj.Rules.Concat(module.Rules)) {
 				try {
-					ret.Add(rule, parser.Parse(rule.Pattern));
+					ret.Add(rule, PatternParser.Parse(rule.Pattern, logger));
 				}
 				catch (InvalidPatternException ex) {
 					logger.LogCritical(ex, "Invalid rule pattern: {0}.", rule.Pattern);

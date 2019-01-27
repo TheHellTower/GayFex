@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Confuser.Core;
 using Confuser.Core.Project;
-using Confuser.Core.Project.Patterns;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ConfuserEx.ViewModel {
 	internal interface IRuleContainer {
@@ -14,7 +14,7 @@ namespace ConfuserEx.ViewModel {
 		readonly ProjectVM parent;
 		readonly Rule rule;
 		string error;
-		PatternExpression exp;
+		IPattern exp;
 
 		public ProjectRuleVM(ProjectVM parent, Rule rule) {
 			this.parent = parent;
@@ -41,7 +41,7 @@ namespace ConfuserEx.ViewModel {
 			}
 		}
 
-		public PatternExpression Expression {
+		public IPattern Expression {
 			get { return exp; }
 			set { SetProperty(ref exp, value, "Expression"); }
 		}
@@ -76,9 +76,9 @@ namespace ConfuserEx.ViewModel {
 		void ParseExpression() {
 			if (Pattern == null)
 				return;
-			PatternExpression expression;
+			IPattern expression;
 			try {
-				expression = new PatternParser().Parse(Pattern);
+				expression = PatternParser.Parse(Pattern, NullLogger.Instance);
 				ExpressionError = null;
 			}
 			catch (Exception e) {
