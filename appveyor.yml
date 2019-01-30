@@ -15,33 +15,17 @@ install:
 - cmd: git submodule update --init --recursive
 
 before_build:
-- cmd: msbuild Confuser2.sln /t:Restore /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmd: msbuild Confuser2.sln @appveyor_restore.rsp /m
 
 build:
   project: Confuser2.sln
-  verbosity: minimal
-
-after_test:
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -v:m -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=linux-x64 -p:RestoreRecursive=false -p:PublishDir=../Publish/linux-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -v:m -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=osx-x64 -p:RestoreRecursive=false -p:PublishDir=../Publish/osx-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -v:m -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=win-x64 -p:RestoreRecursive=false -p:PublishDir=../Publish/win-x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmd: msbuild Confuser.CLI\Confuser.CLI.csproj -v:m -t:Restore;Publish -p:Configuration=Release -p:TargetFramework=netcoreapp2.2 -p:RuntimeIdentifier=win-x86 -p:RestoreRecursive=false -p:PublishDir=../Publish/win-x86 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  verbosity: minimal 
+  parallel: true
+  publish_core_console: true
 
 artifacts:
 - path: Release/bin
   name: ConfuserEx
-  type: zip
-- path: Publish/linux-x64
-  name: ConfuserEx (Linux x64)
-  type: zip
-- path: Publish/osx-x64
-  name: ConfuserEx (Mac OS X x64)
-  type: zip
-- path: Publish/win-x64
-  name: ConfuserEx (Windows x64)
-  type: zip
-- path: Publish/win-x32
-  name: ConfuserEx (Windows x32)
   type: zip
   
 for:
@@ -53,3 +37,6 @@ for:
   artifacts:
   - path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
     name: ConfuserEx.MSBuild
+
+on_failure:
+- appveyor PushArtifact msbuild.binlog
