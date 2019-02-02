@@ -4,7 +4,6 @@ using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Tree;
-using Confuser.Core.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core {

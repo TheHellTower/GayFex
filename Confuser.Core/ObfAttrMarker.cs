@@ -20,6 +20,7 @@ namespace Confuser.Core {
 	/// <summary>
 	/// Obfuscation Attribute Marker
 	/// </summary>
+	/// <inheritdoc />
 	public partial class ObfAttrMarker : Marker {
 		private struct ObfuscationAttributeInfo {
 			public IHasCustomAttribute Owner;
@@ -37,7 +38,7 @@ namespace Confuser.Core {
 			public string Settings;
 		}
 
-		private static readonly Regex _featurePattern = new Regex("^(?:(\\d+)\\.\\s+)?([^:]+)(?:\\:(.+))?$", RegexOptions.CultureInvariant);
+		private static readonly Regex FeaturePattern = new Regex("^(?:(\\d+)\\.\\s+)?([^:]+)(?:\\:(.+))?$", RegexOptions.CultureInvariant);
 
 		private static IEnumerable<ObfuscationAttributeInfo> ReadObfuscationAttributes(IHasCustomAttribute item, ILogger logger) {
 			var ret = new List<(int? Order, ObfuscationAttributeInfo Info)>();
@@ -85,7 +86,7 @@ namespace Confuser.Core {
 						Debug.Assert(prop.Type.ElementType == ElementType.String);
 						string feature = (UTF8String)prop.Value;
 
-						var match = _featurePattern.Match(feature);
+						var match = FeaturePattern.Match(feature);
 						if (match.Success) {
 							if (match.Groups[1].Success) {
 								var orderStr = match.Groups[1].Value;
@@ -120,7 +121,7 @@ namespace Confuser.Core {
 			};
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
-			
+
 			logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
 			bool ok = ObfAttrParser.TryParse(protections, info.Settings, logger);
 			if (!ok) {
@@ -177,11 +178,6 @@ namespace Confuser.Core {
 			}
 		}
 
-		//private ConfuserContext context;
-		private ConfuserProject project;
-		private IPacker packer;
-		private IDictionary<string, string> packerParams;
-
 		private static readonly object ModuleSettingsKey = new object();
 
 		/// <inheritdoc />
@@ -199,8 +195,11 @@ namespace Confuser.Core {
 		/// <inheritdoc />
 		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
 			//this.context = context ?? throw new ArgumentNullException(nameof(context));
-			project = proj ?? throw new ArgumentNullException(nameof(proj));
+			var project = proj ?? throw new ArgumentNullException(nameof(proj));
 			var extModules = ImmutableArray.CreateBuilder<ReadOnlyMemory<byte>>();
+
+			IPacker packer = null;
+			IDictionary<string, string> packerParams = null;
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
@@ -239,7 +238,7 @@ namespace Confuser.Core {
 				logger.LogInformation("Loading '{0}'...", module.ProjModule.Path);
 
 				var rules = ParseRules(proj, module.ProjModule, context);
-				MarkModule(context, module.ProjModule, module.ModuleDef, rules, module == modules[0], logger, extModules);
+				MarkModule(context, project, module.ProjModule, module.ModuleDef, rules, module == modules[0], logger, extModules, ref packer, ref packerParams);
 
 				context.Annotations.Set(module.ModuleDef, RulesKey, rules);
 
@@ -275,7 +274,7 @@ namespace Confuser.Core {
 				ApplyToMember = (attr.ApplyToMembers ?? true),
 				Settings = attr.FeatureValue
 			};
-			
+
 			logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
 			bool ok = ObfAttrParser.TryParse(protections, info.Settings, logger);
 
@@ -286,8 +285,10 @@ namespace Confuser.Core {
 
 			return info;
 		}
-
-		private void MarkModule(IConfuserContext context, ProjectModule projModule, ModuleDefMD module, Rules rules, bool isMain, ILogger logger, ICollection<ReadOnlyMemory<byte>> extModules) {
+		
+		private void MarkModule(IConfuserContext context, ConfuserProject project, ProjectModule projModule, 
+			ModuleDefMD module, Rules rules, bool isMain, ILogger logger, ICollection<ReadOnlyMemory<byte>> extModules,
+			ref IPacker packer, ref IDictionary<string, string> packerParams) {
 			string snKeyPath = projModule.SNKeyPath, snKeyPass = projModule.SNKeyPassword;
 			var stack = new ProtectionSettingsStack(context, protections);
 
@@ -301,28 +302,28 @@ namespace Confuser.Core {
 				if (string.IsNullOrEmpty(attr.FeatureName) && ToInfo(context, attr, out var info)) {
 					layer.Add(info);
 				}
-				else if (attr.FeatureName.Equals("generate debug symbol", StringComparison.OrdinalIgnoreCase)) {
+				else if (string.Equals(attr.FeatureName, "generate debug symbol", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
 						throw new ArgumentException("Only main module can set 'generate debug symbol'.");
 					project.Debug = bool.Parse(attr.FeatureValue);
 				}
-				else if (attr.FeatureName.Equals("random seed", StringComparison.OrdinalIgnoreCase)) {
+				else if (string.Equals(attr.FeatureName, "random seed", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
 						throw new ArgumentException("Only main module can set 'random seed'.");
 					project.Seed = attr.FeatureValue;
 				}
-				else if (attr.FeatureName.Equals("strong name key", StringComparison.OrdinalIgnoreCase)) {
+				else if (string.Equals(attr.FeatureName, "strong name key", StringComparison.OrdinalIgnoreCase)) {
 					snKeyPath = Path.Combine(project.BaseDirectory, attr.FeatureValue);
 				}
-				else if (attr.FeatureName.Equals("strong name key password", StringComparison.OrdinalIgnoreCase)) {
+				else if (string.Equals(attr.FeatureName, "strong name key password", StringComparison.OrdinalIgnoreCase)) {
 					snKeyPass = attr.FeatureValue;
 				}
-				else if (attr.FeatureName.Equals("packer", StringComparison.OrdinalIgnoreCase)) {
+				else if (string.Equals(attr.FeatureName, "packer", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
 						throw new ArgumentException("Only main module can set 'packer'.");
-				    (packer, packerParams) = ObfAttrParser.ParsePacker(packers, attr.FeatureValue, logger);
+					(packer, packerParams) = ObfAttrParser.ParsePacker(packers, attr.FeatureValue, logger);
 				}
-				else if (attr.FeatureName.Equals("external module", StringComparison.OrdinalIgnoreCase)) {
+				else if (string.Equals(attr.FeatureName, "external module", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
 						throw new ArgumentException("Only main module can add external modules.");
 					var rawModule = new ProjectModule { Path = attr.FeatureValue }.LoadRaw(project.BaseDirectory);
@@ -406,7 +407,7 @@ namespace Confuser.Core {
 				ProcessBody(method, stack, context, logger);
 		}
 
-		private void ProcessMember(IDnlibDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) => 
+		private void ProcessMember(IDnlibDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) =>
 			stack.Apply(method, ReadInfos(method, context, logger)).Dispose();
 
 		private void ProcessBody(MethodDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
