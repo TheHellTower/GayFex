@@ -100,7 +100,7 @@ namespace ConfuserEx.ViewModel {
 					if (token.IsCancellationRequested && newMessages < 10)
 						return;
 
-					await Task.Delay(80).ConfigureAwait(true);
+					await Task.Delay(80, token).ConfigureAwait(true);
 				}
 			}
 			catch (OperationCanceledException) { }

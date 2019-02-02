@@ -1,0 +1,3 @@
+@appveyor_logging.rsp
+
+/target:Restore

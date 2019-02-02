@@ -6,7 +6,7 @@ namespace Confuser.Core {
 	/// <summary>
 	///     Protection settings for a certain component
 	/// </summary>
-	public class ProtectionSettings : Dictionary<IConfuserComponent, Dictionary<string, string>>, IProtectionSettings {
+	public class ProtectionSettings : Dictionary<IConfuserComponent, IDictionary<string, string>>, IProtectionSettings {
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ProtectionSettings" /> class.
 		/// </summary>
@@ -50,9 +50,7 @@ namespace Confuser.Core {
 		///     Determines whether the settings is empty.
 		/// </summary>
 		/// <returns><c>true</c> if the settings is empty; otherwise, <c>false</c>.</returns>
-		public bool IsEmpty() {
-			return Count == 0;
-		}
+		public bool IsEmpty() => Count == 0;
 
 		public void RemoveParameters(IConfuserComponent component) {
 			if (component == null) return;
