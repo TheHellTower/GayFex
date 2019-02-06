@@ -39,7 +39,7 @@ namespace AntiProtections.Test {
 
 		public static IEnumerable<object[]> AntiTamperTestData() {
 			foreach (var framework in GetTargetFrameworks())
-				foreach (var mode in new string[] { "Normal", "Anti" })
+				foreach (var mode in new string[] { "Normal" })
 					yield return new object[] { mode, framework };
 		}
 

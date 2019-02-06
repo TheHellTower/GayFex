@@ -28,7 +28,6 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <Compile Remove="..\antinet\antinet\HandleProcessCorruptedStateExceptionsAttribute.cs" />
     <Compile Remove="AntiDump.cs" />
-    <Compile Remove="AntiTamper.Anti.cs" />
     <Compile Remove="AntiTamper.JIT.cs" />
     <Compile Remove="AntiTamper.Normal.cs" />
     <Compile Remove="RefProxy.Strong.cs" />
