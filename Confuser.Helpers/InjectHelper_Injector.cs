@@ -11,7 +11,7 @@ namespace Confuser.Helpers {
 		/// <summary>
 		///     The injector actually does the injecting.
 		/// </summary>
-		private sealed class Injector : ImportResolver {
+		private sealed class Injector : ImportMapper {
 
 			private readonly Dictionary<IMemberDef, IMemberDef> _injectedMembers;
 
@@ -148,7 +148,7 @@ namespace Confuser.Helpers {
 				var existingMappedMethodDef = InjectContext.ResolveMapped(methodDef);
 				if (existingMappedMethodDef != null) return existingMappedMethodDef;
 
-				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs) { Resolver = this };
+				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs, new GenericParamContext(), this);
 				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
 				var result = InjectMethodDef(methodDef, importer, methodInjectProcessors);
 				InjectRemaining(importer, methodInjectProcessors);
@@ -159,7 +159,7 @@ namespace Confuser.Helpers {
 				var existingMappedTypeDef = InjectContext.ResolveMapped(typeDef);
 				if (existingMappedTypeDef != null) return existingMappedTypeDef;
 
-				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs) { Resolver = this };
+				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs, new GenericParamContext(), this);
 				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
 				var result = InjectTypeDef(typeDef, importer);
 				foreach (var method in typeDef.Methods) CopyDef(method);
@@ -385,33 +385,36 @@ namespace Confuser.Helpers {
 				return newPropertyDef;
 			}
 
-			#region ImportResolver
+			#region ImportMapper
 
-			public override TypeDef Resolve(TypeDef typeDef) {
-				var mappedType = InjectContext.ResolveMapped(typeDef);
-				if (mappedType != null) return mappedType;
+			public override ITypeDefOrRef Map(ITypeDefOrRef typeDefOrRef) {
+				if (typeDefOrRef is TypeDef typeDef) {
+					var mappedType = InjectContext.ResolveMapped(typeDef);
+					if (mappedType != null) return mappedType;
 
-				if (typeDef.Module == InjectContext.OriginModule)
-					return CopyDef(typeDef);
-				return base.Resolve(typeDef);
+					if (typeDef.Module == InjectContext.OriginModule)
+						return CopyDef(typeDef);
+				}
+
+				return base.Map(typeDefOrRef);
 			}
 
-			public override MethodDef Resolve(MethodDef methodDef) {
+			public override IMethod Map(MethodDef methodDef) {
 				var mappedMethod = InjectContext.ResolveMapped(methodDef);
 				if (mappedMethod != null) return mappedMethod;
 
 				if (methodDef.Module == InjectContext.OriginModule)
 					return CopyDef(methodDef);
-				return base.Resolve(methodDef);
+				return base.Map(methodDef);
 			}
 
-			public override FieldDef Resolve(FieldDef fieldDef) {
+			public override IField Map(FieldDef fieldDef) {
 				var mappedField = InjectContext.ResolveMapped(fieldDef);
 				if (mappedField != null) return mappedField;
 
 				if (fieldDef.Module == InjectContext.OriginModule)
 					return CopyDef(fieldDef);
-				return base.Resolve(fieldDef);
+				return base.Map(fieldDef);
 			}
 
 			#endregion

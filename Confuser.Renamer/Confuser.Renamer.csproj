@@ -10,6 +10,11 @@
     <Description>Renaming analysis of ConfuserEx</Description>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="..\dnlib\src\DotNet\GenericArguments.cs" Link="GenericArguments.cs" />
+    <Compile Include="..\dnlib\src\DotNet\RecursionCounter.cs" Link="RecursionCounter.cs" />
+  </ItemGroup>
+
   <ItemGroup Label="Nuget Dependencies">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />

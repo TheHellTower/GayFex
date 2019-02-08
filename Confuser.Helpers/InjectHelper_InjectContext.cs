@@ -8,7 +8,7 @@ namespace Confuser.Helpers {
 		/// <summary>
 		///     The inject context is used to store what definitions were injected from one module into another.
 		/// </summary>
-		private sealed class InjectContext : ImportResolver {
+		private sealed class InjectContext {
 			/// <summary>
 			///     The mapping of origin definitions to injected definitions.
 			/// </summary>
