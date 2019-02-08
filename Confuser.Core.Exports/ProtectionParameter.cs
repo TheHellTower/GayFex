@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Confuser.Core.Parameter;
 
 namespace Confuser.Core {
+	[SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames")]
 	public static class ProtectionParameter {
 		public static IReadOnlyDictionary<string, IProtectionParameter> EmptyDictionary =>
 			ImmutableDictionary.Create<string, IProtectionParameter>(StringComparer.OrdinalIgnoreCase);
@@ -42,7 +44,7 @@ namespace Confuser.Core {
 
 		public static  IProtectionParameter<T> Enum<T>(string name, T defaultValue) where T:struct {
 			CheckName(name);
-			if (!typeof(T).IsEnum) throw new ArgumentException("Type is expected to be a enum.", nameof(T));
+			if (!typeof(T).IsEnum) throw new NotSupportedException("Type is expected to be a enum.");
 			if (!System.Enum.IsDefined(typeof(T), defaultValue)) throw new ArgumentException("The default value has to be defined by the enum.", nameof(defaultValue));
 
 			return new EnumProtectionParameter<T>(name, defaultValue);

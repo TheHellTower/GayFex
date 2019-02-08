@@ -3,8 +3,13 @@ using System.Collections.Immutable;
 using dnlib.DotNet;
 
 namespace Confuser.Core {
-	public struct EmptyProtectionParameters : IProtectionParameters {
+	/// <inheritdoc cref="IProtectionParameters" />
+	public sealed class EmptyProtectionParameters : IProtectionParameters {
+		public static IProtectionParameters Instance { get; } = new EmptyProtectionParameters();
+
 		IImmutableList<IDnlibDef> IProtectionParameters.Targets => ImmutableArray.Create<IDnlibDef>();
+
+		private EmptyProtectionParameters() { }
 
 		T IProtectionParameters.GetParameter<T>(IConfuserContext context, IDnlibDef target, IProtectionParameter<T> parameter) {
 			if (context == null) throw new ArgumentNullException(nameof(context));

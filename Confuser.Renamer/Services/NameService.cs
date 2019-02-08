@@ -106,7 +106,7 @@ namespace Confuser.Renamer.Services {
 				GetVTables().GetVTable((TypeDef)def);
 				SetOriginalNamespace(context, def, ((TypeDef)def).Namespace);
 			}
-			analyze.Analyze(this, context, new EmptyProtectionParameters(), def, true);
+			analyze.Analyze(this, context, EmptyProtectionParameters.Instance, def, true);
 		}
 
 		public void SetNameId(uint id) {
