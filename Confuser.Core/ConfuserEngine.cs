@@ -568,7 +568,7 @@ namespace Confuser.Core {
 
 			if (context.Resolver != null) {
 				buildMsg.AppendLine("Cached assemblies:");
-				foreach (var asm in context.Resolver.GetCachedAssemblies()) {
+				foreach (var asm in context.Resolver.GetCachedAssemblies().Where(def => def != null)) {
 					if (string.IsNullOrEmpty(asm.ManifestModule.Location))
 						buildMsg.AppendFormat("    {0}", asm.FullName).AppendLine();
 					else
