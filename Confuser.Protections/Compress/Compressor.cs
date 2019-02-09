@@ -211,8 +211,11 @@ namespace Confuser.Protections {
 				repl.AddRange(args);
 				repl.Add(Instruction.Create(OpCodes.Dup));
 				repl.Add(Instruction.Create(OpCodes.Ldtoken, dataField));
-				repl.Add(Instruction.Create(OpCodes.Call, stubModule.Import(
-					typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.InitializeArray)))));
+
+				var runtimeHelper =
+					context.CurrentModule.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "RuntimeHelpers");
+				var initArrayDef = runtimeHelper.ResolveThrow().FindMethod("InitializeArray");
+				repl.Add(Instruction.Create(OpCodes.Call, stubModule.Import(initArrayDef)));
 				return repl;
 			};
 		}

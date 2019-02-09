@@ -123,8 +123,11 @@ namespace Confuser.Protections.Resources {
 						repl.AddRange(arg);
 						repl.Add(Instruction.Create(OpCodes.Dup));
 						repl.Add(Instruction.Create(OpCodes.Ldtoken, moduleCtx.DataField));
-						repl.Add(Instruction.Create(OpCodes.Call, moduleCtx.Module.Import(
-							typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.InitializeArray)))));
+
+						var runtimeHelper =
+							context.CurrentModule.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "RuntimeHelpers");
+						var initArrayDef = runtimeHelper.ResolveThrow().FindMethod("InitializeArray");
+						repl.Add(Instruction.Create(OpCodes.Call, moduleCtx.Module.Import(initArrayDef)));
 						return repl;
 					},
 					LateKeyFieldValues = lateMutationKeys
