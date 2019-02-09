@@ -16,64 +16,15 @@ namespace Confuser.Runtime {
 		static compileMethod handler;
 
 		public static void Initialize() {
-			Module m = typeof(AntiTamperNormal).Module;
-			string n = m.FullyQualifiedName;
-			bool f = n.Length > 0 && n[0] == '<';
-			var b = (byte*)Marshal.GetHINSTANCE(m);
-			byte* p = b + *(uint*)(b + 0x3c);
-			ushort s = *(ushort*)(p + 0x6);
-			ushort o = *(ushort*)(p + 0x14);
-
-			uint* e = null;
-			uint l = 0;
-			var r = (uint*)(p + 0x18 + o);
-			uint z = (uint)Mutation.KeyI1, x = (uint)Mutation.KeyI2, c = (uint)Mutation.KeyI3, v = (uint)Mutation.KeyI4;
-			for (int i = 0; i < s; i++) {
-				uint g = (*r++) * (*r++);
-				if (g == (uint)Mutation.KeyI0) {
-					e = (uint*)(b + (f ? *(r + 3) : *(r + 1)));
-					l = (f ? *(r + 2) : *(r + 0)) >> 2;
-				}
-				else if (g != 0) {
-					var q = (uint*)(b + (f ? *(r + 3) : *(r + 1)));
-					uint j = *(r + 2) >> 2;
-					for (uint k = 0; k < j; k++) {
-						uint t = (z ^ (*q++)) + x + c * v;
-						z = x;
-						x = c;
-						x = v;
-						v = t;
-					}
-				}
-				r += 8;
-			}
-
-			uint[] y = new uint[0x10], d = new uint[0x10];
-			for (int i = 0; i < 0x10; i++) {
-				y[i] = v;
-				d[i] = x;
-				z = (x >> 5) | (x << 27);
-				x = (c >> 3) | (c << 29);
-				c = (v >> 7) | (v << 25);
-				v = (z >> 11) | (z << 21);
-			}
-			Mutation.Crypt(y, d);
-
-			uint h = 0;
-			uint* u = e;
-			VirtualProtect((IntPtr)e, l << 2, 0x40, out z);
-			for (uint i = 0; i < l; i++) {
-				*e ^= y[h & 0xf];
-				y[h & 0xf] = (y[h & 0xf] ^ (*e++)) + 0x3dbb2819;
-				h++;
-			}
+			var module = typeof(AntiTamperNormal).Module;
+			var u = (uint*)AntiTamperNormal.DecryptSections(module);
 
 			ptr = u + 4;
 			len = *ptr++;
 
 			ver4 = Environment.Version.Major == 4;
 			ver5 = ver4 && Environment.Version.Revision > 17020;
-			ModuleHandle hnd = m.ModuleHandle;
+			ModuleHandle hnd = module.ModuleHandle;
 			var obj = GetFieldValue(hnd, "m_ptr");
 			if (obj is IntPtr) {
 				moduleHnd = (IntPtr)obj;
@@ -93,15 +44,6 @@ namespace Confuser.Runtime {
 			return field.GetValue(obj);
 		}
 
-		[DllImport("kernel32.dll")]
-		static extern IntPtr LoadLibrary(string lib);
-
-		[DllImport("kernel32.dll")]
-		static extern IntPtr GetProcAddress(IntPtr lib, string proc);
-
-		[DllImport("kernel32.dll")]
-		static extern bool VirtualProtect(IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
-
 		static void Hook() {
 			ulong* ptr = stackalloc ulong[2];
 			if (ver4) {
@@ -112,9 +54,9 @@ namespace Confuser.Runtime {
 				ptr[0] = 0x74696a726f63736d; //mscorjit
 				ptr[1] = 0x000000006c6c642e; //.dll....
 			}
-			IntPtr jit = LoadLibrary(new string((sbyte*)ptr));
+			IntPtr jit = NativeMethods.LoadLibrary(new string((sbyte*)ptr));
 			ptr[0] = 0x000074694a746567; //getJit
-			var get = (getJit)Marshal.GetDelegateForFunctionPointer(GetProcAddress(jit, new string((sbyte*)ptr)), typeof(getJit));
+			var get = (getJit)Marshal.GetDelegateForFunctionPointer(NativeMethods.GetProcAddress(jit, new string((sbyte*)ptr)), typeof(getJit));
 			IntPtr hookPosition = *get();
 			IntPtr original = *(IntPtr*)hookPosition;
 
@@ -126,7 +68,7 @@ namespace Confuser.Runtime {
 				tptr[0] = 0xffffffffffffb848;
 				tptr[1] = 0x90909090e0ffffff;
 
-				VirtualProtect(trampoline, 12, 0x40, out oldPl);
+				NativeMethods.VirtualProtect(trampoline, 12, 0x40, out oldPl);
 				Marshal.WriteIntPtr(trampoline, 2, original);
 			}
 			else {
@@ -134,7 +76,7 @@ namespace Confuser.Runtime {
 				var tptr = (ulong*)trampoline;
 				tptr[0] = 0x90e0ffffffffffb8;
 
-				VirtualProtect(trampoline, 7, 0x40, out oldPl);
+				NativeMethods.VirtualProtect(trampoline, 7, 0x40, out oldPl);
 				Marshal.WriteIntPtr(trampoline, 1, original);
 			}
 
@@ -144,9 +86,9 @@ namespace Confuser.Runtime {
 			RuntimeHelpers.PrepareDelegate(originalDelegate);
 			RuntimeHelpers.PrepareDelegate(handler);
 
-			VirtualProtect(hookPosition, (uint)IntPtr.Size, 0x40, out oldPl);
+			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, 0x40, out oldPl);
 			Marshal.WriteIntPtr(hookPosition, Marshal.GetFunctionPointerForDelegate(handler));
-			VirtualProtect(hookPosition, (uint)IntPtr.Size, oldPl, out oldPl);
+			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, oldPl, out oldPl);
 		}
 
 		static void ExtractLocalVars(CORINFO_METHOD_INFO* info, uint len, byte* localVar) {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -17,7 +18,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.AntiTamper {
-	internal sealed class NormalMode : IModeHandler {
+	internal class NormalMode : IModeHandler {
+		// ReSharper disable InconsistentNaming
+		protected const uint CNT_CODE = 0x20;
+		protected const uint CNT_INITIALIZED_DATA = 0x40;
+		protected const uint MEM_EXECUTE = 0x20000000;
+		protected const uint MEM_READ = 0x40000000;
+		protected const uint MEM_WRITE = 0x80000000;
+		// ReSharper restore InconsistentNaming
+
 		/// <summary>The deriver of the key that is used to encrypt the bodies of the protected methods.</summary>
 		private IKeyDeriver _deriver;
 
@@ -33,12 +42,35 @@ namespace Confuser.Protections.AntiTamper {
 		private uint _x;
 		private uint _z;
 
-		public void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
-			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
+		protected IReadOnlyList<MethodDef> Methods => _methods;
 
+		void IModeHandler.HandleInject(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) => HandleInject(parent, context, parameters);
+
+		protected virtual void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
 			logger.LogMsgNormalModeStart(context.CurrentModule);
 
 			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
+			InitParameters(parent, context, parameters, random);
+
+			var injectResult = InjectRuntime(parent, context, "Confuser.Runtime.AntiTamperNormal");
+			if (injectResult == null) {
+				logger.LogMsgNormalModeRuntimeMissing();
+				return;
+			}
+
+			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
+
+			var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
+			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
+			antiTamper.ExcludeMethod(context, cctor);
+
+			logger.LogMsgNormalModeInjectDone(context.CurrentModule);
+		}
+
+		protected virtual void InitParameters(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters, IRandomGenerator random) {
 			_z = random.NextUInt32();
 			_x = random.NextUInt32();
 			_c = random.NextUInt32();
@@ -57,13 +89,11 @@ namespace Confuser.Protections.AntiTamper {
 					throw new UnreachableException();
 			}
 			_deriver.Init(context, random);
+		}
 
-			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
-				.Add(MutationField.KeyI0, (int)(_sectionName.Part1 * _sectionName.Part2))
-				.Add(MutationField.KeyI1, (int)_z)
-				.Add(MutationField.KeyI2, (int)_x)
-				.Add(MutationField.KeyI3, (int)_c)
-				.Add(MutationField.KeyI4, (int)_v);
+		protected InjectResult<MethodDef> InjectRuntime(AntiTamperProtection parent, IConfuserContext context, string runtimeTypeName) {
+			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
+			var mutationKeys = CreateMutationKeys();
 
 			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
@@ -71,11 +101,8 @@ namespace Confuser.Protections.AntiTamper {
 
 			logger.LogMsgNormalModeInjectStart(context.CurrentModule);
 
-			var antiTamperInit = context.GetInitMethod("Confuser.Runtime.AntiTamperNormal", context.CurrentModule);
-			if (antiTamperInit == null) {
-				logger.LogMsgNormalModeRuntimeMissing();
-				return;
-			}
+			var antiTamperInit = context.GetInitMethod(runtimeTypeName, context.CurrentModule);
+			if (antiTamperInit == null) return null;
 
 			var injectResult = InjectHelper.Inject(antiTamperInit, context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
@@ -90,14 +117,21 @@ namespace Confuser.Protections.AntiTamper {
 					antiTamper.ExcludeMethod(context, methodDef);
 			}
 
-			var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
-			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
-			antiTamper.ExcludeMethod(context, cctor);
-
-			logger.LogMsgNormalModeInjectDone(context.CurrentModule);
+			return injectResult;
 		}
 
-		public void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+		protected virtual IImmutableDictionary<MutationField, int> CreateMutationKeys() =>
+			ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, (int)(_sectionName.Part1 * _sectionName.Part2))
+				.Add(MutationField.KeyI1, (int)_z)
+				.Add(MutationField.KeyI2, (int)_x)
+				.Add(MutationField.KeyI3, (int)_c)
+				.Add(MutationField.KeyI4, (int)_v);
+
+		void IModeHandler.HandleMD(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) => HandleMD(parent, context, parameters);
+
+		protected virtual void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
 			_methods = parameters.Targets.OfType<MethodDef>().ToList();
 			context.CurrentModuleWriterOptions.WriterEvent += WriterEvent;
 		}
@@ -115,27 +149,30 @@ namespace Confuser.Protections.AntiTamper {
 			}
 		}
 
-		[SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
-		private void CreateSections(ModuleWriterBase writer) {
-			var nameBuffer = new byte[8];
-			nameBuffer[0] = (byte)(_sectionName.Part1 >> 0);
-			nameBuffer[1] = (byte)(_sectionName.Part1 >> 8);
-			nameBuffer[2] = (byte)(_sectionName.Part1 >> 16);
-			nameBuffer[3] = (byte)(_sectionName.Part1 >> 24);
-			nameBuffer[4] = (byte)(_sectionName.Part2 >> 0);
-			nameBuffer[5] = (byte)(_sectionName.Part2 >> 8);
-			nameBuffer[6] = (byte)(_sectionName.Part2 >> 16);
-			nameBuffer[7] = (byte)(_sectionName.Part2 >> 24);
+		protected string CreateEncryptedSectionName() {
+			var nameBuffer = ArrayPool<byte>.Shared.Rent(8);
+			try {
+				nameBuffer[0] = (byte)(_sectionName.Part1 >> 0);
+				nameBuffer[1] = (byte)(_sectionName.Part1 >> 8);
+				nameBuffer[2] = (byte)(_sectionName.Part1 >> 16);
+				nameBuffer[3] = (byte)(_sectionName.Part1 >> 24);
+				nameBuffer[4] = (byte)(_sectionName.Part2 >> 0);
+				nameBuffer[5] = (byte)(_sectionName.Part2 >> 8);
+				nameBuffer[6] = (byte)(_sectionName.Part2 >> 16);
+				nameBuffer[7] = (byte)(_sectionName.Part2 >> 24);
+				return Encoding.ASCII.GetString(nameBuffer, 0, 8);
+			}
+			finally {
+				ArrayPool<byte>.Shared.Return(nameBuffer);
+			}
+		}
 
-			// ReSharper disable InconsistentNaming
-			const uint CNT_INITIALIZED_DATA = 0x40;
-			const uint MEM_EXECUTE = 0x20000000;
-			const uint MEM_READ = 0x40000000;
-			const uint MEM_WRITE = 0x80000000;
-			// ReSharper restore InconsistentNaming
+		[SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
+		protected virtual void CreateSections(ModuleWriterBase writer) {
 
 			var newSection = new PESection(
-				Encoding.ASCII.GetString(nameBuffer), CNT_INITIALIZED_DATA | MEM_EXECUTE | MEM_READ | MEM_WRITE);
+				CreateEncryptedSectionName(), 
+				CNT_INITIALIZED_DATA | MEM_EXECUTE | MEM_READ | MEM_WRITE);
 			writer.Sections.Insert(0, newSection); // insert first to ensure proper RVA
 
 			var alignment = writer.TextSection.Remove(writer.Metadata).Value;
@@ -148,7 +185,7 @@ namespace Confuser.Protections.AntiTamper {
 			newSection.Add(writer.Constants, alignment);
 
 			// move some PE parts to separate section to prevent it from being hashed
-			var peSection = new PESection("", 0x60000020);
+			var peSection = new PESection("", CNT_CODE | MEM_EXECUTE | MEM_READ);
 			bool moved = false;
 			if (writer.StrongNameSignature != null) {
 				alignment = writer.TextSection.Remove(writer.StrongNameSignature).Value;
@@ -174,7 +211,7 @@ namespace Confuser.Protections.AntiTamper {
 			// move encrypted methods
 			var encryptedChunk = new MethodBodyChunks(writer.TheOptions.ShareMethodBodies);
 			newSection.Add(encryptedChunk, 4);
-			foreach (var method in _methods) {
+			foreach (var method in Methods) {
 				if (!method.HasBody) continue;
 				var body = writer.Metadata.GetMethodBody(method);
 				writer.MethodBodies.Remove(body);

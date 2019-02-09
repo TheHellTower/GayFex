@@ -1,17 +1,20 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Confuser.Runtime {
 	internal static class AntiTamperNormal {
-		[DllImport("kernel32.dll")]
-		private static extern bool VirtualProtect(IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+		// ReSharper disable once UnusedMember.Global
+		/// <remarks>
+		/// This method is invoked from the module initializer. The reference is build during injection.
+		/// </remarks>
+		internal static void Initialize() => DecryptSections(typeof(AntiTamperNormal).Module);
 
 		// ReSharper disable once UnusedMember.Global
 		/// <remarks>
 		/// This method is invoked from the module initializer. The reference is build during injection.
 		/// </remarks>
-		internal static unsafe void Initialize() {
-			var module = typeof(AntiTamperNormal).Module;
+		internal static unsafe IntPtr DecryptSections(Module module) {
 			string moduleName = module.FullyQualifiedName;
 			bool usePhysical = moduleName.Length > 0 && moduleName[0] == '<';
 			var startOfModulePtr = (byte*)Marshal.GetHINSTANCE(module);
@@ -64,25 +67,28 @@ namespace Confuser.Runtime {
 			// Request access to the memory section so it can be modified
 			// (normally parts of the program code aren't writable)
 			uint protectionOption = MemoryProtectionConstants.PAGE_EXECUTE_READWRITE;
-			if (!VirtualProtect((IntPtr)encPos, encSize << 2, protectionOption, out protectionOption)) {
+			if (!NativeMethods.VirtualProtect((IntPtr)encPos, encSize << 2, protectionOption, out protectionOption)) {
 				// Changing the access to the memory page was rejected for some reason.
 				// Maybe someone tampered with the assembly and the key was not decoded correctly anymore.
 				// Nothing more to do here.
-				return;
+				return IntPtr.Zero;
 			}
 
 			// The previous protection option was already set to execute, read, write.
 			// The decryption is either already done or something went wrong.
 			if (protectionOption == MemoryProtectionConstants.PAGE_EXECUTE_READWRITE)
-				return;
+				return IntPtr.Zero;
 
 			// Now transform the memory with the decoded key so the method bodies become visible.
 			uint h = 0;
+			var result = (IntPtr)encPos;
 			for (uint i = 0; i < encSize; i++) {
 				*encPos ^= y[h & 0xf];
 				y[h & 0xf] = (y[h & 0xf] ^ (*encPos++)) + 0x3dbb2819;
 				h++;
 			}
+
+			return result;
 		}
 	}
 }
