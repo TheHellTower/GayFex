@@ -190,8 +190,11 @@ namespace Confuser.Protections.Constants {
 				repl.AddRange(args);
 				repl.Add(Instruction.Create(OpCodes.Dup));
 				repl.Add(Instruction.Create(OpCodes.Ldtoken, moduleCtx.DataField));
-				repl.Add(Instruction.Create(OpCodes.Call, context.CurrentModule.Import(
-					typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.InitializeArray)))));
+
+				var runtimeHelper =
+					context.CurrentModule.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "RuntimeHelpers");
+				var initArrayDef = runtimeHelper.ResolveThrow().FindMethod("InitializeArray");
+				repl.Add(Instruction.Create(OpCodes.Call, context.CurrentModule.Import(initArrayDef)));
 				return repl;
 			};
 		}
