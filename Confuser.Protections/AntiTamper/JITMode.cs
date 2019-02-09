@@ -149,7 +149,8 @@ namespace Confuser.Protections.AntiTamper {
 			newSection.Add(new ByteArrayChunk(_random.NextBytes(0x10).ToArray()), 0x10);
 
 			// create index
-			var bodyIndex = new JITBodyIndex(Methods.Select(method => writer.Metadata.GetToken(method).Raw));
+			var methodsWithBody = Methods.RemoveAll(m => !m.HasBody);
+			var bodyIndex = new JITBodyIndex(methodsWithBody.Select(method => writer.Metadata.GetToken(method).Raw));
 			newSection.Add(bodyIndex, 0x10);
 
 			var nopBody = new CilBody {
@@ -160,10 +161,7 @@ namespace Confuser.Protections.AntiTamper {
 			};
 
 			// save methods
-			foreach (var method in Methods) {//.WithProgress(logger)) {
-				if (!method.HasBody)
-					continue;
-
+			foreach (var method in methodsWithBody) {//.WithProgress(logger)) {
 				var token = writer.Metadata.GetToken(method);
 
 				var jitBody = new JITMethodBody();

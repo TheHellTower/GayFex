@@ -30,9 +30,6 @@ namespace Confuser.Protections.AntiTamper {
 		/// <summary>The deriver of the key that is used to encrypt the bodies of the protected methods.</summary>
 		private IKeyDeriver _deriver;
 
-		/// <summary>The methods that will to protected against tampering.</summary>
-		private List<MethodDef> _methods;
-
 		/// <summary>The name of the section split into two 4 byte parts.</summary>
 		private (uint Part1, uint Part2) _sectionName;
 
@@ -41,8 +38,9 @@ namespace Confuser.Protections.AntiTamper {
 		private uint _v;
 		private uint _x;
 		private uint _z;
-
-		protected IReadOnlyList<MethodDef> Methods => _methods;
+		
+		/// <summary>The methods that will to protected against tampering.</summary>
+		protected IImmutableList<MethodDef> Methods { get; private set; }
 
 		void IModeHandler.HandleInject(AntiTamperProtection parent, IConfuserContext context,
 			IProtectionParameters parameters) => HandleInject(parent, context, parameters);
@@ -132,7 +130,7 @@ namespace Confuser.Protections.AntiTamper {
 			IProtectionParameters parameters) => HandleMD(parent, context, parameters);
 
 		protected virtual void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
-			_methods = parameters.Targets.OfType<MethodDef>().ToList();
+			Methods = parameters.Targets.OfType<MethodDef>().ToImmutableList();
 			context.CurrentModuleWriterOptions.WriterEvent += WriterEvent;
 		}
 
