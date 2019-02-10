@@ -1,8 +1,8 @@
 using System.Reflection;
 
-[assembly: AssemblyProduct("ConfuserEx")]
-[assembly: AssemblyCompany("Ki")]
-[assembly: AssemblyCopyright("Copyright (C) Ki 2014")]
+[assembly: AssemblyProduct("ConfuserEx 2")]
+[assembly: AssemblyCompany("Martin Karing")]
+[assembly: AssemblyCopyright("Copyright © 2018 - 2019 Martin Karing")]
 
 #if DEBUG
 

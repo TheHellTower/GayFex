@@ -1,27 +1,35 @@
 # ConfuserEx 2
 
 [![Build status](https://ci.appveyor.com/api/projects/status/so65dx6p7gq3f14l/branch/release/2.0?svg=true)](https://ci.appveyor.com/project/mkaring/confuserex/branch/release/2.0)
+[![CodeFactor](https://www.codefactor.io/repository/github/mkaring/confuserex/badge/release/2.0)](https://www.codefactor.io/repository/github/mkaring/confuserex/overview/release/2.0)
 
-ConfuserEx is a open-source protector for .NET applications.
+ConfuserEx 2 is a open-source protector for .NET applications.
 It is the successor of [Confuser](http://confuser.codeplex.com) project and the [ConfuserEx](https://yck1509.github.io/ConfuserEx/) project.
 
 The development is currently in alpha stage. While the features of the original ConfuserEx are implementedand working,
-the features that are part of the new version 2.0 are still in development and may be yield the desired results.
+the features that are part of the new version 2.0 are still in development and may not yield the desired results.
 
 ## Features
 
-* Supports .NET Framework 2.0/3.0/3.5/4.0/4.5/4.6/4.7
-* Symbol renaming (Support WPF/BAML)
-* Protection against debuggers/profilers
-* Protection against memory dumping
-* Protection against tampering (method encryption)
-* Control flow obfuscation
-* _Type Scrambling using Generics (current not working in case generic classes are present in the protected assembly.)_
-* Constant/resources encryption
-* Reference hiding proxies
-* Disable decompilers
-* Embedding dependency
-* Compressing output
+* Supported runtimes:
+  * .NET Framework 2.0 - 4.7.2
+  * .NET Standard  1.0 - 2.0
+  * .NET Core      1.0 - 2.2
+* Protections
+  * Symbol renaming (Support WPF/BAML)
+  * Protection against debuggers/profilers
+  * Protection against memory dumping
+  * Protection against tampering (method encryption)
+  * Control flow obfuscation
+  * Constant/resources encryption
+  * Reference hiding proxies
+  * Disable decompilers
+* Optimizations
+  * Compiling regular expressions
+  * Optimizing tail calls and tail recursions
+* Deployment
+  * Embedding dependency
+  * Compressing output
 * Extensible plugin API based on the [Managed Extensibility Framework (MEF)](https://docs.microsoft.com/dotnet/framework/mef/ "Managed Extensibility Framework (MEF) | Microsoft Docs")
 * MSBuild Integration
 
@@ -53,12 +61,23 @@ or it has to be self-hosted.
 
 
 # Bug Report
+
 See the [Issues Report](https://github.com/mkaring/ConfuserEx/issues) section of website.
 
+# Supporting ConfuserEx 2
+
+I gladly accept pull-request for bugs and new additions to ConfuserEx. If you noticed any problem or have and idea how
+to improve ConfuserEx 2, do not hesitate to add those ideas as feature requests to the 
+[Issues](https://github.com/mkaring/ConfuserEx/issues) section.
 
 # License
 
 Licensed under the MIT license. See [LICENSE.md](LICENSE.md) for details.
+
+# Donation
+
+If you find ConfuserEx 2 helpful and want to donate to support my work on the project you can support me on
+[liberapay](https://liberapay.com/mkaring/) or you can [buy me a coffee](http://buymeacoff.ee/fFUnXMCdW) :coffee:.
 
 # Credits
 

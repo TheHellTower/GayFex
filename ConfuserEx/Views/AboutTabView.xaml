@@ -39,12 +39,12 @@
 
                 <StackPanel TextBlock.FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                     <Label FontWeight="Bold">ConfuserEx, a .NET protector</Label>
-                    <Label>Developed by Ki, open sourced under MIT license.</Label>
+                    <Label>Developed by Martin Karing, open sourced under MIT license.</Label>
                     <Label>
                         <TextBlock>
-                            <Hyperlink NavigateUri="http://yck1509.github.io/ConfuserEx/"
+                            <Hyperlink NavigateUri="https://github.com/mkaring/ConfuserEx"
                                        Command="{Binding LaunchBrowser}"
-                                       CommandParameter="http://yck1509.github.io/ConfuserEx/">
+                                       CommandParameter="https://github.com/mkaring/ConfuserEx">
                                 Visit the project page for details.
                             </Hyperlink>
                         </TextBlock>
@@ -54,9 +54,9 @@
                     <Label>If you like it or find it useful,</Label>
                     <Label>
                         <TextBlock>
-                            <Hyperlink NavigateUri="http://yck1509.github.io/ConfuserEx/#donation"
+                            <Hyperlink NavigateUri="https://github.com/mkaring/ConfuserEx/#donation"
                                        Command="{Binding LaunchBrowser}"
-                                       CommandParameter="http://yck1509.github.io/ConfuserEx/#donation">
+                                       CommandParameter="https://github.com/mkaring/ConfuserEx/#donation">
                                 feel free to support the project by making a donation!
                             </Hyperlink>
                         </TextBlock>
@@ -77,7 +77,7 @@
             <StackPanel Grid.Column="1" Grid.RowSpan="3" TextBlock.FontSize="13" Margin="10"
                         VerticalAlignment="Stretch" HorizontalAlignment="Center">
                 <Label HorizontalContentAlignment="Center">Special Thanks to:</Label>
-                <Label HorizontalContentAlignment="Center">0xd4d</Label>
+                <Label HorizontalContentAlignment="Center">yck1509</Label>
                 <Label HorizontalContentAlignment="Center">CodeCracker</Label>
                 <Label HorizontalContentAlignment="Center">JeRRy</Label>
                 <Label HorizontalContentAlignment="Center">kao</Label>
