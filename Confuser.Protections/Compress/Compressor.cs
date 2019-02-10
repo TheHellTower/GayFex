@@ -5,7 +5,6 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -117,7 +116,7 @@ namespace Confuser.Protections {
 			return GetId(assembly);
 		}
 
-		private static string GetId(IAssembly assembly) =>
+		private static string GetId(IFullName assembly) =>
 			new SR.AssemblyName(assembly.FullName).FullName.ToUpperInvariant();
 
 		private void PackModules(IConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, IRandomGenerator random, ILogger logger, CancellationToken token) {
@@ -135,7 +134,7 @@ namespace Confuser.Protections {
 					maxLen = strLen;
 			}
 			foreach (var extModule in context.ExternalModules) {
-				var name = GetId(extModule).ToUpperInvariant();
+				var name = GetId(extModule);
 				modules.Add(name, extModule);
 
 				int strLen = Encoding.UTF8.GetByteCount(name);
