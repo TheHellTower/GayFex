@@ -188,7 +188,7 @@ namespace Confuser.Core.Services {
 			int push, pop;
 			instr.CalculateStackUsage(out push, out pop); // pop is number of arguments
 			if (pop == 0)
-				return new int[0];
+				return Array.Empty<int>();
 
 			int instrIndex = offset2index[instr.Offset];
 			int argCount = pop;

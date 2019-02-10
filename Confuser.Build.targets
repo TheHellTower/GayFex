@@ -1,7 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <ItemGroup>
-    <PackageReference Include="SourceLink.Create.CommandLine" Version="*" PrivateAssets="all" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="*" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="*" PrivateAssets="all"
             Condition="'$(EnableCodeAnalysis)' != 'false'" />
@@ -62,10 +61,12 @@
       <_ConfuserRuntimeEmbeddedResource Include="@(_ConfuserCoreRuntimeBuildOutput)">
         <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETFramework'">%(Filename).net$([System.String]::Copy('%(TargetFrameworkVersion)').Replace('.', ''))%(Extension)</Link>
         <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETStandard'">%(Filename).netstandard%(TargetFrameworkVersion)%(Extension)</Link>
+        <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp'">%(Filename).netcoreapp%(TargetFrameworkVersion)%(Extension)</Link>
       </_ConfuserRuntimeEmbeddedResource>
       <_ConfuserRuntimeEmbeddedResource Include="@(_ConfuserCoreRuntimeBuildOutput->'%(RootDir)%(Directory)%(Filename).pdb')">
         <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETFramework'">%(Filename).net$([System.String]::Copy('%(TargetFrameworkVersion)').Replace('.', '')).pdb</Link>
         <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETStandard'">%(Filename).netstandard%(TargetFrameworkVersion).pdb</Link>
+        <Link Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp'">%(Filename).netcoreapp%(TargetFrameworkVersion).pdb</Link>
       </_ConfuserRuntimeEmbeddedResource>
     </ItemGroup>
     <ItemGroup>

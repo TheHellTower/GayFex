@@ -28,9 +28,6 @@ namespace Confuser.Protections.AntiTamper {
 			case AntiTamperMode.Normal:
 				modeHandler = new NormalMode();
 				break;
-			case AntiTamperMode.Anti:
-				modeHandler = new AntiMode();
-				break;
 			case AntiTamperMode.JIT:
 				modeHandler = new JITMode();
 				break;

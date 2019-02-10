@@ -13,7 +13,6 @@ namespace AntiProtections.Test {
 
 		[Theory]
 		[MemberData(nameof(AntiTamperTestData))]
-		[MemberData(nameof(AntiTamperSkippedTestData), Skip = "Runtime Component of the JIT AntiTamper protection is broken.")]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "anti tamper")]
 		public async Task ProtectAntiTamperAndExecute(string antiTamperMode, string framework) {
@@ -39,13 +38,7 @@ namespace AntiProtections.Test {
 
 		public static IEnumerable<object[]> AntiTamperTestData() {
 			foreach (var framework in GetTargetFrameworks())
-				foreach (var mode in new string[] { "Normal", "Anti" })
-					yield return new object[] { mode, framework };
-		}
-
-		public static IEnumerable<object[]> AntiTamperSkippedTestData() {
-			foreach (var framework in GetTargetFrameworks())
-				foreach (var mode in new string[] { "JIT" })
+				foreach (var mode in new string[] { "Normal", "JIT" })
 					yield return new object[] { mode, framework };
 		}
 	}

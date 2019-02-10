@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Compile Remove="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
+    <Compile Include="..\Confuser.Core\SevenZipGlobalSuppressions.cs" Link="SevenZipGlobalSuppressions.cs" />
     <None Include="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
   </ItemGroup>
 

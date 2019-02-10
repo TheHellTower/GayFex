@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,104 +15,165 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
 using Microsoft.Extensions.DependencyInjection;
-using MethodBody = dnlib.DotNet.Writer.MethodBody;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.AntiTamper {
 	internal class NormalMode : IModeHandler {
-		uint c;
-		IKeyDeriver deriver;
+		// ReSharper disable InconsistentNaming
+		protected const uint CNT_CODE = 0x20;
+		protected const uint CNT_INITIALIZED_DATA = 0x40;
+		protected const uint MEM_EXECUTE = 0x20000000;
+		protected const uint MEM_READ = 0x40000000;
+		protected const uint MEM_WRITE = 0x80000000;
+		// ReSharper restore InconsistentNaming
 
-		List<MethodDef> methods;
-		uint name1, name2;
-		IRandomGenerator random;
-		uint v;
-		uint x;
-		uint z;
+		/// <summary>The deriver of the key that is used to encrypt the bodies of the protected methods.</summary>
+		private IKeyDeriver _deriver;
 
-		public void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
-			random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
-			z = random.NextUInt32();
-			x = random.NextUInt32();
-			c = random.NextUInt32();
-			v = random.NextUInt32();
-			name1 = random.NextUInt32() & 0x7f7f7f7f;
-			name2 = random.NextUInt32() & 0x7f7f7f7f;
+		/// <summary>The name of the section split into two 4 byte parts.</summary>
+		private (uint Part1, uint Part2) _sectionName;
+
+		/// <summary>The components of the key that is used to detect tampering.</summary>
+		private uint _c;
+		private uint _v;
+		private uint _x;
+		private uint _z;
+		
+		/// <summary>The methods that will to protected against tampering.</summary>
+		protected IImmutableList<MethodDef> Methods { get; private set; }
+
+		void IModeHandler.HandleInject(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) => HandleInject(parent, context, parameters);
+
+		protected virtual void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
+			logger.LogMsgNormalModeStart(context.CurrentModule);
+
+			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
+			InitParameters(parent, context, parameters, random);
+
+			var injectResult = InjectRuntime(parent, context, "Confuser.Runtime.AntiTamperNormal");
+			if (injectResult == null) {
+				logger.LogMsgNormalModeRuntimeMissing();
+				return;
+			}
+
+			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
+
+			var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
+			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
+			antiTamper.ExcludeMethod(context, cctor);
+
+			logger.LogMsgNormalModeInjectDone(context.CurrentModule);
+		}
+
+		protected virtual void InitParameters(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters, IRandomGenerator random) {
+			_z = random.NextUInt32();
+			_x = random.NextUInt32();
+			_c = random.NextUInt32();
+			_v = random.NextUInt32();
+
+			_sectionName = (random.NextUInt32() & 0x7f7f7f7f, random.NextUInt32() & 0x7f7f7f7f);
 
 			switch (parameters.GetParameter(context, context.CurrentModule, parent.Parameters.Key)) {
 				case KeyDeriverMode.Normal:
-					deriver = new NormalDeriver();
+					_deriver = new NormalDeriver();
 					break;
 				case KeyDeriverMode.Dynamic:
-					deriver = new DynamicDeriver();
+					_deriver = new DynamicDeriver();
 					break;
 				default:
 					throw new UnreachableException();
 			}
-			deriver.Init(context, random);
+			_deriver.Init(context, random);
+		}
 
-			var mutationKeys = ImmutableDictionary.Create<MutationField, int>()
-				.Add(MutationField.KeyI0, (int)(name1 * name2))
-				.Add(MutationField.KeyI1, (int)z)
-				.Add(MutationField.KeyI2, (int)x)
-				.Add(MutationField.KeyI3, (int)c)
-				.Add(MutationField.KeyI4, (int)v);
+		protected InjectResult<MethodDef> InjectRuntime(AntiTamperProtection parent, IConfuserContext context, string runtimeTypeName) {
+			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
+			var mutationKeys = CreateMutationKeys();
 
 			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
 
-			var antiTamperInit = context.GetInitMethod("Confuser.Runtime.AntiTamperNormal", context.CurrentModule);
-			if (antiTamperInit == null) return;
+			logger.LogMsgNormalModeInjectStart(context.CurrentModule);
+
+			var antiTamperInit = context.GetInitMethod(runtimeTypeName, context.CurrentModule);
+			if (antiTamperInit == null) return null;
 
 			var injectResult = InjectHelper.Inject(antiTamperInit, context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
 					KeyFieldValues = mutationKeys,
-					CryptProcessor = deriver.EmitDerivation(context)
+					CryptProcessor = _deriver.EmitDerivation(context)
 				});
 
-			foreach (var dep in injectResult) {
-				name?.MarkHelper(context, dep.Mapped, marker, parent);
-				if (dep.Mapped is MethodDef methodDef)
+			foreach (var (_, mapped) in injectResult) {
+				name?.MarkHelper(context, mapped, marker, parent);
+				if (mapped is MethodDef methodDef)
 					antiTamper.ExcludeMethod(context, methodDef);
 			}
 
-			var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
-			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
-			antiTamper.ExcludeMethod(context, cctor);
+			return injectResult;
 		}
 
-		public void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
-			methods = parameters.Targets.OfType<MethodDef>().ToList();
+		protected virtual IImmutableDictionary<MutationField, int> CreateMutationKeys() =>
+			ImmutableDictionary.Create<MutationField, int>()
+				.Add(MutationField.KeyI0, (int)(_sectionName.Part1 * _sectionName.Part2))
+				.Add(MutationField.KeyI1, (int)_z)
+				.Add(MutationField.KeyI2, (int)_x)
+				.Add(MutationField.KeyI3, (int)_c)
+				.Add(MutationField.KeyI4, (int)_v);
+
+		void IModeHandler.HandleMD(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) => HandleMD(parent, context, parameters);
+
+		protected virtual void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+			Methods = parameters.Targets.OfType<MethodDef>().ToImmutableList();
 			context.CurrentModuleWriterOptions.WriterEvent += WriterEvent;
 		}
 
-		void WriterEvent(object sender, ModuleWriterEventArgs e) {
-			var writer = (ModuleWriterBase)sender;
-			if (e.Event == ModuleWriterEvent.MDEndCreateTables) {
-				CreateSections(writer);
-			}
-			else if (e.Event == ModuleWriterEvent.BeginStrongNameSign) {
-				EncryptSection(writer);
+		private void WriterEvent(object sender, ModuleWriterEventArgs e) {
+			var writer = e.Writer;
+			// ReSharper disable once SwitchStatementMissingSomeCases
+			switch (e.Event) {
+				case ModuleWriterEvent.MDEndCreateTables:
+					CreateSections(writer);
+					break;
+				case ModuleWriterEvent.BeginStrongNameSign:
+					EncryptSection(writer);
+					break;
 			}
 		}
 
-		void CreateSections(ModuleWriterBase writer) {
-			var nameBuffer = new byte[8];
-			nameBuffer[0] = (byte)(name1 >> 0);
-			nameBuffer[1] = (byte)(name1 >> 8);
-			nameBuffer[2] = (byte)(name1 >> 16);
-			nameBuffer[3] = (byte)(name1 >> 24);
-			nameBuffer[4] = (byte)(name2 >> 0);
-			nameBuffer[5] = (byte)(name2 >> 8);
-			nameBuffer[6] = (byte)(name2 >> 16);
-			nameBuffer[7] = (byte)(name2 >> 24);
-			var newSection = new PESection(Encoding.ASCII.GetString(nameBuffer), 0xE0000040);
+		protected string CreateEncryptedSectionName() {
+			var nameBuffer = ArrayPool<byte>.Shared.Rent(8);
+			try {
+				nameBuffer[0] = (byte)(_sectionName.Part1 >> 0);
+				nameBuffer[1] = (byte)(_sectionName.Part1 >> 8);
+				nameBuffer[2] = (byte)(_sectionName.Part1 >> 16);
+				nameBuffer[3] = (byte)(_sectionName.Part1 >> 24);
+				nameBuffer[4] = (byte)(_sectionName.Part2 >> 0);
+				nameBuffer[5] = (byte)(_sectionName.Part2 >> 8);
+				nameBuffer[6] = (byte)(_sectionName.Part2 >> 16);
+				nameBuffer[7] = (byte)(_sectionName.Part2 >> 24);
+				return Encoding.ASCII.GetString(nameBuffer, 0, 8);
+			}
+			finally {
+				ArrayPool<byte>.Shared.Return(nameBuffer);
+			}
+		}
+
+		[SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
+		protected virtual void CreateSections(ModuleWriterBase writer) {
+
+			var newSection = new PESection(
+				CreateEncryptedSectionName(), 
+				CNT_INITIALIZED_DATA | MEM_EXECUTE | MEM_READ | MEM_WRITE);
 			writer.Sections.Insert(0, newSection); // insert first to ensure proper RVA
 
-			uint alignment;
-
-			alignment = writer.TextSection.Remove(writer.Metadata).Value;
+			var alignment = writer.TextSection.Remove(writer.Metadata).Value;
 			writer.TextSection.Add(writer.Metadata, alignment);
 
 			alignment = writer.TextSection.Remove(writer.NetResources).Value;
@@ -120,15 +183,15 @@ namespace Confuser.Protections.AntiTamper {
 			newSection.Add(writer.Constants, alignment);
 
 			// move some PE parts to separate section to prevent it from being hashed
-			var peSection = new PESection("", 0x60000020);
+			var peSection = new PESection("", CNT_CODE | MEM_EXECUTE | MEM_READ);
 			bool moved = false;
 			if (writer.StrongNameSignature != null) {
 				alignment = writer.TextSection.Remove(writer.StrongNameSignature).Value;
 				peSection.Add(writer.StrongNameSignature, alignment);
 				moved = true;
 			}
-			var managedWriter = writer as ModuleWriter;
-			if (managedWriter != null) {
+
+			if (writer is ModuleWriter managedWriter) {
 				if (managedWriter.ImportAddressTable != null) {
 					alignment = writer.TextSection.Remove(managedWriter.ImportAddressTable).Value;
 					peSection.Add(managedWriter.ImportAddressTable, alignment);
@@ -146,11 +209,10 @@ namespace Confuser.Protections.AntiTamper {
 			// move encrypted methods
 			var encryptedChunk = new MethodBodyChunks(writer.TheOptions.ShareMethodBodies);
 			newSection.Add(encryptedChunk, 4);
-			foreach (MethodDef method in methods) {
-				if (!method.HasBody)
-					continue;
-				MethodBody body = writer.Metadata.GetMethodBody(method);
-				bool ok = writer.MethodBodies.Remove(body);
+			foreach (var method in Methods) {
+				if (!method.HasBody) continue;
+				var body = writer.Metadata.GetMethodBody(method);
+				writer.MethodBodies.Remove(body);
 				encryptedChunk.Add(body);
 			}
 
@@ -158,87 +220,109 @@ namespace Confuser.Protections.AntiTamper {
 			newSection.Add(new ByteArrayChunk(new byte[4]), 4);
 		}
 
-		void EncryptSection(ModuleWriterBase writer) {
-			Stream stream = writer.DestinationStream;
-			var reader = new BinaryReader(writer.DestinationStream);
-			stream.Position = 0x3C;
+		private void EncryptSection(ModuleWriterBase writer) {
+			var stream = writer.DestinationStream;
+			var reader = new BinaryReader(stream);
+			stream.Position = 0x3C; // DOS-HEADER: Byte position of file header start (e_lfanew) (DWORD)
 			stream.Position = reader.ReadUInt32();
 
-			stream.Position += 6;
+			stream.Position += 6; // IMAGE_FILE_HEADER: NumberOfSections (WORD)
 			ushort sections = reader.ReadUInt16();
-			stream.Position += 0xc;
+			stream.Position += 0xc; // IMAGE_FILE_HEADER: SizeOfOptionalHeader (WORD)
 			ushort optSize = reader.ReadUInt16();
-			stream.Position += 2 + optSize;
+			stream.Position += 2 + optSize; // Skip characteristics and optional header
 
 			uint encLoc = 0, encSize = 0;
 			int origSects = -1;
-			if (writer is NativeModuleWriter && writer.Module is ModuleDefMD)
-				origSects = ((ModuleDefMD)writer.Module).Metadata.PEImage.ImageSectionHeaders.Count;
+
+			// Get the amount of sections that were originally present in the image.
+			if (writer is NativeModuleWriter && writer.Module is ModuleDefMD moduleDefMd)
+				origSects = moduleDefMd.Metadata.PEImage.ImageSectionHeaders.Count;
+
+
 			for (int i = 0; i < sections; i++) {
+				// Read one section after another and skip all the original PE headers
 				uint nameHash;
 				if (origSects > 0) {
+					// One of the original sections. Remove the name!
 					origSects--;
 					stream.Write(new byte[8], 0, 8);
 					nameHash = 0;
 				}
-				else
+				else {
+					// The name of a section (like .text or .rsrc) is always represented by 8 byte
 					nameHash = reader.ReadUInt32() * reader.ReadUInt32();
-				stream.Position += 8;
-				if (nameHash == name1 * name2) {
-					encSize = reader.ReadUInt32();
-					encLoc = reader.ReadUInt32();
+				}
+
+				stream.Position += 8; // Forward to SizeOfRawData field
+				if (nameHash == _sectionName.Part1 * _sectionName.Part2) {
+					// This section is the section with the encrypted data.
+					encSize = reader.ReadUInt32(); // SizeOfRawData (DWORD)
+					encLoc = reader.ReadUInt32();  // PointerToRawData (DWORD)
 				}
 				else if (nameHash != 0) {
-					uint sectSize = reader.ReadUInt32();
-					uint sectLoc = reader.ReadUInt32();
+					// Not the encrypted section, but a section with a name. The raw data of the section is used to
+					// transform the encryption code. So if anyone modifies the code, the module with the method bodies
+					// can't be decoded.
+					uint sectSize = reader.ReadUInt32(); // SizeOfRawData (DWORD)
+					uint sectLoc = reader.ReadUInt32();  // PointerToRawData (DWORD)
 					Hash(stream, reader, sectLoc, sectSize);
 				}
-				else
+				else {
+					// Skip the size and the pointer field
 					stream.Position += 8;
+				}
+
+				// Move to start of next section or to IMAGE_COR20_HEADER
 				stream.Position += 16;
 			}
 
-			uint[] key = DeriveKey();
+			// Create the key from the hash values.
+			var key = DeriveKey();
 			encSize >>= 2;
 			stream.Position = encLoc;
+
+			// Transform the sensitive section using the key.
 			var result = new uint[encSize];
 			for (uint i = 0; i < encSize; i++) {
 				uint data = reader.ReadUInt32();
 				result[i] = data ^ key[i & 0xf];
 				key[i & 0xf] = (key[i & 0xf] ^ data) + 0x3dbb2819;
 			}
+
+			// Overwrite the sensitive section with the transformed data.
 			var byteResult = new byte[encSize << 2];
 			Buffer.BlockCopy(result, 0, byteResult, 0, byteResult.Length);
 			stream.Position = encLoc;
 			stream.Write(byteResult, 0, byteResult.Length);
 		}
 
-		void Hash(Stream stream, BinaryReader reader, uint offset, uint size) {
+		private void Hash(Stream stream, BinaryReader reader, uint offset, uint size) {
 			long original = stream.Position;
 			stream.Position = offset;
 			size >>= 2;
 			for (uint i = 0; i < size; i++) {
 				uint data = reader.ReadUInt32();
-				uint tmp = (z ^ data) + x + c * v;
-				z = x;
-				x = c;
-				x = v;
-				v = tmp;
+				uint tmp = (_z ^ data) + _x + _c * _v;
+				_z = _x;
+				_x = _c;
+				_c = _v;
+				_v = tmp;
 			}
 			stream.Position = original;
 		}
 
-		uint[] DeriveKey() {
+		private uint[] DeriveKey() {
 			uint[] dst = new uint[0x10], src = new uint[0x10];
 			for (int i = 0; i < 0x10; i++) {
-				dst[i] = v;
-				src[i] = x;
-				z = (x >> 5) | (x << 27);
-				x = (c >> 3) | (c << 29);
-				c = (v >> 7) | (v << 25);
-				v = (z >> 11) | (z << 21);
+				dst[i] = _v;
+				src[i] = _x;
+				_z = (_x >> 5) | (_x << 27);
+				_x = (_c >> 3) | (_c << 29);
+				_c = (_v >> 7) | (_v << 25);
+				_v = (_z >> 11) | (_z << 21);
 			}
-			return deriver.DeriveKey(dst, src);
+			return _deriver.DeriveKey(dst, src);
 		}
 	}
 }

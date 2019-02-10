@@ -24,7 +24,7 @@
     <SourceLinkOriginUrl>$(RepositoryUrl)</SourceLinkOriginUrl>
   </PropertyGroup> 
   
-  <PropertyGroup Label="Code Analysis" Condition="$(MSBuildProjectFile.StartsWith('Confuser'))">
+  <PropertyGroup Label="Code Analysis" Condition="!$(MSBuildProjectFile.StartsWith('Confuser'))">
     <EnableCodeAnalysis>false</EnableCodeAnalysis>
   </PropertyGroup>
   
