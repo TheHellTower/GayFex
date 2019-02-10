@@ -2,12 +2,17 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFrameworks>net461;netcoreapp2.2</TargetFrameworks>
     <StartupObject>Confuser.CLI.Program</StartupObject>
     <Product>ConfuserEx Command-line</Product>
     <Description>Command-line interface of ConfuserEx</Description>
     <PackageLicenseFile>license/LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/mkaring/ConfuserEx</PackageProjectUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\$(Configuration)\bin</OutputPath>
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
