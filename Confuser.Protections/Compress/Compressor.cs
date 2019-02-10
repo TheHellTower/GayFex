@@ -306,7 +306,7 @@ namespace Confuser.Protections {
 			}
 		}
 
-		private sealed class KeyInjector : IModuleWriterListener {
+		private sealed class KeyInjector {
 			readonly CompressorContext ctx;
 
 			public KeyInjector(CompressorContext ctx) =>
