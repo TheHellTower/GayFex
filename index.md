@@ -3,8 +3,9 @@ layout: page
 ---
 {% include setup %}
 
-ConfuserEx is an free, open-source protector for .NET applications.
-It is the successor of [Confuser](http://confuser.codeplex.com) project.
+ConfuserEx 2 is an free, open-source protector for .NET applications.
+It is the successor of [Confuser](http://confuser.codeplex.com) project
+and the [ConfuserEx](https://github.com/yck1509/ConfuserEx) project.
 
 ---
 <div class="row">
@@ -21,7 +22,7 @@ It is the successor of [Confuser](http://confuser.codeplex.com) project.
 
 Features
 --------
-ConfuserEx supports .NET Framework from 2.0 - 4.5 and Mono (and other .NET platforms if enough request!).
+ConfuserEx supports .NET Framework from 2.0 - 4.7.2, .NET Standard, .NET Core and Mono.
 It supports most of the protections you'll find in commerical protectors, and some more!
 
 <div class="container-fluid">
@@ -67,9 +68,9 @@ It supports most of the protections you'll find in commerical protectors, and so
 
 Downloads
 ---------
-You could obtain the latest source code and releases at [GitHub project page](https://github.com/yck1509/ConfuserEx/releases).
-You may find the bleeding edge builds at [the CI Server](https://ci.appveyor.com/project/yck1509/confuserex).
-ConfuserEx requires only .NET Framework 3.5 to run.
+You could obtain the latest source code and releases at [GitHub project page](https://github.com/mkaring/ConfuserEx/releases).
+You may find the bleeding edge builds at [the CI Server](https://ci.appveyor.com/project/mkaring/confuserex).
+ConfuserEx requires .NET Framework 4.6.1 to run. The CLI interface runs also on .NET Core 2.2 on multiple platforms.
 It might be helpful to read the [FAQ]({{ BASE_PATH }}/faq/)!
 
 ---
@@ -84,8 +85,5 @@ You could also contribute to the project by creating pull requests and [reportin
 
 Donation
 ---------
-If you find ConfuserEx is useful to you, feel free to support the project by making a donation!  
-
-<a href='https://pledgie.com/campaigns/25451'><img alt='Click here to lend your support to: ConfuserEx --- an open-source .NET protector and make a donation at pledgie.com !' src='https://pledgie.com/campaigns/25451.png?skin_name=chrome' border='0' ></a>  
-`BTC : 12wzXhmMtjhn9dEFXdtoVAFwSx3MmV4Afx`  
-`DOGE: DM8NpgvQhzPKcdca6AbSxPiV9QCcix9BYJ`
+If you find ConfuserEx 2 helpful and want to donate to support my work on the project you can support me on
+[liberapay](https://liberapay.com/mkaring/) or you can [buy me a coffee](http://buymeacoff.ee/fFUnXMCdW) :coffee:.

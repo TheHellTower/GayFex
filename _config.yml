@@ -7,18 +7,18 @@ paginate: 5
 paginate_path: "news/page/:num"
 excerpt_separator: "\n\n\n"
 
-title : ConfuserEx
-description: ConfuserEx is an open-source protector for .NET applications.
-repo : "https://github.com/yck1509/ConfuserEx"
+title : ConfuserEx 2
+description: ConfuserEx 2 is an open-source protector for .NET applications.
+repo : "https://github.com/mkaring/ConfuserEx"
 author:
-  name: Ki
-  email: confuser.net@gmail.com
+  name: Martin Karing
+  email: karing.martin@gmail.com
 
-production_url : //yck1509.github.io/ConfuserEx
+production_url: //mkaring.github.io/ConfuserEx
 
 JB :
   version : 0.3.0
-  BASE_PATH : //yck1509.github.io/ConfuserEx
+  BASE_PATH : //mkaring.github.io/ConfuserEx
 
   ASSET_PATH : false
 
