@@ -213,7 +213,7 @@ namespace Confuser.Protections {
 				repl.Add(Instruction.Create(OpCodes.Ldtoken, dataField));
 
 				var runtimeHelper =
-					context.CurrentModule.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "RuntimeHelpers");
+					stubModule.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "RuntimeHelpers");
 				var initArrayDef = runtimeHelper.ResolveThrow().FindMethod("InitializeArray");
 				repl.Add(Instruction.Create(OpCodes.Call, stubModule.Import(initArrayDef)));
 				return repl;
