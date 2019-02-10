@@ -10,7 +10,7 @@ skip_commits:
 
 nuget:
   disable_publish_on_pr: true
-  
+
 install:
 - cmd: git submodule update --init --recursive
 
@@ -25,7 +25,7 @@ artifacts:
 - path: Release/bin
   name: ConfuserEx
   type: zip
-  
+
 for:
 -
   branches:
@@ -35,3 +35,12 @@ for:
   artifacts:
   - path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
     name: ConfuserEx.MSBuild
+
+deploy:
+  tag: $(APPVEYOR_REPO_TAG_NAME)
+  description: "ConfuserEx $(APPVEYOR_REPO_TAG_NAME) Release"
+  provider: GitHub
+  auth_token:
+    secure: NTT+Z1zBxbj+w8jroqhYJnI2urxSt0gq3MUmDavUPVKZL+YX4krR4xJQ5OmHYhcG
+  on:
+    APPVEYOR_REPO_TAG: true
