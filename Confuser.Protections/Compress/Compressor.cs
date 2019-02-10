@@ -105,6 +105,8 @@ namespace Confuser.Protections {
 		private static string GetId(ReadOnlyMemory<byte> module) {
 			var md = MetadataFactory.CreateMetadata(new PEImage(module.ToArray()));
 			var assembly = new AssemblyNameInfo();
+
+			// ReSharper disable once InvertIf
 			if (md.TablesStream.TryReadAssemblyRow(1, out var assemblyRow)) {
 				assembly.Name = md.StringsStream.ReadNoNull(assemblyRow.Name);
 				assembly.Culture = md.StringsStream.ReadNoNull(assemblyRow.Locale);
@@ -119,7 +121,7 @@ namespace Confuser.Protections {
 		private static string GetId(IFullName assembly) =>
 			new SR.AssemblyName(assembly.FullName).FullName.ToUpperInvariant();
 
-		private void PackModules(IConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, IRandomGenerator random, ILogger logger, CancellationToken token) {
+		private static void PackModules(IConfuserContext context, CompressorContext compCtx, ModuleDef stubModule, ICompressionService comp, IRandomGenerator random, ILogger logger, CancellationToken token) {
 			int maxLen = 0;
 			var modules = new Dictionary<string, ReadOnlyMemory<byte>>();
 			for (int i = 0; i < context.OutputModules.Count; i++) {
@@ -152,24 +154,17 @@ namespace Confuser.Protections {
 				keySpan[i] |= 1;
 			compCtx.KeySig = key;
 
-			int moduleIndex = 0;
 			foreach (var entry in modules) {
 				var name = Encoding.UTF8.GetBytes(entry.Key);
 				for (int i = 0; i < name.Length; i++)
 					name[i] *= keySpan[i + 4];
 
-				uint state = 0x6fff61;
-				foreach (byte chr in name)
-					state = state * 0x5e3f1f + chr;
-				var encrypted = compCtx.Encrypt(comp, entry.Value, state, progress => {
-					progress = (progress + moduleIndex) / modules.Count;
-					//logger.Progress((int)(progress * 10000), 10000);
-				});
+				uint state = name.Aggregate<byte, uint>(0x6fff61, (current, chr) => current * 0x5e3f1f + chr);
+				var encrypted = compCtx.Encrypt(comp, entry.Value, state, delegate { });
 				token.ThrowIfCancellationRequested();
 
-				var resource = new EmbeddedResource(Convert.ToBase64String(name), encrypted.ToArray(), ManifestResourceAttributes.Private);
+				var resource = new EmbeddedResource(Convert.ToBase64String(name), encrypted.ToArray());
 				stubModule.Resources.Add(resource);
-				moduleIndex++;
 			}
 			//logger.EndProgress();
 		}
@@ -294,7 +289,7 @@ namespace Confuser.Protections {
 			PackModules(context, compCtx, stubModule, comp, random, logger, token);
 		}
 
-		void ImportAssemblyTypeReferences(ModuleDef originModule, ModuleDef stubModule) {
+		private static void ImportAssemblyTypeReferences(ModuleDef originModule, ModuleDef stubModule) {
 			var assembly = stubModule.Assembly;
 			foreach (var ca in assembly.CustomAttributes) {
 				if (ca.AttributeType.Scope == originModule)
@@ -307,53 +302,60 @@ namespace Confuser.Protections {
 		}
 
 		private sealed class KeyInjector {
-			readonly CompressorContext ctx;
+			private readonly CompressorContext _ctx;
 
-			public KeyInjector(CompressorContext ctx) =>
-				this.ctx = ctx;
+			public KeyInjector(CompressorContext ctx) => _ctx = ctx;
 
 			public void WriterEvent(object sender, ModuleWriterEventArgs args) =>
 				OnWriterEvent(args.Writer, args.Event);
 
-			public void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
-				if (evt == ModuleWriterEvent.MDBeginCreateTables) {
-					// Add key signature
-					uint sigBlob = writer.Metadata.BlobHeap.Add(ctx.KeySig.ToArray());
-					uint sigRid = writer.Metadata.TablesHeap.StandAloneSigTable.Add(new RawStandAloneSigRow(sigBlob));
-					Debug.Assert(sigRid == 1);
-					uint sigToken = 0x11000000 | sigRid;
-					ctx.KeyToken = sigToken;
-					ctx.KeyTokenLoadUpdate.ApplyValue((int)sigToken);
-				}
-				else if (evt == ModuleWriterEvent.MDBeginAddResources && !ctx.CompatMode) {
-					// Compute hash
-					byte[] hash = SHA1.Create().ComputeHash(ctx.OriginModule);
-					uint hashBlob = writer.Metadata.BlobHeap.Add(hash);
+			private void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
+				// ReSharper disable once SwitchStatementMissingSomeCases
+				switch (evt)
+				{
+					case ModuleWriterEvent.MDBeginCreateTables:
+					{
+						// Add key signature
+						uint sigBlob = writer.Metadata.BlobHeap.Add(_ctx.KeySig.ToArray());
+						uint sigRid = writer.Metadata.TablesHeap.StandAloneSigTable.Add(new RawStandAloneSigRow(sigBlob));
+						Debug.Assert(sigRid == 1);
+						uint sigToken = 0x11000000 | sigRid;
+						_ctx.KeyToken = sigToken;
+						_ctx.KeyTokenLoadUpdate.ApplyValue((int)sigToken);
+						break;
+					}
+					case ModuleWriterEvent.MDBeginAddResources when !_ctx.CompatMode:
+					{
+						// Compute hash
+						byte[] hash = SHA1.Create().ComputeHash(_ctx.OriginModule);
+						uint hashBlob = writer.Metadata.BlobHeap.Add(hash);
 
-					var fileTbl = writer.Metadata.TablesHeap.FileTable;
-					uint fileRid = fileTbl.Add(new RawFileRow(
-												   (uint)FileAttributes.ContainsMetadata,
-												   writer.Metadata.StringsHeap.Add("koi"),
-												   hashBlob));
-					uint impl = CodedToken.Implementation.Encode(new MDToken(Table.File, fileRid));
+						var fileTbl = writer.Metadata.TablesHeap.FileTable;
+						uint fileRid = fileTbl.Add(new RawFileRow(
+							(uint)FileAttributes.ContainsMetadata,
+							writer.Metadata.StringsHeap.Add("koi"),
+							hashBlob));
+						uint impl = CodedToken.Implementation.Encode(new MDToken(Table.File, fileRid));
 
-					// Add resources
-					var resTbl = writer.Metadata.TablesHeap.ManifestResourceTable;
-					foreach (var resource in ctx.ManifestResources)
-						resTbl.Add(new RawManifestResourceRow(resource.Offset, resource.Flags, writer.Metadata.StringsHeap.Add(resource.Value), impl));
+						// Add resources
+						var resTbl = writer.Metadata.TablesHeap.ManifestResourceTable;
+						foreach (var resource in _ctx.ManifestResources)
+							resTbl.Add(new RawManifestResourceRow(resource.Offset, resource.Flags, writer.Metadata.StringsHeap.Add(resource.Value), impl));
 
-					// Add exported types
-					// This creates a meta data warning in peverify, stating that the exported type has no TypeDefId.
-					// Is this even required?
+						// Add exported types
+						// This creates a meta data warning in peverify, stating that the exported type has no TypeDefId.
+						// Is this even required?
 
-					//  var exTbl = writer.Metadata.TablesHeap.ExportedTypeTable;
-					//  foreach (var type in ctx.OriginModuleDef.GetTypes()) {
-					//  	if (!type.IsVisibleOutside())
-					//  		continue;
-					//  	exTbl.Add(new RawExportedTypeRow((uint)type.Attributes, 0,
-					//  									 writer.Metadata.StringsHeap.Add(type.Name),
-					//  									 writer.Metadata.StringsHeap.Add(type.Namespace), impl));
-					//  }
+						//  var exTbl = writer.Metadata.TablesHeap.ExportedTypeTable;
+						//  foreach (var type in ctx.OriginModuleDef.GetTypes()) {
+						//  	if (!type.IsVisibleOutside())
+						//  		continue;
+						//  	exTbl.Add(new RawExportedTypeRow((uint)type.Attributes, 0,
+						//  									 writer.Metadata.StringsHeap.Add(type.Name),
+						//  									 writer.Metadata.StringsHeap.Add(type.Namespace), impl));
+						//  }
+						break;
+					}
 				}
 			}
 		}
