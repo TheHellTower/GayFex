@@ -19,11 +19,15 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 namespace Confuser.Protections.ReferenceProxy {
 	internal sealed class StrongMode : RPMode {
 		private readonly List<FieldDesc> fieldDescs = new List<FieldDesc>();
+
 		// { invoke opCode, invoke target, encoding}, { proxy field, bridge method }
-		private readonly Dictionary<(Code OpCode, IMethod TargetMethod, IRPEncoding Encoding), (FieldDef Field, MethodDef BridgeMethod)> fields
+		private readonly Dictionary<(Code OpCode, IMethod TargetMethod, IRPEncoding Encoding), (FieldDef Field,
+			MethodDef BridgeMethod)> fields
 			= new Dictionary<(Code, IMethod, IRPEncoding), (FieldDef, MethodDef)>();
 
-		private readonly Dictionary<IRPEncoding, InitMethodDesc[]> inits = new Dictionary<IRPEncoding, InitMethodDesc[]>();
+		private readonly Dictionary<IRPEncoding, InitMethodDesc[]> inits =
+			new Dictionary<IRPEncoding, InitMethodDesc[]>();
+
 		private RPContext encodeCtx;
 		private Tuple<TypeDef, Func<int, int>>[] keyAttrs;
 
@@ -60,6 +64,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				if (ctx.BranchTargets.Contains(currentInstr) && currentStack != 0)
 					return null;
 			}
+
 			if (currentStack < 0)
 				return null;
 			return currentIndex;
@@ -134,7 +139,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			var targetDef = target.ResolveMethodDef();
 			if (targetDef != null)
-				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted, ReferenceProxyProtection.Targeted);
+				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted,
+					ReferenceProxyProtection.Targeted);
 		}
 
 		private void ProcessInvoke(RPContext ctx, int instrIndex, int argBeginIndex) {
@@ -159,14 +165,14 @@ namespace Confuser.Protections.ReferenceProxy {
 			// Insert field load & replace instruction
 			if (argBeginIndex == instrIndex) {
 				ctx.Body.Instructions.Insert(instrIndex + 1,
-											 new Instruction(OpCodes.Call, delegateType.FindMethod("Invoke")));
+					new Instruction(OpCodes.Call, delegateType.FindMethod("Invoke")));
 				instr.OpCode = OpCodes.Ldsfld;
 				instr.Operand = proxy.Field;
 			}
 			else {
 				var argBegin = ctx.Body.Instructions[argBeginIndex];
 				ctx.Body.Instructions.Insert(argBeginIndex + 1,
-											 new Instruction(argBegin.OpCode, argBegin.Operand));
+					new Instruction(argBegin.OpCode, argBegin.Operand));
 				argBegin.OpCode = OpCodes.Ldsfld;
 				argBegin.Operand = proxy.Field;
 
@@ -176,7 +182,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			var targetDef = target.ResolveMethodDef();
 			if (targetDef != null)
-				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted, ReferenceProxyProtection.Targeted);
+				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted,
+					ReferenceProxyProtection.Targeted);
 		}
 
 		private MethodDef CreateBridge(RPContext ctx, TypeDef delegateType, FieldDef field, MethodSig sig) {
@@ -212,7 +219,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			var keyAttrType = GetKeyAttr(ctx);
 			if (keyAttrType == null) return null;
-			var field = new FieldDefUser("", new FieldSig(fieldType), FieldAttributes.Static | FieldAttributes.Assembly);
+			var field = new FieldDefUser("", new FieldSig(fieldType),
+				FieldAttributes.Static | FieldAttributes.Assembly);
 			field.CustomAttributes.Add(new CustomAttribute(GetKeyAttr(ctx).FindInstanceConstructors().First()));
 			delegateType.Fields.Add(field);
 
@@ -236,11 +244,11 @@ namespace Confuser.Protections.ReferenceProxy {
 
 					ctx.DynCipher.GenerateExpressionPair(
 						ctx.Random,
-						new VariableExpression { Variable = new Variable("{VAR}") },
-						new VariableExpression { Variable = new Variable("{RESULT}") },
+						new VariableExpression {Variable = new Variable("{VAR}")},
+						new VariableExpression {Variable = new Variable("{RESULT}")},
 						ctx.Depth, out var expression, out var inverse);
 
-					var expCompiled = new DMCodeGen(typeof(int), new[] { Tuple.Create("{VAR}", typeof(int)) })
+					var expCompiled = new DMCodeGen(typeof(int), new[] {Tuple.Create("{VAR}", typeof(int))})
 						.GenerateCIL(expression)
 						.Compile<Func<int, int>>();
 
@@ -261,6 +269,7 @@ namespace Confuser.Protections.ReferenceProxy {
 						name?.MarkHelper(ctx.Context, def.Mapped, marker, ctx.Protection);
 				}
 			}
+
 			return keyAttrs[index].Item1;
 		}
 
@@ -310,6 +319,7 @@ namespace Confuser.Protections.ReferenceProxy {
 					initDescs[index] = desc;
 				}
 			}
+
 			return initDescs[index];
 		}
 
@@ -317,7 +327,8 @@ namespace Confuser.Protections.ReferenceProxy {
 			Debug.Assert(fullName != null, $"{nameof(fullName)} != null");
 			Debug.Assert(ctx != null, $"{nameof(ctx)} != null");
 
-			var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ReferenceProxyProtection._Id);
+			var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>()
+				.CreateLogger(ReferenceProxyProtection._Id);
 			return GetRuntimeType(fullName, ctx, logger);
 		}
 
@@ -334,13 +345,15 @@ namespace Confuser.Protections.ReferenceProxy {
 			catch (ArgumentException ex) {
 				logger.LogError("Failed to load runtime: {0}", ex.Message);
 			}
+
 			return null;
 		}
 
 		private static MethodDef GetRuntimeInitMethod(RPContext ctx) {
 			Debug.Assert(ctx != null, $"{nameof(ctx)} != null");
 
-			var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ReferenceProxyProtection._Id);
+			var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>()
+				.CreateLogger(ReferenceProxyProtection._Id);
 			var rtType = GetRuntimeType("Confuser.Runtime.RefProxyStrong", ctx, logger);
 			if (rtType == null) return null;
 
@@ -424,11 +437,13 @@ namespace Confuser.Protections.ReferenceProxy {
 						name[desc.InitDesc.TokenNameOrder[i]] = (char)nameKey[i];
 						encodedNameKey |= (uint)nameKey[i] << desc.InitDesc.TokenByteOrder[i];
 					}
+
 					desc.Field.Name = name.ToString();
 
 					// Field sig
 					var sig = desc.Field.FieldSig;
-					uint encodedToken = (token - writer.Metadata.GetToken(((CModOptSig)sig.Type).Modifier).Raw) ^ encodedNameKey;
+					uint encodedToken = (token - writer.Metadata.GetToken(((CModOptSig)sig.Type).Modifier).Raw) ^
+					                    encodedNameKey;
 
 
 					var extra = new byte[8];
@@ -446,7 +461,8 @@ namespace Confuser.Protections.ReferenceProxy {
 		private sealed class CodeGen : CILCodeGen {
 			private readonly IReadOnlyList<Instruction> arg;
 
-			internal CodeGen(IReadOnlyList<Instruction> arg, ModuleDef module, MethodDef method, IList<Instruction> instrs)
+			internal CodeGen(IReadOnlyList<Instruction> arg, ModuleDef module, MethodDef method,
+				IList<Instruction> instrs)
 				: base(module, method, instrs) {
 				this.arg = arg;
 			}

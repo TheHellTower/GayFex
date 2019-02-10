@@ -5,8 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using dnlib.DotNet;
 
-namespace Confuser.Core.Services
-{
+namespace Confuser.Core.Services {
 	/// <summary>
 	///     Provides methods to access the obfuscation marker.
 	/// </summary>

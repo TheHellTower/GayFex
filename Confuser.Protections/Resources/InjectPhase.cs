@@ -32,18 +32,21 @@ namespace Confuser.Protections.Resources {
 
 		public bool ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (parameters.Targets.Any()) {
 				var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ResourceProtection._Id);
 				if (!UTF8String.IsNullOrEmpty(context.CurrentModule.Assembly.Culture)) {
 					logger.LogDebug("Skipping resource encryption for satellite assembly '{0}'.",
-									context.CurrentModule.Assembly.FullName);
+						context.CurrentModule.Assembly.FullName);
 					return;
 				}
+
 				var name = context.Registry.GetService<INameService>();
 				var marker = context.Registry.GetRequiredService<IMarkerService>();
 				var moduleCtx = new REContext {
-					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ResourceProtection._FullId),
+					Random = context.Registry.GetRequiredService<IRandomService>()
+						.GetRandomGenerator(ResourceProtection._FullId),
 					Context = context,
 					Module = context.CurrentModule,
 					Marker = marker,
@@ -56,14 +59,14 @@ namespace Confuser.Protections.Resources {
 				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.Mode);
 
 				switch (moduleCtx.Mode) {
-				case Mode.Normal:
-					moduleCtx.ModeHandler = new NormalMode();
-					break;
-				case Mode.Dynamic:
-					moduleCtx.ModeHandler = new DynamicMode();
-					break;
-				default:
-					throw new UnreachableException();
+					case Mode.Normal:
+						moduleCtx.ModeHandler = new NormalMode();
+						break;
+					case Mode.Dynamic:
+						moduleCtx.ModeHandler = new DynamicMode();
+						break;
+					default:
+						throw new UnreachableException();
 				}
 
 				if (!InjectHelpers(context, moduleCtx)) return;
@@ -89,7 +92,8 @@ namespace Confuser.Protections.Resources {
 			var rtInitMethod = GetInitMethod(moduleCtx.Module, context, rt, logger);
 			if (rtInitMethod == null) return false;
 
-			var dataType = new TypeDefUser("", "ConfuserResourceData", context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
+			var dataType = new TypeDefUser("", "ConfuserResourceData",
+				context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
 				Layout = TypeAttributes.ExplicitLayout,
 				Visibility = TypeAttributes.NestedPrivate,
 				IsSealed = true,
@@ -125,7 +129,8 @@ namespace Confuser.Protections.Resources {
 						repl.Add(Instruction.Create(OpCodes.Ldtoken, moduleCtx.DataField));
 
 						var runtimeHelper =
-							context.CurrentModule.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "RuntimeHelpers");
+							context.CurrentModule.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices",
+								"RuntimeHelpers");
 						var initArrayDef = runtimeHelper.ResolveThrow().FindMethod("InitializeArray");
 						repl.Add(Instruction.Create(OpCodes.Call, moduleCtx.Module.Import(initArrayDef)));
 						return repl;
@@ -137,17 +142,21 @@ namespace Confuser.Protections.Resources {
 			foreach (var member in injectResult) {
 				name?.MarkHelper(context, member.Mapped, marker, Parent);
 			}
+
 			constant.ExcludeMethod(context, injectResult.Requested.Mapped);
 			return true;
 		}
 
-		private static MethodDef GetInitMethod(ModuleDef module, IConfuserContext context, IRuntimeModule runtimeModule, ILogger logger) {
+		private static MethodDef GetInitMethod(ModuleDef module, IConfuserContext context, IRuntimeModule runtimeModule,
+			ILogger logger) {
 			Debug.Assert(module != null, $"{nameof(module)} != null");
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(runtimeModule != null, $"{nameof(runtimeModule)} != null");
 			Debug.Assert(logger != null, $"{nameof(logger)} != null");
 
-			string runtimeTypeName = context.Packer != null ? "Confuser.Runtime.Resource_Packer" : "Confuser.Runtime.Resource"; ;
+			string runtimeTypeName =
+				context.Packer != null ? "Confuser.Runtime.Resource_Packer" : "Confuser.Runtime.Resource";
+			;
 
 			TypeDef rtType = null;
 			try {

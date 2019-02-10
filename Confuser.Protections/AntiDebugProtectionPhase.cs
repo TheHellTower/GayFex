@@ -27,7 +27,8 @@ namespace Confuser.Protections {
 
 		public bool ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			var rt = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var name = context.Registry.GetRequiredService<INameService>();
@@ -37,7 +38,8 @@ namespace Confuser.Protections {
 				var initMethod = GetInitMethod(module, context, parameters, rt, logger);
 				if (initMethod == null) continue;
 
-				var injectResult = InjectHelper.Inject(initMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
+				var injectResult = InjectHelper.Inject(initMethod, module,
+					InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 				var cctor = module.GlobalType.FindStaticConstructor();
 				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, injectResult.Requested.Mapped));
 
@@ -46,7 +48,8 @@ namespace Confuser.Protections {
 			}
 		}
 
-		private MethodDef GetInitMethod(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, IRuntimeModule runtimeModule, ILogger logger) {
+		private MethodDef GetInitMethod(ModuleDef module, IConfuserContext context, IProtectionParameters parameters,
+			IRuntimeModule runtimeModule, ILogger logger) {
 			Debug.Assert(module != null, $"{nameof(module)} != null");
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(parameters != null, $"{nameof(parameters)} != null");

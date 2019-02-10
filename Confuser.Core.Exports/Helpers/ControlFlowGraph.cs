@@ -88,11 +88,13 @@ namespace Confuser.Core.Helpers {
 					if (i + 1 < body.Instructions.Count)
 						blockHeaders.Add(body.Instructions[i + 1]);
 				}
-				else if ((instr.OpCode.FlowControl == FlowControl.Throw || instr.OpCode.FlowControl == FlowControl.Return) &&
+				else if ((instr.OpCode.FlowControl == FlowControl.Throw ||
+				          instr.OpCode.FlowControl == FlowControl.Return) &&
 				         i + 1 < body.Instructions.Count) {
 					blockHeaders.Add(body.Instructions[i + 1]);
 				}
 			}
+
 			blockHeaders.Add(body.Instructions[0]);
 			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
 				blockHeaders.Add(eh.TryStart);
@@ -117,7 +119,8 @@ namespace Confuser.Core.Helpers {
 						var type = ControlFlowBlockType.Normal;
 						if (entryHeaders.Contains(currentBlockHdr) || currentBlockHdr == body.Instructions[0])
 							type |= ControlFlowBlockType.Entry;
-						if (footer.OpCode.FlowControl == FlowControl.Return || footer.OpCode.FlowControl == FlowControl.Throw)
+						if (footer.OpCode.FlowControl == FlowControl.Return ||
+						    footer.OpCode.FlowControl == FlowControl.Throw)
 							type |= ControlFlowBlockType.Exit;
 
 						blocks.Add(new ControlFlowBlock(currentBlockId, type, currentBlockHdr, footer));
@@ -129,6 +132,7 @@ namespace Confuser.Core.Helpers {
 
 				instrBlocks[i] = currentBlockId;
 			}
+
 			if (blocks.Count == 0 || blocks[blocks.Count - 1].Id != currentBlockId) {
 				Instruction footer = body.Instructions[body.Instructions.Count - 1];
 
@@ -160,6 +164,7 @@ namespace Confuser.Core.Helpers {
 					}
 				}
 			}
+
 			for (int i = 0; i < blocks.Count; i++) {
 				if (blocks[i].Footer.OpCode.FlowControl != FlowControl.Branch &&
 				    blocks[i].Footer.OpCode.FlowControl != FlowControl.Return &&

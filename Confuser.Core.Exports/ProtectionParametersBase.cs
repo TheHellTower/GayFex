@@ -14,7 +14,8 @@ namespace Confuser.Core {
 
 		protected ProtectionParametersBase() =>
 			_lazyReadOnlyDictionaryImplementation =
-				new Lazy<IReadOnlyDictionary<string, IProtectionParameter>>(CreateDictionary, LazyThreadSafetyMode.None);
+				new Lazy<IReadOnlyDictionary<string, IProtectionParameter>>(CreateDictionary,
+					LazyThreadSafetyMode.None);
 
 		private IReadOnlyDictionary<string, IProtectionParameter> CreateDictionary() {
 			var targetType = GetType();
@@ -37,28 +38,32 @@ namespace Confuser.Core {
 		}
 
 		#region IReadOnlyDictionary
-		IEnumerator<KeyValuePair<string, IProtectionParameter>> IEnumerable<KeyValuePair<string, IProtectionParameter>>.GetEnumerator() => 
+
+		IEnumerator<KeyValuePair<string, IProtectionParameter>> IEnumerable<KeyValuePair<string, IProtectionParameter>>.
+			GetEnumerator() =>
 			ReadOnlyDictionaryImplementation.GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)ReadOnlyDictionaryImplementation).GetEnumerator();
 
-		int IReadOnlyCollection<KeyValuePair<string, IProtectionParameter>>.Count => 
+		int IReadOnlyCollection<KeyValuePair<string, IProtectionParameter>>.Count =>
 			ReadOnlyDictionaryImplementation.Count;
 
-		bool IReadOnlyDictionary<string, IProtectionParameter>.ContainsKey(string key) => 
+		bool IReadOnlyDictionary<string, IProtectionParameter>.ContainsKey(string key) =>
 			ReadOnlyDictionaryImplementation.ContainsKey(key);
 
-		bool IReadOnlyDictionary<string, IProtectionParameter>.TryGetValue(string key, out IProtectionParameter value) => 
+		bool IReadOnlyDictionary<string, IProtectionParameter>.
+			TryGetValue(string key, out IProtectionParameter value) =>
 			ReadOnlyDictionaryImplementation.TryGetValue(key, out value);
 
-		IProtectionParameter IReadOnlyDictionary<string, IProtectionParameter>.this[string key] => 
+		IProtectionParameter IReadOnlyDictionary<string, IProtectionParameter>.this[string key] =>
 			ReadOnlyDictionaryImplementation[key];
 
-		IEnumerable<string> IReadOnlyDictionary<string, IProtectionParameter>.Keys => 
+		IEnumerable<string> IReadOnlyDictionary<string, IProtectionParameter>.Keys =>
 			ReadOnlyDictionaryImplementation.Keys;
 
-		IEnumerable<IProtectionParameter> IReadOnlyDictionary<string, IProtectionParameter>.Values => 
+		IEnumerable<IProtectionParameter> IReadOnlyDictionary<string, IProtectionParameter>.Values =>
 			ReadOnlyDictionaryImplementation.Values;
+
 		#endregion
 	}
 }

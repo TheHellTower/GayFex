@@ -13,7 +13,8 @@ namespace Confuser.Core {
 		/// <param name="modules">The modules.</param>
 		/// <param name="packer">The packer.</param>
 		/// <param name="extModules">The external modules.</param>
-		public MarkerResult(IImmutableList<ModuleDefMD> modules, IPacker packer, IImmutableList<ReadOnlyMemory<byte>> extModules) {
+		public MarkerResult(IImmutableList<ModuleDefMD> modules, IPacker packer,
+			IImmutableList<ReadOnlyMemory<byte>> extModules) {
 			Modules = modules;
 			Packer = packer;
 			ExternalModules = extModules;

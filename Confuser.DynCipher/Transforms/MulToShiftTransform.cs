@@ -31,11 +31,13 @@ namespace Confuser.DynCipher.Transforms {
 								else
 									sum.Add(binOp.Left << n);
 							}
+
 							literal >>= 1;
 							n++;
 						}
+
 						BinOpExpression x = sum.OfType<BinOpExpression>().First();
-						foreach (Expression i in sum.Except(new[] { x }))
+						foreach (Expression i in sum.Except(new[] {x}))
 							x += i;
 						return x;
 					}
@@ -51,6 +53,7 @@ namespace Confuser.DynCipher.Transforms {
 			else if (exp is UnaryOpExpression) {
 				((UnaryOpExpression)exp).Value = ProcessExpression(((UnaryOpExpression)exp).Value);
 			}
+
 			return exp;
 		}
 

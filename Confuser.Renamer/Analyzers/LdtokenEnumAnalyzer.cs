@@ -6,7 +6,8 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class LdtokenEnumAnalyzer : IRenamer {
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			var method = def as MethodDef;
 			if (method == null || !method.HasBody)
 				return;
@@ -64,11 +65,13 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
@@ -113,7 +116,8 @@ namespace Confuser.Renamer.Analyzers {
 					return;
 
 				TypeDef targetTypeDef = targetTypeRef.ResolveTypeDefThrow();
-				if (targetTypeDef != null && targetTypeDef.IsEnum && context.Modules.Contains((ModuleDefMD)targetTypeDef.Module))
+				if (targetTypeDef != null && targetTypeDef.IsEnum &&
+				    context.Modules.Contains((ModuleDefMD)targetTypeDef.Module))
 					DisableRename(context, service, targetTypeDef);
 			}
 		}
@@ -129,7 +133,8 @@ namespace Confuser.Renamer.Analyzers {
 			if (index + 2 < method.Body.Instructions.Count) {
 				Instruction instr = method.Body.Instructions[index + 2];
 				var operand = instr.Operand as IMethod;
-				if (instr.OpCode == OpCodes.Newobj && operand.FullName == "System.Void System.ComponentModel.ComponentResourceManager::.ctor(System.Type)")
+				if (instr.OpCode == OpCodes.Newobj && operand.FullName ==
+				    "System.Void System.ComponentModel.ComponentResourceManager::.ctor(System.Type)")
 					return false;
 				if (instr.OpCode == OpCodes.Call || instr.OpCode == OpCodes.Callvirt) {
 					switch (operand.DeclaringType.FullName) {
@@ -150,6 +155,7 @@ namespace Confuser.Renamer.Analyzers {
 					}
 				}
 			}
+
 			if (index + 3 < method.Body.Instructions.Count) {
 				Instruction instr = method.Body.Instructions[index + 3];
 				var operand = instr.Operand as IMethod;

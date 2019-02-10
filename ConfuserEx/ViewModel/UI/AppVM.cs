@@ -49,9 +49,9 @@ namespace ConfuserEx.ViewModel {
 		public string Title {
 			get {
 				return string.Format("{0}{1} - {2}",
-				                     Path.GetFileName(fileName),
-				                     (proj.IsModified ? "*" : ""),
-				                     ConfuserEngine.Version);
+					Path.GetFileName(fileName),
+					(proj.IsModified ? "*" : ""),
+					ConfuserEngine.Version);
 			}
 		}
 
@@ -72,7 +72,11 @@ namespace ConfuserEx.ViewModel {
 		}
 
 		public ICommand Decode {
-			get { return new RelayCommand(() => new StackTraceDecoder { Owner = Application.Current.MainWindow }.ShowDialog(), () => !NavigationDisabled); }
+			get {
+				return new RelayCommand(
+					() => new StackTraceDecoder {Owner = Application.Current.MainWindow}.ShowDialog(),
+					() => !NavigationDisabled);
+			}
 		}
 
 		public bool OnWindowClosing() {
@@ -90,6 +94,7 @@ namespace ConfuserEx.ViewModel {
 					return false;
 				FileName = sfd.FileName;
 			}
+
 			ConfuserProject proj = ((IViewModel<ConfuserProject>)Project).Model;
 			proj.Save().Save(FileName);
 			Project.IsModified = false;
@@ -100,7 +105,8 @@ namespace ConfuserEx.ViewModel {
 		bool PromptSave() {
 			if (!Project.IsModified)
 				return true;
-			switch (MessageBox.Show("The current project has unsaved changes. Do you want to save them?", "ConfuserEx", MessageBoxButton.YesNoCancel, MessageBoxImage.Question)) {
+			switch (MessageBox.Show("The current project has unsaved changes. Do you want to save them?", "ConfuserEx",
+				MessageBoxButton.YesNoCancel, MessageBoxImage.Question)) {
 				case MessageBoxResult.Yes:
 					return SaveProj();
 				case MessageBoxResult.No:
@@ -108,6 +114,7 @@ namespace ConfuserEx.ViewModel {
 				case MessageBoxResult.Cancel:
 					return false;
 			}
+
 			return false;
 		}
 

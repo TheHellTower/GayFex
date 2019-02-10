@@ -7,7 +7,8 @@ using dnlib.DotNet;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class VTableAnalyzer : IRenamer {
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			VTable vTbl;
 
 			var nameService = (NameService)service;
@@ -25,12 +26,15 @@ namespace Confuser.Renamer.Analyzers {
 						// A method in base type can implements an interface method for a
 						// derived type. If the base type/interface is not in our control, we should
 						// not rename the methods.
-						bool baseUnderCtrl = context.Modules.Contains(slot.MethodDef.DeclaringType.Module as ModuleDefMD);
-						bool ifaceUnderCtrl = context.Modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
+						bool baseUnderCtrl =
+							context.Modules.Contains(slot.MethodDef.DeclaringType.Module as ModuleDefMD);
+						bool ifaceUnderCtrl =
+							context.Modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
 						if ((!baseUnderCtrl && ifaceUnderCtrl) || !service.CanRename(context, slot.MethodDef)) {
 							service.SetCanRename(context, slot.Overrides.MethodDef, false);
 						}
-						else if (baseUnderCtrl && !ifaceUnderCtrl || !service.CanRename(context, slot.Overrides.MethodDef)) {
+						else if (baseUnderCtrl && !ifaceUnderCtrl ||
+						         !service.CanRename(context, slot.Overrides.MethodDef)) {
 							service.SetCanRename(context, slot.MethodDef, false);
 						}
 					}
@@ -50,7 +54,8 @@ namespace Confuser.Renamer.Analyzers {
 							continue;
 						// Better on safe side, add references to both methods.
 						service.AddReference(context, method, new OverrideDirectiveReference(slot, slot.Overrides));
-						service.AddReference(context, slot.Overrides.MethodDef, new OverrideDirectiveReference(slot, slot.Overrides));
+						service.AddReference(context, slot.Overrides.MethodDef,
+							new OverrideDirectiveReference(slot, slot.Overrides));
 					}
 				}
 				else {
@@ -64,22 +69,26 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			if (!(def is MethodDef method) || !method.IsVirtual || method.Overrides.Count == 0)
 				return;
 
 			var methods = new HashSet<IMethodDefOrRef>(MethodDefOrRefComparer.Instance);
 			method.Overrides
-			      .RemoveWhere(impl => MethodDefOrRefComparer.Instance.Equals(impl.MethodDeclaration, method));
+				.RemoveWhere(impl => MethodDefOrRefComparer.Instance.Equals(impl.MethodDeclaration, method));
 		}
 
 		private sealed class MethodDefOrRefComparer : IEqualityComparer<IMethodDefOrRef> {
 			public static readonly MethodDefOrRefComparer Instance = new MethodDefOrRefComparer();
-			MethodDefOrRefComparer() { }
+
+			MethodDefOrRefComparer() {
+			}
 
 			public bool Equals(IMethodDefOrRef x, IMethodDefOrRef y) =>
 				new SigComparer().Equals(x, y) && new SigComparer().Equals(x.DeclaringType, y.DeclaringType);

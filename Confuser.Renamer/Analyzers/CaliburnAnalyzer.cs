@@ -13,7 +13,8 @@ namespace Confuser.Renamer.Analyzers {
 			this.context = context;
 		}
 
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			var type = def as TypeDef;
 			if (type == null || type.DeclaringType != null)
 				return;
@@ -60,7 +61,8 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		void AnalyzeMessageAttach(BAMLAnalyzer analyzer, Tuple<IDnlibDef, AttributeInfoRecord, TypeDef> attr, string value) {
+		void AnalyzeMessageAttach(BAMLAnalyzer analyzer, Tuple<IDnlibDef, AttributeInfoRecord, TypeDef> attr,
+			string value) {
 			if (attr.Item2 == null)
 				return;
 			var attrDeclType = analyzer.ResolveType(attr.Item2.OwnerTypeId);
@@ -75,6 +77,7 @@ namespace Confuser.Renamer.Analyzers {
 				else {
 					msgStr = msg.Trim('[', ']', ' ');
 				}
+
 				if (msgStr.StartsWith("Action"))
 					msgStr = msgStr.Substring(6);
 				int parenIndex = msgStr.IndexOf('(');
@@ -88,7 +91,8 @@ namespace Confuser.Renamer.Analyzers {
 		}
 
 		void AnalyzeAutoBind(BAMLAnalyzer analyzer, Tuple<IDnlibDef, AttributeInfoRecord, TypeDef> attr, string value) {
-			if (!(attr.Item1 is PropertyDef) || ((PropertyDef)attr.Item1).DeclaringType.FullName != "System.Windows.FrameworkElement")
+			if (!(attr.Item1 is PropertyDef) ||
+			    ((PropertyDef)attr.Item1).DeclaringType.FullName != "System.Windows.FrameworkElement")
 				return;
 
 			foreach (var method in analyzer.LookupMethod(value))
@@ -97,7 +101,8 @@ namespace Confuser.Renamer.Analyzers {
 				analyzer.NameService.SetCanRename(context, method, false);
 		}
 
-		void AnalyzeActionMessage(BAMLAnalyzer analyzer, Tuple<IDnlibDef, AttributeInfoRecord, TypeDef> attr, string value) {
+		void AnalyzeActionMessage(BAMLAnalyzer analyzer, Tuple<IDnlibDef, AttributeInfoRecord, TypeDef> attr,
+			string value) {
 			if (attr.Item2 == null)
 				return;
 			var attrDeclType = analyzer.ResolveType(attr.Item2.OwnerTypeId);
@@ -109,11 +114,13 @@ namespace Confuser.Renamer.Analyzers {
 		}
 
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 	}

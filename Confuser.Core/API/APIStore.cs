@@ -40,11 +40,13 @@ namespace Confuser.Core.API {
 						return list[j];
 				}
 			}
+
 			return null;
 		}
 
 		/// <inheritdoc />
-		public IOpaquePredicateDescriptor GetPredicate(MethodDef method, OpaquePredicateType? type, params int[] argCount) {
+		public IOpaquePredicateDescriptor GetPredicate(MethodDef method, OpaquePredicateType? type,
+			params int[] argCount) {
 			var randomPredicates = predicates.ToArray();
 			random.Shuffle(randomPredicates);
 			foreach (var predicate in randomPredicates) {
@@ -53,6 +55,7 @@ namespace Confuser.Core.API {
 				    (argCount == null || Array.IndexOf(argCount, predicate.ArgumentCount) != -1))
 					return predicate;
 			}
+
 			return null;
 		}
 	}

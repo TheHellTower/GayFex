@@ -14,7 +14,7 @@ namespace Confuser.Renamer {
 
 		public string Name => "Name Protection";
 
-		public string Description => 
+		public string Description =>
 			"This protection obfuscate the symbols' name so the decompiled source code can neither be compiled nor read.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
@@ -23,7 +23,7 @@ namespace Confuser.Renamer {
 
 		internal NameProtectionParameters Parameters { get; } = new NameProtectionParameters();
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+		void IConfuserComponent.Initialize(IServiceCollection collection) =>
 			collection.AddSingleton(typeof(INameService), p => new NameService(p));
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {

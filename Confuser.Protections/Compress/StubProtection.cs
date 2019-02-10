@@ -57,7 +57,8 @@ namespace Confuser.Protections.Compress {
 
 			public string Name => "Module injection";
 
-			void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+			void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+				CancellationToken token) {
 				// Hack the origin module into the assembly to make sure correct type resolution
 				var originModule = ((StubProtection)Parent).originModule;
 				originModule.Assembly.Modules.Remove(originModule);
@@ -79,7 +80,8 @@ namespace Confuser.Protections.Compress {
 
 			public string Name => "Packer info encoding";
 
-			void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+			void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+				CancellationToken token) {
 				var field = context.CurrentModule.Types[0].FindField("DataField");
 				Debug.Assert(field != null);
 				context.Registry.GetService<INameService>()?.SetCanRename(context, field, true);
@@ -101,9 +103,9 @@ namespace Confuser.Protections.Compress {
 
 						MDTable<RawFileRow> fileTbl = writer.Metadata.TablesHeap.FileTable;
 						uint fileRid = fileTbl.Add(new RawFileRow(
-							                           (uint)FileAttributes.ContainsMetadata,
-							                           writer.Metadata.StringsHeap.Add("koi"),
-							                           hashBlob));
+							(uint)FileAttributes.ContainsMetadata,
+							writer.Metadata.StringsHeap.Add("koi"),
+							hashBlob));
 					}
 				};
 			}

@@ -5,12 +5,11 @@ using dnlib.DotNet.Writer;
 using dnlib.IO;
 using dnlib.PE;
 
-namespace Confuser.Protections.AntiTamper
-{
+namespace Confuser.Protections.AntiTamper {
 	internal class JITBodyIndex : IChunk {
 		private readonly Dictionary<uint, JITMethodBody> _bodies;
 
-		public JITBodyIndex(IEnumerable<uint> tokens) => 
+		public JITBodyIndex(IEnumerable<uint> tokens) =>
 			_bodies = tokens.ToDictionary(token => token, token => (JITMethodBody)null);
 
 		public FileOffset FileOffset { get; private set; }

@@ -23,13 +23,16 @@ namespace Confuser.Core.Services {
 				var rt = serviceProvider.GetRequiredService<CoreRuntimeService>().GetRuntimeModule();
 				var marker = context.Registry.GetRequiredService<IMarkerService>();
 
-				var decompressMethod = rt.GetRuntimeType("Confuser.Core.Runtime.Lzma", module).Methods.Where(method => method.Name == "Decompress").Single();
-				return InjectHelper.Inject(decompressMethod, module, InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
+				var decompressMethod = rt.GetRuntimeType("Confuser.Core.Runtime.Lzma", module).Methods
+					.Where(method => method.Name == "Decompress").Single();
+				return InjectHelper.Inject(decompressMethod, module,
+					InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 			});
 			init(injectResult.Requested.Mapped);
 			foreach (var injectedDependency in injectResult.InjectedDependencies) {
 				init(injectedDependency.Mapped);
 			}
+
 			return injectResult.Requested.Mapped;
 		}
 

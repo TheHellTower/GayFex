@@ -14,7 +14,8 @@ namespace Confuser.Core {
 		/// <summary>
 		///     A empty instance of <see cref="ProtectionParameters" />.
 		/// </summary>
-		public static readonly ProtectionParameters Empty = new ProtectionParameters(null, ImmutableArray.Create<IDnlibDef>());
+		public static readonly ProtectionParameters Empty =
+			new ProtectionParameters(null, ImmutableArray.Create<IDnlibDef>());
 
 		readonly IConfuserComponent comp;
 
@@ -52,6 +53,7 @@ namespace Confuser.Core {
 				// Packer parameters are stored in modules
 				target = context.Modules[0];
 			}
+
 			if (target == null) throw new ArgumentNullException(nameof(target));
 
 			var objParams = context.Annotations.Get<ProtectionSettings>(target, ParametersKey);
@@ -62,8 +64,10 @@ namespace Confuser.Core {
 				try {
 					return parameter.Deserialize(ret);
 				}
-				catch (SerializationException) { }
+				catch (SerializationException) {
+				}
 			}
+
 			return parameter.DefaultValue;
 		}
 

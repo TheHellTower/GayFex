@@ -5,7 +5,7 @@ namespace Confuser.DynCipher.AST {
 		public uint Value { get; set; }
 
 		public static implicit operator LiteralExpression(uint val) {
-			return new LiteralExpression { Value = val };
+			return new LiteralExpression {Value = val};
 		}
 
 		public override string ToString() {

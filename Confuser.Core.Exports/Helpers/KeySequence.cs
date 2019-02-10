@@ -40,6 +40,7 @@ namespace Confuser.Core.Helpers {
 					key.Type = BlockKeyType.Incremental;
 				keys[block.Id] = key;
 			}
+
 			ProcessBlocks(keys, graph, random);
 			return keys;
 		}
@@ -68,6 +69,7 @@ namespace Confuser.Core.Helpers {
 							updated = true;
 						}
 					}
+
 					if (block.Targets.Count > 0) {
 						uint newExit = block.Targets.Select(b => keys[b.Id].EntryState).Max();
 						if (key.ExitState != newExit) {
@@ -75,6 +77,7 @@ namespace Confuser.Core.Helpers {
 							updated = true;
 						}
 					}
+
 					if (block.Footer.OpCode.Code == Code.Endfilter || block.Footer.OpCode.Code == Code.Endfinally) {
 						// Match the exit state within finally/fault/filter
 						List<ExceptionHandler> ehs;
@@ -84,18 +87,20 @@ namespace Confuser.Core.Helpers {
 							foreach (var eh in graph.Body.ExceptionHandlers) {
 								if (eh.FilterStart != null && block.Footer.OpCode.Code == Code.Endfilter) {
 									if (footerIndex >= graph.IndexOf(eh.FilterStart) &&
-										footerIndex < graph.IndexOf(eh.HandlerStart))
+									    footerIndex < graph.IndexOf(eh.HandlerStart))
 										ehs.Add(eh);
 								}
 								else if (eh.HandlerType == ExceptionHandlerType.Finally ||
-										 eh.HandlerType == ExceptionHandlerType.Fault) {
+								         eh.HandlerType == ExceptionHandlerType.Fault) {
 									if (footerIndex >= graph.IndexOf(eh.HandlerStart) &&
-										(eh.HandlerEnd == null || footerIndex < graph.IndexOf(eh.HandlerEnd)))
+									    (eh.HandlerEnd == null || footerIndex < graph.IndexOf(eh.HandlerEnd)))
 										ehs.Add(eh);
 								}
 							}
+
 							ehMap[block] = ehs;
 						}
+
 						foreach (var eh in ehs) {
 							uint ehVal;
 							if (finallyIds.TryGetValue(eh, out ehVal)) {
@@ -122,9 +127,10 @@ namespace Confuser.Core.Helpers {
 							int footerIndex = graph.IndexOf(block.Footer);
 							foreach (var eh in graph.Body.ExceptionHandlers) {
 								if (footerIndex >= graph.IndexOf(eh.TryStart) &&
-									(eh.TryEnd == null || footerIndex < graph.IndexOf(eh.TryEnd)))
+								    (eh.TryEnd == null || footerIndex < graph.IndexOf(eh.TryEnd)))
 									ehs.Add(eh);
 							}
+
 							ehMap[block] = ehs;
 						}
 
@@ -137,6 +143,7 @@ namespace Confuser.Core.Helpers {
 								maxVal = ehVal;
 							}
 						}
+
 						if (maxVal != null) {
 							if (key.ExitState > maxVal.Value) {
 								maxVal = key.ExitState;
@@ -146,10 +153,12 @@ namespace Confuser.Core.Helpers {
 								key.ExitState = maxVal.Value;
 								updated = true;
 							}
+
 							foreach (var eh in ehs)
 								finallyIds[eh] = maxVal.Value;
 						}
 					}
+
 					keys[block.Id] = key;
 				}
 			} while (updated);

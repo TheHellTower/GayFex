@@ -1,5 +1,4 @@
-﻿namespace Confuser.Protections.AntiTamper
-{
+﻿namespace Confuser.Protections.AntiTamper {
 	internal struct JITExceptionHandlerClause {
 		public uint ClassTokenOrFilterOffset;
 		public uint Flags;

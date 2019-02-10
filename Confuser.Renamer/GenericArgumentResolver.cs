@@ -60,6 +60,7 @@ namespace Confuser.Renamer {
 				typeSig = newTypeSig;
 				return true;
 			}
+
 			return false;
 		}
 
@@ -84,6 +85,7 @@ namespace Confuser.Renamer {
 				foreach (TypeSig p in old.ParamsAfterSentinel)
 					sig.ParamsAfterSentinel.Add(ResolveGenericArgs(p));
 			}
+
 			return sig;
 		}
 
@@ -143,6 +145,7 @@ namespace Confuser.Renamer {
 					foreach (TypeSig ga in gis.GenericArguments) {
 						genArgs.Add(ResolveGenericArgs(ga));
 					}
+
 					result = new GenericInstSig(ResolveGenericArgs(gis.GenericType) as ClassOrValueTypeSig, genArgs);
 					break;
 

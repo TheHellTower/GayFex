@@ -80,6 +80,7 @@ namespace Confuser.Protections.ControlFlow {
 								Increment(RefCount, offset);
 								BrRefs.AddListEntry(offset, instr);
 							}
+
 							break;
 						case FlowControl.Meta:
 						case FlowControl.Next:
@@ -126,7 +127,8 @@ namespace Confuser.Protections.ControlFlow {
 				var instr = block.Instructions[i];
 				currentStatement.Add(instr);
 
-				var shouldSplit = i + 1 < block.Instructions.Count && trace.HasMultipleSources(block.Instructions[i + 1].Offset);
+				var shouldSplit = i + 1 < block.Instructions.Count &&
+				                  trace.HasMultipleSources(block.Instructions[i + 1].Offset);
 				// ReSharper disable once SwitchStatementMissingSomeCases
 				switch (instr.OpCode.FlowControl) {
 					case FlowControl.Branch:
@@ -142,14 +144,16 @@ namespace Confuser.Protections.ControlFlow {
 									requiredInstr.Add(target);
 							}
 						}
+
 						break;
 				}
+
 				requiredInstr.Remove(instr);
 				if ((instr.OpCode.OpCodeType != OpCodeType.Prefix &&
-					 trace.AfterStack[instr.Offset] == 0 &&
-					 requiredInstr.Count == 0) &&
-					(shouldSplit || ctx.Intensity > ctx.Random.NextDouble()) &&
-					(i == 0 || block.Instructions[i - 1].OpCode.Code != Code.Tailcall)) {
+				     trace.AfterStack[instr.Offset] == 0 &&
+				     requiredInstr.Count == 0) &&
+				    (shouldSplit || ctx.Intensity > ctx.Random.NextDouble()) &&
+				    (i == 0 || block.Instructions[i - 1].OpCode.Code != Code.Tailcall)) {
 					statements.AddLast(currentStatement.ToArray());
 					currentStatement.Clear();
 				}
@@ -188,6 +192,7 @@ namespace Confuser.Protections.ControlFlow {
 				case Code.Bne_Un:
 					return OpCodes.Beq;
 			}
+
 			throw new NotSupportedException();
 		}
 
@@ -222,6 +227,7 @@ namespace Confuser.Protections.ControlFlow {
 						if (lastInstr.OpCode == OpCodes.Call && ((IMethod)lastInstr.Operand).Name == ".ctor")
 							break;
 					}
+
 					statements.AddFirst(newStatement.ToArray());
 				}
 
@@ -261,13 +267,14 @@ namespace Confuser.Protections.ControlFlow {
 
 						// Not within current instruction block / targeted in first statement
 						if (srcs.Any(src => src.Offset <= statements.First.Value.Last().Offset ||
-											src.Offset >= block.Instructions.Last().Offset))
+						                    src.Offset >= block.Instructions.Last().Offset))
 							return true;
 
 						// Not targeted by the last of statements
 						if (srcs.Any(src => statementLast.Contains(src)))
 							return true;
 					}
+
 					return false;
 				});
 
@@ -308,7 +315,7 @@ namespace Confuser.Protections.ControlFlow {
 							var target = (Instruction)newStatement.Last().Operand;
 							int brKey;
 							if (!trace.IsBranchTarget(newStatement.Last().Offset) &&
-								statementKeys.TryGetValue(target, out brKey)) {
+							    statementKeys.TryGetValue(target, out brKey)) {
 								var targetKey = predicate != null ? predicate.GetSwitchKey(brKey) : brKey;
 								var unkSrc = hasUnknownSource(newStatement);
 
@@ -339,7 +346,7 @@ namespace Confuser.Protections.ControlFlow {
 							var target = (Instruction)newStatement.Last().Operand;
 							int brKey;
 							if (!trace.IsBranchTarget(newStatement.Last().Offset) &&
-								statementKeys.TryGetValue(target, out brKey)) {
+							    statementKeys.TryGetValue(target, out brKey)) {
 								bool unkSrc = hasUnknownSource(newStatement);
 								int nextKey = key[i + 1];
 								OpCode condBr = newStatement.Last().OpCode;
@@ -359,8 +366,11 @@ namespace Confuser.Protections.ControlFlow {
 									xorKey = thisKey * r;
 								}
 
-								Instruction brKeyInstr = Instruction.CreateLdcI4(xorKey ^ (predicate != null ? predicate.GetSwitchKey(brKey) : brKey));
-								Instruction nextKeyInstr = Instruction.CreateLdcI4(xorKey ^ (predicate != null ? predicate.GetSwitchKey(nextKey) : nextKey));
+								Instruction brKeyInstr =
+									Instruction.CreateLdcI4(
+										xorKey ^ (predicate != null ? predicate.GetSwitchKey(brKey) : brKey));
+								Instruction nextKeyInstr = Instruction.CreateLdcI4(
+									xorKey ^ (predicate != null ? predicate.GetSwitchKey(nextKey) : nextKey));
 								Instruction pop = Instruction.Create(OpCodes.Pop);
 
 								newStatement.Add(Instruction.Create(condBr, brKeyInstr));
@@ -414,6 +424,7 @@ namespace Confuser.Protections.ControlFlow {
 					current = current.Next;
 					i++;
 				}
+
 				operands[keyId[i]] = current.Value[0];
 				switchInstr.Operand = operands;
 

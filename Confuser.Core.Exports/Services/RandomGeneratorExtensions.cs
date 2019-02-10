@@ -22,7 +22,8 @@ namespace Confuser.Core.Services {
 		/// <exception cref="ArgumentOutOfRangeException"><paramref name="generator"/> &lt; 0</exception>
 		public static Memory<byte> NextBytes(this IRandomGenerator generator, int length) {
 			if (generator == null) throw new ArgumentNullException(nameof(generator));
-			if (length < 0) throw new ArgumentOutOfRangeException(nameof(length), length, "Length can't be less than 0");
+			if (length < 0)
+				throw new ArgumentOutOfRangeException(nameof(length), length, "Length can't be less than 0");
 
 			if (length == 0) return Memory<byte>.Empty;
 
@@ -46,7 +47,8 @@ namespace Confuser.Core.Services {
 			try {
 				buffer.CopyTo(tmpArray);
 				return BitConverter.ToInt32(tmpArray, 0);
-			} finally {
+			}
+			finally {
 				ArrayPool<byte>.Shared.Return(tmpArray);
 			}
 		}

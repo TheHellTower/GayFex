@@ -13,7 +13,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			return resultType;
 		}
 
-		internal static FieldInfo GetField(Type declaringType, string name) => 
+		internal static FieldInfo GetField(Type declaringType, string name) =>
 			GetField(declaringType, name, Array.Empty<string>());
 
 		internal static FieldInfo GetField(Type declaringType, string name, params string[] altNames) {
@@ -28,6 +28,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					if (resultField != null) break;
 				}
 			}
+
 			Debug.Assert(resultField != null, $"Failed to find field {name} in type {declaringType.FullName}");
 			return resultField;
 		}
@@ -44,7 +45,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (declaringType == null) throw new ArgumentNullException(nameof(declaringType));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
-			var resultMethod = declaringType.GetMethod(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, parameters, null);
+			var resultMethod = declaringType.GetMethod(name,
+				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, parameters, null);
 			Debug.Assert(resultMethod != null, $"Failed to find method {name} in type {declaringType.FullName}");
 			return resultMethod;
 		}
@@ -53,7 +55,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (declaringType == null) throw new ArgumentNullException(nameof(declaringType));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
-			var resultMethod = declaringType.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic, null, parameters, null);
+			var resultMethod = declaringType.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic, null,
+				parameters, null);
 			Debug.Assert(resultMethod != null, $"Failed to find method {name} in type {declaringType.FullName}");
 			return resultMethod;
 		}

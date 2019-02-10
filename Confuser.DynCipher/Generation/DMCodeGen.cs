@@ -26,6 +26,7 @@ namespace Confuser.DynCipher.Generation {
 				ret = ilGen.DeclareLocal(typeof(int));
 				localMap[var.Name] = ret;
 			}
+
 			return ret;
 		}
 
@@ -102,6 +103,7 @@ namespace Confuser.DynCipher.Generation {
 					default:
 						throw new NotSupportedException();
 				}
+
 				ilGen.Emit(op);
 			}
 			else if (exp is UnaryOpExpression) {
@@ -118,6 +120,7 @@ namespace Confuser.DynCipher.Generation {
 					default:
 						throw new NotSupportedException();
 				}
+
 				ilGen.Emit(op);
 			}
 			else if (exp is LiteralExpression) {

@@ -46,7 +46,7 @@ namespace ConfuserEx.ViewModel {
 
 		public ICommand Add {
 			get {
-				var cmd =  new RelayCommand(() => {
+				var cmd = new RelayCommand(() => {
 					Debug.Assert(SelectedList != null);
 
 					var rule = new ProjectRuleVM(App.Project, new Rule());
@@ -55,7 +55,11 @@ namespace ConfuserEx.ViewModel {
 					SelectedRuleIndex = SelectedList.Rules.Count - 1;
 				}, () => SelectedList != null);
 
-				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList") { cmd.RaiseCanExecuteChanged(); } };
+				PropertyChanged += (sender, args) => {
+					if (args.PropertyName == "SelectedList") {
+						cmd.RaiseCanExecuteChanged();
+					}
+				};
 
 				return cmd;
 			}
@@ -73,7 +77,11 @@ namespace ConfuserEx.ViewModel {
 					SelectedRuleIndex = selIndex >= SelectedList.Rules.Count ? SelectedList.Rules.Count - 1 : selIndex;
 				}, () => SelectedRuleIndex != -1 && SelectedList != null);
 
-				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") { cmd.RaiseCanExecuteChanged(); } };
+				PropertyChanged += (sender, args) => {
+					if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") {
+						cmd.RaiseCanExecuteChanged();
+					}
+				};
 
 				return cmd;
 			}
@@ -89,7 +97,11 @@ namespace ConfuserEx.ViewModel {
 					dialog.Cleanup();
 				}, () => SelectedRuleIndex != -1 && SelectedList != null);
 
-				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") { cmd.RaiseCanExecuteChanged(); } };
+				PropertyChanged += (sender, args) => {
+					if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") {
+						cmd.RaiseCanExecuteChanged();
+					}
+				};
 
 				return cmd;
 			}
@@ -98,7 +110,7 @@ namespace ConfuserEx.ViewModel {
 		void InitProject() {
 			ModulesView = new CompositeCollection {
 				App.Project,
-				new CollectionContainer { Collection = App.Project.Modules }
+				new CollectionContainer {Collection = App.Project.Modules}
 			};
 			OnPropertyChanged("ModulesView");
 			HasPacker = App.Project.Packer != null;
@@ -107,10 +119,12 @@ namespace ConfuserEx.ViewModel {
 		protected override void OnPropertyChanged(string property) {
 			if (property == "HasPacker") {
 				if (hasPacker && App.Project.Packer == null)
-					App.Project.Packer = new ProjectSettingVM<IPacker>(App.Project, new SettingItem<IPacker> { Id = App.Project.Packers[0].Id });
+					App.Project.Packer = new ProjectSettingVM<IPacker>(App.Project,
+						new SettingItem<IPacker> {Id = App.Project.Packers[0].Id});
 				else if (!hasPacker)
 					App.Project.Packer = null;
 			}
+
 			base.OnPropertyChanged(property);
 		}
 	}

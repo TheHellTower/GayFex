@@ -23,6 +23,7 @@ namespace Confuser.Renamer.BAML {
 				// Lets try this again with .xaml at the end.
 				Rename(ToXaml(oldName), ToXaml(newName));
 			}
+
 			// Reaching this point means that the record was already properly replaced.
 		}
 

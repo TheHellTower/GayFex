@@ -11,7 +11,9 @@ namespace Confuser.Core.Services {
 
 		IRuntimeModuleBuilder IRuntimeService.CreateRuntimeModule(string name) {
 			if (name == null) throw new ArgumentNullException(nameof(name));
-			if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name of the runtime module must not be empty or white-space only.", nameof(name));
+			if (string.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Name of the runtime module must not be empty or white-space only.",
+					nameof(name));
 
 			if (_builders.ContainsKey(name))
 				throw new ArgumentNullException("There is already a runtime module builder with the name " + name);
@@ -24,7 +26,9 @@ namespace Confuser.Core.Services {
 
 		IRuntimeModule IRuntimeService.GetRuntimeModule(string name) {
 			if (name == null) throw new ArgumentNullException(nameof(name));
-			if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name of the runtime module must not be empty or white-space only.", nameof(name));
+			if (string.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Name of the runtime module must not be empty or white-space only.",
+					nameof(name));
 
 			if (!_modules.TryGetValue(name, out var runtimeModule)) {
 				if (!_builders.TryGetValue(name, out var runtimeModuleBuilder))
@@ -33,6 +37,7 @@ namespace Confuser.Core.Services {
 				runtimeModule = new RuntimeModule(runtimeModuleBuilder);
 				_modules = _modules.Add(name, runtimeModule);
 			}
+
 			return runtimeModule;
 		}
 	}

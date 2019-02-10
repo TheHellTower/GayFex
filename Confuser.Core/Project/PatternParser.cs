@@ -51,14 +51,14 @@ namespace Confuser.Core.Project {
 		private sealed class EvaluationVisitor : PatternParserBaseVisitor<bool> {
 			private readonly IDnlibDef _def;
 
-			public EvaluationVisitor(IDnlibDef def) => 
+			public EvaluationVisitor(IDnlibDef def) =>
 				_def = def ?? throw new ArgumentNullException(nameof(def));
 
 			public override bool VisitPattern(PatternContext context) {
 				var childPattern = context.pattern();
 
 				switch (childPattern.Length) {
-					case 0: 
+					case 0:
 						return base.VisitPattern(context);
 
 					case 1:
@@ -85,7 +85,7 @@ namespace Confuser.Core.Project {
 			public override bool VisitDeclTypeFunction(DeclTypeFunctionContext context) {
 				if (!(_def is IMemberDef memberDef) || memberDef.DeclaringType == null)
 					return false;
-				
+
 				var fullName = context.literalExpression().GetCleanedText();
 				return string.Equals(memberDef.DeclaringType.FullName, fullName, StringComparison.Ordinal);
 			}
@@ -178,8 +178,7 @@ namespace Confuser.Core.Project {
 
 			public override bool VisitMatchTypeNameFunction(MatchTypeNameFunctionContext context) {
 				string regex = context.literalExpression().GetCleanedText();
-				switch (_def)
-				{
+				switch (_def) {
 					case TypeDef _:
 						return Regex.IsMatch(_def.Name, regex);
 					case IMemberDef memberDef when memberDef.DeclaringType != null:
@@ -194,15 +193,13 @@ namespace Confuser.Core.Project {
 
 				var memberType = new StringBuilder();
 
-				switch (_def)
-				{
+				switch (_def) {
 					case TypeDef _:
 						memberType.Append("type ");
 						break;
-					case MethodDef method:
-					{
+					case MethodDef method: {
 						memberType.Append("method ");
-						
+
 						if (method.IsGetter)
 							memberType.Append("propertym getter ");
 						else if (method.IsSetter)
@@ -240,7 +237,7 @@ namespace Confuser.Core.Project {
 				var name = context.literalExpression().GetCleanedText();
 				if (_def is IModule moduleDef)
 					return string.Equals(moduleDef.Name, name, StringComparison.Ordinal);
-				return string.Equals(((IOwnerModule)_def).Module.Name,name, StringComparison.Ordinal);
+				return string.Equals(((IOwnerModule)_def).Module.Name, name, StringComparison.Ordinal);
 			}
 
 			public override bool VisitNameFunction(NameFunctionContext context) {

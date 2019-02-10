@@ -17,7 +17,8 @@ namespace ConfuserEx.ViewModel {
 			this.parent = parent;
 			this.module = module;
 
-			ObservableCollection<ProjectRuleVM> rules = Utils.Wrap(module.Rules, rule => new ProjectRuleVM(parent, rule));
+			ObservableCollection<ProjectRuleVM> rules = Utils.Wrap(module.Rules,
+				rule => new ProjectRuleVM(parent, rule));
 			rules.CollectionChanged += (sender, e) => parent.IsModified = true;
 			Rules = rules;
 
@@ -68,7 +69,8 @@ namespace ConfuserEx.ViewModel {
 		public string SNKeyPassword {
 			get { return module.SNKeyPassword; }
 			set {
-				if (SetProperty(module.SNKeyPassword != value, val => module.SNKeyPassword = val, value, "SNKeyPassword"))
+				if (SetProperty(module.SNKeyPassword != value, val => module.SNKeyPassword = val, value,
+					"SNKeyPassword"))
 					parent.IsModified = true;
 			}
 		}

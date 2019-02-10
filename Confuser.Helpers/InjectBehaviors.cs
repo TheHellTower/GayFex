@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Helpers {
 	public static class InjectBehaviors {
-
 		/// <summary>
 		/// This inject behavior will rename every method, field and type it encounters. It will also internalize all
 		/// public elements and it will declare all dependency classes as nested private classes.
@@ -21,6 +20,7 @@ namespace Confuser.Helpers {
 		/// <exception cref="InvalidOperationException"><see cref="INameService"/> is not registered</exception>
 		public static IInjectBehavior RenameAndNestBehavior(IConfuserContext context, TypeDef targetType) =>
 			new RenameEverythingNestedPrivateDependenciesBehavior(context, targetType);
+
 		public static IInjectBehavior RenameAndInternalizeBehavior(IConfuserContext context) =>
 			new RenameEverythingInternalDependenciesBehavior(context);
 
@@ -112,6 +112,7 @@ namespace Confuser.Helpers {
 					nameBuilder.Insert(0, '+');
 					nameBuilder.Insert(0, declaringType.Name);
 				}
+
 				nameBuilder.Replace('.', '_').Replace('/', '_');
 				return GetName(nameBuilder.ToString());
 			}
@@ -123,7 +124,8 @@ namespace Confuser.Helpers {
 		}
 
 		private class RenameEverythingInternalDependenciesBehavior : RenameEverythingBehavior {
-			internal RenameEverythingInternalDependenciesBehavior(IConfuserContext context) : base(context) { }
+			internal RenameEverythingInternalDependenciesBehavior(IConfuserContext context) : base(context) {
+			}
 
 			public override void Process(TypeDef source, TypeDefUser injected, Importer importer) {
 				base.Process(source, injected, importer);

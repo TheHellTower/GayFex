@@ -11,7 +11,7 @@ namespace Confuser.Core {
 	internal class LoggerAntlrErrorListener<TSymbol> : IAntlrErrorListener<TSymbol> {
 		private readonly ILogger _logger;
 
-		internal LoggerAntlrErrorListener(ILogger logger) => 
+		internal LoggerAntlrErrorListener(ILogger logger) =>
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
 		public void SyntaxError(IRecognizer recognizer, TSymbol offendingSymbol, int line, int charPositionInLine,

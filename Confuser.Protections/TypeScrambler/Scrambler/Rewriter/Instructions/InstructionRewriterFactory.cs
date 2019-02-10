@@ -6,7 +6,6 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 	class InstructionRewriterFactory : IEnumerable {
-
 		private Dictionary<Type, InstructionRewriter> RewriterDefinitions = new Dictionary<Type, InstructionRewriter>();
 
 		public void Add(InstructionRewriter i) {
@@ -18,6 +17,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 			if (current.Operand == null) {
 				return;
 			}
+
 			InstructionRewriter rw;
 			if (RewriterDefinitions.TryGetValue(current.Operand.GetType().BaseType, out rw)) {
 				rw.ProcessInstruction(service, method, c, ref index, current);

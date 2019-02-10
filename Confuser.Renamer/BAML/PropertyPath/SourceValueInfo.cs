@@ -8,8 +8,8 @@ namespace Confuser.Renamer.BAML {
 	internal struct SourceValueInfo {
 		public SourceValueType type;
 		public DrillIn drillIn;
-		public string name;                 // the name the user supplied - could be "(0)"
-		public IReadOnlyList<IndexerParamInfo> paramList;    // params for indexer
+		public string name; // the name the user supplied - could be "(0)"
+		public IReadOnlyList<IndexerParamInfo> paramList; // params for indexer
 
 		public SourceValueInfo(SourceValueType t, DrillIn d, string n) {
 			type = t;

@@ -56,6 +56,7 @@ namespace Confuser.DynCipher.Transforms {
 				    context.Definitions[block.Statements[i]].Intersect(usage).Count() > 0)
 					return i;
 			}
+
 			return 0;
 		}
 
@@ -67,6 +68,7 @@ namespace Confuser.DynCipher.Transforms {
 				    context.Definitions[block.Statements[i]].Intersect(usage).Count() > 0)
 					return i;
 			}
+
 			return block.Statements.Count - 1;
 		}
 

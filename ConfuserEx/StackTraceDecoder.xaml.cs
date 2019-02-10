@@ -41,6 +41,7 @@ namespace ConfuserEx {
 						line = reader.ReadLine();
 					}
 				}
+
 				status.Content = "Loaded symbol map from '" + shortPath + "' successfully.";
 			}
 			catch {

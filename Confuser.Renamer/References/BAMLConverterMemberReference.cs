@@ -10,7 +10,8 @@ namespace Confuser.Renamer.References {
 		readonly TypeSig sig;
 		readonly BAMLAnalyzer.XmlNsContext xmlnsCtx;
 
-		public BAMLConverterMemberReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IDnlibDef member, PropertyRecord rec) {
+		public BAMLConverterMemberReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IDnlibDef member,
+			PropertyRecord rec) {
 			this.xmlnsCtx = xmlnsCtx;
 			this.sig = sig;
 			this.member = member;
@@ -19,7 +20,8 @@ namespace Confuser.Renamer.References {
 
 		public bool UpdateNameReference(IConfuserContext context, INameService service) {
 			string typeName = sig.ReflectionName;
-			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
+			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace,
+				sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
 			if (!string.IsNullOrEmpty(prefix))
 				typeName = prefix + ":" + typeName;
 			rec.Value = typeName + "." + member.Name;

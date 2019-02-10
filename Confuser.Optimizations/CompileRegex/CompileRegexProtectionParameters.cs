@@ -17,6 +17,7 @@ namespace Confuser.Optimizations.CompileRegex {
 		/// In case this option is enabled, broken expressions will be skipped. Otherwise they will cause ConfuserEx
 		/// to fail obfuscating the assembly.
 		/// </summary>
-		internal IProtectionParameter<bool> SkipBrokenExpressions { get; } = ProtectionParameter.Boolean("skipBroken", false);
+		internal IProtectionParameter<bool> SkipBrokenExpressions { get; } =
+			ProtectionParameter.Boolean("skipBroken", false);
 	}
 }

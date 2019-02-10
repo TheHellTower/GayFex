@@ -45,10 +45,10 @@ namespace Confuser.Protections.ControlFlow {
 
 			ctx.DynCipher.GenerateExpressionPair(
 				ctx.Random,
-				new VariableExpression { Variable = var }, new VariableExpression { Variable = result },
+				new VariableExpression {Variable = var}, new VariableExpression {Variable = result},
 				ctx.Depth, out expression, out inverse);
 
-			expCompiled = new DMCodeGen(typeof(int), new[] { Tuple.Create("{VAR}", typeof(int)) })
+			expCompiled = new DMCodeGen(typeof(int), new[] {Tuple.Create("{VAR}", typeof(int))})
 				.GenerateCIL(expression)
 				.Compile<Func<int, int>>();
 

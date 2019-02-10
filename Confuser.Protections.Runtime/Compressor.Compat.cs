@@ -17,6 +17,7 @@ namespace Confuser.Runtime {
 				k[i] = (uint)s;
 				w[i] = (uint)((s * s) % 0x444d56fb);
 			}
+
 			Mutation.Crypt(w, k);
 			Array.Clear(k, 0, 0x10);
 
@@ -31,6 +32,7 @@ namespace Confuser.Runtime {
 				b[h + 3] = (byte)(d >> 24);
 				h += 4;
 			}
+
 			Array.Clear(w, 0, 0x10);
 			byte[] j = CompressionService.Decompress(b);
 			Array.Clear(b, 0, b.Length);
@@ -42,6 +44,7 @@ namespace Confuser.Runtime {
 				if ((i & 0xff) == 0)
 					s = (s * s) % 0x8a5cb7;
 			}
+
 			return g;
 		}
 
@@ -81,6 +84,7 @@ namespace Confuser.Runtime {
 				string n = Convert.ToBase64String(b);
 				m = Assembly.GetEntryAssembly().GetManifestResourceStream(n);
 			}
+
 			if (m != null) {
 				var d = new uint[m.Length >> 2];
 				var t = new byte[0x100];
@@ -90,6 +94,7 @@ namespace Confuser.Runtime {
 					Buffer.BlockCopy(t, 0, d, o, r);
 					o += r;
 				}
+
 				uint s = 0x6fff61;
 				foreach (byte c in b)
 					s = s * 0x5e3f1f + c;
@@ -103,6 +108,7 @@ namespace Confuser.Runtime {
 
 				return a;
 			}
+
 			return null;
 		}
 	}

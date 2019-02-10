@@ -16,7 +16,12 @@ namespace Confuser.Renamer.BAML {
 	/// implementation: https://referencesource.microsoft.com/#PresentationFramework/src/Framework/MS/Internal/Data/PathParser.cs,408574f0013d222e
 	/// </remarks>
 	internal sealed class PropertyPathParser {
-		private enum State { Init, DrillIn, Prop, Done }
+		private enum State {
+			Init,
+			DrillIn,
+			Prop,
+			Done
+		}
 
 		internal string Error { get; private set; }
 
@@ -44,7 +49,7 @@ namespace Confuser.Renamer.BAML {
 			if (_n == 0) {
 				// When no path string is specified, use value directly and do not drill-in. (same as Path=".")
 				// ClrBindingWorker needs this information to tell XmlBindingWorker about collectionMode.
-				return new SourceValueInfo[] { new SourceValueInfo(SourceValueType.Direct, DrillIn.Never, (string)null) };
+				return new SourceValueInfo[] {new SourceValueInfo(SourceValueType.Direct, DrillIn.Never, (string)null)};
 			}
 
 			_index = 0;
@@ -73,6 +78,7 @@ namespace Confuser.Renamer.BAML {
 								_state = State.Prop;
 								break;
 						}
+
 						break;
 
 					case State.DrillIn:
@@ -89,9 +95,11 @@ namespace Confuser.Renamer.BAML {
 							case NullChar:
 								break;
 							default:
-								SetError(Resources.InvalidPathSyntax, _path.Substring(0, _index), _path.Substring(_index));
+								SetError(Resources.InvalidPathSyntax, _path.Substring(0, _index),
+									_path.Substring(_index));
 								return EmptyInfo;
 						}
+
 						_state = State.Prop;
 						break;
 
@@ -167,7 +175,12 @@ namespace Confuser.Renamer.BAML {
 		}
 
 
-		enum IndexerState { BeginParam, ParenString, ValueString, Done }
+		enum IndexerState {
+			BeginParam,
+			ParenString,
+			ValueString,
+			Done
+		}
 
 		void AddIndexer() {
 			// indexer args are parsed by a (sub-) state machine with four
@@ -177,11 +190,11 @@ namespace Confuser.Renamer.BAML {
 			// escape any of the special characters:  comma, parens, ], ^,
 			// and white space.
 
-			int start = ++_index;       // skip over initial [
-			int level = 1;              // level of nested []
+			int start = ++_index; // skip over initial [
+			int level = 1; // level of nested []
 
-			bool escaped = false;       // true if current char is escaped
-			bool trimRight = false;     // true if value string has trailing white space
+			bool escaped = false; // true if current char is escaped
+			bool trimRight = false; // true if value string has trailing white space
 
 			StringBuilder parenStringBuilder = new StringBuilder();
 			StringBuilder valueStringBuilder = new StringBuilder();
@@ -204,7 +217,7 @@ namespace Confuser.Renamer.BAML {
 				}
 
 				switch (state) {
-					case IndexerState.BeginParam:   // look for optional (...)
+					case IndexerState.BeginParam: // look for optional (...)
 						if (escaped) {
 							// no '(', go parse the value
 							state = IndexerState.ValueString;
@@ -222,9 +235,10 @@ namespace Confuser.Renamer.BAML {
 							state = IndexerState.ValueString;
 							goto case IndexerState.ValueString;
 						}
+
 						break;
 
-					case IndexerState.ParenString:  // parse (...)
+					case IndexerState.ParenString: // parse (...)
 						if (escaped) {
 							// add an escaped character without question
 							parenStringBuilder.Append(c);
@@ -237,9 +251,10 @@ namespace Confuser.Renamer.BAML {
 							// add normal characters inside (...)
 							parenStringBuilder.Append(c);
 						}
+
 						break;
 
-					case IndexerState.ValueString:  // parse value
+					case IndexerState.ValueString: // parse value
 						if (escaped) {
 							// add an escaped character without question
 							valueStringBuilder.Append(c);
@@ -288,6 +303,7 @@ namespace Confuser.Renamer.BAML {
 								++level;
 							}
 						}
+
 						break;
 				}
 
@@ -297,8 +313,8 @@ namespace Confuser.Renamer.BAML {
 
 			// assemble the final result
 			SourceValueInfo info = new SourceValueInfo(
-										SourceValueType.Indexer,
-										_drillIn, paramList);
+				SourceValueType.Indexer,
+				_drillIn, paramList);
 			_al.Add(info);
 
 			StartNewLevel();

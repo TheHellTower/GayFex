@@ -20,7 +20,8 @@ namespace Confuser.Optimizations.TailCall {
 
 			var instruction = instructions[i];
 
-			if (instruction.OpCode == OpCodes.Call || instruction.OpCode == OpCodes.Calli || instruction.OpCode == OpCodes.Callvirt) {
+			if (instruction.OpCode == OpCodes.Call || instruction.OpCode == OpCodes.Calli ||
+			    instruction.OpCode == OpCodes.Callvirt) {
 				// A call operation is a candidate for the tail call optimization.
 
 				// There are no following instructions. There is something strange going on here.
@@ -51,7 +52,7 @@ namespace Confuser.Optimizations.TailCall {
 				if (nextInstruction.OpCode == OpCodes.Ret) return IsCompatibleCall(method, i);
 
 				// Next thing: Check if we have a ternary pattern (Call, followed by a branch instruction to a return)
-				if (nextInstruction.OpCode == OpCodes.Br && 
+				if (nextInstruction.OpCode == OpCodes.Br &&
 				    (nextInstruction.Operand as Instruction)?.OpCode == OpCodes.Ret) return IsCompatibleCall(method, i);
 
 
@@ -61,10 +62,12 @@ namespace Confuser.Optimizations.TailCall {
 
 					var debugVariable = nextInstruction.Operand;
 					var branchInstruction = instructions[i + 2];
-					if (branchInstruction.OpCode != OpCodes.Br || !(branchInstruction.Operand is Instruction loadDebugVarInstruction))
+					if (branchInstruction.OpCode != OpCodes.Br ||
+					    !(branchInstruction.Operand is Instruction loadDebugVarInstruction))
 						return false;
 
-					if (loadDebugVarInstruction.OpCode != OpCodes.Ldloc || loadDebugVarInstruction.Operand != debugVariable)
+					if (loadDebugVarInstruction.OpCode != OpCodes.Ldloc ||
+					    loadDebugVarInstruction.Operand != debugVariable)
 						return false;
 
 					var loadDebugIndex = instructions.IndexOf(loadDebugVarInstruction);
@@ -92,7 +95,8 @@ namespace Confuser.Optimizations.TailCall {
 
 			var voidType = method.Module.CorLibTypes.Void;
 			var typeCmp = TypeEqualityComparer.Instance;
-			if (typeCmp.Equals(targetMethod.MethodSig.RetType, voidType) && !typeCmp.Equals(method.ReturnType, voidType))
+			if (typeCmp.Equals(targetMethod.MethodSig.RetType, voidType) &&
+			    !typeCmp.Equals(method.ReturnType, voidType))
 				return false;
 
 			return true;
@@ -140,7 +144,6 @@ namespace Confuser.Optimizations.TailCall {
 						}
 					}
 				}
-
 			}
 		}
 

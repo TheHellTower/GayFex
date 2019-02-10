@@ -4,17 +4,18 @@ using System.Text.RegularExpressions;
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal partial class RegexRunnerGoMethodCompiler {
 		// indices for unique code fragments
-		private const int stackpop = 0;    // pop one
-		private const int stackpop2 = 1;    // pop two
-		private const int capback = 3;    // uncapture
-		private const int capback2 = 4;    // uncapture 2
-		private const int branchmarkback2 = 5;    // back2 part of branchmark
-		private const int lazybranchmarkback2 = 6;    // back2 part of lazybranchmark
-		private const int branchcountback2 = 7;    // back2 part of branchcount
-		private const int lazybranchcountback2 = 8;    // back2 part of lazybranchcount
-		private const int forejumpback = 9;    // back part of forejump
+		private const int stackpop = 0; // pop one
+		private const int stackpop2 = 1; // pop two
+		private const int capback = 3; // uncapture
+		private const int capback2 = 4; // uncapture 2
+		private const int branchmarkback2 = 5; // back2 part of branchmark
+		private const int lazybranchmarkback2 = 6; // back2 part of lazybranchmark
+		private const int branchcountback2 = 7; // back2 part of branchcount
+		private const int lazybranchcountback2 = 8; // back2 part of lazybranchcount
+		private const int forejumpback = 9; // back part of forejump
 
-		private void GenerateOneCode(RegexOptions options, RegexCode code, int regexOpCode, int codePos, int backtrackCodePos) {
+		private void GenerateOneCode(RegexOptions options, RegexCode code, int regexOpCode, int codePos,
+			int backtrackCodePos) {
 			int Operand(int i) => code.Codes[codePos + i + 1];
 			int Code = regexOpCode & RegexCode.Mask;
 			bool IsRtl = (regexOpCode & RegexCode.Rtl) != 0;
@@ -159,6 +160,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					if (Operand(0) != -1 && Operand(1) != -1) {
 						CallUncapture();
 					}
+
 					Back();
 					break;
 
@@ -182,17 +184,17 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 					PopStack();
 					Dup();
-					Stloc(mark);                            // Stacked(0) -> temp
+					Stloc(mark); // Stacked(0) -> temp
 					PushTrack(mark);
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
-					Beq(l1);                                // mark == textpos -> branch
+					Beq(l1); // mark == textpos -> branch
 
 					// (matched != 0)
 
 					PushTrack(_regexRunnerDef.runtextposFieldDef);
 					PushStack(_regexRunnerDef.runtextposFieldDef);
 					Track(codePos);
-					Goto(code, Operand(0), codePos);                       // Goto(Operand(0))
+					Goto(code, Operand(0), codePos); // Goto(Operand(0))
 
 					// else
 
@@ -251,12 +253,12 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 					PopStack();
 					Dup();
-					Stloc(mark);                      // Stacked(0) -> temp
+					Stloc(mark); // Stacked(0) -> temp
 
 					// if (oldMarkPos != -1)
 					Ldloc(mark);
 					Ldc(-1);
-					Beq(l2);                                // mark == -1 -> branch
+					Beq(l2); // mark == -1 -> branch
 					PushTrack(mark);
 					Br(l3);
 					// else
@@ -266,14 +268,14 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 					// if (Textpos() != mark)
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
-					Beq(l1);                                // mark == textpos -> branch
+					Beq(l1); // mark == textpos -> branch
 					PushTrack(_regexRunnerDef.runtextposFieldDef);
 					Track(codePos);
-					Br(AdvanceLabel(code, codePos));                 // Advance (near)
-																	 // else
+					Br(AdvanceLabel(code, codePos)); // Advance (near)
+					// else
 					MarkLabel(l1);
-					ReadyPushStack();                   // push the current textPos on the stack.
-														// May be ignored by 'back2' or used by a true empty match.
+					ReadyPushStack(); // push the current textPos on the stack.
+					// May be ignored by 'back2' or used by a true empty match.
 					Ldloc(mark);
 
 					DoPush();
@@ -363,27 +365,27 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					var l2 = CreateLabel();
 
 					PopStack();
-					Stloc(count);                           // count -> temp
+					Stloc(count); // count -> temp
 					PopStack();
 					Dup();
-					Stloc(mark);                            // mark -> temp2
+					Stloc(mark); // mark -> temp2
 					PushTrack(mark);
 
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
-					Bne(l1);                                // mark != textpos -> l1
+					Bne(l1); // mark != textpos -> l1
 					Ldloc(count);
 					Ldc(0);
-					Bge(l2);                                // count >= 0 && mark == textpos -> l2
+					Bge(l2); // count >= 0 && mark == textpos -> l2
 
 					MarkLabel(l1);
 					Ldloc(count);
 					Ldc(Operand(1));
-					Bge(l2);                                // count >= Operand(1) -> l2
+					Bge(l2); // count >= Operand(1) -> l2
 
 					// else
 					PushStack(_regexRunnerDef.runtextposFieldDef);
 					ReadyPushStack();
-					Ldloc(count);                           // mark already on track
+					Ldloc(count); // mark already on track
 					Ldc(1);
 					Add();
 					DoPush();
@@ -392,7 +394,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 					// if (count >= Operand(1) || Textpos() == mark)
 					MarkLabel(l2);
-					PushTrack(count);                       // mark already on track
+					PushTrack(count); // mark already on track
 					TrackUnique2(branchcountback2, codePos);
 
 					FreeLocal(count);
@@ -426,7 +428,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					// if (count >= 0)
 					PopStack();
 					StRunnerField(_regexRunnerDef.runtextposFieldDef);
-					PushTrack(count);                       // Tracked(0) is alredy on the track
+					PushTrack(count); // Tracked(0) is alredy on the track
 					TrackUnique2(branchcountback2, codePos);
 					Advance(code, codePos);
 
@@ -480,13 +482,13 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					var l1 = CreateLabel();
 
 					PopStack();
-					Stloc(count);                           // count -> temp
+					Stloc(count); // count -> temp
 					PopStack();
-					Stloc(mark);                            // mark -> temp2
+					Stloc(mark); // mark -> temp2
 
 					Ldloc(count);
 					Ldc(0);
-					Bge(l1);                                // count >= 0 -> l1
+					Bge(l1); // count >= 0 -> l1
 
 					// if (count < 0)
 					PushTrack(mark);
@@ -537,11 +539,11 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Dup();
 					Stloc(cV);
 					Ldc(Operand(1));
-					Bge(l1);                                // Tracked(1) >= Operand(1) -> l1
+					Bge(l1); // Tracked(1) >= Operand(1) -> l1
 
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					TopTrack();
-					Beq(l1);                                // textpos == mark -> l1
+					Beq(l1); // textpos == mark -> l1
 
 					PushStack(_regexRunnerDef.runtextposFieldDef);
 					ReadyPushStack();
@@ -680,7 +682,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				case RegexCode.Nonboundary:
 					//: if (!IsBoundary(Textpos(), _textbeg, _textend))
 					//:     break Backward;
-					CallIsBoundary(_regexRunnerDef.runtextposFieldDef, _regexRunnerDef.runtextbegFieldDef, _regexRunnerDef.runtextendFieldDef);
+					CallIsBoundary(_regexRunnerDef.runtextposFieldDef, _regexRunnerDef.runtextbegFieldDef,
+						_regexRunnerDef.runtextendFieldDef);
 					if (Code == RegexCode.Boundary)
 						Brfalse(BackwardLabel);
 					else
@@ -691,7 +694,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				case RegexCode.NonECMABoundary:
 					//: if (!IsECMABoundary(Textpos(), _textbeg, _textend))
 					//:     break Backward;
-					CallIsECMABoundary(_regexRunnerDef.runtextposFieldDef, _regexRunnerDef.runtextbegFieldDef, _regexRunnerDef.runtextendFieldDef);
+					CallIsECMABoundary(_regexRunnerDef.runtextposFieldDef, _regexRunnerDef.runtextbegFieldDef,
+						_regexRunnerDef.runtextendFieldDef);
 					if (Code == RegexCode.ECMABoundary)
 						Brfalse(BackwardLabel);
 					else
@@ -780,6 +784,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						else
 							Beq(BackwardLabel);
 					}
+
 					break;
 
 				case RegexCode.Multi:
@@ -889,20 +894,22 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 						LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 					}
+
 					Sub();
-					Bgt(BackwardLabel);         // Matchlength() > Rightchars() -> back
+					Bgt(BackwardLabel); // Matchlength() > Rightchars() -> back
 
 					CallMatchIndex(Operand(0));
 					if (!IsRtl) {
 						Ldloc(lenV);
 						Add(false);
 					}
-					Stloc(indexV);              // index += len
+
+					Stloc(indexV); // index += len
 
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					Ldloc(lenV);
 					Add(IsRtl);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef);           // texpos += len
+					StRunnerField(_regexRunnerDef.runtextposFieldDef); // texpos += len
 
 					MarkLabel(l1);
 					Ldloc(lenV);
@@ -917,6 +924,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						Dup();
 						Stloc(lenV);
 					}
+
 					Sub(IsRtl);
 					CallStringGetChars();
 					if (IsCi)
@@ -931,6 +939,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						Sub();
 						Stloc(lenV);
 					}
+
 					Sub(IsRtl);
 					CallStringGetChars();
 					if (IsCi)
@@ -980,13 +989,14 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 						LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 					}
+
 					Sub();
-					Bgt(BackwardLabel);         // Matchlength() > Rightchars() -> back
+					Bgt(BackwardLabel); // Matchlength() > Rightchars() -> back
 
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					Ldc(c);
 					Add(IsRtl);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef);           // texpos += len
+					StRunnerField(_regexRunnerDef.runtextposFieldDef); // texpos += len
 
 					Ldc(c);
 					Stloc(lenV);
@@ -1009,6 +1019,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						Stloc(lenV);
 						Sub();
 					}
+
 					CallStringGetChars();
 					if (IsCi)
 						CallToLower(options);
@@ -1024,6 +1035,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						else
 							Beq(BackwardLabel);
 					}
+
 					Ldloc(lenV);
 					Ldc(0);
 					if (Code == RegexCode.Setrep)
@@ -1079,6 +1091,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 						LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 					}
+
 					Sub();
 					if (c != Int32.MaxValue) {
 						var l4 = CreateLabel();
@@ -1089,6 +1102,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						Ldc(c);
 						MarkLabel(l4);
 					}
+
 					Dup();
 					Stloc(lenV);
 					Ldc(1);
@@ -1235,6 +1249,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 						LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 					}
+
 					Sub();
 					if (c != Int32.MaxValue) {
 						var l4 = CreateLabel();
@@ -1245,6 +1260,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						Ldc(c);
 						MarkLabel(l4);
 					}
+
 					Dup();
 					Stloc(cV);
 					Ldc(0);
@@ -1328,6 +1344,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					throw new NotImplementedException();
 			}
 		}
+
 		private void CrawlAndUncapture() {
 			// Creates something like this:
 			//: while (Crawlpos() != x)

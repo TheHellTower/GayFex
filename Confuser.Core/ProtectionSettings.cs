@@ -10,7 +10,8 @@ namespace Confuser.Core {
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ProtectionSettings" /> class.
 		/// </summary>
-		public ProtectionSettings() { }
+		public ProtectionSettings() {
+		}
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ProtectionSettings" /> class
@@ -33,8 +34,10 @@ namespace Confuser.Core {
 				if (p.TryGetValue(name, out var result)) {
 					return result;
 				}
+
 				throw new ArgumentException($"{name} is not set for {component.Name}", nameof(name));
 			}
+
 			throw new ArgumentException($"{component.Name} has no parameters", nameof(component));
 		}
 
@@ -43,6 +46,7 @@ namespace Confuser.Core {
 			if (TryGetValue(component, out var p)) {
 				return p.Any();
 			}
+
 			return false;
 		}
 
@@ -65,6 +69,7 @@ namespace Confuser.Core {
 				p = new Dictionary<string, string>();
 				Add(component, p);
 			}
+
 			p[name] = value;
 		}
 	}

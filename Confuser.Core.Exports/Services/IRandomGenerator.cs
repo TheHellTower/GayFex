@@ -1,7 +1,6 @@
 ﻿using System;
 
-namespace Confuser.Core.Services
-{
+namespace Confuser.Core.Services {
 	public interface IRandomGenerator {
 		/// <summary>
 		///     Fills the specified buffer with random bytes.

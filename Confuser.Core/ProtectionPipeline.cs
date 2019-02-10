@@ -51,15 +51,17 @@ namespace Confuser.Core {
 		/// <returns>The phase with specified type in the pipeline.</returns>
 		public T FindPhase<T>() where T : IProtectionPhase {
 			foreach (var phases in preStage.Values)
-				foreach (var phase in phases) {
-					if (phase is T)
-						return (T)phase;
-				}
+			foreach (var phase in phases) {
+				if (phase is T)
+					return (T)phase;
+			}
+
 			foreach (var phases in postStage.Values)
-				foreach (var phase in phases) {
-					if (phase is T)
-						return (T)phase;
-				}
+			foreach (var phase in phases) {
+				if (phase is T)
+					return (T)phase;
+			}
+
 			return default;
 		}
 
@@ -70,7 +72,8 @@ namespace Confuser.Core {
 		/// <param name="func">The stage function.</param>
 		/// <param name="targets">The target list of the stage.</param>
 		/// <param name="context">The working context.</param>
-		internal void ExecuteStage(PipelineStage stage, Action<ConfuserContext, CancellationToken> func, Func<IList<IDnlibDef>> targets, ConfuserContext context, CancellationToken token) {
+		internal void ExecuteStage(PipelineStage stage, Action<ConfuserContext, CancellationToken> func,
+			Func<IList<IDnlibDef>> targets, ConfuserContext context, CancellationToken token) {
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("Pipeline");
 
 			foreach (var pre in preStage[stage]) {
@@ -78,6 +81,7 @@ namespace Confuser.Core {
 				logger.LogDebug("Executing '{0}' phase...", pre.Name);
 				pre.Execute(context, new ProtectionParameters(pre.Parent, Filter(context, targets(), pre)), token);
 			}
+
 			token.ThrowIfCancellationRequested();
 			func(context, token);
 			token.ThrowIfCancellationRequested();
@@ -95,7 +99,8 @@ namespace Confuser.Core {
 		/// <param name="targets">List of targets.</param>
 		/// <param name="phase">The component phase.</param>
 		/// <returns>Filtered targets.</returns>
-		static IImmutableList<IDnlibDef> Filter(ConfuserContext context, IList<IDnlibDef> targets, IProtectionPhase phase) {
+		static IImmutableList<IDnlibDef> Filter(ConfuserContext context, IList<IDnlibDef> targets,
+			IProtectionPhase phase) {
 			ProtectionTargets targetType = phase.Targets;
 
 			IEnumerable<IDnlibDef> filter = targets;
@@ -123,6 +128,7 @@ namespace Confuser.Core {
 					logger.LogCritical("'{0}' not marked for obfuscation, possibly a bug.", def);
 					throw new ConfuserException();
 				}
+
 				return parameters.ContainsKey(phase.Parent);
 			}).ToImmutableArray();
 		}

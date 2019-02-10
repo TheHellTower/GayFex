@@ -92,11 +92,13 @@ namespace Confuser.Core.Project {
 				extAttr.Value = IsExternal ? "true" : "false";
 				elem.Attributes.Append(extAttr);
 			}
+
 			if (SNKeyPath != null) {
 				XmlAttribute snKeyAttr = xmlDoc.CreateAttribute("snKey");
 				snKeyAttr.Value = SNKeyPath;
 				elem.Attributes.Append(snKeyAttr);
 			}
+
 			if (SNKeyPassword != null) {
 				XmlAttribute snKeyPassAttr = xmlDoc.CreateAttribute("snKeyPass");
 				snKeyPassAttr.Value = SNKeyPassword;
@@ -213,7 +215,8 @@ namespace Confuser.Core.Project {
 		/// <param name="xmlDoc">The root XML document.</param>
 		/// <returns>The setting module description.</returns>
 		internal XmlElement Save(XmlDocument xmlDoc) {
-			XmlElement elem = xmlDoc.CreateElement(typeof(T) == typeof(IPacker) ? "packer" : "protection", ConfuserProject.Namespace);
+			XmlElement elem = xmlDoc.CreateElement(typeof(T) == typeof(IPacker) ? "packer" : "protection",
+				ConfuserProject.Namespace);
 
 			XmlAttribute idAttr = xmlDoc.CreateAttribute("id");
 			idAttr.Value = Id;
@@ -249,7 +252,8 @@ namespace Confuser.Core.Project {
 			Id = elem.Attributes["id"].Value;
 
 			if (elem.Attributes["action"] != null)
-				Action = (SettingItemAction)Enum.Parse(typeof(SettingItemAction), elem.Attributes["action"].Value, true);
+				Action = (SettingItemAction)Enum.Parse(typeof(SettingItemAction), elem.Attributes["action"].Value,
+					true);
 			else
 				Action = SettingItemAction.Add;
 
@@ -378,6 +382,7 @@ namespace Confuser.Core.Project {
 					item.Add(j, i[j]);
 				ret.Add(item);
 			}
+
 			return ret;
 		}
 	}
@@ -414,7 +419,10 @@ namespace Confuser.Core.Project {
 		/// <summary>
 		///     The schema of project XML.
 		/// </summary>
-		public static readonly XmlSchema Schema = XmlSchema.Read(typeof(ConfuserProject).Assembly.GetManifestResourceStream("Confuser.Core.Project.ConfuserPrj.xsd"), null);
+		public static readonly XmlSchema Schema =
+			XmlSchema.Read(
+				typeof(ConfuserProject).Assembly.GetManifestResourceStream("Confuser.Core.Project.ConfuserPrj.xsd"),
+				null);
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ConfuserProject" /> class.

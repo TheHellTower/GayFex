@@ -37,6 +37,7 @@ namespace Confuser.Protections.ReferenceProxy {
 					TypeDef declType = method.DeclaringType.ResolveTypeDefThrow();
 					retType = Import(ctx, declType).ToTypeSig();
 				}
+
 				return MethodSig.CreateStatic(retType, paramTypes);
 			}
 			else {
@@ -48,10 +49,11 @@ namespace Confuser.Protections.ReferenceProxy {
 				if (method.MethodSig.HasThis && !method.MethodSig.ExplicitThis) {
 					TypeDef declType = method.DeclaringType.ResolveTypeDefThrow();
 					if (ctx.TypeErasure && !declType.IsValueType)
-						paramTypes = new[] { module.CorLibTypes.Object }.Concat(paramTypes);
+						paramTypes = new[] {module.CorLibTypes.Object}.Concat(paramTypes);
 					else
-						paramTypes = new[] { Import(ctx, declType).ToTypeSig() }.Concat(paramTypes);
+						paramTypes = new[] {Import(ctx, declType).ToTypeSig()}.Concat(paramTypes);
 				}
+
 				TypeSig retType = method.MethodSig.RetType;
 				if (ctx.TypeErasure && retType.IsClassSig)
 					retType = module.CorLibTypes.Object;
@@ -64,17 +66,23 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (ctx.Delegates.TryGetValue(sig, out ret))
 				return ret;
 
-			ret = new TypeDefUser(ctx.Name.ObfuscateName(ctx.Method.Module, ctx.Method.DeclaringType.Namespace, RenameMode.Unicode), ctx.Name.RandomName(), ctx.Module.CorLibTypes.GetTypeRef("System", "MulticastDelegate"));
+			ret = new TypeDefUser(
+				ctx.Name.ObfuscateName(ctx.Method.Module, ctx.Method.DeclaringType.Namespace, RenameMode.Unicode),
+				ctx.Name.RandomName(), ctx.Module.CorLibTypes.GetTypeRef("System", "MulticastDelegate"));
 			ret.Attributes = TypeAttributes.NotPublic | TypeAttributes.Sealed;
 
-			var ctor = new MethodDefUser(".ctor", MethodSig.CreateInstance(ctx.Module.CorLibTypes.Void, ctx.Module.CorLibTypes.Object, ctx.Module.CorLibTypes.IntPtr));
-			ctor.Attributes = MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
+			var ctor = new MethodDefUser(".ctor",
+				MethodSig.CreateInstance(ctx.Module.CorLibTypes.Void, ctx.Module.CorLibTypes.Object,
+					ctx.Module.CorLibTypes.IntPtr));
+			ctor.Attributes = MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName |
+			                  MethodAttributes.SpecialName;
 			ctor.ImplAttributes = MethodImplAttributes.Runtime;
 			ret.Methods.Add(ctor);
 
 			var invoke = new MethodDefUser("Invoke", sig.Clone());
 			invoke.MethodSig.HasThis = true;
-			invoke.Attributes = MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.NewSlot;
+			invoke.Attributes = MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Virtual |
+			                    MethodAttributes.NewSlot;
 			invoke.ImplAttributes = MethodImplAttributes.Runtime;
 			ret.Methods.Add(invoke);
 
@@ -88,6 +96,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			ctx.Delegates[sig] = ret;
 			return ret;
 		}
+
 		private sealed class TypeRefReference : INameReference<TypeDef> {
 			readonly TypeDef typeDef;
 			readonly TypeRef typeRef;

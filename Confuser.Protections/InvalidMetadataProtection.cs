@@ -13,7 +13,7 @@ namespace Confuser.Protections {
 
 		public string Name => "Invalid Metadata Protection";
 
-		public string Description => 
+		public string Description =>
 			"This protection adds invalid metadata to modules to prevent disassembler/decompiler from opening them.";
 
 		public string Id => _Id;
@@ -28,7 +28,7 @@ namespace Confuser.Protections {
 			//
 		}
 
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPostStage(PipelineStage.BeginModule, new InvalidMetadataProtectionPhase(this));
 	}
 }

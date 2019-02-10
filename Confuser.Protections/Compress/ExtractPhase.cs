@@ -24,20 +24,22 @@ namespace Confuser.Protections.Compress {
 
 		public bool ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (context.Packer == null)
 				return;
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(Compressor._Id);
 
 			bool isExe = context.CurrentModule.Kind == ModuleKind.Windows ||
-						 context.CurrentModule.Kind == ModuleKind.Console;
+			             context.CurrentModule.Kind == ModuleKind.Console;
 
 			if (context.Annotations.Get<CompressorContext>(context, Compressor.ContextKey) != null) {
 				if (isExe) {
 					logger.LogCritical("Too many executable modules!");
 					throw new ConfuserException();
 				}
+
 				return;
 			}
 

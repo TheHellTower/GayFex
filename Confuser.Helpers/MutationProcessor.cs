@@ -9,9 +9,11 @@ using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Helpers {
-	public delegate IReadOnlyList<Instruction> PlaceholderProcessor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arguments);
+	public delegate IReadOnlyList<Instruction> PlaceholderProcessor(ModuleDef module, MethodDef method,
+		IReadOnlyList<Instruction> arguments);
 
-	public delegate IReadOnlyList<Instruction> CryptProcessor(ModuleDef module, MethodDef method, Local block, Local key);
+	public delegate IReadOnlyList<Instruction> CryptProcessor(ModuleDef module, MethodDef method, Local block,
+		Local key);
 
 	public class MutationProcessor : IMethodInjectProcessor {
 		private const string MutationClassName = "Confuser.Mutation";
@@ -41,14 +43,17 @@ namespace Confuser.Helpers {
 				var instr = instructions[i];
 
 				if (instr.OpCode == OpCodes.Ldsfld) {
-					if (instr.Operand is IField loadedField && loadedField.DeclaringType.FullName == MutationClassName) {
+					if (instr.Operand is IField loadedField &&
+					    loadedField.DeclaringType.FullName == MutationClassName) {
 						if (!ProcessKeyField(method, instr, loadedField))
 							throw new InvalidOperationException("Unexpected load field operation to Mutation class!");
 					}
 				}
 				else if (instr.OpCode == OpCodes.Call) {
-					if (instr.Operand is IMethod calledMethod && calledMethod.DeclaringType.FullName == MutationClassName) {
-						if (!ReplacePlaceholder(method, instr, calledMethod, ref i) && !ReplaceCrypt(method, instr, calledMethod, ref i))
+					if (instr.Operand is IMethod calledMethod &&
+					    calledMethod.DeclaringType.FullName == MutationClassName) {
+						if (!ReplacePlaceholder(method, instr, calledMethod, ref i) &&
+						    !ReplaceCrypt(method, instr, calledMethod, ref i))
 							throw new InvalidOperationException("Unexpected call operation to Mutation class!");
 					}
 				}
@@ -65,22 +70,54 @@ namespace Confuser.Helpers {
 				if (int.TryParse(number.ToString(), out var value)) {
 					MutationField mutationField;
 					switch (value) {
-						case 0: mutationField = MutationField.KeyI0; break;
-						case 1: mutationField = MutationField.KeyI1; break;
-						case 2: mutationField = MutationField.KeyI2; break;
-						case 3: mutationField = MutationField.KeyI3; break;
-						case 4: mutationField = MutationField.KeyI4; break;
-						case 5: mutationField = MutationField.KeyI5; break;
-						case 6: mutationField = MutationField.KeyI6; break;
-						case 7: mutationField = MutationField.KeyI7; break;
-						case 8: mutationField = MutationField.KeyI8; break;
-						case 9: mutationField = MutationField.KeyI9; break;
-						case 10: mutationField = MutationField.KeyI10; break;
-						case 11: mutationField = MutationField.KeyI11; break;
-						case 12: mutationField = MutationField.KeyI12; break;
-						case 13: mutationField = MutationField.KeyI13; break;
-						case 14: mutationField = MutationField.KeyI14; break;
-						case 15: mutationField = MutationField.KeyI15; break;
+						case 0:
+							mutationField = MutationField.KeyI0;
+							break;
+						case 1:
+							mutationField = MutationField.KeyI1;
+							break;
+						case 2:
+							mutationField = MutationField.KeyI2;
+							break;
+						case 3:
+							mutationField = MutationField.KeyI3;
+							break;
+						case 4:
+							mutationField = MutationField.KeyI4;
+							break;
+						case 5:
+							mutationField = MutationField.KeyI5;
+							break;
+						case 6:
+							mutationField = MutationField.KeyI6;
+							break;
+						case 7:
+							mutationField = MutationField.KeyI7;
+							break;
+						case 8:
+							mutationField = MutationField.KeyI8;
+							break;
+						case 9:
+							mutationField = MutationField.KeyI9;
+							break;
+						case 10:
+							mutationField = MutationField.KeyI10;
+							break;
+						case 11:
+							mutationField = MutationField.KeyI11;
+							break;
+						case 12:
+							mutationField = MutationField.KeyI12;
+							break;
+						case 13:
+							mutationField = MutationField.KeyI13;
+							break;
+						case 14:
+							mutationField = MutationField.KeyI14;
+							break;
+						case 15:
+							mutationField = MutationField.KeyI15;
+							break;
 						default: return false;
 					}
 
@@ -89,7 +126,8 @@ namespace Confuser.Helpers {
 						instr.Operand = keyValue;
 						return true;
 					}
-					else if (LateKeyFieldValues != null && LateKeyFieldValues.TryGetValue(mutationField, out var lateUpdate)) {
+					else if (LateKeyFieldValues != null &&
+					         LateKeyFieldValues.TryGetValue(mutationField, out var lateUpdate)) {
 						lateUpdate.AddUpdateInstruction(method, instr);
 						// Setting a dummy value, so the reference to the Mutation class is not injected.
 						instr.OpCode = OpCodes.Ldc_I4_0;
@@ -97,7 +135,8 @@ namespace Confuser.Helpers {
 						return true;
 					}
 					else {
-						throw new InvalidOperationException($"Code contains request to mutation key {field.Name}, but the value for this field is not set.");
+						throw new InvalidOperationException(
+							$"Code contains request to mutation key {field.Name}, but the value for this field is not set.");
 					}
 				}
 			}
@@ -111,13 +150,16 @@ namespace Confuser.Helpers {
 			Debug.Assert(calledMethod != null, $"{nameof(calledMethod)} != null");
 
 			if (calledMethod.Name == "Placeholder") {
-				if (PlaceholderProcessor == null) throw new InvalidOperationException("Found mutation placeholder, but there is no processor defined.");
+				if (PlaceholderProcessor == null)
+					throw new InvalidOperationException(
+						"Found mutation placeholder, but there is no processor defined.");
 				var trace = TraceService.Trace(method);
 				int[] argIndexes = trace.TraceArguments(instr);
 				if (argIndexes == null) throw new InvalidOperationException("Failed to trace placeholder argument.");
 
 				int argIndex = argIndexes[0];
-				IReadOnlyList<Instruction> arg = method.Body.Instructions.Skip(argIndex).Take(index - argIndex).ToImmutableArray();
+				IReadOnlyList<Instruction> arg = method.Body.Instructions.Skip(argIndex).Take(index - argIndex)
+					.ToImmutableArray();
 
 				for (int j = 0; j < arg.Count; j++)
 					method.Body.Instructions.RemoveAt(argIndex);
@@ -143,7 +185,8 @@ namespace Confuser.Helpers {
 			Debug.Assert(calledMethod != null, $"{nameof(calledMethod)} != null");
 
 			if (calledMethod.Name == "Crypt") {
-				if (CryptProcessor == null) throw new InvalidOperationException("Found mutation crypt, but not processor defined.");
+				if (CryptProcessor == null)
+					throw new InvalidOperationException("Found mutation crypt, but not processor defined.");
 
 				var instrIndex = method.Body.Instructions.IndexOf(instr);
 				var ldBlock = method.Body.Instructions[instrIndex - 2];
@@ -155,7 +198,7 @@ namespace Confuser.Helpers {
 				method.Body.Instructions.RemoveAt(instrIndex - 2);
 
 				var cryptInstr = CryptProcessor(TargetModule, method, (Local)ldBlock.Operand, (Local)ldKey.Operand);
-				for (var i = 0; i< cryptInstr.Count; i++) {
+				for (var i = 0; i < cryptInstr.Count; i++) {
 					method.Body.Instructions.Insert(instrIndex - 2 + i, cryptInstr[i]);
 				}
 
@@ -163,6 +206,7 @@ namespace Confuser.Helpers {
 
 				return true;
 			}
+
 			return false;
 		}
 	}

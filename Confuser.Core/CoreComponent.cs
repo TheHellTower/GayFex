@@ -7,7 +7,6 @@ namespace Confuser.Core {
 	///     Core component of Confuser.
 	/// </summary>
 	internal sealed class CoreComponent : IConfuserComponent {
-
 		readonly Marker marker;
 		readonly ConfuserParameters parameters;
 
@@ -41,6 +40,7 @@ namespace Confuser.Core {
 		}
 
 		/// <inheritdoc />
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) { }
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {
+		}
 	}
 }

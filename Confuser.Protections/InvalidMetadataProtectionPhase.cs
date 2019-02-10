@@ -27,9 +27,11 @@ namespace Confuser.Protections {
 
 		public bool ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (parameters.Targets.Contains(context.CurrentModule)) {
-				random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(InvalidMetadataProtection._FullId);
+				random = context.Registry.GetRequiredService<IRandomService>()
+					.GetRandomGenerator(InvalidMetadataProtection._FullId);
 				context.CurrentModuleWriterOptions.WriterEvent += OnWriterEvent;
 				token.ThrowIfCancellationRequested();
 			}
@@ -71,7 +73,8 @@ namespace Confuser.Protections {
 
 				int r = random.NextInt32(8, 16);
 				for (int i = 0; i < r; i++)
-					writer.Metadata.TablesHeap.ENCLogTable.Add(new RawENCLogRow(random.NextUInt32(), random.NextUInt32()));
+					writer.Metadata.TablesHeap.ENCLogTable.Add(new RawENCLogRow(random.NextUInt32(),
+						random.NextUInt32()));
 				r = random.NextInt32(8, 16);
 				for (int i = 0; i < r; i++)
 					writer.Metadata.TablesHeap.ENCMapTable.Add(new RawENCMapRow(random.NextUInt32()));
@@ -100,13 +103,14 @@ namespace Confuser.Protections {
 			}
 			else if (e.Event == ModuleWriterEvent.MDOnAllTablesSorted) {
 				writer.Metadata.TablesHeap.DeclSecurityTable.Add(new RawDeclSecurityRow(
-																	 unchecked(0x7fff), 0xffff7fff, 0xffff7fff));
+					unchecked(0x7fff), 0xffff7fff, 0xffff7fff));
 				/*
 				writer.MetaData.TablesHeap.ManifestResourceTable.Add(new RawManifestResourceRow(
 					0x7fff7fff, (uint)ManifestResourceAttributes.Private, 0x7fff7fff, 2));
 				*/
 			}
 		}
+
 		private sealed class RawHeap : HeapBase {
 			readonly byte[] content;
 
@@ -122,5 +126,4 @@ namespace Confuser.Protections {
 			protected override void WriteToImpl(DataWriter writer) => writer.WriteBytes(content);
 		}
 	}
-
 }

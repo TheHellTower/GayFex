@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace Confuser.Core {
 	public interface IRuntimeModuleBuilder {
-		void AddImplementation(string targetFrameworkName, Func<Stream> assemblyStreamFactory, Func<Stream> debugSymbolStreamFactory);
+		void AddImplementation(string targetFrameworkName, Func<Stream> assemblyStreamFactory,
+			Func<Stream> debugSymbolStreamFactory);
 	}
 }

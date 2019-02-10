@@ -48,7 +48,8 @@ namespace ConfuserEx.ViewModel {
 		private async void DoProtect() {
 			var parameters = new ConfuserParameters {
 				Project = ((IViewModel<ConfuserProject>)App.Project).Model,
-				ConfigureLogging = builder => builder.AddProvider(new UiLoggerProvider(SendLogMessage)).SetMinimumLevel(LogLevel.Information)
+				ConfigureLogging = builder =>
+					builder.AddProvider(new UiLoggerProvider(SendLogMessage)).SetMinimumLevel(LogLevel.Information)
 			};
 			if (File.Exists(App.FileName))
 				Environment.CurrentDirectory = Path.GetDirectoryName(App.FileName);
@@ -85,10 +86,10 @@ namespace ConfuserEx.ViewModel {
 			LogDocument.Blocks.Add(documentContent);
 
 			try {
-				for (; ; ) {
+				for (;;) {
 					var newMessages = 0;
 					while (UnpublishedMessage.TryDequeue(out var log)) {
-						var messageRun = new Run(log.message) { Foreground = GetLogLevelForeground(log.level) };
+						var messageRun = new Run(log.message) {Foreground = GetLogLevelForeground(log.level)};
 
 						documentContent.Inlines.Add(messageRun);
 						documentContent.Inlines.Add(new LineBreak());
@@ -103,7 +104,8 @@ namespace ConfuserEx.ViewModel {
 					await Task.Delay(80, token).ConfigureAwait(true);
 				}
 			}
-			catch (OperationCanceledException) { }
+			catch (OperationCanceledException) {
+			}
 		}
 
 		private static Brush GetLogLevelForeground(LogLevel logLevel) {

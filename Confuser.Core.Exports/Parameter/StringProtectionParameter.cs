@@ -2,10 +2,9 @@
 
 namespace Confuser.Core.Parameter {
 	internal sealed class StringProtectionParameter : IProtectionParameter<string> {
-
 		public string DefaultValue { get; }
 
-		public string Name {get;}
+		public string Name { get; }
 
 		internal StringProtectionParameter(string name, string defaultValue) {
 			Debug.Assert(!string.IsNullOrWhiteSpace(name));

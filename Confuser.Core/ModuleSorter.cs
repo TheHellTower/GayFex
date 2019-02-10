@@ -19,17 +19,17 @@ namespace Confuser.Core {
 			var edges = new List<DependencyGraphEdge>();
 			var roots = new HashSet<ModuleDefMD>(modules);
 			var asmMap = modules.GroupBy(module => module.Assembly.ToAssemblyRef(), AssemblyNameComparer.CompareAll)
-			                    .ToDictionary(gp => gp.Key, gp => gp.ToList(), AssemblyNameComparer.CompareAll);
+				.ToDictionary(gp => gp.Key, gp => gp.ToList(), AssemblyNameComparer.CompareAll);
 
 			foreach (ModuleDefMD m in modules)
-				foreach (AssemblyRef nameRef in m.GetAssemblyRefs()) {
-					if (!asmMap.ContainsKey(nameRef))
-						continue;
+			foreach (AssemblyRef nameRef in m.GetAssemblyRefs()) {
+				if (!asmMap.ContainsKey(nameRef))
+					continue;
 
-					foreach (var asmModule in asmMap[nameRef])
-						edges.Add(new DependencyGraphEdge(asmModule, m));
-					roots.Remove(m);
-				}
+				foreach (var asmModule in asmMap[nameRef])
+					edges.Add(new DependencyGraphEdge(asmModule, m));
+				roots.Remove(m);
+			}
 
 			var sorted = SortGraph(roots, edges).ToList();
 			Debug.Assert(sorted.Count == modules.Count);
@@ -53,6 +53,7 @@ namespace Confuser.Core {
 							queue.Enqueue(edge.To);
 					}
 				}
+
 				if (edges.Count > 0) {
 					foreach (var edge in edges) {
 						if (!visited.Contains(edge.From)) {

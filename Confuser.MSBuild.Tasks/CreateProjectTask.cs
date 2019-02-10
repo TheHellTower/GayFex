@@ -10,18 +10,15 @@ namespace Confuser.MSBuild.Tasks {
 	public sealed class CreateProjectTask : Task {
 		public ITaskItem SourceProject { get; set; }
 
-		[Required]
-		public ITaskItem[] References { get; set; }
+		[Required] public ITaskItem[] References { get; set; }
 
-		[Required]
-		public ITaskItem AssemblyPath { get; set; }
+		[Required] public ITaskItem AssemblyPath { get; set; }
 
 		public ITaskItem[] SatelliteAssemblyPaths { get; set; }
 
 		public ITaskItem KeyFilePath { get; set; }
 
-		[Required, Output]
-		public ITaskItem ResultProject { get; set; }
+		[Required, Output] public ITaskItem ResultProject { get; set; }
 
 		public override bool Execute() {
 			var project = new ConfuserProject();
@@ -60,7 +57,8 @@ namespace Confuser.MSBuild.Tasks {
 			return true;
 		}
 
-		private static ProjectModule GetOrCreateProjectModule(ConfuserProject project, string assemblyPath, bool isExternal = false) {
+		private static ProjectModule GetOrCreateProjectModule(ConfuserProject project, string assemblyPath,
+			bool isExternal = false) {
 			var assemblyFileName = Path.GetFileName(assemblyPath);
 			var assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
 			foreach (var module in project) {
@@ -70,7 +68,8 @@ namespace Confuser.MSBuild.Tasks {
 			}
 
 			if (assemblyPath.StartsWith(project.BaseDirectory)) {
-				assemblyPath = assemblyPath.Substring(project.BaseDirectory.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+				assemblyPath = assemblyPath.Substring(project.BaseDirectory.Length)
+					.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 			}
 
 			var result = new ProjectModule {

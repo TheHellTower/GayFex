@@ -15,7 +15,8 @@ namespace ConfuserEx.ViewModel {
 			this.proj = proj;
 			FileName = fileName;
 
-			ObservableCollection<ProjectModuleVM> modules = Utils.Wrap(proj, module => new ProjectModuleVM(this, module));
+			ObservableCollection<ProjectModuleVM> modules = Utils.Wrap(proj,
+				module => new ProjectModuleVM(this, module));
 			modules.CollectionChanged += (sender, e) => IsModified = true;
 			Modules = modules;
 
@@ -64,7 +65,9 @@ namespace ConfuserEx.ViewModel {
 
 		public string OutputDirectory {
 			get { return proj.OutputDirectory; }
-			set { SetProperty(proj.OutputDirectory != value, val => proj.OutputDirectory = val, value, "OutputDirectory"); }
+			set {
+				SetProperty(proj.OutputDirectory != value, val => proj.OutputDirectory = val, value, "OutputDirectory");
+			}
 		}
 
 		public ProjectSettingVM<IPacker> Packer {

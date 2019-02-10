@@ -4,24 +4,24 @@ using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
 	public abstract class ScannedItem {
-
 		internal Dictionary<uint, GenericParam> Generics = new Dictionary<uint, GenericParam>();
 		public List<TypeSig> TrueTypes = new List<TypeSig>();
 		public ushort GenericCount { get; set; }
+
 		public bool RegisterGeneric(TypeSig t) {
 			if (t == null || t.ScopeType == null || t.IsSZArray) {
 				return false;
 			}
 
 			if (!Generics.ContainsKey(t.ScopeType.MDToken.Raw)) {
-				Generics.Add(t.ScopeType.MDToken.Raw, new GenericParamUser(GenericCount++, GenericParamAttributes.NoSpecialConstraint, "koi"));
+				Generics.Add(t.ScopeType.MDToken.Raw,
+					new GenericParamUser(GenericCount++, GenericParamAttributes.NoSpecialConstraint, "koi"));
 				TrueTypes.Add(t);
 				return true;
 			}
 			else {
 				return false;
 			}
-
 		}
 
 		public GenericMVar GetGeneric(TypeSig t) {
@@ -45,6 +45,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 					newSig = new ArraySig(newSig, tarr.Rank);
 				}
 			}
+
 			return newSig ?? t;
 		}
 
@@ -56,7 +57,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				TypeSig[] types = TrueTypes.Select(t => from.ConvertToGenericIfAvalible(t)).ToArray();
 				return new GenericInstMethodSig(types);
 			}
-
 		}
 
 		public GenericInstSig CreateGenericTypeSig(ScannedItem from) {

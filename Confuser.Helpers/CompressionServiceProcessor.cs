@@ -32,9 +32,11 @@ namespace Confuser.Helpers {
 			MethodDef decompressionMethod = null;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode == OpCodes.Call && instr.Operand is IMethod opMethod) {
-					if (opMethod.Name == DecompressionMethodName && opMethod.DeclaringType.FullName == CompressionServiceTypeName) {
-						if (decompressionMethod ==  null)
-							decompressionMethod = CompressionService.GetRuntimeDecompressor(Context, TargetModule, def => { });
+					if (opMethod.Name == DecompressionMethodName &&
+					    opMethod.DeclaringType.FullName == CompressionServiceTypeName) {
+						if (decompressionMethod == null)
+							decompressionMethod =
+								CompressionService.GetRuntimeDecompressor(Context, TargetModule, def => { });
 
 						instr.Operand = decompressionMethod;
 					}

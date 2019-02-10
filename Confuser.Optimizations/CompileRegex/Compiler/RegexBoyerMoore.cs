@@ -7,13 +7,25 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal sealed class RegexBoyerMoore {
 		private static readonly Type _realRegexBoyerMooreType = RU.GetRegexType("RegexBoyerMoore");
 
-		private static readonly FieldInfo _positiveField = RU.GetField(_realRegexBoyerMooreType, "_positive", "Positive");
-		private static readonly FieldInfo _negativeASCIIField = RU.GetField(_realRegexBoyerMooreType, "_negativeASCII", "NegativeASCII");
-		private static readonly FieldInfo _negativeUnicodeField = RU.GetField(_realRegexBoyerMooreType, "_negativeUnicode", "NegativeUnicode");
+		private static readonly FieldInfo _positiveField =
+			RU.GetField(_realRegexBoyerMooreType, "_positive", "Positive");
+
+		private static readonly FieldInfo _negativeASCIIField =
+			RU.GetField(_realRegexBoyerMooreType, "_negativeASCII", "NegativeASCII");
+
+		private static readonly FieldInfo _negativeUnicodeField =
+			RU.GetField(_realRegexBoyerMooreType, "_negativeUnicode", "NegativeUnicode");
+
 		private static readonly FieldInfo _patternField = RU.GetField(_realRegexBoyerMooreType, "_pattern", "Pattern");
-		private static readonly FieldInfo _lowASCIIField = RU.GetField(_realRegexBoyerMooreType, "_lowASCII", "LowASCII");
-		private static readonly FieldInfo _highASCIIField = RU.GetField(_realRegexBoyerMooreType, "_highASCII", "HighASCII");
-		private static readonly FieldInfo _caseInsensitiveField = RU.GetField(_realRegexBoyerMooreType, "_caseInsensitive", "CaseInsensitive");
+
+		private static readonly FieldInfo _lowASCIIField =
+			RU.GetField(_realRegexBoyerMooreType, "_lowASCII", "LowASCII");
+
+		private static readonly FieldInfo _highASCIIField =
+			RU.GetField(_realRegexBoyerMooreType, "_highASCII", "HighASCII");
+
+		private static readonly FieldInfo _caseInsensitiveField =
+			RU.GetField(_realRegexBoyerMooreType, "_caseInsensitive", "CaseInsensitive");
 
 		internal static RegexBoyerMoore Wrap(object realRegexPrefix) {
 			if (realRegexPrefix == null) return null;

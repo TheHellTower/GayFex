@@ -31,7 +31,8 @@ namespace Confuser.Protections {
 
 				var symbolManifestResourceName = Path.ChangeExtension(resourceName, ".pdb");
 				if (manifestResourceNames.Contains(symbolManifestResourceName))
-					symbolStreamFactory = () => assembly.GetManifestResourceStream(Path.ChangeExtension(resourceName, ".pdb"));
+					symbolStreamFactory = () =>
+						assembly.GetManifestResourceStream(Path.ChangeExtension(resourceName, ".pdb"));
 
 				var frameworkIdentifier = resourceName.Substring(RuntimeResourceIdentifier.Length,
 					resourceName.Length - RuntimeResourceIdentifier.Length - RuntimeResourceExtension.Length);
@@ -44,8 +45,8 @@ namespace Confuser.Protections {
 
 		private static bool IsRuntimeDll(string resourceName) =>
 			resourceName != null &&
-			resourceName.StartsWith(RuntimeResourceIdentifier, StringComparison.Ordinal) && 
+			resourceName.StartsWith(RuntimeResourceIdentifier, StringComparison.Ordinal) &&
 			resourceName.EndsWith(RuntimeResourceExtension, StringComparison.Ordinal) &&
-		    resourceName.Length > RuntimeResourceIdentifier.Length + RuntimeResourceExtension.Length;
+			resourceName.Length > RuntimeResourceIdentifier.Length + RuntimeResourceExtension.Length;
 	}
 }

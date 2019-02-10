@@ -58,7 +58,8 @@ namespace Confuser.Core {
 		/// <param name="key">The key of the element to add.</param>
 		/// <param name="value">The value of the element to add.</param>
 		/// <exception cref="System.ArgumentNullException">key is <c>null</c>.</exception>
-		public static void AddListEntry<TKey, TValue>(this IDictionary<TKey, List<TValue>> self, TKey key, TValue value) {
+		public static void AddListEntry<TKey, TValue>(this IDictionary<TKey, List<TValue>> self, TKey key,
+			TValue value) {
 			if (key == null)
 				throw new ArgumentNullException("key");
 			List<TValue> list;
@@ -81,8 +82,10 @@ namespace Confuser.Core {
 			if (!folder.EndsWith(Path.DirectorySeparatorChar.ToString())) {
 				folder += Path.DirectorySeparatorChar;
 			}
+
 			var folderUri = new Uri(folder);
-			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString()
+				.Replace('/', Path.DirectorySeparatorChar));
 		}
 
 		/// <summary>
@@ -108,6 +111,7 @@ namespace Confuser.Core {
 				if (match(self[i]))
 					self.RemoveAt(i);
 			}
+
 			return self;
 		}
 	}

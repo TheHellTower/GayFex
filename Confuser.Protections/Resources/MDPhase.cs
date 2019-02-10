@@ -32,7 +32,8 @@ namespace Confuser.Protections.Resources {
 		void OnWriterEvent(object sender, ModuleWriterEventArgs e) {
 			var writer = e.Writer;
 			if (e.Event == ModuleWriterEvent.MDBeginAddResources) {
-				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ResourceProtection._Id);
+				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>()
+					.CreateLogger(ResourceProtection._Id);
 				token.ThrowIfCancellationRequested();
 				logger.LogDebug("Encrypting resources...");
 				bool hasPacker = ctx.Context.Packer != null;
@@ -42,7 +43,8 @@ namespace Confuser.Protections.Resources {
 					ctx.Module.Resources.RemoveWhere(res => res is EmbeddedResource);
 
 				// move resources
-				string asmName = ctx.Name?.RandomName(RenameMode.Letters) ?? writer.Module.Name.String + ".ConfuserResources";
+				string asmName = ctx.Name?.RandomName(RenameMode.Letters) ??
+				                 writer.Module.Name.String + ".ConfuserResources";
 				PublicKey pubKey = null;
 				if (writer.TheOptions.StrongNameKey != null)
 					pubKey = PublicKeyBase.CreatePublicKey(writer.TheOptions.StrongNameKey.PublicKey);
@@ -58,16 +60,18 @@ namespace Confuser.Protections.Resources {
 						ctx.Module.Resources.Add(new AssemblyLinkedResource(res.Name, asmRef, res.Attributes));
 					}
 				}
+
 				byte[] moduleBuff;
 				using (var ms = new MemoryStream()) {
-					module.Write(ms, new ModuleWriterOptions(writer.Module) { StrongNameKey = writer.TheOptions.StrongNameKey });
+					module.Write(ms,
+						new ModuleWriterOptions(writer.Module) {StrongNameKey = writer.TheOptions.StrongNameKey});
 					moduleBuff = ms.ToArray();
 				}
 
 				// compress
 				moduleBuff = ctx.Context.Registry.GetRequiredService<ICompressionService>().Compress(
 					moduleBuff,
-					null);// logger.Progress((int)(progress * 10000), 10000));
+					null); // logger.Progress((int)(progress * 10000), 10000));
 				//logger.EndProgress();
 				token.ThrowIfCancellationRequested();
 
@@ -98,6 +102,7 @@ namespace Confuser.Protections.Resources {
 					Buffer.BlockCopy(enc.ToArray(), 0, encryptedBuffer, buffIndex * 4, 0x40);
 					buffIndex += 0x10;
 				}
+
 				Debug.Assert(buffIndex == compressedBuff.Length);
 				var size = (uint)encryptedBuffer.Length;
 
@@ -105,11 +110,14 @@ namespace Confuser.Protections.Resources {
 
 				uint classLayoutRid = writer.Metadata.GetClassLayoutRid(ctx.DataType);
 				RawClassLayoutRow classLayout = tblHeap.ClassLayoutTable[classLayoutRid];
-				tblHeap.ClassLayoutTable[classLayoutRid] = new RawClassLayoutRow(classLayout.PackingSize, size, classLayout.Parent);
+				tblHeap.ClassLayoutTable[classLayoutRid] =
+					new RawClassLayoutRow(classLayout.PackingSize, size, classLayout.Parent);
 
 				uint dataFieldRid = writer.Metadata.GetRid(ctx.DataField);
 				RawFieldRow dataField = tblHeap.FieldTable[dataFieldRid];
-				tblHeap.FieldTable[dataFieldRid] = new RawFieldRow((ushort)(dataField.Flags | (ushort)FieldAttributes.HasFieldRVA), dataField.Name, dataField.Signature);
+				tblHeap.FieldTable[dataFieldRid] = new RawFieldRow(
+					(ushort)(dataField.Flags | (ushort)FieldAttributes.HasFieldRVA), dataField.Name,
+					dataField.Signature);
 				encryptedResource = writer.Constants.Add(new ByteArrayChunk(encryptedBuffer), 8);
 
 				// inject key values

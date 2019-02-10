@@ -30,7 +30,8 @@ namespace Confuser.Core {
 			}
 
 			private struct DummyDisposable : IDisposable {
-				public void Dispose() { }
+				public void Dispose() {
+				}
 			}
 
 			public ProtectionSettingsStack(IConfuserContext context, Dictionary<string, IProtection> protections) {
@@ -52,7 +53,7 @@ namespace Confuser.Core {
 
 			public void Apply(IDnlibDef target) {
 				var localSettings = new ProtectionSettings(settings);
-				
+
 				var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
 				if (stack.Count > 0) {
@@ -96,7 +97,8 @@ namespace Confuser.Core {
 				return result;
 			}
 
-			private static void ApplyInfo(IReadOnlyDictionary<string, IProtection> protections, IDnlibDef context, ProtectionSettings settings,
+			private static void ApplyInfo(IReadOnlyDictionary<string, IProtection> protections, IDnlibDef context,
+				ProtectionSettings settings,
 				IEnumerable<ProtectionSettingsInfo> infos, ApplyInfoType type, ILogger logger) {
 				foreach (var info in infos) {
 					if (info.Condition != null && !(bool)info.Condition.Evaluate(context))
@@ -104,20 +106,21 @@ namespace Confuser.Core {
 
 					if (info.Condition == null && info.Exclude) {
 						if (type == ApplyInfoType.CurrentInfoOnly ||
-							(type == ApplyInfoType.CurrentInfoInherits && info.ApplyToMember)) {
+						    (type == ApplyInfoType.CurrentInfoInherits && info.ApplyToMember)) {
 							settings.Clear();
 						}
 					}
+
 					if (!string.IsNullOrEmpty(info.Settings)) {
 						if ((type == ApplyInfoType.ParentInfo && info.Condition != null && info.ApplyToMember) ||
-							type == ApplyInfoType.CurrentInfoOnly ||
-							(type == ApplyInfoType.CurrentInfoInherits && info.Condition == null && info.ApplyToMember)) {
+						    type == ApplyInfoType.CurrentInfoOnly ||
+						    (type == ApplyInfoType.CurrentInfoInherits && info.Condition == null &&
+						     info.ApplyToMember)) {
 							ObfAttrParser.ParseProtection(protections, settings, info.Settings, logger);
 						}
 					}
 				}
 			}
 		}
-
 	}
 }

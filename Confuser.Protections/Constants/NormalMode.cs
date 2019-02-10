@@ -23,6 +23,7 @@ namespace Confuser.Protections.Constants {
 				ret.Add(Instruction.Create(OpCodes.Xor));
 				ret.Add(Instruction.Create(OpCodes.Stelem_I4));
 			}
+
 			return ret;
 		};
 
@@ -36,6 +37,7 @@ namespace Confuser.Protections.Constants {
 		(PlaceholderProcessor, object) IEncodeMode.CreateDecoder(CEContext ctx) {
 			uint k1 = ctx.Random.NextUInt32() | 1;
 			uint k2 = ctx.Random.NextUInt32();
+
 			IReadOnlyList<Instruction> processor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arg) {
 				var repl = new List<Instruction>(arg.Count + 4);
 				repl.AddRange(arg);
@@ -45,6 +47,7 @@ namespace Confuser.Protections.Constants {
 				repl.Add(Instruction.Create(OpCodes.Xor));
 				return repl;
 			}
+
 			return (processor, Tuple.Create(k1, k2));
 		}
 

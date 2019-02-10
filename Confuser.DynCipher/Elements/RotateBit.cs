@@ -6,7 +6,8 @@ using Confuser.DynCipher.Generation;
 namespace Confuser.DynCipher.Elements {
 	internal class RotateBit : CryptoElement {
 		public RotateBit()
-			: base(1) { }
+			: base(1) {
+		}
 
 		public int Bits { get; private set; }
 		public bool IsAlternate { get; private set; }

@@ -62,16 +62,19 @@ namespace Confuser.Protections.ReferenceProxy {
 					ctx.Module,
 					proxy.Name,
 					proxy.MethodSig,
-					new GenericInstSig((ClassOrValueTypeSig)ctx.Method.DeclaringType.ToTypeSig(), genArgs).ToTypeDefOrRef());
+					new GenericInstSig((ClassOrValueTypeSig)ctx.Method.DeclaringType.ToTypeSig(), genArgs)
+						.ToTypeDefOrRef());
 			}
 			else
 				invoke.Operand = proxy;
 
 			var targetDef = target.ResolveMethodDef();
 			if (targetDef != null)
-				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted, ReferenceProxyProtection.Targeted);
+				ctx.Context.Annotations.Set(targetDef, ReferenceProxyProtection.Targeted,
+					ReferenceProxyProtection.Targeted);
 		}
 
-		public override void Finalize(RPContext ctx) { }
+		public override void Finalize(RPContext ctx) {
+		}
 	}
 }

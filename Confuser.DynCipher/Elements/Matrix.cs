@@ -6,7 +6,8 @@ using Confuser.DynCipher.Generation;
 namespace Confuser.DynCipher.Elements {
 	internal class Matrix : CryptoElement {
 		public Matrix()
-			: base(4) { }
+			: base(4) {
+		}
 
 		public uint[,] Key { get; private set; }
 		public uint[,] InverseKey { get; private set; }
@@ -15,16 +16,16 @@ namespace Confuser.DynCipher.Elements {
 			Func<uint> next = () => (uint)random.NextInt32(4);
 
 			uint[,] l = {
-				{ 1, 0, 0, 0 },
-				{ next(), 1, 0, 0 },
-				{ next(), next(), 1, 0 },
-				{ next(), next(), next(), 1 }
+				{1, 0, 0, 0},
+				{next(), 1, 0, 0},
+				{next(), next(), 1, 0},
+				{next(), next(), next(), 1}
 			};
 			uint[,] u = {
-				{ 1, next(), next(), next() },
-				{ 0, 1, next(), next() },
-				{ 0, 0, 1, next() },
-				{ 0, 0, 0, 1 }
+				{1, next(), next(), next()},
+				{0, 1, next(), next()},
+				{0, 0, 1, next()},
+				{0, 0, 0, 1}
 			};
 
 			return mul(l, u);
@@ -37,11 +38,12 @@ namespace Confuser.DynCipher.Elements {
 
 			var ret = new uint[n, p];
 			for (int i = 0; i < n; i++)
-				for (int j = 0; j < p; j++) {
-					ret[i, j] = 0;
-					for (int k = 0; k < m; k++)
-						ret[i, j] += a[i, k] * b[k, j];
-				}
+			for (int j = 0; j < p; j++) {
+				ret[i, j] = 0;
+				for (int k = 0; k < m; k++)
+					ret[i, j] += a[i, k] * b[k, j];
+			}
+
 			return ret;
 		}
 
@@ -52,14 +54,17 @@ namespace Confuser.DynCipher.Elements {
 					si--;
 					continue;
 				}
+
 				for (int cj = 0, sj = 0; cj < 4; cj++, sj++) {
 					if (cj == j) {
 						sj--;
 						continue;
 					}
+
 					sub[si, sj] = mat[ci, cj];
 				}
 			}
+
 			uint ret = det3(sub);
 			if ((i + j) % 2 == 0) return ret;
 			return (uint)(-ret);
@@ -77,8 +82,8 @@ namespace Confuser.DynCipher.Elements {
 		static uint[,] transpose4(uint[,] mat) {
 			var ret = new uint[4, 4];
 			for (int i = 0; i < 4; i++)
-				for (int j = 0; j < 4; j++)
-					ret[j, i] = mat[i, j];
+			for (int j = 0; j < 4; j++)
+				ret[j, i] = mat[i, j];
 			return ret;
 		}
 
@@ -87,8 +92,8 @@ namespace Confuser.DynCipher.Elements {
 
 			var cof = new uint[4, 4];
 			for (int i = 0; i < 4; i++)
-				for (int j = 0; j < 4; j++)
-					cof[i, j] = cofactor4(InverseKey, i, j);
+			for (int j = 0; j < 4; j++)
+				cof[i, j] = cofactor4(InverseKey, i, j);
 			Key = transpose4(cof);
 		}
 
@@ -106,22 +111,22 @@ namespace Confuser.DynCipher.Elements {
 			using (context.AcquireTempVar(out tc))
 			using (context.AcquireTempVar(out td)) {
 				context.Emit(new AssignmentStatement {
-					Value = a * l(k[0, 0]) + b * l(k[0, 1]) + c * l(k[0, 2]) + d * l(k[0, 3]),
-					Target = ta
-				}).Emit(new AssignmentStatement {
-					Value = a * l(k[1, 0]) + b * l(k[1, 1]) + c * l(k[1, 2]) + d * l(k[1, 3]),
-					Target = tb
-				}).Emit(new AssignmentStatement {
-					Value = a * l(k[2, 0]) + b * l(k[2, 1]) + c * l(k[2, 2]) + d * l(k[2, 3]),
-					Target = tc
-				}).Emit(new AssignmentStatement {
-					Value = a * l(k[3, 0]) + b * l(k[3, 1]) + c * l(k[3, 2]) + d * l(k[3, 3]),
-					Target = td
-				})
-				       .Emit(new AssignmentStatement { Value = ta, Target = a })
-				       .Emit(new AssignmentStatement { Value = tb, Target = b })
-				       .Emit(new AssignmentStatement { Value = tc, Target = c })
-				       .Emit(new AssignmentStatement { Value = td, Target = d });
+						Value = a * l(k[0, 0]) + b * l(k[0, 1]) + c * l(k[0, 2]) + d * l(k[0, 3]),
+						Target = ta
+					}).Emit(new AssignmentStatement {
+						Value = a * l(k[1, 0]) + b * l(k[1, 1]) + c * l(k[1, 2]) + d * l(k[1, 3]),
+						Target = tb
+					}).Emit(new AssignmentStatement {
+						Value = a * l(k[2, 0]) + b * l(k[2, 1]) + c * l(k[2, 2]) + d * l(k[2, 3]),
+						Target = tc
+					}).Emit(new AssignmentStatement {
+						Value = a * l(k[3, 0]) + b * l(k[3, 1]) + c * l(k[3, 2]) + d * l(k[3, 3]),
+						Target = td
+					})
+					.Emit(new AssignmentStatement {Value = ta, Target = a})
+					.Emit(new AssignmentStatement {Value = tb, Target = b})
+					.Emit(new AssignmentStatement {Value = tc, Target = c})
+					.Emit(new AssignmentStatement {Value = td, Target = d});
 			}
 		}
 

@@ -7,7 +7,8 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.ReferenceProxy {
 	internal class ExpressionEncoding : IRPEncoding {
-		readonly Dictionary<MethodDef, Tuple<Expression, Func<int, int>>> keys = new Dictionary<MethodDef, Tuple<Expression, Func<int, int>>>();
+		readonly Dictionary<MethodDef, Tuple<Expression, Func<int, int>>> keys =
+			new Dictionary<MethodDef, Tuple<Expression, Func<int, int>>>();
 
 		Helpers.PlaceholderProcessor IRPEncoding.EmitDecode(RPContext ctx) => (module, method, args) => {
 			var key = GetKey(ctx, method);
@@ -30,10 +31,10 @@ namespace Confuser.Protections.ReferenceProxy {
 			Expression expression;
 			ctx.DynCipher.GenerateExpressionPair(
 				ctx.Random,
-				new VariableExpression { Variable = var }, new VariableExpression { Variable = result },
+				new VariableExpression {Variable = var}, new VariableExpression {Variable = result},
 				ctx.Depth, out expression, out inverse);
 
-			expCompiled = new DMCodeGen(typeof(int), new[] { Tuple.Create("{VAR}", typeof(int)) })
+			expCompiled = new DMCodeGen(typeof(int), new[] {Tuple.Create("{VAR}", typeof(int))})
 				.GenerateCIL(expression)
 				.Compile<Func<int, int>>();
 		}
@@ -46,13 +47,15 @@ namespace Confuser.Protections.ReferenceProxy {
 				Compile(ctx, init.Body, out keyFunc, out inverse);
 				keys[init] = ret = Tuple.Create(inverse, keyFunc);
 			}
+
 			return ret;
 		}
 
 		private sealed class CodeGen : CILCodeGen {
 			private readonly IReadOnlyList<Instruction> arg;
 
-			internal CodeGen(IReadOnlyList<Instruction> arg, ModuleDef module, MethodDef method, IList<Instruction> instrs)
+			internal CodeGen(IReadOnlyList<Instruction> arg, ModuleDef module, MethodDef method,
+				IList<Instruction> instrs)
 				: base(module, method, instrs) {
 				this.arg = arg;
 			}

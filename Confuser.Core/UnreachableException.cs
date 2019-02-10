@@ -9,6 +9,7 @@ namespace Confuser.Core {
 		///     Initializes a new instance of the <see cref="UnreachableException" /> class.
 		/// </summary>
 		public UnreachableException() :
-			base("Unreachable code reached.") { }
+			base("Unreachable code reached.") {
+		}
 	}
 }

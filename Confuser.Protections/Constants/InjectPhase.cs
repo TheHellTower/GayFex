@@ -32,14 +32,16 @@ namespace Confuser.Protections.Constants {
 
 		public string Name => "Constant encryption helpers injection";
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (parameters.Targets.Any()) {
 				var compression = context.Registry.GetRequiredService<ICompressionService>();
 				var name = context.Registry.GetService<INameService>();
 				var marker = context.Registry.GetRequiredService<IMarkerService>();
 				var moduleCtx = new CEContext {
 					Protection = Parent,
-					Random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ConstantProtection._FullId),
+					Random = context.Registry.GetRequiredService<IRandomService>()
+						.GetRandomGenerator(ConstantProtection._FullId),
 					Context = context,
 					Module = context.CurrentModule,
 					Marker = marker,
@@ -50,7 +52,8 @@ namespace Confuser.Protections.Constants {
 
 				// Extract parameters
 				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.Mode);
-				moduleCtx.DecoderCount = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.DecoderCount);
+				moduleCtx.DecoderCount =
+					parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.DecoderCount);
 
 				switch (moduleCtx.Mode) {
 					case Mode.Normal:
@@ -104,7 +107,7 @@ namespace Confuser.Protections.Constants {
 
 			moduleCtx.Decoders = new List<(MethodDef, DecoderDesc)>();
 			for (int i = 0; i < moduleCtx.DecoderCount; i++) {
-				Span<byte> ids = stackalloc byte[3] { 0, 1, 2 };
+				Span<byte> ids = stackalloc byte[3] {0, 1, 2};
 				moduleCtx.Random.Shuffle(ids);
 
 				var decoderDesc = new DecoderDesc {
@@ -169,7 +172,8 @@ namespace Confuser.Protections.Constants {
 
 			var name = context.Registry.GetRequiredService<INameService>();
 
-			var dataType = new TypeDefUser("", name.RandomName(), context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
+			var dataType = new TypeDefUser("", name.RandomName(),
+				context.CurrentModule.CorLibTypes.GetTypeRef("System", "ValueType")) {
 				Layout = TypeAttributes.ExplicitLayout,
 				Visibility = TypeAttributes.NestedPrivate,
 				IsSealed = true

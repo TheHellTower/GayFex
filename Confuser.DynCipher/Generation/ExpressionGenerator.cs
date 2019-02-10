@@ -5,25 +5,30 @@ using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Generation {
 	internal class ExpressionGenerator {
-		static Expression GenerateExpression(IRandomGenerator random, Expression current, uint currentDepth, uint targetDepth) {
+		static Expression GenerateExpression(IRandomGenerator random, Expression current, uint currentDepth,
+			uint targetDepth) {
 			if (currentDepth == targetDepth || (currentDepth > targetDepth / 3 && random.NextUInt32(100) > 85))
 				return current;
 
 			switch ((ExpressionOps)random.NextInt32(6)) {
 				case ExpressionOps.Add:
 					return GenerateExpression(random, current, currentDepth + 1, targetDepth) +
-					       GenerateExpression(random, (LiteralExpression)random.NextUInt32(), currentDepth + 1, targetDepth);
+					       GenerateExpression(random, (LiteralExpression)random.NextUInt32(), currentDepth + 1,
+						       targetDepth);
 
 				case ExpressionOps.Sub:
 					return GenerateExpression(random, current, currentDepth + 1, targetDepth) -
-					       GenerateExpression(random, (LiteralExpression)random.NextUInt32(), currentDepth + 1, targetDepth);
+					       GenerateExpression(random, (LiteralExpression)random.NextUInt32(), currentDepth + 1,
+						       targetDepth);
 
 				case ExpressionOps.Mul:
-					return GenerateExpression(random, current, currentDepth + 1, targetDepth) * (LiteralExpression)(random.NextUInt32() | 1);
+					return GenerateExpression(random, current, currentDepth + 1, targetDepth) *
+					       (LiteralExpression)(random.NextUInt32() | 1);
 
 				case ExpressionOps.Xor:
 					return GenerateExpression(random, current, currentDepth + 1, targetDepth) ^
-					       GenerateExpression(random, (LiteralExpression)random.NextUInt32(), currentDepth + 1, targetDepth);
+					       GenerateExpression(random, (LiteralExpression)random.NextUInt32(), currentDepth + 1,
+						       targetDepth);
 
 				case ExpressionOps.Not:
 					return ~GenerateExpression(random, current, currentDepth + 1, targetDepth);
@@ -31,6 +36,7 @@ namespace Confuser.DynCipher.Generation {
 				case ExpressionOps.Neg:
 					return -GenerateExpression(random, current, currentDepth + 1, targetDepth);
 			}
+
 			throw new UnreachableException();
 		}
 
@@ -42,6 +48,7 @@ namespace Confuser.DynCipher.Generation {
 					binExp.Left = binExp.Right;
 					binExp.Right = tmp;
 				}
+
 				SwapOperands(random, binExp.Left);
 				SwapOperands(random, binExp.Right);
 			}
@@ -69,8 +76,10 @@ namespace Confuser.DynCipher.Generation {
 				}
 				else
 					throw new UnreachableException();
+
 				hasVar[exp] = ret;
 			}
+
 			return ret;
 		}
 
@@ -137,10 +146,12 @@ namespace Confuser.DynCipher.Generation {
 					exp = varExp;
 				}
 			}
+
 			return result;
 		}
 
-		public static void GeneratePair(IRandomGenerator random, Expression var, Expression result, uint depth, out Expression expression, out Expression inverse) {
+		public static void GeneratePair(IRandomGenerator random, Expression var, Expression result, uint depth,
+			out Expression expression, out Expression inverse) {
 			expression = GenerateExpression(random, var, 0, depth);
 			SwapOperands(random, expression);
 

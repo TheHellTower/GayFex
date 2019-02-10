@@ -27,7 +27,8 @@ namespace Confuser.Core.Services {
 
 				var symbolManifestResourceName = Path.ChangeExtension(resourceName, ".pdb");
 				if (manifestResourceNames.Contains(symbolManifestResourceName))
-					symbolStreamFactory = () => assembly.GetManifestResourceStream(Path.ChangeExtension(resourceName, ".pdb"));
+					symbolStreamFactory = () =>
+						assembly.GetManifestResourceStream(Path.ChangeExtension(resourceName, ".pdb"));
 
 				var frameworkIdentifier = resourceName.Substring(RuntimeResourceIdentifer.Length,
 					resourceName.Length - RuntimeResourceIdentifer.Length - RuntimeResourceExtension.Length);

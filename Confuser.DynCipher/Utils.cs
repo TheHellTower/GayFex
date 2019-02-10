@@ -20,6 +20,7 @@ namespace Confuser.DynCipher {
 				p1 += (b / a) * p0;
 				b = b % a;
 			}
+
 			return 0;
 		}
 
@@ -55,29 +56,31 @@ namespace Confuser.DynCipher {
                  *      pop ret
                  *      
                  */
-				writer.Write(new byte[] { 0x89, 0xe0 });
-				writer.Write(new byte[] { 0x53 });
-				writer.Write(new byte[] { 0x57 });
-				writer.Write(new byte[] { 0x56 });
-				writer.Write(new byte[] { 0x29, 0xe0 });
-				writer.Write(new byte[] { 0x83, 0xf8, 0x18 });
-				writer.Write(new byte[] { 0x74, 0x07 });
-				writer.Write(new byte[] { 0x8b, 0x44, 0x24, 0x10 });
-				writer.Write(new byte[] { 0x50 });
-				writer.Write(new byte[] { 0xeb, 0x01 });
-				writer.Write(new byte[] { 0x51 });
+				writer.Write(new byte[] {0x89, 0xe0});
+				writer.Write(new byte[] {0x53});
+				writer.Write(new byte[] {0x57});
+				writer.Write(new byte[] {0x56});
+				writer.Write(new byte[] {0x29, 0xe0});
+				writer.Write(new byte[] {0x83, 0xf8, 0x18});
+				writer.Write(new byte[] {0x74, 0x07});
+				writer.Write(new byte[] {0x8b, 0x44, 0x24, 0x10});
+				writer.Write(new byte[] {0x50});
+				writer.Write(new byte[] {0xeb, 0x01});
+				writer.Write(new byte[] {0x51});
 
 				foreach (x86Instruction i in codeGen.Instructions)
 					writer.Write(i.Assemble());
 
 				if (reg != x86Register.EAX)
-					writer.Write(x86Instruction.Create(x86OpCode.MOV, new x86RegisterOperand(x86Register.EAX), new x86RegisterOperand(reg)).Assemble());
+					writer.Write(x86Instruction.Create(x86OpCode.MOV, new x86RegisterOperand(x86Register.EAX),
+						new x86RegisterOperand(reg)).Assemble());
 
-				writer.Write(new byte[] { 0x5e });
-				writer.Write(new byte[] { 0x5f });
-				writer.Write(new byte[] { 0x5b });
-				writer.Write(new byte[] { 0xc3 });
+				writer.Write(new byte[] {0x5e});
+				writer.Write(new byte[] {0x5f});
+				writer.Write(new byte[] {0x5b});
+				writer.Write(new byte[] {0xc3});
 			}
+
 			return stream.ToArray();
 		}
 	}

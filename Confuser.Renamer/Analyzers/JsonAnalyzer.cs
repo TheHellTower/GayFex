@@ -11,6 +11,7 @@ namespace Confuser.Renamer.Analyzers {
 		const string JsonProperty = "Newtonsoft.Json.JsonPropertyAttribute";
 		const string JsonIgnore = "Newtonsoft.Json.JsonIgnoreAttribute";
 		const string JsonObject = "Newtonsoft.Json.JsonObjectAttribute";
+
 		static readonly HashSet<string> JsonContainers = new HashSet<string> {
 			"Newtonsoft.Json.JsonArrayAttribute",
 			"Newtonsoft.Json.JsonContainerAttribute",
@@ -23,6 +24,7 @@ namespace Confuser.Renamer.Analyzers {
 				if (JsonContainers.Contains(attr.TypeFullName))
 					return attr;
 			}
+
 			return null;
 		}
 
@@ -43,7 +45,8 @@ namespace Confuser.Renamer.Analyzers {
 				return false;
 
 			int serialization = 0;
-			if (attr.HasConstructorArguments && attr.ConstructorArguments[0].Type.FullName == "Newtonsoft.Json.MemberSerialization")
+			if (attr.HasConstructorArguments &&
+			    attr.ConstructorArguments[0].Type.FullName == "Newtonsoft.Json.MemberSerialization")
 				serialization = (int)attr.ConstructorArguments[0].Value;
 			else {
 				foreach (var property in attr.Properties) {
@@ -52,19 +55,21 @@ namespace Confuser.Renamer.Analyzers {
 				}
 			}
 
-			if (serialization == 0) { // OptOut
+			if (serialization == 0) {
+				// OptOut
 				return (def is PropertyDef && ((PropertyDef)def).IsPublic()) ||
-					(def is FieldDef && ((FieldDef)def).IsPublic);
+				       (def is FieldDef && ((FieldDef)def).IsPublic);
 			}
 			else if (serialization == 1) // OptIn
 				return false;
 			else if (serialization == 2) // Fields
 				return def is FieldDef;
-			else  // Unknown
+			else // Unknown
 				return false;
 		}
 
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			if (def is TypeDef)
 				Analyze(context, service, (TypeDef)def, parameters);
 			else if (def is MethodDef)
@@ -89,17 +94,20 @@ namespace Confuser.Renamer.Analyzers {
 						hasId = true;
 				}
 			}
+
 			if (!hasId)
 				service.SetCanRename(context, type, false);
 		}
 
-		void Analyze(IConfuserContext context, INameService service, MethodDef method, IProtectionParameters parameters) {
+		void Analyze(IConfuserContext context, INameService service, MethodDef method,
+			IProtectionParameters parameters) {
 			if (GetJsonContainerAttribute(method.DeclaringType) != null && method.IsConstructor) {
 				service.SetParam(context, method, "renameArgs", "false");
 			}
 		}
 
-		void Analyze(IConfuserContext context, INameService service, PropertyDef property, IProtectionParameters parameters) {
+		void Analyze(IConfuserContext context, INameService service, PropertyDef property,
+			IProtectionParameters parameters) {
 			if (ShouldExclude(property.DeclaringType, property)) {
 				service.SetCanRename(context, property, false);
 			}
@@ -111,11 +119,13 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 	}

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <PropertyGroup>
     <ConfuserKeyFile Condition="'$(ConfuserKeyFile)' == ''">$(AssemblyOriginatorKeyFile)</ConfuserKeyFile>
@@ -17,7 +17,7 @@
       ConfuseAssembly;
       _ReplaceOutputWithConfusedAssemblies;
       _ReplaceDebugOutputWithConfusedAssemblies;
-      CopyConfusedFilesToOutputDirectory;      
+      CopyConfusedFilesToOutputDirectory;
     </ConfuserExDependsOn>
   </PropertyGroup>
 
@@ -34,7 +34,7 @@
   </PropertyGroup>
 
   <Target Name="CreateConfuserProject"
-          Condition="$(DesignTimeBuild) != true And $(Obfuscate) == true"          
+          Condition="$(DesignTimeBuild) != true And $(Obfuscate) == true"
           DependsOnTargets="$(CreateConfuserProjectDependsOn)"
           Inputs="@(IntermediateAssembly->'%(FullPath)');$(ConfuserProject);@(IntermediateSatelliteAssembliesWithTargetPath)"
           Outputs="@(IntermediateAssembly->'$(IntermediateOutputPath)%(Filename).crproj')">
@@ -44,7 +44,7 @@
       AssemblyPath="@(IntermediateAssembly)"
       SatelliteAssemblyPaths="@(IntermediateSatelliteAssembliesWithTargetPath)"
       KeyFilePath="$(ConfuserKeyFile)"
-      ResultProject="@(IntermediateAssembly->'$(IntermediateOutputPath)%(Filename).crproj')"/>
+      ResultProject="@(IntermediateAssembly->'$(IntermediateOutputPath)%(Filename).crproj')" />
   </Target>
 
   <PropertyGroup>
@@ -76,7 +76,7 @@
       <Output TaskParameter="Include" ItemName="IntermediateAssembly" />
     </CreateItem>
   </Target>
-  
+
   <Target Name="_ReplaceDebugOutputWithConfusedAssemblies"
           Condition="$(DesignTimeBuild) != true And $(Obfuscate) == true and '$(ConfuserReplaceOutput)' == 'true' and '@(_DebugSymbolsIntermediatePath)' != ''"
           DependsOnTargets="ConfuseAssembly">
@@ -95,8 +95,14 @@
           Condition="$(DesignTimeBuild) != true And $(Obfuscate) == true and '$(ConfuserReplaceOutput)' != 'true'">
     <PropertyGroup>
       <!-- By default we're not using Hard Links to copy to the output directory, and never when building in VS -->
-      <CreateHardLinksForCopyFilesToOutputDirectoryIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)' == ''">false</CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
-      <CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)' == ''">false</CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible>
+      <CreateHardLinksForCopyFilesToOutputDirectoryIfPossible
+        Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)' == ''">
+        false
+      </CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
+      <CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible
+        Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)' == ''">
+        false
+      </CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -115,41 +121,41 @@
       UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
       UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
       Condition="'$(CopyBuildOutputToOutputDirectory)' == 'true' and '$(SkipCopyBuildProduct)' != 'true'">
-      
-      <Output TaskParameter="DestinationFiles" ItemName="ConfusedMainAssembly"/>
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
-      
+
+      <Output TaskParameter="DestinationFiles" ItemName="ConfusedMainAssembly" />
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
+
     </Copy>
-    
+
     <!-- Copy the debug information file (.pdb), if any -->
     <Copy
-        SourceFiles="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename).pdb')"
-        DestinationFolder="$(ConfuserOutDir)"
-        SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
-        OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
-        Retries="$(CopyRetryCount)"
-        RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
-        UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
-        UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
-        Condition="'$(_DebugSymbolsProduced)'=='true' and '$(SkipCopyingSymbolsToOutputDirectory)' != 'true' and '$(CopyOutputSymbolsToOutputDirectory)'=='true'">
-        
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
-      
+      SourceFiles="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename).pdb')"
+      DestinationFolder="$(ConfuserOutDir)"
+      SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+      OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+      Retries="$(CopyRetryCount)"
+      RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+      UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
+      UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
+      Condition="'$(_DebugSymbolsProduced)'=='true' and '$(SkipCopyingSymbolsToOutputDirectory)' != 'true' and '$(CopyOutputSymbolsToOutputDirectory)'=='true'">
+
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
+
     </Copy>
 
     <!-- Copy the satellite assemblies (.resources.dll), if any -->
     <Copy
-        SourceFiles="@(IntermediateSatelliteAssembliesWithTargetPath->'$(ConfuserIntermediateOutputPath)%(TargetPath)')"
-        DestinationFiles="@(IntermediateSatelliteAssembliesWithTargetPath->'$(ConfuserOutDir)%(TargetPath)')"
-        SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
-        OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
-        Retries="$(CopyRetryCount)"
-        RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
-        UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
-        UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
-        Condition="'$(_DebugSymbolsProduced)'=='true' and '$(SkipCopyingSymbolsToOutputDirectory)' != 'true' and '$(CopyOutputSymbolsToOutputDirectory)'=='true'">
+      SourceFiles="@(IntermediateSatelliteAssembliesWithTargetPath->'$(ConfuserIntermediateOutputPath)%(TargetPath)')"
+      DestinationFiles="@(IntermediateSatelliteAssembliesWithTargetPath->'$(ConfuserOutDir)%(TargetPath)')"
+      SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+      OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+      Retries="$(CopyRetryCount)"
+      RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+      UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
+      UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
+      Condition="'$(_DebugSymbolsProduced)'=='true' and '$(SkipCopyingSymbolsToOutputDirectory)' != 'true' and '$(CopyOutputSymbolsToOutputDirectory)'=='true'">
 
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
 
     </Copy>
   </Target>

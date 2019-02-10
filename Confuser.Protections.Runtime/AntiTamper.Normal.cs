@@ -20,10 +20,10 @@ namespace Confuser.Runtime {
 			var startOfModulePtr = (byte*)Marshal.GetHINSTANCE(module);
 			var byteCursor = startOfModulePtr + *(uint*)(startOfModulePtr + 0x3c); // IMAGE_DOS_HEADER (e_lfanew)
 			ushort sections = *(ushort*)(byteCursor + 0x6); // IMAGE_FILE_HEADER (NumberOfSections)
-			ushort optSize = *(ushort*)(byteCursor + 0x14);       // IMAGE_FILE_HEADER (SizeOfOptionalHeader)
+			ushort optSize = *(ushort*)(byteCursor + 0x14); // IMAGE_FILE_HEADER (SizeOfOptionalHeader)
 
 			uint* encPos = null; // Start address of the sensitive data section
-			uint encSize = 0;    // Size of the sensitive data section
+			uint encSize = 0; // Size of the sensitive data section
 			var uintCursor = (uint*)(byteCursor + 0x18 + optSize); // Move to start of first IMAGE_SECTION_HEADER
 			uint z = (uint)Mutation.KeyI1, x = (uint)Mutation.KeyI2, c = (uint)Mutation.KeyI3, v = (uint)Mutation.KeyI4;
 			for (int i = 0; i < sections; i++) {
@@ -49,6 +49,7 @@ namespace Confuser.Runtime {
 						v = t;
 					}
 				}
+
 				uintCursor += 8;
 			}
 
@@ -62,6 +63,7 @@ namespace Confuser.Runtime {
 				c = (v >> 7) | (v << 25);
 				v = (z >> 11) | (z << 21);
 			}
+
 			Mutation.Crypt(y, d);
 
 			// Request access to the memory section so it can be modified

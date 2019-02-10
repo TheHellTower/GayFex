@@ -31,7 +31,8 @@ namespace Confuser.Protections.Constants {
 
 		public string Name => "Constants encoding";
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			var moduleCtx = context.Annotations.Get<CEContext>(context.CurrentModule, ConstantProtection.ContextKey);
 			if (!parameters.Targets.Any() || moduleCtx == null)
 				return;
@@ -52,15 +53,19 @@ namespace Confuser.Protections.Constants {
 				EncodeInitializer(moduleCtx, entry.Key, entry.Value);
 				token.ThrowIfCancellationRequested();
 			}
-			foreach (var entry in ldc) {//.WithProgress(logger)) {
+
+			foreach (var entry in ldc) {
+				//.WithProgress(logger)) {
 				if (entry.Key is string) {
 					EncodeString(moduleCtx, (string)entry.Key, entry.Value);
 				}
 				else if (entry.Key is int) {
-					EncodeConstant32(moduleCtx, (uint)(int)entry.Key, context.CurrentModule.CorLibTypes.Int32, entry.Value);
+					EncodeConstant32(moduleCtx, (uint)(int)entry.Key, context.CurrentModule.CorLibTypes.Int32,
+						entry.Value);
 				}
 				else if (entry.Key is long) {
-					EncodeConstant64(moduleCtx, (uint)((long)entry.Key >> 32), (uint)(long)entry.Key, context.CurrentModule.CorLibTypes.Int64, entry.Value);
+					EncodeConstant64(moduleCtx, (uint)((long)entry.Key >> 32), (uint)(long)entry.Key,
+						context.CurrentModule.CorLibTypes.Int64, entry.Value);
 				}
 				else if (entry.Key is float) {
 					var t = new RTransform();
@@ -74,6 +79,7 @@ namespace Confuser.Protections.Constants {
 				}
 				else
 					throw new UnreachableException();
+
 				token.ThrowIfCancellationRequested();
 			}
 
@@ -88,6 +94,7 @@ namespace Confuser.Protections.Constants {
 				encodedBuff[buffIndex++] = (byte)((dat >> 16) & 0xff);
 				encodedBuff[buffIndex++] = (byte)((dat >> 24) & 0xff);
 			}
+
 			Debug.Assert(buffIndex == encodedBuff.Length);
 			encodedBuff = context.Registry.GetService<ICompressionService>().Compress(encodedBuff);
 			token.ThrowIfCancellationRequested();
@@ -118,6 +125,7 @@ namespace Confuser.Protections.Constants {
 				Buffer.BlockCopy(enc, 0, encryptedBuffer, buffIndex * 4, 0x40);
 				buffIndex += 0x10;
 			}
+
 			Debug.Assert(buffIndex == compressedBuff.Length);
 
 			moduleCtx.DataField.InitialValue = encryptedBuffer;
@@ -131,7 +139,8 @@ namespace Confuser.Protections.Constants {
 		void EncodeString(CEContext moduleCtx, string value, ReferenceEnumerable references) {
 			int buffIndex = EncodeByteArray(moduleCtx, Encoding.UTF8.GetBytes(value));
 
-			UpdateReference(moduleCtx, moduleCtx.Module.CorLibTypes.String, references, buffIndex, desc => desc.StringID);
+			UpdateReference(moduleCtx, moduleCtx.Module.CorLibTypes.String, references, buffIndex,
+				desc => desc.StringID);
 		}
 
 		void EncodeConstant32(CEContext moduleCtx, uint value, TypeSig valueType, ReferenceEnumerable references) {
@@ -144,7 +153,8 @@ namespace Confuser.Protections.Constants {
 			UpdateReference(moduleCtx, valueType, references, buffIndex, desc => desc.NumberID);
 		}
 
-		void EncodeConstant64(CEContext moduleCtx, uint hi, uint lo, TypeSig valueType, ReferenceEnumerable references) {
+		void EncodeConstant64(CEContext moduleCtx, uint hi, uint lo, TypeSig valueType,
+			ReferenceEnumerable references) {
 			int buffIndex = -1;
 			do {
 				buffIndex = moduleCtx.EncodedBuffer.IndexOf(lo, buffIndex + 1);
@@ -192,9 +202,11 @@ namespace Confuser.Protections.Constants {
 			// byte[] -> uint[]
 			int integral = buff.Length / 4, remainder = buff.Length % 4;
 			for (int i = 0; i < integral; i++) {
-				var data = (uint)(buff[i * 4] | (buff[i * 4 + 1] << 8) | (buff[i * 4 + 2] << 16) | (buff[i * 4 + 3] << 24));
+				var data = (uint)(buff[i * 4] | (buff[i * 4 + 1] << 8) | (buff[i * 4 + 2] << 16) |
+				                  (buff[i * 4 + 3] << 24));
 				moduleCtx.EncodedBuffer.Add(data);
 			}
+
 			if (remainder > 0) {
 				int baseIndex = integral * 4;
 				uint r = 0;
@@ -202,10 +214,12 @@ namespace Confuser.Protections.Constants {
 					r |= (uint)(buff[baseIndex + i] << (i * 8));
 				moduleCtx.EncodedBuffer.Add(r);
 			}
+
 			return buffIndex;
 		}
 
-		void UpdateReference(CEContext moduleCtx, TypeSig valueType, ReferenceEnumerable references, int buffIndex, Func<DecoderDesc, byte> typeID) {
+		void UpdateReference(CEContext moduleCtx, TypeSig valueType, ReferenceEnumerable references, int buffIndex,
+			Func<DecoderDesc, byte> typeID) {
 			foreach (var instr in references) {
 				var (method, decoderDesc) = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
 				uint id = (uint)buffIndex | (uint)(typeID(decoderDesc) << 30);
@@ -224,13 +238,14 @@ namespace Confuser.Protections.Constants {
 			}
 		}
 
-		void RemoveDataFieldRefs(IConfuserContext context, HashSet<FieldDef> dataFields, HashSet<Instruction> fieldRefs) {
+		void RemoveDataFieldRefs(IConfuserContext context, HashSet<FieldDef> dataFields,
+			HashSet<Instruction> fieldRefs) {
 			foreach (var type in context.CurrentModule.GetTypes())
-				foreach (var method in type.Methods.Where(m => m.HasBody)) {
-					foreach (var instr in method.Body.Instructions)
-						if (instr.Operand is FieldDef && !fieldRefs.Contains(instr))
-							dataFields.Remove((FieldDef)instr.Operand);
-				}
+			foreach (var method in type.Methods.Where(m => m.HasBody)) {
+				foreach (var instr in method.Body.Instructions)
+					if (instr.Operand is FieldDef && !fieldRefs.Contains(instr))
+						dataFields.Remove((FieldDef)instr.Operand);
+			}
 
 			foreach (var fieldToRemove in dataFields) {
 				fieldToRemove.DeclaringType.Fields.Remove(fieldToRemove);
@@ -244,7 +259,8 @@ namespace Confuser.Protections.Constants {
 			ILogger logger, CancellationToken token) {
 			var dataFields = new HashSet<FieldDef>();
 			var fieldRefs = new HashSet<Instruction>();
-			foreach (var method in parameters.Targets.OfType<MethodDef>()) { //.WithProgress(logger)) {
+			foreach (var method in parameters.Targets.OfType<MethodDef>()) {
+				//.WithProgress(logger)) {
 				if (!method.HasBody)
 					continue;
 
@@ -320,13 +336,15 @@ namespace Confuser.Protections.Constants {
 						}
 						else if (instr.OpCode == OpCodes.Ldc_R4) {
 							var operand = (float)instr.Operand;
-							if ((operand == -1 || operand == 0 || operand == 1) && (moduleCtx.Elements & EncodeElements.Primitive) == 0)
+							if ((operand == -1 || operand == 0 || operand == 1) &&
+							    (moduleCtx.Elements & EncodeElements.Primitive) == 0)
 								continue;
 							eligible = true;
 						}
 						else if (instr.OpCode == OpCodes.Ldc_R8) {
 							var operand = (double)instr.Operand;
-							if ((operand == -1 || operand == 0 || operand == 1) && (moduleCtx.Elements & EncodeElements.Primitive) == 0)
+							if ((operand == -1 || operand == 0 || operand == 1) &&
+							    (moduleCtx.Elements & EncodeElements.Primitive) == 0)
 								continue;
 							eligible = true;
 						}
@@ -338,6 +356,7 @@ namespace Confuser.Protections.Constants {
 
 				token.ThrowIfCancellationRequested();
 			}
+
 			RemoveDataFieldRefs(context, dataFields, fieldRefs);
 		}
 

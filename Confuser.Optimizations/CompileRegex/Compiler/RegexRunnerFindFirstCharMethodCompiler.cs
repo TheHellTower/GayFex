@@ -6,7 +6,8 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal sealed class RegexRunnerFindFirstCharMethodCompiler : RegexRunnerMethodCompiler {
-		internal RegexRunnerFindFirstCharMethodCompiler(ModuleDef module, MethodDef method, RegexRunnerDef regexRunnerDef) :
+		internal RegexRunnerFindFirstCharMethodCompiler(ModuleDef module, MethodDef method,
+			RegexRunnerDef regexRunnerDef) :
 			base(module, method, regexRunnerDef) {
 		}
 
@@ -45,7 +46,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 					Ble(l1);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => LdRunnerField(_regexRunnerDef.runtextendFieldDef));
+					StRunnerField(_regexRunnerDef.runtextposFieldDef,
+						() => LdRunnerField(_regexRunnerDef.runtextendFieldDef));
 					Br(endFoundNothing);
 					MarkLabel(l1);
 				}
@@ -56,7 +58,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					LdRunnerField(_regexRunnerDef.runtextstartFieldDef);
 					Ble(l1);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => LdRunnerField(_regexRunnerDef.runtextendFieldDef));
+					StRunnerField(_regexRunnerDef.runtextposFieldDef,
+						() => LdRunnerField(_regexRunnerDef.runtextendFieldDef));
 					Br(endFoundNothing);
 					MarkLabel(l1);
 				}
@@ -83,7 +86,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					LdRunnerField(_regexRunnerDef.runtextendFieldDef);
 					Bge(l1);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => LdRunnerField(_regexRunnerDef.runtextendFieldDef));
+					StRunnerField(_regexRunnerDef.runtextposFieldDef,
+						() => LdRunnerField(_regexRunnerDef.runtextendFieldDef));
 					MarkLabel(l1);
 				}
 			}
@@ -94,7 +98,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					LdRunnerField(_regexRunnerDef.runtextendFieldDef);
 					Bge(l1);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
+					StRunnerField(_regexRunnerDef.runtextposFieldDef,
+						() => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
 					Br(endFoundNothing);
 					MarkLabel(l1);
 				}
@@ -116,7 +121,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					Ldc((int)'\n');
 					Beq(l2);
 					MarkLabel(l1);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
+					StRunnerField(_regexRunnerDef.runtextposFieldDef,
+						() => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
 					Br(endFoundNothing);
 					MarkLabel(l2);
 				}
@@ -127,7 +133,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					LdRunnerField(_regexRunnerDef.runtextstartFieldDef);
 					Bge(l1);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
+					StRunnerField(_regexRunnerDef.runtextposFieldDef,
+						() => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
 					Br(endFoundNothing);
 					MarkLabel(l1);
 				}
@@ -138,7 +145,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 					LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 					Ble(l1);
-					StRunnerField(_regexRunnerDef.runtextposFieldDef, () => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
+					StRunnerField(_regexRunnerDef.runtextposFieldDef,
+						() => LdRunnerField(_regexRunnerDef.runtextbegFieldDef));
 					MarkLabel(l1);
 				}
 			}
@@ -356,6 +364,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				LdRunnerField(_regexRunnerDef.runtextposFieldDef);
 				LdRunnerField(_regexRunnerDef.runtextbegFieldDef);
 			}
+
 			Sub();
 
 			{

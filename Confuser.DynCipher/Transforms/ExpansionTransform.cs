@@ -27,6 +27,7 @@ namespace Confuser.DynCipher.Transforms {
 					}
 				}
 			}
+
 			block.Statements.Add(st);
 			return false;
 		}

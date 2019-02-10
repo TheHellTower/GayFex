@@ -10,7 +10,8 @@ using Confuser.Core;
 namespace ConfuserEx {
 	[ValueConversion(typeof(string), typeof(ConfuserUiComponent))]
 	internal class ComponentConverter : Freezable, IValueConverter {
-		public static readonly DependencyProperty ComponentsProperty = DependencyProperty.Register("Components", typeof(IList<ConfuserUiComponent>), typeof(ComponentConverter), new UIPropertyMetadata(null));
+		public static readonly DependencyProperty ComponentsProperty = DependencyProperty.Register("Components",
+			typeof(IList<ConfuserUiComponent>), typeof(ComponentConverter), new UIPropertyMetadata(null));
 
 		public IList<ConfuserUiComponent> Components {
 			get => (IList<ConfuserUiComponent>)GetValue(ComponentsProperty);

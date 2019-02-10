@@ -7,15 +7,14 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
 		public MethodDefAnalyzer(TypeService _service) {
 			service = _service;
 		}
+
 		public override void Process(ScannedMethod m, MethodDef o) {
 			var sc = service.GetItem(o.MDToken) as ScannedMethod;
 			if (sc != null) {
-
 				foreach (var regTypes in sc.TrueTypes) {
 					m.RegisterGeneric(regTypes);
 				}
 			}
-
 		}
 	}
 }

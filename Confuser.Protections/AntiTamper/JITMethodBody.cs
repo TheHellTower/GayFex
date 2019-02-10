@@ -5,8 +5,7 @@ using dnlib.DotNet.Writer;
 using dnlib.IO;
 using dnlib.PE;
 
-namespace Confuser.Protections.AntiTamper
-{
+namespace Confuser.Protections.AntiTamper {
 	internal class JITMethodBody : IChunk {
 		private ReadOnlyMemory<byte> _body;
 		public JITExceptionHandlerClause[] ExceptionHandlers { get; set; }
@@ -82,9 +81,11 @@ namespace Confuser.Protections.AntiTamper
 					writer.WriteUInt32(clause.HandlerLength);
 					writer.WriteUInt32(clause.ClassTokenOrFilterOffset);
 				}
+
 				writer.WriteZeroes(4 - ((int)ms.Length & 3)); // pad to 4 bytes
 				body = ms.ToArray();
 			}
+
 			Debug.Assert(body.Length % 4 == 0);
 			// encrypt body
 			{

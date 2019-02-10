@@ -23,19 +23,21 @@ namespace Confuser.Renamer {
 
 		public string Name => "Name analysis";
 
-		private void ParseParameters(IConfuserContext context, IDnlibDef def, INameService service, IProtectionParameters parameters)
-		{
+		private void ParseParameters(IConfuserContext context, IDnlibDef def, INameService service,
+			IProtectionParameters parameters) {
 			var mode = parameters.GetParameter(context, def, Parent.Parameters.Mode);
 			service.SetRenameMode(context, def, mode);
 		}
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
 			var service = (NameService)context.Registry.GetRequiredService<INameService>();
-			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);			logger.LogDebug("Building VTables & identifier list...");
-			foreach (IDnlibDef def in parameters.Targets/*.WithProgress(logger)*/) {
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
+			logger.LogDebug("Building VTables & identifier list...");
+			foreach (IDnlibDef def in parameters.Targets /*.WithProgress(logger)*/) {
 				ParseParameters(context, def, service, parameters);
 
 				if (def is ModuleDef module) {
@@ -49,13 +51,14 @@ namespace Confuser.Renamer {
 					service.GetVTables().GetVTable((TypeDef)def);
 					service.SetOriginalNamespace(context, def, ((TypeDef)def).Namespace);
 				}
+
 				token.ThrowIfCancellationRequested();
 			}
 
 			logger.LogDebug("Analyzing...");
 			RegisterRenamers(context, service, logger);
 			var renamers = service.Renamers;
-			foreach (IDnlibDef def in parameters.Targets/*.WithProgress(logger)*/) {
+			foreach (IDnlibDef def in parameters.Targets /*.WithProgress(logger)*/) {
 				Analyze(service, context, parameters, def, true);
 				token.ThrowIfCancellationRequested();
 			}
@@ -71,7 +74,7 @@ namespace Confuser.Renamer {
 			foreach (var module in context.Modules) {
 				foreach (var asmRef in module.GetAssemblyRefs()) {
 					if (asmRef.Name == "WindowsBase" || asmRef.Name == "PresentationCore" ||
-						asmRef.Name == "PresentationFramework" || asmRef.Name == "System.Xaml") {
+					    asmRef.Name == "PresentationFramework" || asmRef.Name == "System.Xaml") {
 						wpf = true;
 					}
 					else if (asmRef.Name == "Caliburn.Micro") {
@@ -120,7 +123,8 @@ namespace Confuser.Renamer {
 			}
 		}
 
-		internal void Analyze(NameService service, IConfuserContext context, IProtectionParameters parameters, IDnlibDef def, bool runAnalyzer) {
+		internal void Analyze(NameService service, IConfuserContext context, IProtectionParameters parameters,
+			IDnlibDef def, bool runAnalyzer) {
 			if (def is TypeDef)
 				Analyze(service, context, parameters, (TypeDef)def);
 			else if (def is MethodDef)
@@ -171,7 +175,8 @@ namespace Confuser.Renamer {
 			}
 		}
 
-		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters, MethodDef method) {
+		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters,
+			MethodDef method) {
 			if (method.IsRuntimeSpecialName)
 				service.SetCanRename(context, method, false);
 
@@ -181,7 +186,8 @@ namespace Confuser.Renamer {
 			else if (parameters.GetParameter(context, method, Parent.Parameters.ForceRename))
 				return;
 
-			else if (method.DeclaringType.IsComImport() && !method.HasAttribute("System.Runtime.InteropServices.DispIdAttribute"))
+			else if (method.DeclaringType.IsComImport() &&
+			         !method.HasAttribute("System.Runtime.InteropServices.DispIdAttribute"))
 				service.SetCanRename(context, method, false);
 
 			else if (method.DeclaringType.IsDelegate())
@@ -199,11 +205,12 @@ namespace Confuser.Renamer {
 				service.SetCanRename(context, field, false);
 
 			else if (field.IsLiteral && field.DeclaringType.IsEnum &&
-				!parameters.GetParameter(context, field, Parent.Parameters.ForceRename))
+			         !parameters.GetParameter(context, field, Parent.Parameters.ForceRename))
 				service.SetCanRename(context, field, false);
 		}
 
-		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters, PropertyDef property) {
+		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters,
+			PropertyDef property) {
 			if (property.IsRuntimeSpecialName)
 				service.SetCanRename(context, property, false);
 

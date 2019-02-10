@@ -22,15 +22,19 @@ namespace ConfuserEx {
 			foreach (var level in Enum.GetValues(typeof(LogLevel)).Cast<LogLevel>().Where(l => l != LogLevel.None)) {
 				maxLogLevelLength = Math.Max(maxLogLevelLength, GetLogLevelString(level).Length);
 			}
+
 			_messagePadding = new string(' ', maxLogLevelLength + _loglevelPadding.Length);
 			_newLineWithMessagePadding = Environment.NewLine + _messagePadding;
 		}
 
 
-		internal UiLogger(string name, Action<LogLevel, string> publish, Func<LogLevel, bool> filter, bool includeScopes)
-			: this(name, publish, filter, includeScopes ? new LoggerExternalScopeProvider() : null) { }
+		internal UiLogger(string name, Action<LogLevel, string> publish, Func<LogLevel, bool> filter,
+			bool includeScopes)
+			: this(name, publish, filter, includeScopes ? new LoggerExternalScopeProvider() : null) {
+		}
 
-		internal UiLogger(string name, Action<LogLevel, string> publish, Func<LogLevel, bool> filter, IExternalScopeProvider scopeProvider) {
+		internal UiLogger(string name, Action<LogLevel, string> publish, Func<LogLevel, bool> filter,
+			IExternalScopeProvider scopeProvider) {
 			Name = name ?? throw new ArgumentNullException(nameof(name));
 			Publish = publish ?? throw new ArgumentNullException(nameof(publish));
 			Filter = filter ?? ((logLevel) => true);
@@ -44,7 +48,8 @@ namespace ConfuserEx {
 			return Filter(logLevel);
 		}
 
-		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
+		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
+			Func<TState, Exception, string> formatter) {
 			if (!IsEnabled(logLevel)) return;
 			if (formatter == null) throw new ArgumentNullException(nameof(formatter));
 
@@ -68,9 +73,9 @@ namespace ConfuserEx {
 			logBuilder.Append(_messagePadding, logBuilder.Length, _messagePadding.Length - logBuilder.Length);
 			//logBuilder.Append('(').Append(logName).Append(')');
 			//if (eventId != 0) {
-				//logBuilder.Append("[");
-				//logBuilder.Append(eventId);
-				//logBuilder.AppendLine("]");
+			//logBuilder.Append("[");
+			//logBuilder.Append(eventId);
+			//logBuilder.AppendLine("]");
 			//}
 
 			// scope information

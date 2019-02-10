@@ -12,7 +12,8 @@ using Ookii.Dialogs.Wpf;
 namespace ConfuserEx.ViewModel {
 	public class ProjectTabVM : TabViewModel {
 		public ProjectTabVM(AppVM app)
-			: base(app, "Project") { }
+			: base(app, "Project") {
+		}
 
 		public ICommand DragDrop {
 			get {
@@ -72,8 +73,10 @@ namespace ConfuserEx.ViewModel {
 			get {
 				return new RelayCommand(() => {
 					Debug.Assert(App.Project.Modules.Any(m => m.IsSelected));
-					string msg = "Are you sure to remove selected modules?\r\nAll settings specific to it would be lost!";
-					if (MessageBox.Show(msg, "ConfuserEx", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) {
+					string msg =
+						"Are you sure to remove selected modules?\r\nAll settings specific to it would be lost!";
+					if (MessageBox.Show(msg, "ConfuserEx", MessageBoxButton.YesNo, MessageBoxImage.Question) ==
+					    MessageBoxResult.Yes) {
 						foreach (var item in App.Project.Modules.Where(m => m.IsSelected).ToList())
 							App.Project.Modules.Remove(item);
 					}
@@ -104,14 +107,17 @@ namespace ConfuserEx.ViewModel {
 
 		void AddModule(string file) {
 			if (!File.Exists(file)) {
-				MessageBox.Show(string.Format("File '{0}' does not exists!", file), "ConfuserEx", MessageBoxButton.OK, MessageBoxImage.Error);
+				MessageBox.Show(string.Format("File '{0}' does not exists!", file), "ConfuserEx", MessageBoxButton.OK,
+					MessageBoxImage.Error);
 				return;
 			}
+
 			if (string.IsNullOrEmpty(App.Project.BaseDirectory)) {
 				string directory = Path.GetDirectoryName(file);
 				App.Project.BaseDirectory = directory;
 				App.Project.OutputDirectory = Path.Combine(directory, "Confused");
 			}
+
 			var module = new ProjectModuleVM(App.Project, new ProjectModule());
 			try {
 				module.Path = Confuser.Core.Utils.GetRelativePath(file, App.Project.BaseDirectory);
@@ -119,6 +125,7 @@ namespace ConfuserEx.ViewModel {
 			catch {
 				module.Path = file;
 			}
+
 			App.Project.Modules.Add(module);
 		}
 	}

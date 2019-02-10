@@ -46,7 +46,7 @@ namespace Confuser.Core.Services {
 			/// <summary>
 			///     The prime numbers used for generation
 			/// </summary>
-			private static readonly byte[] primes = { 7, 11, 23, 37, 43, 59, 71 };
+			private static readonly byte[] primes = {7, 11, 23, 37, 43, 59, 71};
 
 			private readonly HashAlgorithm hashAlgo;
 			private int mixIndex;
@@ -61,7 +61,8 @@ namespace Confuser.Core.Services {
 				Debug.Assert(hashAlgo != null, $"{nameof(hashAlgo)} != null");
 				this.hashAlgo = hashAlgo;
 
-				Debug.Assert(seed.Length == hashAlgo.HashSize / 8, $"{nameof(seed)}.Length == {nameof(hashAlgo)}.HashSize / 8 ({hashAlgo.HashSize / 8})");
+				Debug.Assert(seed.Length == hashAlgo.HashSize / 8,
+					$"{nameof(seed)}.Length == {nameof(hashAlgo)}.HashSize / 8 ({hashAlgo.HashSize / 8})");
 
 				fullState = new byte[seed.Length];
 				seed.CopyTo(fullState.Span);
@@ -130,6 +131,7 @@ namespace Confuser.Core.Services {
 						state = state.Slice(buffer.Length);
 						buffer = Span<byte>.Empty;
 					}
+
 					if (state.IsEmpty)
 						NextState();
 				}
@@ -157,6 +159,7 @@ namespace Confuser.Core.Services {
 			}
 
 			#region IDisposable Support
+
 			private bool _disposed = false;
 
 			void Dispose(bool disposing) {
@@ -168,10 +171,12 @@ namespace Confuser.Core.Services {
 					_disposed = true;
 				}
 			}
+
 			public void Dispose() {
 				Dispose(true);
 				GC.SuppressFinalize(this);
 			}
+
 			#endregion
 		}
 	}

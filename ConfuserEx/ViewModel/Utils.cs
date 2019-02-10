@@ -41,7 +41,8 @@ namespace ConfuserEx.ViewModel {
 			return ret;
 		}
 
-		public static ObservableCollection<TViewModel> Wrap<TModel, TViewModel>(IList<TModel> list, Func<TModel, TViewModel> transform) where TViewModel : IViewModel<TModel> {
+		public static ObservableCollection<TViewModel> Wrap<TModel, TViewModel>(IList<TModel> list,
+			Func<TModel, TViewModel> transform) where TViewModel : IViewModel<TModel> {
 			var ret = new ObservableCollection<TViewModel>(list.Select(item => transform(item)));
 
 			ret.CollectionChanged += (sender, e) => {

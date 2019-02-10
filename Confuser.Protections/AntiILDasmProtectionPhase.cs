@@ -19,10 +19,13 @@ namespace Confuser.Protections {
 
 		public bool ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			foreach (var module in parameters.Targets.OfType<ModuleDef>()) {
-				var attrRef = module.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "SuppressIldasmAttribute");
-				var ctorRef = new MemberRefUser(module, ".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void), attrRef);
+				var attrRef =
+					module.CorLibTypes.GetTypeRef("System.Runtime.CompilerServices", "SuppressIldasmAttribute");
+				var ctorRef = new MemberRefUser(module, ".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void),
+					attrRef);
 
 				var attr = new CustomAttribute(ctorRef);
 				module.CustomAttributes.Add(attr);

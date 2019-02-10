@@ -19,7 +19,8 @@ namespace Confuser.Renamer {
 
 		public string Name => "Post-renaming";
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			var service = (NameService)context.Registry.GetRequiredService<INameService>();
 
 			foreach (var renamer in service.Renamers) {

@@ -7,12 +7,12 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
 
 			if (o.Class is TypeRef) {
 				sig = (o.Class as TypeRef)?.ToTypeSig();
-
 			}
 
 			if (o.Class is TypeSpec) {
 				sig = (o.Class as TypeSpec)?.ToTypeSig();
 			}
+
 			if (sig != null) {
 				m.RegisterGeneric(sig);
 			}

@@ -12,11 +12,13 @@ namespace Confuser.Helpers {
 	/// </summary>
 	public static partial class InjectHelper {
 		/// <summary>The stack of contexts that are parents to the current context.</summary>
-		private static Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>> _parentMaps =
-			new Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>>();
+		private static Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>>
+			_parentMaps =
+				new Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>>();
 
 		/// <summary>The current context storage. One context for each pair of source and target module.</summary>
-		private static IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext> _contextMap =
+		private static IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext> _contextMap
+			=
 			ImmutableDictionary.Create<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>();
 
 		private static InjectContext GetOrCreateContext(ModuleDef sourceModule, ModuleDef targetModule) {
@@ -36,8 +38,10 @@ namespace Confuser.Helpers {
 					// injects for the current injection block.
 					context = new InjectContext(context);
 				}
+
 				_contextMap = _contextMap.Add(key, context);
 			}
+
 			return context;
 		}
 
@@ -100,6 +104,7 @@ namespace Confuser.Helpers {
 					parentMap = oldParentMap;
 				}
 			}
+
 			_parentMaps.Push(parentMap);
 			_contextMap = _contextMap.Clear();
 
@@ -107,7 +112,8 @@ namespace Confuser.Helpers {
 		}
 
 		private static void ReleaseChildContext() {
-			if (!_parentMaps.Any()) throw new InvalidOperationException("There is not child context to release. Disposed twice?!");
+			if (!_parentMaps.Any())
+				throw new InvalidOperationException("There is not child context to release. Disposed twice?!");
 
 			_contextMap = _parentMaps.Pop();
 		}
@@ -125,9 +131,9 @@ namespace Confuser.Helpers {
 		/// <returns>The result of the injection that contains the mapping of all injected members.</returns>
 		/// <exception cref="ArgumentNullException">Any parameter is <see langword="null"/>.</exception>
 		public static InjectResult<MethodDef> Inject(MethodDef methodDef,
-													 ModuleDef target,
-													 IInjectBehavior behavior,
-													 params IMethodInjectProcessor[] methodInjectProcessors) {
+			ModuleDef target,
+			IInjectBehavior behavior,
+			params IMethodInjectProcessor[] methodInjectProcessors) {
 			if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
 			if (target == null) throw new ArgumentNullException(nameof(target));
 			if (behavior == null) throw new ArgumentNullException(nameof(behavior));
@@ -138,7 +144,8 @@ namespace Confuser.Helpers {
 			var injector = new Injector(ctx, behavior, methodInjectProcessors);
 
 			var mappedMethod = injector.Inject(methodDef);
-			return InjectResult.Create(methodDef, mappedMethod, injector.InjectedMembers.Where(m => m.Value != mappedMethod));
+			return InjectResult.Create(methodDef, mappedMethod,
+				injector.InjectedMembers.Where(m => m.Value != mappedMethod));
 		}
 
 		/// <summary>
@@ -154,9 +161,9 @@ namespace Confuser.Helpers {
 		/// <returns>The result of the injection that contains the mapping of all injected members.</returns>
 		/// <exception cref="ArgumentNullException">Any parameter is <see langword="null"/>.</exception>
 		public static InjectResult<TypeDef> Inject(TypeDef typeDef,
-												   ModuleDef target,
-												   IInjectBehavior behavior,
-												   params IMethodInjectProcessor[] methodInjectProcessors) {
+			ModuleDef target,
+			IInjectBehavior behavior,
+			params IMethodInjectProcessor[] methodInjectProcessors) {
 			if (typeDef == null) throw new ArgumentNullException(nameof(typeDef));
 			if (target == null) throw new ArgumentNullException(nameof(target));
 			if (behavior == null) throw new ArgumentNullException(nameof(behavior));

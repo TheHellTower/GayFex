@@ -10,12 +10,17 @@ using dnlib.DotNet;
 namespace Confuser.Optimizations.CompileRegex {
 	internal sealed class CompileRegexService : ICompileRegexService {
 		private IDictionary<ModuleDef, IRegexTargetMethods> CachedRegexTargetMethods { get; }
-		private IDictionary<ModuleDef, IDictionary<(String pattern, RegexOptions options), (TimeSpan? timeout, bool staticTimeout, ISet<IRegexTargetMethod> requiredMethods)>> RecordedRegex { get; }
+
+		private IDictionary<ModuleDef, IDictionary<(String pattern, RegexOptions options), (TimeSpan? timeout, bool
+			staticTimeout, ISet<IRegexTargetMethod> requiredMethods)>> RecordedRegex { get; }
+
 		private IDictionary<ModuleDef, IList<RegexCompilerResult>> CompiledRegexExpressions { get; }
 
 		internal CompileRegexService() {
 			CachedRegexTargetMethods = new Dictionary<ModuleDef, IRegexTargetMethods>();
-			RecordedRegex = new Dictionary<ModuleDef, IDictionary<(String, RegexOptions), (TimeSpan?, bool, ISet<IRegexTargetMethod>)>>();
+			RecordedRegex =
+				new Dictionary<ModuleDef,
+					IDictionary<(String, RegexOptions), (TimeSpan?, bool, ISet<IRegexTargetMethod>)>>();
 			CompiledRegexExpressions = new Dictionary<ModuleDef, IList<RegexCompilerResult>>();
 		}
 
@@ -25,6 +30,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			if (CachedRegexTargetMethods.TryGetValue(module, out var result)) {
 				return result;
 			}
+
 			return null;
 		}
 
@@ -47,28 +53,34 @@ namespace Confuser.Optimizations.CompileRegex {
 					if (regexTypeDef != null)
 						result = new RegexTargetMethods(regexTypeDef);
 				}
+
 				CachedRegexTargetMethods.Add(moduleDef, result);
 			}
+
 			return result;
 		}
 
-		void ICompileRegexService.RecordExpression(ModuleDef module, RegexCompileDef compileDef, IRegexTargetMethod regexMethod) {
+		void ICompileRegexService.RecordExpression(ModuleDef module, RegexCompileDef compileDef,
+			IRegexTargetMethod regexMethod) {
 			if (module == null) throw new ArgumentNullException(nameof(module));
 			if (compileDef == null) throw new ArgumentNullException(nameof(compileDef));
 			if (regexMethod == null) throw new ArgumentNullException(nameof(regexMethod));
 
 			if (!RecordedRegex.TryGetValue(module, out var recordedRegexByModule)) {
-				recordedRegexByModule = new Dictionary<(String, RegexOptions), (TimeSpan?, bool, ISet<IRegexTargetMethod>)>();
+				recordedRegexByModule =
+					new Dictionary<(String, RegexOptions), (TimeSpan?, bool, ISet<IRegexTargetMethod>)>();
 				RecordedRegex.Add(module, recordedRegexByModule);
 			}
 
 			var regexKey = (compileDef.Pattern, compileDef.Options);
 			if (!recordedRegexByModule.TryGetValue(regexKey, out var regexParams)) {
-				ISet<IRegexTargetMethod> requiredMethods = new HashSet<IRegexTargetMethod>() { regexMethod };
+				ISet<IRegexTargetMethod> requiredMethods = new HashSet<IRegexTargetMethod>() {regexMethod};
 				recordedRegexByModule.Add(regexKey, (compileDef.Timeout, compileDef.StaticTimeout, requiredMethods));
-			} else {
+			}
+			else {
 				regexParams.requiredMethods.Add(regexMethod);
-				if (!compileDef.StaticTimeout || !regexParams.staticTimeout || !Nullable.Equals(compileDef.Timeout, regexParams.timeout)) {
+				if (!compileDef.StaticTimeout || !regexParams.staticTimeout ||
+				    !Nullable.Equals(compileDef.Timeout, regexParams.timeout)) {
 					regexParams = (null, false, regexParams.requiredMethods);
 					recordedRegexByModule[regexKey] = regexParams;
 				}
@@ -80,7 +92,8 @@ namespace Confuser.Optimizations.CompileRegex {
 
 			if (RecordedRegex.TryGetValue(module, out var recordedRegexExpressions)) {
 				foreach (var entry in recordedRegexExpressions)
-					yield return new RegexCompileDef(entry.Key.pattern, entry.Key.options, entry.Value.timeout, entry.Value.staticTimeout, entry.Value.requiredMethods);
+					yield return new RegexCompileDef(entry.Key.pattern, entry.Key.options, entry.Value.timeout,
+						entry.Value.staticTimeout, entry.Value.requiredMethods);
 			}
 		}
 

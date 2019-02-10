@@ -7,7 +7,9 @@ namespace Confuser.Runtime {
 			try {
 				if (!AntiManagedDebugger.Initialize())
 					Environment.FailFast(null);
-			} catch { }
+			}
+			catch {
+			}
 
 			try {
 				AntiManagedProfiler.Initialize();
@@ -17,7 +19,8 @@ namespace Confuser.Runtime {
 					AntiManagedProfiler.PreventActiveProfilerFromReceivingProfilingMessages();
 				}
 			}
-			catch { }
+			catch {
+			}
 		}
 	}
 }

@@ -21,7 +21,7 @@ namespace Confuser.Core {
 			return visitor.Visit(parser.protectionString());
 		}
 
-		public static ISettingsDictionary ParseProtection(IReadOnlyDictionary<string, IProtection> items, 
+		public static ISettingsDictionary ParseProtection(IReadOnlyDictionary<string, IProtection> items,
 			ISettingsDictionary settings, string str, ILogger logger) {
 			var inputStream = new AntlrInputStream(str);
 			var lexer = new ObfAttrLexer(inputStream);
@@ -31,7 +31,7 @@ namespace Confuser.Core {
 
 			var expr = parser.protectionString();
 			var visitor = new ObfProtectionAttrParser(items, settings);
-			
+
 			return visitor.Visit(expr);
 		}
 
@@ -45,7 +45,7 @@ namespace Confuser.Core {
 
 			var expr = parser.packerString();
 			var visitor = new ObfPackerAttrVisitor(packers);
-			
+
 			return visitor.Visit(expr);
 		}
 
@@ -58,7 +58,6 @@ namespace Confuser.Core {
 		}
 
 		private sealed class ValidateProtectionNamesVisitor : ObfAttrProtectionParserBaseVisitor<bool> {
-
 			private IReadOnlyDictionary<string, IProtection> Items { get; }
 
 			protected override bool DefaultResult => true;
@@ -79,7 +78,8 @@ namespace Confuser.Core {
 
 			protected override ISettingsDictionary DefaultResult => Settings;
 
-			public ObfProtectionAttrParser(IReadOnlyDictionary<string, IProtection> items, ISettingsDictionary settings) {
+			public ObfProtectionAttrParser(IReadOnlyDictionary<string, IProtection> items,
+				ISettingsDictionary settings) {
 				Items = items;
 				Settings = settings;
 			}
@@ -118,14 +118,17 @@ namespace Confuser.Core {
 					else {
 						if (itemValues == null) {
 							if (!Settings.ContainsKey((protection)))
-								Settings.Add(protection, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+								Settings.Add(protection,
+									new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
 						}
 						else {
 							if (!Settings.TryGetValue(protection, out var protectionSettings))
-								protectionSettings = Settings[protection] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+								protectionSettings = Settings[protection] =
+									new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 							foreach (var itemValue in itemValues.itemValue()) {
-								protectionSettings.Add(itemValue.itemValueName().GetText(), itemValue.itemValueValue().GetText().Trim('\''));
+								protectionSettings.Add(itemValue.itemValueName().GetText(),
+									itemValue.itemValueValue().GetText().Trim('\''));
 							}
 						}
 					}
@@ -135,17 +138,21 @@ namespace Confuser.Core {
 			}
 		}
 
-		private sealed class ObfPackerAttrVisitor : ObfAttrPackerParserBaseVisitor<(IPacker, IDictionary<string, string>)> {
+		private sealed class
+			ObfPackerAttrVisitor : ObfAttrPackerParserBaseVisitor<(IPacker, IDictionary<string, string>)> {
 			private IReadOnlyDictionary<string, IPacker> Packers { get; }
 			private IPacker Packer { get; set; }
-			private IDictionary<string, string> PackerParameter { get; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
-			internal ObfPackerAttrVisitor(IReadOnlyDictionary<string, IPacker> packers) => 
+			private IDictionary<string, string> PackerParameter { get; } =
+				new Dictionary<string, string>(StringComparer.Ordinal);
+
+			internal ObfPackerAttrVisitor(IReadOnlyDictionary<string, IPacker> packers) =>
 				Packers = packers ?? throw new ArgumentNullException(nameof(packers));
 
 			protected override (IPacker, IDictionary<string, string>) DefaultResult => (Packer, PackerParameter);
 
-			public override (IPacker, IDictionary<string, string>) VisitPacker(ObfAttrPackerParser.PackerContext context) {
+			public override (IPacker, IDictionary<string, string>) VisitPacker(
+				ObfAttrPackerParser.PackerContext context) {
 				var packerName = context.itemName().GetText();
 				if (Packers.TryGetValue(packerName, out var packer))
 					Packer = packer;
@@ -154,7 +161,8 @@ namespace Confuser.Core {
 				return DefaultResult;
 			}
 
-			public override (IPacker, IDictionary<string, string>) VisitItemValue(ObfAttrPackerParser.ItemValueContext context) {
+			public override (IPacker, IDictionary<string, string>) VisitItemValue(
+				ObfAttrPackerParser.ItemValueContext context) {
 				PackerParameter[context.itemValueName().GetText()] = context.itemValueValue().GetText();
 				return DefaultResult;
 			}

@@ -9,13 +9,14 @@ namespace Confuser.Renamer.Analyzers {
 	internal class InterReferenceAnalyzer : IRenamer {
 		// i.e. Inter-Assembly References, e.g. InternalVisibleToAttributes
 
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			var module = def as ModuleDefMD;
 			if (module == null) return;
 
 			// MemberRef/MethodSpec
 			var methods = module.GetTypes().SelectMany(type => type.Methods);
-			foreach(var methodDef in methods) {
+			foreach (var methodDef in methods) {
 				foreach (var ov in methodDef.Overrides) {
 					ProcessMemberRef(context, service, module, ov.MethodBody);
 					ProcessMemberRef(context, service, module, ov.MethodDeclaration);
@@ -59,11 +60,13 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 	}

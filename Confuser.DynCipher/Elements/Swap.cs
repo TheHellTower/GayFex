@@ -6,7 +6,8 @@ using Confuser.DynCipher.Generation;
 namespace Confuser.DynCipher.Elements {
 	internal class Swap : CryptoElement {
 		public Swap()
-			: base(2) { }
+			: base(2) {
+		}
 
 		public uint Mask { get; private set; }
 		public uint Key { get; private set; }

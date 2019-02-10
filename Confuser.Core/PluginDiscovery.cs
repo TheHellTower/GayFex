@@ -21,7 +21,8 @@ namespace Confuser.Core {
 		/// <summary>
 		///     Initializes a new instance of the <see cref="PluginDiscovery" /> class.
 		/// </summary>
-		protected PluginDiscovery() { }
+		protected PluginDiscovery() {
+		}
 
 		/// <summary>
 		///     Retrieves the available protection plug-ins.
@@ -75,6 +76,7 @@ namespace Confuser.Core {
 				if (DefaultPlugIns == null) {
 					DefaultPlugIns = GetDefaultPlugInsInternal(logger);
 				}
+
 				return DefaultPlugIns;
 			}
 
@@ -89,8 +91,7 @@ namespace Confuser.Core {
 				return new AggregateCatalog(result);
 			}
 
-			private static void LoadAssemblyCatalog(string assemblyName, IList<ComposablePartCatalog> catalogs)
-			{
+			private static void LoadAssemblyCatalog(string assemblyName, IList<ComposablePartCatalog> catalogs) {
 				Debug.Assert(catalogs != null, $"{nameof(catalogs)} != null");
 				Debug.Assert(assemblyName != null, $"{nameof(assemblyName)} != null");
 

@@ -22,6 +22,7 @@ namespace Confuser.DynCipher.AST {
 				default:
 					throw new Exception();
 			}
+
 			return op + Value;
 		}
 	}

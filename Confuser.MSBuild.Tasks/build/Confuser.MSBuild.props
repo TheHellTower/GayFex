@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <Choose>
     <When Condition="'$(MSBuildRuntimeType)' == 'Full'">
@@ -15,5 +15,5 @@
   <UsingTask TaskName="Confuser.MSBuild.Tasks.CreateProjectTask"
              AssemblyFile="$(ConfuserAssemblyPath)Confuser.MSBuild.Tasks.dll" />
   <UsingTask TaskName="Confuser.MSBuild.Tasks.ConfuseTask"
-             AssemblyFile="$(ConfuserAssemblyPath)Confuser.MSBuild.Tasks.dll" />  
+             AssemblyFile="$(ConfuserAssemblyPath)Confuser.MSBuild.Tasks.dll" />
 </Project>

@@ -12,7 +12,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class TypeBlobAnalyzer : IRenamer {
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			if (!(def is ModuleDefMD module)) return;
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
@@ -28,6 +29,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (methodImpl.MethodDeclaration is MemberRef)
 						AnalyzeMemberRef(context, service, (MemberRef)methodImpl.MethodDeclaration);
 				}
+
 				if (!method.HasBody)
 					continue;
 				foreach (Instruction instr in method.Body.Instructions) {
@@ -50,6 +52,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (module.TablesStream.TryReadCustomAttributeRow((uint)rid, out var row)) {
 						return module.ResolveHasCustomAttribute(row.Parent);
 					}
+
 					return null;
 				})
 				.Where(a => a != null)
@@ -75,25 +78,31 @@ namespace Confuser.Renamer.Analyzers {
 				foreach (CANamedArgument fieldArg in attr.Fields) {
 					FieldDef field = attrType.FindField(fieldArg.Name, new FieldSig(fieldArg.Type));
 					if (field == null)
-						logger.LogWarning("Failed to resolve CA field '{0}::{1} : {2}'.", attrType, fieldArg.Name, fieldArg.Type);
+						logger.LogWarning("Failed to resolve CA field '{0}::{1} : {2}'.", attrType, fieldArg.Name,
+							fieldArg.Type);
 					else
 						service.AddReference(context, field, new CAMemberReference(fieldArg, field));
 				}
+
 				foreach (CANamedArgument propertyArg in attr.Properties) {
-					PropertyDef property = attrType.FindProperty(propertyArg.Name, new PropertySig(true, propertyArg.Type));
+					PropertyDef property =
+						attrType.FindProperty(propertyArg.Name, new PropertySig(true, propertyArg.Type));
 					if (property == null)
-						logger.LogWarning("Failed to resolve CA property '{0}::{1} : {2}'.", attrType, propertyArg.Name, propertyArg.Type);
+						logger.LogWarning("Failed to resolve CA property '{0}::{1} : {2}'.", attrType, propertyArg.Name,
+							propertyArg.Type);
 					else
 						service.AddReference(context, property, new CAMemberReference(propertyArg, property));
 				}
 			}
 		}
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
@@ -134,7 +143,7 @@ namespace Confuser.Renamer.Analyzers {
 				Debug.Assert(!(inst.GenericType.TypeDefOrRef is TypeSpec));
 				TypeDef openType = inst.GenericType.TypeDefOrRef.ResolveTypeDefThrow();
 				if (!context.Modules.Contains((ModuleDefMD)openType.Module) ||
-					memberRef.IsArrayAccessors())
+				    memberRef.IsArrayAccessors())
 					return;
 
 				IDnlibDef member;

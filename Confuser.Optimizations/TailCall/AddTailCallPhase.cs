@@ -12,7 +12,6 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Optimizations.TailCall {
 	internal sealed class AddTailCallPhase : IProtectionPhase {
-
 		internal AddTailCallPhase(TailCallProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
@@ -112,6 +111,7 @@ namespace Confuser.Optimizations.TailCall {
 
 				return !(i > 1 && method.Body.Instructions[i - 1].OpCode == OpCodes.Tailcall);
 			}
+
 			return false;
 		}
 	}

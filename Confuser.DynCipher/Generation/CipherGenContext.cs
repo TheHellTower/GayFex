@@ -16,18 +16,18 @@ namespace Confuser.DynCipher.Generation {
 			Block = new StatementBlock(); // new LoopStatement() { Begin = 0, Limit = 4 };
 			dataVars = new Variable[dataVarCount];
 			for (int i = 0; i < dataVarCount; i++)
-				dataVars[i] = new Variable("v" + i) { Tag = i };
+				dataVars[i] = new Variable("v" + i) {Tag = i};
 		}
 
 		public StatementBlock Block { get; private set; }
 
 		public Expression GetDataExpression(int index) {
-			return new VariableExpression { Variable = dataVars[index] };
+			return new VariableExpression {Variable = dataVars[index]};
 		}
 
 		public Expression GetKeyExpression(int index) {
 			return new ArrayIndexExpression {
-				Array = new VariableExpression { Variable = keyVar },
+				Array = new VariableExpression {Variable = keyVar},
 				Index = index
 			};
 		}
@@ -45,7 +45,8 @@ namespace Confuser.DynCipher.Generation {
 				var = tempVars[random.NextInt32(tempVars.Count)];
 				tempVars.Remove(var);
 			}
-			exp = new VariableExpression { Variable = var };
+
+			exp = new VariableExpression {Variable = var};
 			return new TempVarHolder(this, var);
 		}
 

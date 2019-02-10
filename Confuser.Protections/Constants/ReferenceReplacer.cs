@@ -13,25 +13,34 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.Constants {
 	internal static class ReferenceReplacer {
-		internal static bool ReplaceReference(ConstantProtection protection, CEContext ctx, IProtectionParameters parameters) {
+		internal static bool ReplaceReference(ConstantProtection protection, CEContext ctx,
+			IProtectionParameters parameters) {
 			foreach (var entry in ctx.ReferenceRepl) {
-				if (parameters.GetParameter(ctx.Context, entry.Key, protection.Parameters.ControlFlowGraphReplacement)) {
+				if (parameters.GetParameter(ctx.Context, entry.Key,
+					protection.Parameters.ControlFlowGraphReplacement)) {
 					if (!ReplaceCFG(entry.Key, entry.Value, ctx)) return false;
 				}
 				else {
 					if (!ReplaceNormal(entry.Key, entry.Value)) return false;
 				}
 			}
+
 			return true;
 		}
 
-		private static bool ReplaceNormal(MethodDef method, IEnumerable<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)> instrs) {
+		private static bool ReplaceNormal(MethodDef method,
+			IEnumerable<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)> instrs) {
 			foreach (var (targetInstruction, argument, decoderMethod) in instrs) {
-				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_I4 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Int32);
-				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_I8 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Int64);
-				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_R4 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Single);
-				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_R8 || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Double);
-				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldstr || decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.String);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_I4 ||
+				             decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Int32);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_I8 ||
+				             decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Int64);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_R4 ||
+				             decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Single);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldc_R8 ||
+				             decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.Double);
+				Debug.Assert(targetInstruction.OpCode != OpCodes.Ldstr ||
+				             decoderMethod.GetReturnTypeSig() == method.Module.CorLibTypes.String);
 
 				int i = method.Body.Instructions.IndexOf(targetInstruction);
 				targetInstruction.OpCode = OpCodes.Ldc_I4;
@@ -39,6 +48,7 @@ namespace Confuser.Protections.Constants {
 
 				method.Body.Instructions.Insert(i + 1, OpCodes.Call.ToInstruction(decoderMethod));
 			}
+
 			return true;
 		}
 
@@ -119,6 +129,7 @@ namespace Confuser.Protections.Constants {
 					case 3:
 						return D - target;
 				}
+
 				throw new UnreachableException();
 			}
 
@@ -133,6 +144,7 @@ namespace Confuser.Protections.Constants {
 					case 3:
 						return D;
 				}
+
 				throw new UnreachableException();
 			}
 
@@ -153,12 +165,17 @@ namespace Confuser.Protections.Constants {
 					InjectBehaviors.RenameAndInternalizeBehavior(ctx.Context));
 
 				ctx.CfgCtxType = injectResult.Requested.Mapped;
-				ctx.CfgCtxCtor = injectResult.Where(inj => inj.Source.IsMethodDef && ((MethodDef)inj.Source).IsInstanceConstructor).Single().Mapped as MethodDef;
-				ctx.CfgCtxNext = injectResult.Where(inj => inj.Source.IsMethodDef && inj.Source.Name.Equals("Next")).Single().Mapped as MethodDef;
+				ctx.CfgCtxCtor =
+					injectResult.Where(inj => inj.Source.IsMethodDef && ((MethodDef)inj.Source).IsInstanceConstructor)
+						.Single().Mapped as MethodDef;
+				ctx.CfgCtxNext =
+					injectResult.Where(inj => inj.Source.IsMethodDef && inj.Source.Name.Equals("Next")).Single()
+						.Mapped as MethodDef;
 
 				foreach (var def in injectResult)
 					ctx.Name?.MarkHelper(ctx.Context, def.Mapped, ctx.Marker, ctx.Protection);
 			}
+
 			return true;
 		}
 
@@ -175,6 +192,7 @@ namespace Confuser.Protections.Constants {
 			catch (ArgumentException ex) {
 				logger.LogError("Failed to load runtime: {0}", ex.Message);
 			}
+
 			return null;
 		}
 
@@ -210,7 +228,8 @@ namespace Confuser.Protections.Constants {
 					var fl = CFGState.EncodeFlag(false, updateId, getId);
 					var incr = entry.GetIncrementalUpdate(updateId, targetValue);
 
-					body.Instructions.Insert(targetIndex++, first = Instruction.Create(OpCodes.Ldloca, ctx.StateVariable));
+					body.Instructions.Insert(targetIndex++,
+						first = Instruction.Create(OpCodes.Ldloca, ctx.StateVariable));
 					body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Ldc_I4_S, (sbyte)fl));
 					body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Ldc_I4, (int)incr));
 					body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Call, ctx.Ctx.CfgCtxNext));
@@ -236,6 +255,7 @@ namespace Confuser.Protections.Constants {
 						body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Call, ctx.Ctx.CfgCtxNext));
 						body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Pop));
 					}
+
 					first = body.Instructions[headerIndex];
 				}
 			}
@@ -247,7 +267,8 @@ namespace Confuser.Protections.Constants {
 					// Create new exit state from random seed
 					var seed = ctx.Random.NextUInt32();
 					exit = new CFGState(seed);
-					body.Instructions.Insert(targetIndex++, first = Instruction.Create(OpCodes.Ldloca, ctx.StateVariable));
+					body.Instructions.Insert(targetIndex++,
+						first = Instruction.Create(OpCodes.Ldloca, ctx.StateVariable));
 					body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Ldc_I4, (int)seed));
 					body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Call, ctx.Ctx.CfgCtxCtor));
 
@@ -267,6 +288,7 @@ namespace Confuser.Protections.Constants {
 						body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Call, ctx.Ctx.CfgCtxNext));
 						body.Instructions.Insert(targetIndex++, Instruction.Create(OpCodes.Pop));
 					}
+
 					first = body.Instructions[headerIndex];
 				}
 			}
@@ -274,7 +296,8 @@ namespace Confuser.Protections.Constants {
 			ctx.Graph.Body.ReplaceReference(block.Header, first);
 		}
 
-		static uint InsertStateGetAndUpdate(CFGContext ctx, ref int index, BlockKeyType type, ref CFGState currentState, CFGState? targetState) {
+		static uint InsertStateGetAndUpdate(CFGContext ctx, ref int index, BlockKeyType type, ref CFGState currentState,
+			CFGState? targetState) {
 			var body = ctx.Graph.Body;
 
 			if (type == BlockKeyType.Incremental) {
@@ -297,15 +320,16 @@ namespace Confuser.Protections.Constants {
 
 					return currentState.Get(getId);
 				}
+
 				// Scan for updated state
-				int[] stateIds = { 0, 1, 2, 3 };
+				int[] stateIds = {0, 1, 2, 3};
 				ctx.Random.Shuffle(stateIds);
 				int i = 0;
 				uint getValue = 0;
 				foreach (var stateId in stateIds) {
 					// There must be at least one update&get
 					if (currentState.Get(stateId) == targetState.Value.Get(stateId) &&
-						i != stateIds.Length - 1) {
+					    i != stateIds.Length - 1) {
 						i++;
 						continue;
 					}
@@ -327,6 +351,7 @@ namespace Confuser.Protections.Constants {
 					else
 						body.Instructions.Insert(index++, Instruction.Create(OpCodes.Pop));
 				}
+
 				return getValue;
 			}
 			else {
@@ -358,7 +383,7 @@ namespace Confuser.Protections.Constants {
 				}
 				else {
 					// Scan for updated state
-					int[] stateIds = { 0, 1, 2, 3 };
+					int[] stateIds = {0, 1, 2, 3};
 					ctx.Random.Shuffle(stateIds);
 					int i = 0;
 					uint getValue = 0;
@@ -379,12 +404,14 @@ namespace Confuser.Protections.Constants {
 						else
 							body.Instructions.Insert(index++, Instruction.Create(OpCodes.Pop));
 					}
+
 					return getValue;
 				}
 			}
 		}
 
-		private static bool ReplaceCFG(MethodDef method, List<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)> instrs, CEContext ctx) {
+		private static bool ReplaceCFG(MethodDef method,
+			List<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)> instrs, CEContext ctx) {
 			if (!InjectStateType(ctx)) return false;
 
 			var graph = ControlFlowGraph.Construct(method.Body);
@@ -436,12 +463,14 @@ namespace Confuser.Protections.Constants {
 
 					var index = graph.Body.Instructions.IndexOf(graph[blockRef.Key].Header);
 					Instruction newHeader;
-					method.Body.Instructions.Insert(index++, newHeader = Instruction.Create(OpCodes.Ldloca, cfgCtx.StateVariable));
+					method.Body.Instructions.Insert(index++,
+						newHeader = Instruction.Create(OpCodes.Ldloca, cfgCtx.StateVariable));
 					method.Body.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldc_I4, (int)blockSeed));
 					method.Body.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, ctx.CfgCtxCtor));
 					method.Body.ReplaceReference(graph[blockRef.Key].Header, newHeader);
 					key.Type = BlockKeyType.Incremental;
 				}
+
 				var type = key.Type;
 
 				for (int i = 0; i < blockRef.Value.Count; i++) {
@@ -469,6 +498,7 @@ namespace Confuser.Protections.Constants {
 					type = BlockKeyType.Incremental;
 				}
 			}
+
 			return true;
 		}
 	}

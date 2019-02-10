@@ -20,6 +20,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				ret.AddRange(args);
 				ret.Add(Instruction.Create(OpCodes.Ldc_I4, key.Item1));
 			}
+
 			ret.Add(Instruction.Create(OpCodes.Mul));
 			return ret;
 		};
@@ -35,6 +36,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				int key = random.NextInt32() | 1;
 				keys[init] = ret = Tuple.Create(key, (int)MathsUtils.modInv((uint)key));
 			}
+
 			return ret;
 		}
 	}

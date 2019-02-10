@@ -31,7 +31,8 @@ namespace Confuser.Protections.ControlFlow {
 
 		public string Name => "Control flow mangling";
 
-		CFContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, IRandomGenerator random, bool disableOpti) {
+		CFContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters,
+			IRandomGenerator random, bool disableOpti) {
 			var ret = new CFContext();
 			ret.Type = parameters.GetParameter(context, method, Parent.Parameters.ControlFlowType);
 			ret.Predicate = parameters.GetParameter(context, method, Parent.Parameters.PredicateType);
@@ -59,23 +60,29 @@ namespace Confuser.Protections.ControlFlow {
 			CustomAttribute debugAttr = module.Assembly.CustomAttributes.Find("System.Diagnostics.DebuggableAttribute");
 			if (debugAttr != null) {
 				if (debugAttr.ConstructorArguments.Count == 1)
-					disableOpti |= ((DebuggableAttribute.DebuggingModes)(int)debugAttr.ConstructorArguments[0].Value & DebuggableAttribute.DebuggingModes.DisableOptimizations) != 0;
+					disableOpti |= ((DebuggableAttribute.DebuggingModes)(int)debugAttr.ConstructorArguments[0].Value &
+					                DebuggableAttribute.DebuggingModes.DisableOptimizations) != 0;
 				else
 					disableOpti |= (bool)debugAttr.ConstructorArguments[1].Value;
 			}
+
 			debugAttr = module.CustomAttributes.Find("System.Diagnostics.DebuggableAttribute");
 			if (debugAttr != null) {
 				if (debugAttr.ConstructorArguments.Count == 1)
-					disableOpti |= ((DebuggableAttribute.DebuggingModes)(int)debugAttr.ConstructorArguments[0].Value & DebuggableAttribute.DebuggingModes.DisableOptimizations) != 0;
+					disableOpti |= ((DebuggableAttribute.DebuggingModes)(int)debugAttr.ConstructorArguments[0].Value &
+					                DebuggableAttribute.DebuggingModes.DisableOptimizations) != 0;
 				else
 					disableOpti |= (bool)debugAttr.ConstructorArguments[1].Value;
 			}
+
 			return disableOpti;
 		}
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			bool disabledOpti = DisabledOptimization(context.CurrentModule);
-			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ControlFlowProtection._FullId);
+			var random = context.Registry.GetRequiredService<IRandomService>()
+				.GetRandomGenerator(ControlFlowProtection._FullId);
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ControlFlowProtection._Id);
 
 			foreach (var method in parameters.Targets.OfType<MethodDef>()) //.WithProgress(logger))
@@ -94,10 +101,12 @@ namespace Confuser.Protections.ControlFlow {
 		void ProcessMethod(CilBody body, CFContext ctx) {
 			uint maxStack;
 			if (!MaxStackCalculator.GetMaxStack(body.Instructions, body.ExceptionHandlers, out maxStack)) {
-				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ControlFlowProtection._Id);
+				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>()
+					.CreateLogger(ControlFlowProtection._Id);
 				logger.LogCritical("Failed to calculate maxstack.");
 				throw new ConfuserException();
 			}
+
 			body.MaxStack = (ushort)maxStack;
 			ScopeBlock root = BlockParser.ParseBody(body);
 
@@ -113,12 +122,14 @@ namespace Confuser.Protections.ControlFlow {
 					}
 				};
 			}
+
 			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
 				var index = body.Instructions.IndexOf(eh.TryEnd) + 1;
 				eh.TryEnd = index < body.Instructions.Count ? body.Instructions[index] : null;
 				index = body.Instructions.IndexOf(eh.HandlerEnd) + 1;
 				eh.HandlerEnd = index < body.Instructions.Count ? body.Instructions[index] : null;
 			}
+
 			body.KeepOldMaxStack = true;
 		}
 	}

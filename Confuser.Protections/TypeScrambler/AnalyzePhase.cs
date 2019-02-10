@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.TypeScramble {
 	internal sealed class AnalyzePhase : IProtectionPhase {
-
 		public AnalyzePhase(TypeScrambleProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
@@ -26,34 +25,37 @@ namespace Confuser.Protections.TypeScramble {
 
 		public string Name => "Type scanner";
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(TypeScrambleProtection._Id);
 			//CreateGenericsForTypes(context, parameters.Targets.OfType<TypeDef>().WithProgress(context.Logger), token);
 
 			CreateGenericsForMethods(context, parameters.Targets.OfType<MethodDef>()
-				.OrderBy(x =>
-				x?.Parameters?.Count ?? 0 +
-				x.Body?.Variables?.Count ?? 0)
+					.OrderBy(x =>
+						x?.Parameters?.Count ?? 0 +
+						x.Body?.Variables?.Count ?? 0)
 				/*.WithProgress(logger)*/, token);
 		}
 
 
-		private void CreateGenericsForTypes(IConfuserContext context, IEnumerable<TypeDef> types, CancellationToken token) {
+		private void CreateGenericsForTypes(IConfuserContext context, IEnumerable<TypeDef> types,
+			CancellationToken token) {
 			var service = (TypeService)context.Registry.GetRequiredService<ITypeScrambleService>();
 
 			foreach (var type in types) {
 				if (type.Module.EntryPoint.DeclaringType != type) {
 					service.AddScannedItem(new ScannedType(type));
 				}
+
 				token.ThrowIfCancellationRequested();
 			}
 		}
 
-		private void CreateGenericsForMethods(IConfuserContext context, IEnumerable<MethodDef> methods, CancellationToken token) {
+		private void CreateGenericsForMethods(IConfuserContext context, IEnumerable<MethodDef> methods,
+			CancellationToken token) {
 			var service = (TypeService)context.Registry.GetRequiredService<ITypeScrambleService>();
 
 			foreach (var method in methods) {
-
 				/*
 				context.Logger.DebugFormat("[{0}]", method.Name);
 				if (method.HasBody) {
@@ -63,12 +65,13 @@ namespace Confuser.Protections.TypeScramble {
 				}*/
 
 
-				if (method.Module.EntryPoint != method && !(method.HasOverrides || method.IsAbstract || method.IsConstructor || method.IsGetter)) {
+				if (method.Module.EntryPoint != method &&
+				    !(method.HasOverrides || method.IsAbstract || method.IsConstructor || method.IsGetter)) {
 					service.AddScannedItem(new ScannedMethod(service, method));
 				}
+
 				token.ThrowIfCancellationRequested();
 			}
 		}
-
 	}
 }

@@ -9,7 +9,6 @@ namespace Confuser.Core {
 	public interface IPackerMetadata {
 		string Id { get; }
 
-		[DefaultValue(null)]
-		string MarkerId { get; }
+		[DefaultValue(null)] string MarkerId { get; }
 	}
 }

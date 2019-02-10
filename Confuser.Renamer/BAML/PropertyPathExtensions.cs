@@ -13,6 +13,7 @@ namespace Confuser.Renamer.BAML {
 				if (indexOfDot < 0) return null;
 				return propertyName.Substring(1, indexOfDot - 1);
 			}
+
 			return null;
 		}
 
@@ -27,6 +28,7 @@ namespace Confuser.Renamer.BAML {
 						if (indexOfDot < 0) return propertyName.Substring(1, propertyName.Length - 2);
 						return propertyName.Substring(indexOfDot + 1, propertyName.Length - indexOfDot - 2);
 					}
+
 					return propertyName;
 				case SourceValueType.Indexer:
 					return "Item";

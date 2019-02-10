@@ -9,7 +9,8 @@ namespace Confuser.Core.Parameter {
 		public string Name { get; }
 
 		internal EnumProtectionParameter(string name, T defaultValue) {
-			Debug.Assert(!string.IsNullOrWhiteSpace(name) && typeof(T).IsEnum && Enum.IsDefined(typeof(T), defaultValue));
+			Debug.Assert(
+				!string.IsNullOrWhiteSpace(name) && typeof(T).IsEnum && Enum.IsDefined(typeof(T), defaultValue));
 
 			Name = name;
 			DefaultValue = defaultValue;
@@ -19,7 +20,8 @@ namespace Confuser.Core.Parameter {
 			if (Enum.TryParse<T>(serializedValue, true, out var result))
 				return result;
 
-			throw new SerializationException($"Value {serializedValue} can't be deserialized to enum {typeof(T).FullName}");
+			throw new SerializationException(
+				$"Value {serializedValue} can't be deserialized to enum {typeof(T).FullName}");
 		}
 
 		string IProtectionParameter<T>.Serialize(T value) => Enum.GetName(typeof(T), value);

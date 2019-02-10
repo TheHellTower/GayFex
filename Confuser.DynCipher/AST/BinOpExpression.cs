@@ -51,6 +51,7 @@ namespace Confuser.DynCipher.AST {
 				default:
 					throw new Exception();
 			}
+
 			return string.Format("({0} {1} {2})", Left, op, Right);
 		}
 	}

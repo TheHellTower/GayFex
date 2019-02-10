@@ -9,9 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Confuser.Optimizations.CompileRegex {
-
 	internal sealed class ExtractPhase : IProtectionPhase {
-
 		internal ExtractPhase(CompileRegexProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
@@ -25,7 +23,8 @@ namespace Confuser.Optimizations.CompileRegex {
 
 		bool IProtectionPhase.ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
@@ -48,10 +47,12 @@ namespace Confuser.Optimizations.CompileRegex {
 
 						if (!onlyExplicit || result.explicitCompiled) {
 							regexService.RecordExpression(modulesAndMethods.Key, result.compileDef, result.regexMethod);
-						} else {
+						}
+						else {
 							logger.LogMsgSkippedRegexNotCompiled(method);
 						}
 					}
+
 					token.ThrowIfCancellationRequested();
 				}
 			}

@@ -28,10 +28,10 @@ namespace Confuser.Protections {
 
 		internal ConstantProtectionParameters Parameters { get; } = new ConstantProtectionParameters();
 
-		void IConstantService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
+		void IConstantService.ExcludeMethod(IConfuserContext context, MethodDef method) =>
 			context.GetParameters(method).RemoveParameters(this);
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+		void IConfuserComponent.Initialize(IServiceCollection collection) =>
 			collection.AddSingleton(typeof(IConstantService), this);
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {

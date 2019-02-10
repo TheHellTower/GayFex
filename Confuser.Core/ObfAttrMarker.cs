@@ -38,9 +38,11 @@ namespace Confuser.Core {
 			public string Settings;
 		}
 
-		private static readonly Regex FeaturePattern = new Regex("^(?:(\\d+)\\.\\s+)?([^:]+)(?:\\:(.+))?$", RegexOptions.CultureInvariant);
+		private static readonly Regex FeaturePattern =
+			new Regex("^(?:(\\d+)\\.\\s+)?([^:]+)(?:\\:(.+))?$", RegexOptions.CultureInvariant);
 
-		private static IEnumerable<ObfuscationAttributeInfo> ReadObfuscationAttributes(IHasCustomAttribute item, ILogger logger) {
+		private static IEnumerable<ObfuscationAttributeInfo> ReadObfuscationAttributes(IHasCustomAttribute item,
+			ILogger logger) {
 			var ret = new List<(int? Order, ObfuscationAttributeInfo Info)>();
 			for (int i = item.CustomAttributes.Count - 1; i >= 0; i--) {
 				var ca = item.CustomAttributes[i];
@@ -53,11 +55,13 @@ namespace Confuser.Core {
 
 				ret.Add((order, info));
 			}
+
 			ret.Sort((x, y) => Nullable.Compare(x.Order, y.Order));
 			return ret.Select(pair => pair.Info);
 		}
 
-		private static (ObfuscationAttributeInfo Info, int? Order, bool Strip) CreateObfuscationAttributeInfo(IHasCustomAttribute owner, ICustomAttribute ca, ILogger logger) {
+		private static (ObfuscationAttributeInfo Info, int? Order, bool Strip) CreateObfuscationAttributeInfo(
+			IHasCustomAttribute owner, ICustomAttribute ca, ILogger logger) {
 			Debug.Assert(ca.TypeFullName == typeof(ObfuscationAttribute).FullName);
 
 			var info = new ObfuscationAttributeInfo();
@@ -91,7 +95,8 @@ namespace Confuser.Core {
 							if (match.Groups[1].Success) {
 								var orderStr = match.Groups[1].Value;
 								if (!int.TryParse(orderStr, out int o))
-									logger.LogWarning("Failed to parse obfuscation attribute feature '{0}' in {1}", feature, owner);
+									logger.LogWarning("Failed to parse obfuscation attribute feature '{0}' in {1}",
+										feature, owner);
 								else
 									order = o;
 							}
@@ -100,6 +105,7 @@ namespace Confuser.Core {
 							if (match.Groups[3].Success)
 								info.FeatureValue = match.Groups[3].Value;
 						}
+
 						break;
 
 					default:
@@ -134,6 +140,7 @@ namespace Confuser.Core {
 			if (info.Exclude && (!string.IsNullOrEmpty(attr.FeatureName) || !string.IsNullOrEmpty(attr.FeatureValue))) {
 				throw new ArgumentException("Feature property cannot be set when Exclude is true. Owner=" + attr.Owner);
 			}
+
 			return true;
 		}
 
@@ -160,16 +167,20 @@ namespace Confuser.Core {
 						settings.AppendFormat("{0}='{1}'", arg.Key, arg.Value.Replace("'", "\\'"));
 						i++;
 					}
+
 					settings.Append(')');
 				}
+
 				settings.Append(';');
 			}
+
 			info.Settings = settings.ToString();
 
 			return info;
 		}
 
-		private IEnumerable<ProtectionSettingsInfo> ReadInfos(IHasCustomAttribute item, IConfuserContext context, ILogger logger) {
+		private IEnumerable<ProtectionSettingsInfo> ReadInfos(IHasCustomAttribute item, IConfuserContext context,
+			ILogger logger) {
 			foreach (var attr in ReadObfuscationAttributes(item, logger)) {
 				if (!string.IsNullOrEmpty(attr.FeatureName))
 					yield return AddRule(context, attr, null);
@@ -193,7 +204,8 @@ namespace Confuser.Core {
 		}
 
 		/// <inheritdoc />
-		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
+		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context,
+			CancellationToken token) {
 			//this.context = context ?? throw new ArgumentNullException(nameof(context));
 			var project = proj ?? throw new ArgumentNullException(nameof(proj));
 			var extModules = ImmutableArray.CreateBuilder<ReadOnlyMemory<byte>>();
@@ -229,16 +241,19 @@ namespace Confuser.Core {
 							: "Method '{0}' has no custom debug infos.", method);
 					token.ThrowIfCancellationRequested();
 				}
+
 				token.ThrowIfCancellationRequested();
 
 				context.Resolver.AddToCache(modDef);
 				modules.Add((module, modDef));
 			}
+
 			foreach (var module in modules) {
 				logger.LogInformation("Loading '{0}'...", module.ProjModule.Path);
 
 				var rules = ParseRules(proj, module.ProjModule, context);
-				MarkModule(context, project, module.ProjModule, module.ModuleDef, rules, module == modules[0], logger, extModules, ref packer, ref packerParams);
+				MarkModule(context, project, module.ProjModule, module.ModuleDef, rules, module == modules[0], logger,
+					extModules, ref packer, ref packerParams);
 
 				context.Annotations.Set(module.ModuleDef, RulesKey, rules);
 
@@ -250,10 +265,12 @@ namespace Confuser.Core {
 			if (proj.Debug && proj.Packer != null)
 				logger.LogWarning("Generated Debug symbols might not be usable with packers!");
 
-			return new MarkerResult(modules.Select(module => module.ModuleDef).ToImmutableArray(), packer, extModules.ToImmutable());
+			return new MarkerResult(modules.Select(module => module.ModuleDef).ToImmutableArray(), packer,
+				extModules.ToImmutable());
 		}
 
-		private ProtectionSettingsInfo AddRule(IConfuserContext context, ObfuscationAttributeInfo attr, ICollection<ProtectionSettingsInfo> infos) {
+		private ProtectionSettingsInfo AddRule(IConfuserContext context, ObfuscationAttributeInfo attr,
+			ICollection<ProtectionSettingsInfo> infos) {
 			Debug.Assert(attr.FeatureName != null);
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
@@ -264,7 +281,8 @@ namespace Confuser.Core {
 				expr = PatternParser.Parse(pattern, logger);
 			}
 			catch (Exception ex) {
-				throw new Exception("Error when parsing pattern " + pattern + " in ObfuscationAttribute. Owner=" + attr.Owner, ex);
+				throw new Exception(
+					"Error when parsing pattern " + pattern + " in ObfuscationAttribute. Owner=" + attr.Owner, ex);
 			}
 
 			var info = new ProtectionSettingsInfo {
@@ -285,8 +303,8 @@ namespace Confuser.Core {
 
 			return info;
 		}
-		
-		private void MarkModule(IConfuserContext context, ConfuserProject project, ProjectModule projModule, 
+
+		private void MarkModule(IConfuserContext context, ConfuserProject project, ProjectModule projModule,
 			ModuleDefMD module, Rules rules, bool isMain, ILogger logger, ICollection<ReadOnlyMemory<byte>> extModules,
 			ref IPacker packer, ref IDictionary<string, string> packerParams) {
 			string snKeyPath = projModule.SNKeyPath, snKeyPass = projModule.SNKeyPassword;
@@ -315,7 +333,8 @@ namespace Confuser.Core {
 				else if (string.Equals(attr.FeatureName, "strong name key", StringComparison.OrdinalIgnoreCase)) {
 					snKeyPath = Path.Combine(project.BaseDirectory, attr.FeatureValue);
 				}
-				else if (string.Equals(attr.FeatureName, "strong name key password", StringComparison.OrdinalIgnoreCase)) {
+				else if (string.Equals(attr.FeatureName, "strong name key password",
+					StringComparison.OrdinalIgnoreCase)) {
 					snKeyPass = attr.FeatureValue;
 				}
 				else if (string.Equals(attr.FeatureName, "packer", StringComparison.OrdinalIgnoreCase)) {
@@ -326,7 +345,7 @@ namespace Confuser.Core {
 				else if (string.Equals(attr.FeatureName, "external module", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
 						throw new ArgumentException("Only main module can add external modules.");
-					var rawModule = new ProjectModule { Path = attr.FeatureValue }.LoadRaw(project.BaseDirectory);
+					var rawModule = new ProjectModule {Path = attr.FeatureValue}.LoadRaw(project.BaseDirectory);
 					extModules.Add(rawModule);
 				}
 				else {
@@ -346,13 +365,15 @@ namespace Confuser.Core {
 				ProcessModule(module, stack, context, logger);
 		}
 
-		private void ProcessModule(ModuleDef module, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+		private void ProcessModule(ModuleDef module, ProtectionSettingsStack stack, IConfuserContext context,
+			ILogger logger) {
 			context.Annotations.Set(module, ModuleSettingsKey, new ProtectionSettingsStack(stack));
 			foreach (var type in module.Types)
 				ProcessTypeMembers(type, stack, context, logger);
 		}
 
-		private void ProcessTypeMembers(TypeDef type, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+		private void ProcessTypeMembers(TypeDef type, ProtectionSettingsStack stack, IConfuserContext context,
+			ILogger logger) {
 			using (stack.Apply(type, ReadInfos(type, context, logger))) {
 				foreach (var nestedType in type.NestedTypes)
 					ProcessTypeMembers(nestedType, stack, context, logger);
@@ -373,7 +394,8 @@ namespace Confuser.Core {
 			}
 		}
 
-		private void ProcessMember(PropertyDef property, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+		private void ProcessMember(PropertyDef property, ProtectionSettingsStack stack, IConfuserContext context,
+			ILogger logger) {
 			using (stack.Apply(property, ReadInfos(property, context, logger))) {
 				if (property.GetMethod != null)
 					ProcessMember(property.GetMethod, stack, context, logger);
@@ -386,7 +408,8 @@ namespace Confuser.Core {
 			}
 		}
 
-		private void ProcessMember(EventDef evt, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+		private void ProcessMember(EventDef evt, ProtectionSettingsStack stack, IConfuserContext context,
+			ILogger logger) {
 			using (stack.Apply(evt, ReadInfos(evt, context, logger))) {
 				if (evt.AddMethod != null)
 					ProcessMember(evt.AddMethod, stack, context, logger);
@@ -402,15 +425,18 @@ namespace Confuser.Core {
 			}
 		}
 
-		private void ProcessMember(MethodDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+		private void ProcessMember(MethodDef method, ProtectionSettingsStack stack, IConfuserContext context,
+			ILogger logger) {
 			using (stack.Apply(method, ReadInfos(method, context, logger)))
 				ProcessBody(method, stack, context, logger);
 		}
 
-		private void ProcessMember(IDnlibDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) =>
+		private void ProcessMember(IDnlibDef method, ProtectionSettingsStack stack, IConfuserContext context,
+			ILogger logger) =>
 			stack.Apply(method, ReadInfos(method, context, logger)).Dispose();
 
-		private void ProcessBody(MethodDef method, ProtectionSettingsStack stack, IConfuserContext context, ILogger logger) {
+		private void ProcessBody(MethodDef method, ProtectionSettingsStack stack, IConfuserContext context,
+			ILogger logger) {
 			if (method?.Body == null)
 				return;
 

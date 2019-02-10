@@ -18,7 +18,8 @@ namespace Confuser.Optimizations {
 			TargetMethods = null;
 		}
 
-		public RegexCompileDef(string pattern, RegexOptions options, TimeSpan? timeout, bool staticTimeout, ISet<IRegexTargetMethod> targetMethods) {
+		public RegexCompileDef(string pattern, RegexOptions options, TimeSpan? timeout, bool staticTimeout,
+			ISet<IRegexTargetMethod> targetMethods) {
 			Pattern = pattern;
 			Options = options;
 			Timeout = timeout;
@@ -30,7 +31,8 @@ namespace Confuser.Optimizations {
 			(obj is RegexCompileDef) ? base.Equals((RegexCompileDef)obj) : false;
 
 		public bool Equals(RegexCompileDef other) =>
-			Pattern == other.Pattern && Options == other.Options && Nullable.Equals(Timeout, other.Timeout) && StaticTimeout == other.StaticTimeout;
+			Pattern == other.Pattern && Options == other.Options && Nullable.Equals(Timeout, other.Timeout) &&
+			StaticTimeout == other.StaticTimeout;
 
 		public override int GetHashCode() =>
 			(Pattern, Options, Timeout, StaticTimeout).GetHashCode();

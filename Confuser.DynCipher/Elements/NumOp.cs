@@ -13,7 +13,8 @@ namespace Confuser.DynCipher.Elements {
 
 	internal class NumOp : CryptoElement {
 		public NumOp()
-			: base(1) { }
+			: base(1) {
+		}
 
 		public uint Key { get; private set; }
 		public uint InverseKey { get; private set; }

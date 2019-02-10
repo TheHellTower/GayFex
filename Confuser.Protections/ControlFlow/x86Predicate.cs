@@ -62,8 +62,11 @@ namespace Confuser.Protections.ControlFlow {
 				var result = new Variable("{RESULT}");
 
 				CorLibTypeSig int32 = ctx.Method.Module.CorLibTypes.Int32;
-				native = new MethodDefUser(ctx.Context.Registry.GetRequiredService<INameService>().RandomName(), MethodSig.CreateStatic(int32, int32), MethodAttributes.PinvokeImpl | MethodAttributes.PrivateScope | MethodAttributes.Static);
-				native.ImplAttributes = MethodImplAttributes.Native | MethodImplAttributes.Unmanaged | MethodImplAttributes.PreserveSig;
+				native = new MethodDefUser(ctx.Context.Registry.GetRequiredService<INameService>().RandomName(),
+					MethodSig.CreateStatic(int32, int32),
+					MethodAttributes.PinvokeImpl | MethodAttributes.PrivateScope | MethodAttributes.Static);
+				native.ImplAttributes = MethodImplAttributes.Native | MethodImplAttributes.Unmanaged |
+				                        MethodImplAttributes.PreserveSig;
 				// Attempt to improve performance --- failed with StackOverflowException... :/
 				//var suppressAttr = ctx.Method.Module.CorLibTypes.GetTypeRef("System.Security", "SuppressUnmanagedCodeSecurityAttribute").ResolveThrow();
 				//native.CustomAttributes.Add(new CustomAttribute((MemberRef)ctx.Method.Module.Import(suppressAttr.FindDefaultConstructor())));
@@ -78,15 +81,16 @@ namespace Confuser.Protections.ControlFlow {
 				do {
 					ctx.DynCipher.GenerateExpressionPair(
 						ctx.Random,
-						new VariableExpression { Variable = var }, new VariableExpression { Variable = result },
+						new VariableExpression {Variable = var}, new VariableExpression {Variable = result},
 						ctx.Depth, out expression, out inverse);
 
-					reg = codeGen.GenerateX86(inverse, (v, r) => { return new[] { x86Instruction.Create(x86OpCode.POP, new x86RegisterOperand(r)) }; });
+					reg = codeGen.GenerateX86(inverse,
+						(v, r) => { return new[] {x86Instruction.Create(x86OpCode.POP, new x86RegisterOperand(r))}; });
 				} while (reg == null);
 
 				code = CodeGenUtils.AssembleCode(codeGen, reg.Value);
 
-				expCompiled = new DMCodeGen(typeof(int), new[] { Tuple.Create("{VAR}", typeof(int)) })
+				expCompiled = new DMCodeGen(typeof(int), new[] {Tuple.Create("{VAR}", typeof(int))})
 					.GenerateCIL(expression)
 					.Compile<Func<int, int>>();
 
@@ -97,21 +101,21 @@ namespace Confuser.Protections.ControlFlow {
 			void InjectNativeCode(object sender, ModuleWriterEventArgs e) {
 				var writer = e.Writer;
 				switch (e.Event) {
-				case ModuleWriterEvent.MDEndWriteMethodBodies:
-					codeChunk = writer.MethodBodies.Add(new MethodBody(code));
-					break;
-				case ModuleWriterEvent.EndCalculateRvasAndFileOffsets:
-					uint rid = writer.Metadata.GetRid(native);
+					case ModuleWriterEvent.MDEndWriteMethodBodies:
+						codeChunk = writer.MethodBodies.Add(new MethodBody(code));
+						break;
+					case ModuleWriterEvent.EndCalculateRvasAndFileOffsets:
+						uint rid = writer.Metadata.GetRid(native);
 
-					var methodRow = writer.Metadata.TablesHeap.MethodTable[rid];
-					writer.Metadata.TablesHeap.MethodTable[rid] = new RawMethodRow(
-					  (uint)codeChunk.RVA,
-					  methodRow.ImplFlags,
-					  methodRow.Flags,
-					  methodRow.Name,
-					  methodRow.Signature,
-					  methodRow.ParamList);
-					break;
+						var methodRow = writer.Metadata.TablesHeap.MethodTable[rid];
+						writer.Metadata.TablesHeap.MethodTable[rid] = new RawMethodRow(
+							(uint)codeChunk.RVA,
+							methodRow.ImplFlags,
+							methodRow.Flags,
+							methodRow.Name,
+							methodRow.Signature,
+							methodRow.ParamList);
+						break;
 				}
 			}
 		}

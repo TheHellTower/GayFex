@@ -29,7 +29,8 @@ namespace Confuser.Protections.ReferenceProxy {
 
 		public string Name => "Encoding reference proxies";
 
-		RPContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
+		RPContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters,
+			RPStore store) {
 			var ret = new RPContext {
 				Mode = parameters.GetParameter(context, method, Parent.Parameters.Mode),
 				Encoding = parameters.GetParameter(context, method, Parent.Parameters.Encoding),
@@ -90,13 +91,15 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (instr.Operand is Instruction instrOp) {
 				return ImmutableArray.Create(instrOp);
 			}
-			else if(instr.Operand is Instruction[] instrsOp) {
+			else if (instr.Operand is Instruction[] instrsOp) {
 				return instrsOp;
 			}
+
 			return Enumerable.Empty<Instruction>();
 		}
 
-		private RPContext ParseParameters(ModuleDef module, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
+		private RPContext ParseParameters(ModuleDef module, IConfuserContext context, IProtectionParameters parameters,
+			RPStore store) {
 			var ret = new RPContext {
 				Depth = parameters.GetParameter(context, module, Parent.Parameters.Depth),
 				InitCount = parameters.GetParameter(context, module, Parent.Parameters.InitCount),
@@ -114,11 +117,14 @@ namespace Confuser.Protections.ReferenceProxy {
 			return ret;
 		}
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
-			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(ReferenceProxyProtection._FullId);
-			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(ReferenceProxyProtection._Id);
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
+			var random = context.Registry.GetRequiredService<IRandomService>()
+				.GetRandomGenerator(ReferenceProxyProtection._FullId);
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>()
+				.CreateLogger(ReferenceProxyProtection._Id);
 
-			var store = new RPStore { random = random };
+			var store = new RPStore {random = random};
 
 			foreach (var method in parameters.Targets.OfType<MethodDef>()) //.WithProgress(logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
@@ -138,11 +144,13 @@ namespace Confuser.Protections.ReferenceProxy {
 		void ProcessMethod(RPContext ctx) {
 			for (int i = 0; i < ctx.Body.Instructions.Count; i++) {
 				var instr = ctx.Body.Instructions[i];
-				if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt || instr.OpCode.Code == Code.Newobj) {
+				if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt ||
+				    instr.OpCode.Code == Code.Newobj) {
 					var operand = (IMethod)instr.Operand;
 					var def = operand.ResolveMethodDef();
 
-					if (def != null && ctx.Context.Annotations.Get<object>(def, ReferenceProxyProtection.TargetExcluded) != null)
+					if (def != null &&
+					    ctx.Context.Annotations.Get<object>(def, ReferenceProxyProtection.TargetExcluded) != null)
 						return;
 
 					// Call constructor
@@ -159,7 +167,7 @@ namespace Confuser.Protections.ReferenceProxy {
 						continue;
 					// No varargs
 					if (operand.MethodSig.ParamsAfterSentinel != null &&
-						operand.MethodSig.ParamsAfterSentinel.Count > 0)
+					    operand.MethodSig.ParamsAfterSentinel.Count > 0)
 						continue;
 					var declType = operand.DeclaringType.ResolveTypeDefThrow();
 					// No delegates
@@ -178,7 +186,9 @@ namespace Confuser.Protections.ReferenceProxy {
 		}
 
 		private sealed class RPStore {
-			internal readonly Dictionary<MethodSig, TypeDef> delegates = new Dictionary<MethodSig, TypeDef>(new MethodSigComparer());
+			internal readonly Dictionary<MethodSig, TypeDef> delegates =
+				new Dictionary<MethodSig, TypeDef>(new MethodSigComparer());
+
 			internal ExpressionEncoding expression;
 			internal MildMode mild;
 

@@ -17,7 +17,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.AntiTamper {
 	internal class JITMode : NormalMode {
-		
 		private MethodDef _cctor;
 		private MethodDef _cctorRepl;
 		private ReadOnlyMemory<byte> _fieldLayout;
@@ -25,9 +24,10 @@ namespace Confuser.Protections.AntiTamper {
 		private uint _key;
 		private IRandomGenerator _random;
 
-		protected override void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+		protected override void HandleInject(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) {
 			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
-			
+
 			var random = context.Registry.GetService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
 			InitParameters(parent, context, parameters, random);
 
@@ -38,7 +38,7 @@ namespace Confuser.Protections.AntiTamper {
 			}
 
 			_initMethod = injectResult.Requested.Mapped;
-			
+
 			var name = context.Registry.GetService<INameService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var antiTamper = context.Registry.GetRequiredService<IAntiTamperService>();
@@ -59,12 +59,24 @@ namespace Confuser.Protections.AntiTamper {
 				if (dependency.Source is FieldDef depField && depField.DeclaringType.Name == "MethodData") {
 					var mapField = (FieldDef)dependency.Mapped;
 					switch (depField.Name.String) {
-						case "ILCodeSize": methodDataMapping.Add(mapField, 0); break;
-						case "MaxStack": methodDataMapping.Add(mapField, 1); break;
-						case "EHCount": methodDataMapping.Add(mapField, 2); break;
-						case "LocalVars": methodDataMapping.Add(mapField, 3); break;
-						case "Options": methodDataMapping.Add(mapField, 4); break;
-						case "MulSeed": methodDataMapping.Add(mapField, 5); break;
+						case "ILCodeSize":
+							methodDataMapping.Add(mapField, 0);
+							break;
+						case "MaxStack":
+							methodDataMapping.Add(mapField, 1);
+							break;
+						case "EHCount":
+							methodDataMapping.Add(mapField, 2);
+							break;
+						case "LocalVars":
+							methodDataMapping.Add(mapField, 3);
+							break;
+						case "Options":
+							methodDataMapping.Add(mapField, 4);
+							break;
+						case "MulSeed":
+							methodDataMapping.Add(mapField, 5);
+							break;
 					}
 				}
 			}
@@ -78,6 +90,7 @@ namespace Confuser.Protections.AntiTamper {
 					for (var i = 0; i < fields.Length; i++) {
 						fieldLayout[i] = (byte)methodDataMapping[fields[i]];
 					}
+
 					_fieldLayout = fieldLayout;
 
 					mapType.Fields.Clear();
@@ -91,7 +104,7 @@ namespace Confuser.Protections.AntiTamper {
 			antiTamper.ExcludeMethod(context, _cctor);
 		}
 
-		protected override IImmutableDictionary<MutationField, int> CreateMutationKeys() => 
+		protected override IImmutableDictionary<MutationField, int> CreateMutationKeys() =>
 			base.CreateMutationKeys().Add(MutationField.KeyI5, (int)_key);
 
 		protected override void InitParameters(AntiTamperProtection parent, IConfuserContext context,
@@ -101,7 +114,8 @@ namespace Confuser.Protections.AntiTamper {
 			_random = random;
 		}
 
-		protected override void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+		protected override void HandleMD(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) {
 			// move initialization away from module initializer
 			_cctorRepl.Body = _cctor.Body;
 			_cctor.Body = new CilBody();
@@ -111,7 +125,7 @@ namespace Confuser.Protections.AntiTamper {
 
 			base.HandleMD(parent, context, parameters);
 		}
-		
+
 		[SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
 		protected override void CreateSections(ModuleWriterBase writer) {
 			// move some PE parts to separate section to prevent it from being hashed
@@ -130,18 +144,20 @@ namespace Confuser.Protections.AntiTamper {
 					peSection.Add(managedWriter.ImportAddressTable, alignment);
 					moved = true;
 				}
+
 				if (managedWriter.StartupStub != null) {
 					alignment = writer.TextSection.Remove(managedWriter.StartupStub).Value;
 					peSection.Add(managedWriter.StartupStub, alignment);
 					moved = true;
 				}
 			}
+
 			if (moved)
 				writer.Sections.AddBeforeReloc(peSection);
 
 			// create section
 			var newSection = new PESection(
-				CreateEncryptedSectionName(), 
+				CreateEncryptedSectionName(),
 				CNT_INITIALIZED_DATA | MEM_EXECUTE | MEM_READ | MEM_WRITE);
 			writer.Sections.InsertBeforeReloc(_random.NextInt32(writer.Sections.Count), newSection);
 
@@ -161,11 +177,13 @@ namespace Confuser.Protections.AntiTamper {
 			};
 
 			// save methods
-			foreach (var method in methodsWithBody) {//.WithProgress(logger)) {
+			foreach (var method in methodsWithBody) {
+				//.WithProgress(logger)) {
 				var token = writer.Metadata.GetToken(method);
 
 				var jitBody = new JITMethodBody();
-				var bodyWriter = new JITMethodBodyWriter(writer.Metadata, method.Body, jitBody, _random.NextUInt32(), writer.Metadata.KeepOldMaxStack || method.Body.KeepOldMaxStack);
+				var bodyWriter = new JITMethodBodyWriter(writer.Metadata, method.Body, jitBody, _random.NextUInt32(),
+					writer.Metadata.KeepOldMaxStack || method.Body.KeepOldMaxStack);
 				bodyWriter.Write();
 				jitBody.Serialize(token.Raw, _key, _fieldLayout.Span);
 				bodyIndex.Add(token.Raw, jitBody);
@@ -180,6 +198,7 @@ namespace Confuser.Protections.AntiTamper {
 					methodRow.Signature,
 					methodRow.ParamList);
 			}
+
 			bodyIndex.PopulateSection(newSection);
 
 			// padding to prevent bad size due to shift division

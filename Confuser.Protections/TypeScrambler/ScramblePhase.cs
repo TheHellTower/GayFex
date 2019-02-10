@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.TypeScramble {
 	internal sealed class ScramblePhase : IProtectionPhase {
-
 		public ScramblePhase(TypeScrambleProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
@@ -17,24 +16,27 @@ namespace Confuser.Protections.TypeScramble {
 
 		IConfuserComponent IProtectionPhase.Parent => Parent;
 
-		public ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods | ProtectionTargets.Modules;
+		public ProtectionTargets Targets =>
+			ProtectionTargets.Types | ProtectionTargets.Methods | ProtectionTargets.Modules;
 
 		public bool ProcessAll => false;
 
 		public string Name => "Type scrambler";
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			var rewriter = new TypeRewriter(context);
 			rewriter.ApplyGeterics();
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(TypeScrambleProtection._Id);
 
-			foreach (var def in parameters.Targets/*.WithProgress(logger)*/) {
+			foreach (var def in parameters.Targets /*.WithProgress(logger)*/) {
 				switch (def) {
 					case MethodDef md:
 						if (md.HasBody) {
 							rewriter.Process(md);
 						}
+
 						break;
 					case ModuleDef mod:
 						rewriter.ImportCode(mod);
@@ -43,8 +45,6 @@ namespace Confuser.Protections.TypeScramble {
 
 				token.ThrowIfCancellationRequested();
 			}
-
-
 		}
 	}
 }

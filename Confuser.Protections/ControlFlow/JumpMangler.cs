@@ -17,6 +17,7 @@ namespace Confuser.Protections.ControlFlow {
 						skipCount--;
 						continue;
 					}
+
 					fragments.AddLast(currentFragment.ToArray());
 					currentFragment.Clear();
 
@@ -27,6 +28,7 @@ namespace Confuser.Protections.ControlFlow {
 					skipCount = block.Instructions[i].OpCode.Code == Code.Tailcall ? 2 : 1;
 					currentFragment.Add(block.Instructions[i]);
 				}
+
 				if (i + 2 < block.Instructions.Count &&
 				    block.Instructions[i + 0].OpCode.Code == Code.Dup &&
 				    block.Instructions[i + 1].OpCode.Code == Code.Ldvirtftn &&
@@ -34,6 +36,7 @@ namespace Confuser.Protections.ControlFlow {
 					skipCount = 2;
 					currentFragment.Add(block.Instructions[i]);
 				}
+
 				if (i + 4 < block.Instructions.Count &&
 				    block.Instructions[i + 0].OpCode.Code == Code.Ldc_I4 &&
 				    block.Instructions[i + 1].OpCode.Code == Code.Newarr &&
@@ -44,12 +47,14 @@ namespace Confuser.Protections.ControlFlow {
 					skipCount = 4;
 					currentFragment.Add(block.Instructions[i]);
 				}
+
 				if (i + 1 < block.Instructions.Count &&
 				    block.Instructions[i + 0].OpCode.Code == Code.Ldftn &&
 				    block.Instructions[i + 1].OpCode.Code == Code.Newobj) {
 					skipCount = 1;
 					currentFragment.Add(block.Instructions[i]);
 				}
+
 				currentFragment.Add(block.Instructions[i]);
 
 				if (ctx.Intensity > ctx.Random.NextDouble()) {
@@ -78,6 +83,7 @@ namespace Confuser.Protections.ControlFlow {
 					current.Value = newFragment.ToArray();
 					current = current.Next;
 				}
+
 				Instruction[] first = fragments.First.Value;
 				fragments.RemoveFirst();
 				Instruction[] last = fragments.Last.Value;

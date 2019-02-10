@@ -65,7 +65,7 @@ namespace Confuser.CLI {
 						parameters.Project = proj;
 					}
 					catch (Exception ex) {
-						WriteLineWithColor(ConsoleColor.Red, 
+						WriteLineWithColor(ConsoleColor.Red,
 							string.Format(Resources.Culture, Resources.ErrorLoadingProjectFailed, ex.ToString()));
 						return -1;
 					}
@@ -91,7 +91,8 @@ namespace Confuser.CLI {
 							}
 							catch (Exception ex) {
 								WriteLineWithColor(ConsoleColor.Red,
-									string.Format(Resources.Culture, Resources.ErrorLoadingProjectFailed, ex.ToString()));
+									string.Format(Resources.Culture, Resources.ErrorLoadingProjectFailed,
+										ex.ToString()));
 								return -1;
 							}
 						}
@@ -109,8 +110,9 @@ namespace Confuser.CLI {
 					proj.Debug = debug.HasValue();
 					parameters.Project = proj;
 				}
-				
-				parameters.ConfigureLogging = builder => builder.AddConsole(b => b.IncludeScopes = false).SetMinimumLevel(GetLogLevel(verbosity));
+
+				parameters.ConfigureLogging = builder =>
+					builder.AddConsole(b => b.IncludeScopes = false).SetMinimumLevel(GetLogLevel(verbosity));
 
 				int retVal = await RunProject(parameters);
 
@@ -132,7 +134,7 @@ namespace Confuser.CLI {
 				return cmd.Execute(args);
 			}
 			catch (Exception ex) {
-				WriteLineWithColor(ConsoleColor.Red, 
+				WriteLineWithColor(ConsoleColor.Red,
 					string.Format(Resources.Culture, Resources.ErrorUnexpected, ex.ToString()));
 
 				// ReSharper disable once InvertIf
@@ -148,6 +150,7 @@ namespace Confuser.CLI {
 				Console.Title = originalTitle;
 			}
 		}
+
 		private static ConfuserProject LoadConfuserProject(string projFile) {
 			var proj = new ConfuserProject();
 			var xmlDoc = new XmlDocument();
@@ -188,7 +191,6 @@ namespace Confuser.CLI {
 				default:
 					return LogLevel.Information;
 			}
-
 		}
 
 		private static bool NeedPause() =>

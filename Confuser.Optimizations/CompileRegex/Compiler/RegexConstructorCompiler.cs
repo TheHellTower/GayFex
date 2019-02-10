@@ -36,7 +36,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var typeRefFinder = new TypeRefFinder(module);
 			_regexTypeDef = typeRefFinder.FindType(CompileRegexProtection._RegexTypeFullName).ResolveTypeDefThrow();
 			_regexCtorDef = _regexTypeDef.FindDefaultConstructor();
-			_initializeReferencesMethodDef = _regexTypeDef.FindMethod("InitializeReferences", MethodSig.CreateInstance(module.CorLibTypes.Void));
+			_initializeReferencesMethodDef = _regexTypeDef.FindMethod("InitializeReferences",
+				MethodSig.CreateInstance(module.CorLibTypes.Void));
 
 			const string ns = CompileRegexProtection._RegexNamespace;
 			var regexOptionsTypeSig = typeRefFinder.FindType(ns + ".RegexOptions").ToTypeSig();
@@ -44,24 +45,36 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			_timespanTypeDef = typeRefFinder.FindType("System.TimeSpan").ResolveTypeDefThrow();
 			_timespanTypeSig = _timespanTypeDef.ToTypeSig();
 
-			_patternFieldDef = _regexTypeDef.FindField("pattern", new FieldSig(module.CorLibTypes.String), SigComparerOptions.PrivateScopeFieldIsComparable);
-			_roptionsFieldDef = _regexTypeDef.FindField("roptions", new FieldSig(regexOptionsTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
-			_regexFactoryFieldDef = _regexTypeDef.FindField("factory", new FieldSig(regexRunnerFactoryTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
+			_patternFieldDef = _regexTypeDef.FindField("pattern", new FieldSig(module.CorLibTypes.String),
+				SigComparerOptions.PrivateScopeFieldIsComparable);
+			_roptionsFieldDef = _regexTypeDef.FindField("roptions", new FieldSig(regexOptionsTypeSig),
+				SigComparerOptions.PrivateScopeFieldIsComparable);
+			_regexFactoryFieldDef = _regexTypeDef.FindField("factory", new FieldSig(regexRunnerFactoryTypeSig),
+				SigComparerOptions.PrivateScopeFieldIsComparable);
 			_capsFieldDef = _regexTypeDef.FindField("caps");
 			_capnamesFieldDef = _regexTypeDef.FindField("capnames");
-			_capslistFieldDef = _regexTypeDef.FindField("capslist", new FieldSig(new SZArraySig(module.CorLibTypes.String)), SigComparerOptions.PrivateScopeFieldIsComparable);
-			_capsizeFieldDef = _regexTypeDef.FindField("capsize", new FieldSig(module.CorLibTypes.Int32), SigComparerOptions.PrivateScopeFieldIsComparable);
-			_internalMatchTimeoutFieldDef = _regexTypeDef.FindField("internalMatchTimeout", new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
-			_validateMatchTimeoutMethodDef = _regexTypeDef.FindMethod("ValidateMatchTimeout", MethodSig.CreateStatic(module.CorLibTypes.Void, _timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
-			
-			_defaultMatchTimeoutFieldDef = _regexTypeDef.FindField("DefaultMatchTimeout", new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
+			_capslistFieldDef = _regexTypeDef.FindField("capslist",
+				new FieldSig(new SZArraySig(module.CorLibTypes.String)),
+				SigComparerOptions.PrivateScopeFieldIsComparable);
+			_capsizeFieldDef = _regexTypeDef.FindField("capsize", new FieldSig(module.CorLibTypes.Int32),
+				SigComparerOptions.PrivateScopeFieldIsComparable);
+			_internalMatchTimeoutFieldDef = _regexTypeDef.FindField("internalMatchTimeout",
+				new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
+			_validateMatchTimeoutMethodDef = _regexTypeDef.FindMethod("ValidateMatchTimeout",
+				MethodSig.CreateStatic(module.CorLibTypes.Void, _timespanTypeSig),
+				SigComparerOptions.PrivateScopeFieldIsComparable);
+
+			_defaultMatchTimeoutFieldDef = _regexTypeDef.FindField("DefaultMatchTimeout",
+				new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
 
 			_stringTypeRef = module.CorLibTypes.String.ToTypeDefOrRef();
 			_int32TypeRef = module.CorLibTypes.Int32.ToTypeDefOrRef();
-			_timespanFromTicksMethodDef = _timespanTypeDef.FindMethod("FromTicks", MethodSig.CreateStatic(_timespanTypeSig, module.CorLibTypes.Int64));
+			_timespanFromTicksMethodDef = _timespanTypeDef.FindMethod("FromTicks",
+				MethodSig.CreateStatic(_timespanTypeSig, module.CorLibTypes.Int64));
 		}
 
-		internal void GenerateDefaultConstructor(TypeDef factory, RegexCompileDef expression, RegexCode code, RegexTree tree) {
+		internal void GenerateDefaultConstructor(TypeDef factory, RegexCompileDef expression, RegexCode code,
+			RegexTree tree) {
 			Debug.Assert(factory != null, $"{nameof(factory)} != null");
 
 			Call(_regexCtorDef);
@@ -90,8 +103,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			else {
 				// Set the timeout to the default value
 				if (_defaultMatchTimeoutFieldDef.IsFamily ||
-					_defaultMatchTimeoutFieldDef.IsFamilyOrAssembly ||
-					_defaultMatchTimeoutFieldDef.IsPublic)
+				    _defaultMatchTimeoutFieldDef.IsFamilyOrAssembly ||
+				    _defaultMatchTimeoutFieldDef.IsPublic)
 					Stfld(_internalMatchTimeoutFieldDef, () => Ldfld(_defaultMatchTimeoutFieldDef));
 			}
 

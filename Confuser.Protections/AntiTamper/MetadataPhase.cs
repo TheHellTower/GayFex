@@ -18,11 +18,13 @@ namespace Confuser.Protections.AntiTamper {
 
 		public bool ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (!parameters.Targets.Any())
 				return;
 
-			var modeHandler = context.Annotations.Get<IModeHandler>(context.CurrentModule, AntiTamperProtection.HandlerKey);
+			var modeHandler =
+				context.Annotations.Get<IModeHandler>(context.CurrentModule, AntiTamperProtection.HandlerKey);
 			modeHandler.HandleMD(Parent, context, parameters);
 		}
 	}

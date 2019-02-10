@@ -12,7 +12,8 @@ namespace Confuser.DynCipher.Elements {
 
 	internal class BinOp : CryptoElement {
 		public BinOp()
-			: base(2) { }
+			: base(2) {
+		}
 
 		public CryptoBinOps Operation { get; private set; }
 

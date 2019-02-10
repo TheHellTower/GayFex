@@ -11,7 +11,8 @@ namespace Confuser.Core {
 	///     The annotations are stored using <see cref="WeakReference" />
 	/// </remarks>
 	public sealed class Annotations : IAnnotations {
-		readonly Dictionary<object, ListDictionary> annotations = new Dictionary<object, ListDictionary>(WeakReferenceComparer.Instance);
+		readonly Dictionary<object, ListDictionary> annotations =
+			new Dictionary<object, ListDictionary>(WeakReferenceComparer.Instance);
 
 		/// <summary>
 		///     Retrieves the annotation on the specified object associated with the specified key.
@@ -98,6 +99,7 @@ namespace Confuser.Core {
 					return (TValue)Convert.ChangeType(objAnno[key], typeof(TValue));
 				return (TValue)objAnno[key];
 			}
+
 			objAnno[key] = ret = factory(key);
 			return ret;
 		}
@@ -128,7 +130,8 @@ namespace Confuser.Core {
 		///     Trims the annotations of unreachable objects from this instance.
 		/// </summary>
 		public void Trim() {
-			foreach (object key in annotations.Where(kvp => !((WeakReferenceKey)kvp.Key).IsAlive).Select(kvp => kvp.Key))
+			foreach (object key in annotations.Where(kvp => !((WeakReferenceKey)kvp.Key).IsAlive)
+				.Select(kvp => kvp.Key))
 				annotations.Remove(key);
 		}
 
@@ -144,7 +147,8 @@ namespace Confuser.Core {
 			/// <summary>
 			///     Prevents a default instance of the <see cref="WeakReferenceComparer" /> class from being created.
 			/// </summary>
-			WeakReferenceComparer() { }
+			WeakReferenceComparer() {
+			}
 
 			/// <inheritdoc />
 			public new bool Equals(object x, object y) {
@@ -155,12 +159,15 @@ namespace Confuser.Core {
 				if (xWeak != null && yWeak != null) {
 					return xWeak.IsAlive && yWeak.IsAlive && ReferenceEquals(xWeak.Target, yWeak.Target);
 				}
+
 				if (xWeak != null && yWeak == null) {
 					return xWeak.IsAlive && ReferenceEquals(xWeak.Target, y);
 				}
+
 				if (xWeak == null && yWeak == null) {
 					return xWeak.IsAlive && ReferenceEquals(xWeak.Target, y);
 				}
+
 				throw new UnreachableException();
 			}
 

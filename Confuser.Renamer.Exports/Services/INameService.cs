@@ -4,8 +4,8 @@ using Confuser.Core;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 
-namespace Confuser.Renamer.Services
-{	public interface INameService {
+namespace Confuser.Renamer.Services {
+	public interface INameService {
 		void Analyze(IConfuserContext context, IDnlibDef def);
 
 		/// <summary>

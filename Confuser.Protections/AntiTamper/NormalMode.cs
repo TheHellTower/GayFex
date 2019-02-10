@@ -24,6 +24,7 @@ namespace Confuser.Protections.AntiTamper {
 		protected const uint CNT_INITIALIZED_DATA = 0x40;
 		protected const uint MEM_EXECUTE = 0x20000000;
 		protected const uint MEM_READ = 0x40000000;
+
 		protected const uint MEM_WRITE = 0x80000000;
 		// ReSharper restore InconsistentNaming
 
@@ -35,21 +36,24 @@ namespace Confuser.Protections.AntiTamper {
 
 		/// <summary>The components of the key that is used to detect tampering.</summary>
 		private uint _c;
+
 		private uint _v;
 		private uint _x;
 		private uint _z;
-		
+
 		/// <summary>The methods that will to protected against tampering.</summary>
 		protected IImmutableList<MethodDef> Methods { get; private set; }
 
 		void IModeHandler.HandleInject(AntiTamperProtection parent, IConfuserContext context,
 			IProtectionParameters parameters) => HandleInject(parent, context, parameters);
 
-		protected virtual void HandleInject(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+		protected virtual void HandleInject(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) {
 			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
 			logger.LogMsgNormalModeStart(context.CurrentModule);
 
-			var random = context.Registry.GetRequiredService<IRandomService>().GetRandomGenerator(AntiTamperProtection._FullId);
+			var random = context.Registry.GetRequiredService<IRandomService>()
+				.GetRandomGenerator(AntiTamperProtection._FullId);
 			InitParameters(parent, context, parameters, random);
 
 			var injectResult = InjectRuntime(parent, context, "Confuser.Runtime.AntiTamperNormal");
@@ -86,10 +90,12 @@ namespace Confuser.Protections.AntiTamper {
 				default:
 					throw new UnreachableException();
 			}
+
 			_deriver.Init(context, random);
 		}
 
-		protected InjectResult<MethodDef> InjectRuntime(AntiTamperProtection parent, IConfuserContext context, string runtimeTypeName) {
+		protected InjectResult<MethodDef> InjectRuntime(AntiTamperProtection parent, IConfuserContext context,
+			string runtimeTypeName) {
 			var logger = context.Registry.GetService<ILoggerProvider>().CreateLogger(AntiTamperProtection._Id);
 			var mutationKeys = CreateMutationKeys();
 
@@ -129,7 +135,8 @@ namespace Confuser.Protections.AntiTamper {
 		void IModeHandler.HandleMD(AntiTamperProtection parent, IConfuserContext context,
 			IProtectionParameters parameters) => HandleMD(parent, context, parameters);
 
-		protected virtual void HandleMD(AntiTamperProtection parent, IConfuserContext context, IProtectionParameters parameters) {
+		protected virtual void HandleMD(AntiTamperProtection parent, IConfuserContext context,
+			IProtectionParameters parameters) {
 			Methods = parameters.Targets.OfType<MethodDef>().ToImmutableList();
 			context.CurrentModuleWriterOptions.WriterEvent += WriterEvent;
 		}
@@ -167,9 +174,8 @@ namespace Confuser.Protections.AntiTamper {
 
 		[SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
 		protected virtual void CreateSections(ModuleWriterBase writer) {
-
 			var newSection = new PESection(
-				CreateEncryptedSectionName(), 
+				CreateEncryptedSectionName(),
 				CNT_INITIALIZED_DATA | MEM_EXECUTE | MEM_READ | MEM_WRITE);
 			writer.Sections.Insert(0, newSection); // insert first to ensure proper RVA
 
@@ -197,12 +203,14 @@ namespace Confuser.Protections.AntiTamper {
 					peSection.Add(managedWriter.ImportAddressTable, alignment);
 					moved = true;
 				}
+
 				if (managedWriter.StartupStub != null) {
 					alignment = writer.TextSection.Remove(managedWriter.StartupStub).Value;
 					peSection.Add(managedWriter.StartupStub, alignment);
 					moved = true;
 				}
 			}
+
 			if (moved)
 				writer.Sections.AddBeforeReloc(peSection);
 
@@ -258,14 +266,14 @@ namespace Confuser.Protections.AntiTamper {
 				if (nameHash == _sectionName.Part1 * _sectionName.Part2) {
 					// This section is the section with the encrypted data.
 					encSize = reader.ReadUInt32(); // SizeOfRawData (DWORD)
-					encLoc = reader.ReadUInt32();  // PointerToRawData (DWORD)
+					encLoc = reader.ReadUInt32(); // PointerToRawData (DWORD)
 				}
 				else if (nameHash != 0) {
 					// Not the encrypted section, but a section with a name. The raw data of the section is used to
 					// transform the encryption code. So if anyone modifies the code, the module with the method bodies
 					// can't be decoded.
 					uint sectSize = reader.ReadUInt32(); // SizeOfRawData (DWORD)
-					uint sectLoc = reader.ReadUInt32();  // PointerToRawData (DWORD)
+					uint sectLoc = reader.ReadUInt32(); // PointerToRawData (DWORD)
 					Hash(stream, reader, sectLoc, sectSize);
 				}
 				else {
@@ -309,6 +317,7 @@ namespace Confuser.Protections.AntiTamper {
 				_c = _v;
 				_v = tmp;
 			}
+
 			stream.Position = original;
 		}
 
@@ -322,6 +331,7 @@ namespace Confuser.Protections.AntiTamper {
 				_c = (_v >> 7) | (_v << 25);
 				_v = (_z >> 11) | (_z << 21);
 			}
+
 			return _deriver.DeriveKey(dst, src);
 		}
 	}

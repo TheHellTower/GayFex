@@ -19,15 +19,18 @@ namespace Confuser.Renamer.References {
 			this.sig = sig;
 		}
 
-		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IndexerParamInfo indexerInfo) : this(xmlnsCtx, sig) =>
+		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IndexerParamInfo indexerInfo) :
+			this(xmlnsCtx, sig) =>
 			this.indexerInfo = indexerInfo;
 
-		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, SourceValueInfo propertyInfo) : this(xmlnsCtx, sig) =>
+		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, SourceValueInfo propertyInfo) :
+			this(xmlnsCtx, sig) =>
 			this.propertyInfo = propertyInfo;
 
 		public bool UpdateNameReference(IConfuserContext context, INameService service) {
 			string name = sig.ReflectionName;
-			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
+			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace,
+				sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
 			if (!string.IsNullOrEmpty(prefix))
 				name = prefix + ":" + name;
 			if (indexerInfo != null) {
@@ -41,6 +44,7 @@ namespace Confuser.Renamer.References {
 				info.name = string.Format("({0}.{1})", name, propertyName);
 				propertyInfo = info;
 			}
+
 			return true;
 		}
 

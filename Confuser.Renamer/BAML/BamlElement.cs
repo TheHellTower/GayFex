@@ -13,6 +13,7 @@ namespace Confuser.Renamer.BAML {
 
 		// Type of this element
 		public TypeDef Type { get; set; }
+
 		// Attribute this element will be assigned to.
 		public IDnlibDef Attribute { get; set; }
 
@@ -30,6 +31,7 @@ namespace Confuser.Renamer.BAML {
 				case BamlRecordType.StaticResourceStart:
 					return true;
 			}
+
 			return false;
 		}
 
@@ -46,6 +48,7 @@ namespace Confuser.Renamer.BAML {
 				case BamlRecordType.StaticResourceEnd:
 					return true;
 			}
+
 			return false;
 		}
 
@@ -79,6 +82,7 @@ namespace Confuser.Renamer.BAML {
 				case BamlRecordType.NamedElementStart:
 					return footer.Type == BamlRecordType.ElementEnd;
 			}
+
 			return false;
 		}
 
@@ -112,6 +116,7 @@ namespace Confuser.Renamer.BAML {
 						if (stack.Count > 0)
 							current = stack.Pop();
 					}
+
 					current.Footer = document[i];
 					if (stack.Count > 0)
 						current = stack.Pop();
@@ -119,6 +124,7 @@ namespace Confuser.Renamer.BAML {
 				else
 					current.Body.Add(document[i]);
 			}
+
 			Debug.Assert(stack.Count == 0);
 			return current;
 		}

@@ -12,7 +12,8 @@ using GalaSoft.MvvmLight.Command;
 namespace ConfuserEx {
 	public class FileDragDrop {
 		public static readonly DependencyProperty CommandProperty =
-			DependencyProperty.RegisterAttached("Command", typeof(ICommand), typeof(FileDragDrop), new UIPropertyMetadata(null, OnCommandChanged));
+			DependencyProperty.RegisterAttached("Command", typeof(ICommand), typeof(FileDragDrop),
+				new UIPropertyMetadata(null, OnCommandChanged));
 
 		public static ICommand FileCmd = new DragDropCommand(
 			data => {
@@ -94,6 +95,7 @@ namespace ConfuserEx {
 				if (cmd.CanExecute(e.Data))
 					e.Effects = DragDropEffects.Link;
 			}
+
 			e.Handled = true;
 		}
 
@@ -107,13 +109,16 @@ namespace ConfuserEx {
 				if (cmd.CanExecute(e.Data))
 					cmd.Execute(e.Data);
 			}
+
 			e.Handled = true;
 		}
 
 
 		class DragDropCommand : RelayCommand<Tuple<UIElement, IDataObject>> {
-			public DragDropCommand(Action<Tuple<UIElement, IDataObject>> execute, Func<Tuple<UIElement, IDataObject>, bool> canExecute)
-				: base(execute, canExecute) { }
+			public DragDropCommand(Action<Tuple<UIElement, IDataObject>> execute,
+				Func<Tuple<UIElement, IDataObject>, bool> canExecute)
+				: base(execute, canExecute) {
+			}
 		}
 	}
 }

@@ -57,7 +57,8 @@ namespace ConfuserEx.Views {
 				int selIndex = ProbePaths.SelectedIndex;
 				Debug.Assert(selIndex != -1);
 				project.ProbePaths.RemoveAt(selIndex);
-				ProbePaths.SelectedIndex = selIndex >= project.ProbePaths.Count ? project.ProbePaths.Count - 1 : selIndex;
+				ProbePaths.SelectedIndex =
+					selIndex >= project.ProbePaths.Count ? project.ProbePaths.Count - 1 : selIndex;
 			}, () => ProbePaths.SelectedIndex != -1);
 		}
 	}

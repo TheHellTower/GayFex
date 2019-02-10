@@ -12,7 +12,8 @@ namespace Confuser.DynCipher.Generation {
 		public MethodDef Method { get; }
 		public IList<Instruction> Instructions { get; }
 
-		public CILCodeGen(MethodDef method, IList<Instruction> instrs) : this(method?.Module, method, instrs) { }
+		public CILCodeGen(MethodDef method, IList<Instruction> instrs) : this(method?.Module, method, instrs) {
+		}
 
 		public CILCodeGen(ModuleDef module, MethodDef method, IList<Instruction> instrs) {
 			Module = module ?? throw new ArgumentNullException(nameof(module));
@@ -22,7 +23,7 @@ namespace Confuser.DynCipher.Generation {
 
 		protected void Emit(Instruction instr) {
 			if (instr == null) throw new ArgumentNullException(nameof(instr));
-			
+
 			Instructions.Add(instr);
 		}
 
@@ -33,6 +34,7 @@ namespace Confuser.DynCipher.Generation {
 				ret.Name = var.Name;
 				localMap[var.Name] = ret;
 			}
+
 			return ret;
 		}
 
@@ -103,6 +105,7 @@ namespace Confuser.DynCipher.Generation {
 					default:
 						throw new NotSupportedException();
 				}
+
 				Emit(Instruction.Create(op));
 			}
 			else if (exp is UnaryOpExpression) {
@@ -119,6 +122,7 @@ namespace Confuser.DynCipher.Generation {
 					default:
 						throw new NotSupportedException();
 				}
+
 				Emit(Instruction.Create(op));
 			}
 			else if (exp is LiteralExpression) {

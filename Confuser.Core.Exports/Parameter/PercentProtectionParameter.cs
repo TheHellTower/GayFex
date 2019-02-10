@@ -5,10 +5,9 @@ using System.Runtime.Serialization;
 
 namespace Confuser.Core.Parameter {
 	internal sealed class PercentProtectionParameter : IProtectionParameter<double> {
-
 		public double DefaultValue { get; }
 
-		public string Name {get;}
+		public string Name { get; }
 
 		internal PercentProtectionParameter(string name, double defaultValue) {
 			Debug.Assert(!string.IsNullOrWhiteSpace(name) && defaultValue >= 0.0 && defaultValue <= 1.0);

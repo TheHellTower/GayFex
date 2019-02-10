@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.Protections.AntiTamper {
 	internal static class ModeHandlerRuntime {
-		internal static MethodDef GetInitMethod(this IConfuserContext context, string runtimeTypeFullName, ModuleDef targetModule) {
+		internal static MethodDef GetInitMethod(this IConfuserContext context, string runtimeTypeFullName,
+			ModuleDef targetModule) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (runtimeTypeFullName == null) throw new ArgumentNullException(nameof(runtimeTypeFullName));
 			if (targetModule == null) throw new ArgumentNullException(nameof(targetModule));

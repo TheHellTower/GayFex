@@ -23,36 +23,52 @@ namespace Confuser.Optimizations.CompileRegex {
 			var regexMatchType = regexType.Module.FindNormalThrow(regexNs + ".Match").ToTypeSig();
 			var regexMatchColType = regexType.Module.FindNormalThrow(regexNs + ".MatchCollection").ToTypeSig();
 			var regexMatchEvalType = regexType.Module.FindNormalThrow(regexNs + ".MatchEvaluator").ToTypeSig();
-			var timeSpanType = regexType.Module.GetTypeRefs().Where(t => t.FullName == "System.TimeSpan").First().ToTypeSig();
+			var timeSpanType = regexType.Module.GetTypeRefs().Where(t => t.FullName == "System.TimeSpan").First()
+				.ToTypeSig();
 
 			Methods = ImmutableArray.Create(
 				ScanMethod(regexType.FindMethod(".ctor", MethodSig.CreateInstance(voidType, stringType))),
-				ScanMethod(regexType.FindMethod(".ctor", MethodSig.CreateInstance(voidType, stringType, regexOptionsType))),
-				ScanMethod(regexType.FindMethod(".ctor", MethodSig.CreateInstance(voidType, stringType, regexOptionsType, timeSpanType))),
-
+				ScanMethod(regexType.FindMethod(".ctor",
+					MethodSig.CreateInstance(voidType, stringType, regexOptionsType))),
+				ScanMethod(regexType.FindMethod(".ctor",
+					MethodSig.CreateInstance(voidType, stringType, regexOptionsType, timeSpanType))),
 				ScanMethod(regexType.FindMethod("IsMatch", MethodSig.CreateStatic(boolType, stringType, stringType))),
-				ScanMethod(regexType.FindMethod("IsMatch", MethodSig.CreateStatic(boolType, stringType, stringType, regexOptionsType))),
-				ScanMethod(regexType.FindMethod("IsMatch", MethodSig.CreateStatic(boolType, stringType, stringType, regexOptionsType, timeSpanType))),
-
-				ScanMethod(regexType.FindMethod("Match", MethodSig.CreateStatic(regexMatchType, stringType, stringType))),
-				ScanMethod(regexType.FindMethod("Match", MethodSig.CreateStatic(regexMatchType, stringType, stringType, regexOptionsType))),
-				ScanMethod(regexType.FindMethod("Match", MethodSig.CreateStatic(regexMatchType, stringType, stringType, regexOptionsType, timeSpanType))),
-
-				ScanMethod(regexType.FindMethod("Matches", MethodSig.CreateStatic(regexMatchColType, stringType, stringType))),
-				ScanMethod(regexType.FindMethod("Matches", MethodSig.CreateStatic(regexMatchColType, stringType, stringType, regexOptionsType))),
-				ScanMethod(regexType.FindMethod("Matches", MethodSig.CreateStatic(regexMatchColType, stringType, stringType, regexOptionsType, timeSpanType))),
-
-				ScanMethod(regexType.FindMethod("Split", MethodSig.CreateStatic(stringArrType, stringType, stringType))),
-				ScanMethod(regexType.FindMethod("Split", MethodSig.CreateStatic(stringArrType, stringType, stringType, regexOptionsType))),
-				ScanMethod(regexType.FindMethod("Split", MethodSig.CreateStatic(stringArrType, stringType, stringType, regexOptionsType, timeSpanType))),
-
-				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, stringType))),
-				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, stringType, regexOptionsType))),
-				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, stringType, regexOptionsType, timeSpanType))),
-
-				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType))),
-				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType, regexOptionsType))),
-				ScanMethod(regexType.FindMethod("Replace", MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType, regexOptionsType, timeSpanType)))
+				ScanMethod(regexType.FindMethod("IsMatch",
+					MethodSig.CreateStatic(boolType, stringType, stringType, regexOptionsType))),
+				ScanMethod(regexType.FindMethod("IsMatch",
+					MethodSig.CreateStatic(boolType, stringType, stringType, regexOptionsType, timeSpanType))),
+				ScanMethod(
+					regexType.FindMethod("Match", MethodSig.CreateStatic(regexMatchType, stringType, stringType))),
+				ScanMethod(regexType.FindMethod("Match",
+					MethodSig.CreateStatic(regexMatchType, stringType, stringType, regexOptionsType))),
+				ScanMethod(regexType.FindMethod("Match",
+					MethodSig.CreateStatic(regexMatchType, stringType, stringType, regexOptionsType, timeSpanType))),
+				ScanMethod(regexType.FindMethod("Matches",
+					MethodSig.CreateStatic(regexMatchColType, stringType, stringType))),
+				ScanMethod(regexType.FindMethod("Matches",
+					MethodSig.CreateStatic(regexMatchColType, stringType, stringType, regexOptionsType))),
+				ScanMethod(regexType.FindMethod("Matches",
+					MethodSig.CreateStatic(regexMatchColType, stringType, stringType, regexOptionsType, timeSpanType))),
+				ScanMethod(regexType.FindMethod("Split",
+					MethodSig.CreateStatic(stringArrType, stringType, stringType))),
+				ScanMethod(regexType.FindMethod("Split",
+					MethodSig.CreateStatic(stringArrType, stringType, stringType, regexOptionsType))),
+				ScanMethod(regexType.FindMethod("Split",
+					MethodSig.CreateStatic(stringArrType, stringType, stringType, regexOptionsType, timeSpanType))),
+				ScanMethod(regexType.FindMethod("Replace",
+					MethodSig.CreateStatic(stringType, stringType, stringType, stringType))),
+				ScanMethod(regexType.FindMethod("Replace",
+					MethodSig.CreateStatic(stringType, stringType, stringType, stringType, regexOptionsType))),
+				ScanMethod(regexType.FindMethod("Replace",
+					MethodSig.CreateStatic(stringType, stringType, stringType, stringType, regexOptionsType,
+						timeSpanType))),
+				ScanMethod(regexType.FindMethod("Replace",
+					MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType))),
+				ScanMethod(regexType.FindMethod("Replace",
+					MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType, regexOptionsType))),
+				ScanMethod(regexType.FindMethod("Replace",
+					MethodSig.CreateStatic(stringType, stringType, stringType, regexMatchEvalType, regexOptionsType,
+						timeSpanType)))
 			).RemoveAll(m => m == null);
 		}
 
@@ -66,6 +82,7 @@ namespace Confuser.Optimizations.CompileRegex {
 				if (testMethod.Method.Name == method.Name && sig.Equals(testMethod.Method.MethodSig, method.MethodSig))
 					return testMethod;
 			}
+
 			return null;
 		}
 
@@ -73,8 +90,10 @@ namespace Confuser.Optimizations.CompileRegex {
 			if (method == null) return null;
 
 			var patternIndex = method.Parameters.Where(p => p.Name == "pattern").Select(p => p.MethodSigIndex).First();
-			var optionsIndex = method.Parameters.Where(p => p.Name == "options").Select(p => p.MethodSigIndex).DefaultIfEmpty(-1).First();
-			var timeoutIndex = method.Parameters.Where(p => p.Name == "matchTimeout").Select(p => p.MethodSigIndex).DefaultIfEmpty(-1).First();
+			var optionsIndex = method.Parameters.Where(p => p.Name == "options").Select(p => p.MethodSigIndex)
+				.DefaultIfEmpty(-1).First();
+			var timeoutIndex = method.Parameters.Where(p => p.Name == "matchTimeout").Select(p => p.MethodSigIndex)
+				.DefaultIfEmpty(-1).First();
 
 			MethodDef equivalent = null;
 			if (!method.IsInstanceConstructor) {
@@ -83,6 +102,7 @@ namespace Confuser.Optimizations.CompileRegex {
 					if (i != patternIndex && i != optionsIndex && i != timeoutIndex)
 						searchSig.Params.Add(method.MethodSig.Params[i]);
 				}
+
 				equivalent = method.DeclaringType.FindMethod(method.Name, searchSig);
 			}
 
@@ -96,7 +116,8 @@ namespace Confuser.Optimizations.CompileRegex {
 			public int OptionsParameterIndex { get; }
 			public int TimeoutParameterIndex { get; }
 
-			internal RegexTargetMethod(MethodDef method, MethodDef equivalentMethod, int pattern, int options, int timeout) {
+			internal RegexTargetMethod(MethodDef method, MethodDef equivalentMethod, int pattern, int options,
+				int timeout) {
 				Method = method ?? throw new ArgumentNullException(nameof(method));
 				InstanceEquivalentMethod = equivalentMethod;
 				if (!method.IsInstanceConstructor && equivalentMethod == null)

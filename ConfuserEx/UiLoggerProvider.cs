@@ -13,6 +13,7 @@ namespace ConfuserEx {
 		ILogger ILoggerProvider.CreateLogger(string categoryName) =>
 			new UiLogger(categoryName, Publish, Filter, false);
 
-		void IDisposable.Dispose() { }
+		void IDisposable.Dispose() {
+		}
 	}
 }

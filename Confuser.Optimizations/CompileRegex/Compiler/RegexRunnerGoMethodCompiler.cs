@@ -19,13 +19,15 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				if (_backwardLabel == null) {
 					_backwardLabel = CreateLabel();
 				}
+
 				return _backwardLabel;
 			}
 		}
 
 		internal bool CheckTimeout { get; set; } = true;
 
-		internal RegexRunnerGoMethodCompiler(ModuleDef module, MethodDef method, RegexRunnerDef regexRunnerDef) : base(module, method, regexRunnerDef) {
+		internal RegexRunnerGoMethodCompiler(ModuleDef module, MethodDef method, RegexRunnerDef regexRunnerDef) : base(
+			module, method, regexRunnerDef) {
 			_notes = new List<BacktrackNote>();
 			_goto = new Dictionary<int, int>();
 			_uniquenote = new Dictionary<int, int>();
@@ -106,6 +108,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		internal void Back() => Br(BackwardLabel);
 
 		#region Track
+
 		/*
 		 * Adds a backtrack note to the list of them, and returns the index of the new
 		 * note (which is also the index for the jump used by the switch table)
@@ -135,6 +138,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (!_goto.TryGetValue(destCodePos, out var target)) {
 				target = _goto[destCodePos] = AddBacktrackNote(0, CodePosLabel(destCodePos), destCodePos);
 			}
+
 			return target;
 		}
 
@@ -154,6 +158,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (!_uniquenote.TryGetValue(id, out var result)) {
 				result = _uniquenote[id] = AddTrack(flags, codePos);
 			}
+
 			return result;
 		}
 
@@ -161,6 +166,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (!_codePosLabel.TryGetValue(codePos, out var label)) {
 				label = _codePosLabel[codePos] = CreateLabel();
 			}
+
 			return label;
 		}
 
@@ -184,6 +190,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			LdRunnerField(field);
 			DoPush();
 		}
+
 		internal void PushTrack(Local local) {
 			ReadyPushTrack();
 			Ldloc(local);
@@ -248,7 +255,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		#endregion
 
 		#region Stack
-
 
 		/*
 		 * Saves the value of a local variable on the grouping stack
@@ -329,6 +335,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			Add();
 			StRunnerField(_regexRunnerDef.runstackposFieldDef);
 		}
+
 		#endregion
 
 		/*
@@ -389,7 +396,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		/*
 		 * The label for the next (forward) operation
 		 */
-		internal RegexMethodCompilerLabel AdvanceLabel(RegexCode code, int codePos) => CodePosLabel(NextCodepos(code, codePos));
+		internal RegexMethodCompilerLabel AdvanceLabel(RegexCode code, int codePos) =>
+			CodePosLabel(NextCodepos(code, codePos));
 
 		/*
 		 * Returns the position of the next operation in the regex code, taking

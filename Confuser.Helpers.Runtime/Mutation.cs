@@ -21,6 +21,7 @@
 			return val;
 		}
 
-		public static void Crypt(uint[] data, uint[] key) { }
+		public static void Crypt(uint[] data, uint[] key) {
+		}
 	}
 }

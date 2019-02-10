@@ -31,7 +31,8 @@ namespace Confuser.Helpers {
 				yield return dep;
 		}
 
-		IEnumerator<(IMemberDef Source, IMemberDef Mapped)> IEnumerable<(IMemberDef Source, IMemberDef Mapped)>.GetEnumerator() =>
+		IEnumerator<(IMemberDef Source, IMemberDef Mapped)> IEnumerable<(IMemberDef Source, IMemberDef Mapped)>.
+			GetEnumerator() =>
 			GetAllMembers().GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator() => GetAllMembers().GetEnumerator();

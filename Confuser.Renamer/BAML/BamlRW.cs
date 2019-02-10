@@ -6,7 +6,8 @@ using System.Text;
 namespace Confuser.Renamer.BAML {
 	internal class BamlBinaryReader : BinaryReader {
 		public BamlBinaryReader(Stream stream)
-			: base(stream) { }
+			: base(stream) {
+		}
 
 		public int ReadEncodedInt() {
 			return Read7BitEncodedInt();
@@ -15,7 +16,8 @@ namespace Confuser.Renamer.BAML {
 
 	internal class BamlBinaryWriter : BinaryWriter {
 		public BamlBinaryWriter(Stream stream)
-			: base(stream) { }
+			: base(stream) {
+		}
 
 		public void WriteEncodedInt(int val) {
 			Write7BitEncodedInt(val);
@@ -33,9 +35,10 @@ namespace Confuser.Renamer.BAML {
 				rdr.ReadBytes((int)(((len + 3) & ~3) - len));
 			}
 			if (ret.Signature != "MSBAML") throw new NotSupportedException();
-			ret.ReaderVersion = new BamlDocument.BamlVersion { Major = reader.ReadUInt16(), Minor = reader.ReadUInt16() };
-			ret.UpdaterVersion = new BamlDocument.BamlVersion { Major = reader.ReadUInt16(), Minor = reader.ReadUInt16() };
-			ret.WriterVersion = new BamlDocument.BamlVersion { Major = reader.ReadUInt16(), Minor = reader.ReadUInt16() };
+			ret.ReaderVersion = new BamlDocument.BamlVersion {Major = reader.ReadUInt16(), Minor = reader.ReadUInt16()};
+			ret.UpdaterVersion = new BamlDocument.BamlVersion
+				{Major = reader.ReadUInt16(), Minor = reader.ReadUInt16()};
+			ret.WriterVersion = new BamlDocument.BamlVersion {Major = reader.ReadUInt16(), Minor = reader.ReadUInt16()};
 			if (ret.ReaderVersion.Major != 0 || ret.ReaderVersion.Minor != 0x60 ||
 			    ret.UpdaterVersion.Major != 0 || ret.UpdaterVersion.Minor != 0x60 ||
 			    ret.WriterVersion.Major != 0 || ret.WriterVersion.Minor != 0x60)
@@ -207,12 +210,14 @@ namespace Confuser.Renamer.BAML {
 					default:
 						throw new NotSupportedException();
 				}
+
 				rec.Position = pos;
 
 				rec.Read(reader);
 				ret.Add(rec);
 				recs.Add(pos, rec);
 			}
+
 			for (int i = 0; i < ret.Count; i++) {
 				var defer = ret[i] as IBamlDeferRecord;
 				if (defer != null)
@@ -248,6 +253,7 @@ namespace Confuser.Renamer.BAML {
 				rec.Write(writer);
 				if (rec is IBamlDeferRecord) defers.Add(i);
 			}
+
 			foreach (int i in defers)
 				(doc[i] as IBamlDeferRecord).WriteDefer(doc, i, writer);
 		}

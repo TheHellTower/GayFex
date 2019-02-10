@@ -60,7 +60,8 @@ namespace Confuser {
 		/// <param name="key">The key of the element to add.</param>
 		/// <param name="value">The value of the element to add.</param>
 		/// <exception cref="System.ArgumentNullException">key is <c>null</c>.</exception>
-		public static void AddListEntry<TKey, TValue>(this IDictionary<TKey, List<TValue>> self, TKey key, TValue value) {
+		public static void AddListEntry<TKey, TValue>(this IDictionary<TKey, List<TValue>> self, TKey key,
+			TValue value) {
 			if (key == null)
 				throw new ArgumentNullException("key");
 			List<TValue> list;
@@ -83,8 +84,10 @@ namespace Confuser {
 			if (!folder.EndsWith(Path.DirectorySeparatorChar.ToString())) {
 				folder += Path.DirectorySeparatorChar;
 			}
+
 			var folderUri = new Uri(folder);
-			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString()
+				.Replace('/', Path.DirectorySeparatorChar));
 		}
 
 		/// <summary>
@@ -150,6 +153,7 @@ namespace Confuser {
 					current /= charset.Length;
 				}
 			}
+
 			if (current != 0)
 				ret.Append(charset[current % charset.Length]);
 			return ret.ToString();
@@ -181,6 +185,7 @@ namespace Confuser {
 				previousIndex = index;
 				index = str.IndexOf(oldValue, index, comparison);
 			}
+
 			sb.Append(str.Substring(previousIndex));
 
 			return sb.ToString();
@@ -197,7 +202,8 @@ namespace Confuser {
 				Span<char> ret = stackalloc char[buff.Length * 2];
 				ToHexString(buff, ret);
 				return ret.ToString();
-			} else {
+			}
+			else {
 				Span<char> ret = new char[buff.Length * 2];
 				ToHexString(buff, ret);
 				return ret.ToString();
@@ -226,6 +232,7 @@ namespace Confuser {
 				if (match(self[i]))
 					self.RemoveAt(i);
 			}
+
 			return self;
 		}
 

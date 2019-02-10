@@ -20,7 +20,8 @@ namespace Confuser.Optimizations.CompileRegex {
 
 		public string Name => "Compile Regular Expressions";
 
-		public string Description => "This optimization will search uses of regular expressions and create the compiled code for the expression if possible.";
+		public string Description =>
+			"This optimization will search uses of regular expressions and create the compiled code for the expression if possible.";
 
 		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => Parameters;
 

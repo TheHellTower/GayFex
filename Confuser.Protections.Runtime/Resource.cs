@@ -31,12 +31,14 @@ namespace Confuser.Runtime {
 					o[d++] = (byte)(e >> 24);
 					k[j] ^= e;
 				}
+
 				s += 0x10;
 			}
 
 			return Assembly.Load(CompressionService.Decompress(o));
 		}
 	}
+
 	internal static class Resource {
 		private static Assembly c;
 

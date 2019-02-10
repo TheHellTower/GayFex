@@ -7,10 +7,11 @@ namespace Confuser.DynCipher.Transforms {
 			if (exp is VariableExpression) {
 				if (((VariableExpression)exp).Variable.Name[0] != 'v') return exp;
 				return new ArrayIndexExpression {
-					Array = new VariableExpression { Variable = buff },
+					Array = new VariableExpression {Variable = buff},
 					Index = (int)(exp as VariableExpression).Variable.Tag
 				};
 			}
+
 			if (exp is ArrayIndexExpression) {
 				((ArrayIndexExpression)exp).Array = ReplaceVar(((ArrayIndexExpression)exp).Array, buff);
 			}
@@ -21,6 +22,7 @@ namespace Confuser.DynCipher.Transforms {
 			else if (exp is UnaryOpExpression) {
 				((UnaryOpExpression)exp).Value = ReplaceVar(((UnaryOpExpression)exp).Value, buff);
 			}
+
 			return exp;
 		}
 
@@ -29,6 +31,7 @@ namespace Confuser.DynCipher.Transforms {
 				((AssignmentStatement)st).Value = ReplaceVar(((AssignmentStatement)st).Value, buff);
 				((AssignmentStatement)st).Target = ReplaceVar(((AssignmentStatement)st).Target, buff);
 			}
+
 			return st;
 		}
 

@@ -147,7 +147,8 @@ namespace Confuser {
 		/// <returns><c>true</c> if the specified type is visible outside the containing assembly; otherwise, <c>false</c>.</returns>
 		public static bool IsVisibleOutside(this TypeDef typeDef, bool exeNonPublic = true) {
 			// Assume executable modules' type is not visible
-			if (exeNonPublic && (typeDef.Module.Kind == ModuleKind.Windows || typeDef.Module.Kind == ModuleKind.Console))
+			if (exeNonPublic &&
+			    (typeDef.Module.Kind == ModuleKind.Windows || typeDef.Module.Kind == ModuleKind.Console))
 				return false;
 
 			do {
@@ -178,8 +179,8 @@ namespace Confuser {
 		/// <returns><c>true</c> if specified type is COM import; otherwise, <c>false</c>.</returns>
 		public static bool IsComImport(this TypeDef type) {
 			return type.IsImport ||
-				   type.HasAttribute("System.Runtime.InteropServices.ComImportAttribute") ||
-				   type.HasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute");
+			       type.HasAttribute("System.Runtime.InteropServices.ComImportAttribute") ||
+			       type.HasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute");
 		}
 
 		/// <summary>
@@ -220,6 +221,7 @@ namespace Confuser {
 				if (bas.ReflectionFullName == baseType)
 					return true;
 			} while (bas.BaseType != null && bas.BaseType.DefinitionAssembly.IsCorLib());
+
 			return false;
 		}
 
@@ -239,6 +241,7 @@ namespace Confuser {
 				if (bas.ReflectionFullName == baseType)
 					return true;
 			} while (bas.BaseType != null);
+
 			return false;
 		}
 
@@ -260,6 +263,7 @@ namespace Confuser {
 
 				type = type.BaseType.ResolveTypeDefThrow();
 			} while (type != null);
+
 			throw new UnreachableException();
 		}
 
@@ -408,13 +412,13 @@ namespace Confuser {
 		}
 
 		private static IEnumerable<MethodDef> AllMethods(this EventDef evt) {
-			return new[] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
+			return new[] {evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod}
 				.Concat(evt.OtherMethods)
 				.Where(m => m != null);
 		}
 
 		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property) {
-			return new[] { property.GetMethod, property.SetMethod }
+			return new[] {property.GetMethod, property.SetMethod}
 				.Concat(property.OtherMethods)
 				.Where(m => m != null);
 		}
@@ -460,10 +464,13 @@ namespace Confuser {
 				}
 			}
 		}
-		public static void InsertPrefixInstructions(this CilBody body, Instruction instr, params Instruction[] newInstrs) =>
+
+		public static void InsertPrefixInstructions(this CilBody body, Instruction instr,
+			params Instruction[] newInstrs) =>
 			InsertPrefixInstructions(body, instr, newInstrs.AsEnumerable());
 
-		public static void InsertPrefixInstructions(this CilBody body, Instruction instr, IEnumerable<Instruction> newInstrs) {
+		public static void InsertPrefixInstructions(this CilBody body, Instruction instr,
+			IEnumerable<Instruction> newInstrs) {
 			if (body == null) throw new ArgumentNullException(nameof(body));
 			if (instr == null) throw new ArgumentNullException(nameof(instr));
 			if (newInstrs == null) throw new ArgumentNullException(nameof(newInstrs));
@@ -558,7 +565,7 @@ namespace Confuser {
 				body.UpdateReference(instr, body.Instructions[indexOfInstr + 1]);
 				body.FixScopeStarts(instr, body.Instructions[indexOfInstr + 1]);
 			}
-			else if(indexOfInstr > 0) {
+			else if (indexOfInstr > 0) {
 				body.UpdateReference(instr, body.Instructions[indexOfInstr - 1]);
 				body.FixScopeStarts(instr, body.Instructions[indexOfInstr - 1]);
 			}
@@ -572,7 +579,8 @@ namespace Confuser {
 				if (instr.SequencePoint != null && body.Instructions[indexOfInstr + 1].SequencePoint == null) {
 					body.Instructions[indexOfInstr + 1].SequencePoint = instr.SequencePoint;
 				}
-			} else if (indexOfInstr > 0) {
+			}
+			else if (indexOfInstr > 0) {
 				if (instr.SequencePoint != null && body.Instructions[indexOfInstr - 1].SequencePoint == null) {
 					body.Instructions[indexOfInstr - 1].SequencePoint = instr.SequencePoint;
 				}
@@ -596,6 +604,7 @@ namespace Confuser {
 			if (declType.IsArray) {
 				return method.Name == "Get" || method.Name == "Set" || method.Name == "Address";
 			}
+
 			return false;
 		}
 	}

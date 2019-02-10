@@ -24,7 +24,8 @@ namespace Confuser.DynCipher.Generation {
 			ConvertVariables.Run(block);
 		}
 
-		public static void GeneratePair(IRandomGenerator random, out StatementBlock encrypt, out StatementBlock decrypt) {
+		public static void GeneratePair(IRandomGenerator random, out StatementBlock encrypt,
+			out StatementBlock decrypt) {
 			double varPrecentage = 1 + ((random.NextDouble() * 2) - 1) * VARIANCE;
 			var totalElements = (int)(((random.NextDouble() + 1) * RATIO_SUM) * varPrecentage);
 
@@ -54,10 +55,12 @@ namespace Confuser.DynCipher.Generation {
 						overdue = true; // Can't shuffle now to prevent duplication
 						index = 0;
 					}
+
 					elem.DataIndexes[i] = x[index++];
 				}
+
 				if (overdue) {
-					random.Shuffle( x);
+					random.Shuffle(x);
 					index = 0;
 					overdue = false;
 				}

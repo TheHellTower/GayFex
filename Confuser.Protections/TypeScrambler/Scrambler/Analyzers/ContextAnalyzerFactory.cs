@@ -6,6 +6,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
 	internal sealed class ContextAnalyzerFactory : IEnumerable {
 		public Dictionary<Type, ContextAnalyzer> Analyzers = new Dictionary<Type, ContextAnalyzer>();
 		private ScannedMethod targetMethod;
+
 		public ContextAnalyzerFactory(ScannedMethod m) {
 			targetMethod = m;
 		}

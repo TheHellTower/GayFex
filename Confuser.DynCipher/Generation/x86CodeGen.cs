@@ -16,7 +16,8 @@ namespace Confuser.DynCipher.Generation {
 
 		public int MaxUsedRegister { get; private set; }
 
-		public x86Register? GenerateX86(Expression expression, Func<Variable, x86Register, IEnumerable<x86Instruction>> loadArg) {
+		public x86Register? GenerateX86(Expression expression,
+			Func<Variable, x86Register, IEnumerable<x86Instruction>> loadArg) {
 			instrs = new List<x86Instruction>();
 			usedRegs = new bool[8];
 			MaxUsedRegister = -1;
@@ -123,6 +124,7 @@ namespace Confuser.DynCipher.Generation {
 
 				return reg;
 			}
+
 			Debug.Assert(instr.Operands.Length > 0);
 			Debug.Assert(instr.Operands[0] is x86RegisterOperand);
 
@@ -140,24 +142,29 @@ namespace Confuser.DynCipher.Generation {
 				x86Register reg;
 				switch (binOp.Operation) {
 					case BinOps.Add:
-						reg = Normalize(x86Instruction.Create(x86OpCode.ADD, Emit(binOp.Left, loadArg), Emit(binOp.Right, loadArg)));
+						reg = Normalize(x86Instruction.Create(x86OpCode.ADD, Emit(binOp.Left, loadArg),
+							Emit(binOp.Right, loadArg)));
 						break;
 
 					case BinOps.Sub:
-						reg = Normalize(x86Instruction.Create(x86OpCode.SUB, Emit(binOp.Left, loadArg), Emit(binOp.Right, loadArg)));
+						reg = Normalize(x86Instruction.Create(x86OpCode.SUB, Emit(binOp.Left, loadArg),
+							Emit(binOp.Right, loadArg)));
 						break;
 
 					case BinOps.Mul:
-						reg = Normalize(x86Instruction.Create(x86OpCode.IMUL, Emit(binOp.Left, loadArg), Emit(binOp.Right, loadArg)));
+						reg = Normalize(x86Instruction.Create(x86OpCode.IMUL, Emit(binOp.Left, loadArg),
+							Emit(binOp.Right, loadArg)));
 						break;
 
 					case BinOps.Xor:
-						reg = Normalize(x86Instruction.Create(x86OpCode.XOR, Emit(binOp.Left, loadArg), Emit(binOp.Right, loadArg)));
+						reg = Normalize(x86Instruction.Create(x86OpCode.XOR, Emit(binOp.Left, loadArg),
+							Emit(binOp.Right, loadArg)));
 						break;
 
 					default:
 						throw new NotSupportedException();
 				}
+
 				TakeRegister(reg);
 				return new x86RegisterOperand(reg);
 			}
@@ -177,6 +184,7 @@ namespace Confuser.DynCipher.Generation {
 					default:
 						throw new NotSupportedException();
 				}
+
 				TakeRegister(reg);
 				return new x86RegisterOperand(reg);
 			}
@@ -222,7 +230,8 @@ namespace Confuser.DynCipher.Generation {
 		EDI
 	}
 
-	public interface Ix86Operand { }
+	public interface Ix86Operand {
+	}
 
 	public class x86RegisterOperand : Ix86Operand {
 		public x86RegisterOperand(x86Register reg) {
@@ -272,14 +281,17 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					if (Operands[0] is x86RegisterOperand &&
 					    Operands[1] is x86ImmediateOperand) {
 						var ret = new byte[5];
 						ret[0] = 0xb8;
 						ret[0] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
-						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret, 1, 4);
+						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret,
+							1, 4);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -294,15 +306,18 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					if (Operands[0] is x86RegisterOperand &&
 					    Operands[1] is x86ImmediateOperand) {
 						var ret = new byte[6];
 						ret[0] = 0x81;
 						ret[1] = 0xc0;
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
-						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret, 2, 4);
+						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret,
+							2, 4);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -317,15 +332,18 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					if (Operands[0] is x86RegisterOperand &&
 					    Operands[1] is x86ImmediateOperand) {
 						var ret = new byte[6];
 						ret[0] = 0x81;
 						ret[1] = 0xe8;
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
-						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret, 2, 4);
+						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret,
+							2, 4);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -338,6 +356,7 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -350,6 +369,7 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -364,15 +384,18 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					if (Operands[0] is x86RegisterOperand &&
 					    Operands[1] is x86ImmediateOperand) {
 						var ret = new byte[6];
 						ret[0] = 0x81;
 						ret[1] = 0xf0;
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
-						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret, 2, 4);
+						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret,
+							2, 4);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -384,6 +407,7 @@ namespace Confuser.DynCipher.Generation {
 						ret[0] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -399,6 +423,7 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
 						return ret;
 					}
+
 					if (Operands[0] is x86RegisterOperand &&
 					    Operands[1] is x86ImmediateOperand) {
 						var ret = new byte[6];
@@ -406,9 +431,11 @@ namespace Confuser.DynCipher.Generation {
 						ret[1] = 0xc0;
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 3);
 						ret[1] |= (byte)((int)(Operands[0] as x86RegisterOperand).Register << 0);
-						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret, 2, 4);
+						Buffer.BlockCopy(BitConverter.GetBytes((Operands[1] as x86ImmediateOperand).Immediate), 0, ret,
+							2, 4);
 						return ret;
 					}
+
 					throw new NotSupportedException();
 				}
 
@@ -423,6 +450,7 @@ namespace Confuser.DynCipher.Generation {
 			for (int i = 0; i < Operands.Length; i++) {
 				ret.AppendFormat("{0}{1}", i == 0 ? " " : ", ", Operands[i]);
 			}
+
 			return ret.ToString();
 		}
 	}

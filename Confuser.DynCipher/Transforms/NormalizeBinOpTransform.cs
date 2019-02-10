@@ -33,6 +33,7 @@ namespace Confuser.DynCipher.Transforms {
 			else if (exp is UnaryOpExpression) {
 				((UnaryOpExpression)exp).Value = ProcessExpression(((UnaryOpExpression)exp).Value);
 			}
+
 			return exp;
 		}
 

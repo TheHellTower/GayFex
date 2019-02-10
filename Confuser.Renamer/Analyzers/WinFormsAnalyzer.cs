@@ -14,11 +14,12 @@ namespace Confuser.Renamer.Analyzers {
 	public class WinFormsAnalyzer : IRenamer {
 		Dictionary<string, List<PropertyDef>> properties = new Dictionary<string, List<PropertyDef>>();
 
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			if (def is ModuleDef) {
 				foreach (var type in ((ModuleDef)def).GetTypes())
-					foreach (var prop in type.Properties)
-						properties.AddListEntry(prop.Name, prop);
+				foreach (var prop in type.Properties)
+					properties.AddListEntry(prop.Name, prop);
 				return;
 			}
 
@@ -39,22 +40,24 @@ namespace Confuser.Renamer.Analyzers {
 						Debug.Assert(target != null);
 
 						if ((target.DeclaringType.FullName == "System.Windows.Forms.ControlBindingsCollection" ||
-							 target.DeclaringType.FullName == "System.Windows.Forms.BindingsCollection") &&
-							target.Name == "Add" && target.MethodSig.Params.Count != 1) {
+						     target.DeclaringType.FullName == "System.Windows.Forms.BindingsCollection") &&
+						    target.Name == "Add" && target.MethodSig.Params.Count != 1) {
 							binding.Add(Tuple.Create(true, instr));
 						}
 						else if (target.DeclaringType.FullName == "System.Windows.Forms.DataGridViewColumn" &&
-							target.Name == "set_DataPropertyName" &&
-							target.MethodSig.Params.Count == 1) {
+						         target.Name == "set_DataPropertyName" &&
+						         target.MethodSig.Params.Count == 1) {
 							dataPropertyName.Add(instr);
 						}
+
 						break;
 					case Code.Newobj:
 						Debug.Assert(target != null);
 						if (target.DeclaringType.FullName == "System.Windows.Forms.Binding" &&
-								target.Name.String == ".ctor") {
+						    target.Name.String == ".ctor") {
 							binding.Add(Tuple.Create(false, instr));
 						}
+
 						break;
 				}
 			}
@@ -148,23 +151,27 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		private static Instruction ResolveNameInstruction(MethodDef method, int[] tracedArguments, ref int argumentIndex) {
+		private static Instruction ResolveNameInstruction(MethodDef method, int[] tracedArguments,
+			ref int argumentIndex) {
 			Instruction propertyName = null;
-			for (; ; ) {
+			for (;;) {
 				propertyName = method.Body.Instructions[tracedArguments[argumentIndex]];
 				if (propertyName.OpCode.Code == Code.Dup)
 					argumentIndex++;
 				else break;
 			}
+
 			return propertyName;
 		}
 
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 	}

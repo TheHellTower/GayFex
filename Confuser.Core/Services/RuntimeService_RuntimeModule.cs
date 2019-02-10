@@ -92,7 +92,8 @@ namespace Confuser.Core.Services {
 					return FrameworkConstants.CommonFrameworks.Net4;
 				}
 
-				throw new NotImplementedException("Unknown common language runtime. Assembly is not compatible with ConfuserEx runtime system.");
+				throw new NotImplementedException(
+					"Unknown common language runtime. Assembly is not compatible with ConfuserEx runtime system.");
 			}
 
 			private static bool IndicatesNetFramework35(ModuleRef module) {
@@ -101,12 +102,18 @@ namespace Confuser.Core.Services {
 				switch (module.FullName) {
 					case "System.Net, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a":
 					case "System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089":
-					case "System.Data.DataSetExtensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089":
+					case
+						"System.Data.DataSetExtensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+						:
 					case "System.AddIn, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089":
 					case "System.Xml.Linq, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089":
 					case "System.ServiceModel.Web, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35":
-					case "System.Windows.Presentation, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089":
-					case "System.Data.Services.Client, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089":
+					case
+						"System.Windows.Presentation, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+						:
+					case
+						"System.Data.Services.Client, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+						:
 						return true;
 					default:
 						return false;

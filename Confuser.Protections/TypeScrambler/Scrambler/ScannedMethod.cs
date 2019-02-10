@@ -4,13 +4,11 @@ using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
 	internal class ScannedMethod : ScannedItem {
-
 		public MethodDef TargetMethod { get; private set; }
 
 		ContextAnalyzerFactory analyzers;
 
 		public ScannedMethod(TypeService service, MethodDef target) {
-
 			TargetMethod = target;
 
 			GenericCount = (ushort)TargetMethod.GenericParameters.Count();
@@ -21,21 +19,22 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				new MethodSpecAnalyzer(),
 				new MethodDefAnalyzer(service)
 			};
-
 		}
 
 		public override void Scan() {
-
 			foreach (var v in TargetMethod.Body.Variables) {
 				RegisterGeneric(v.Type);
 			}
+
 			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void) {
 				RegisterGeneric(TargetMethod.ReturnType);
 			}
+
 			foreach (var param in TargetMethod.Parameters) {
 				if (param.Index == 0 && !TargetMethod.IsStatic) {
 					continue;
 				}
+
 				RegisterGeneric(param.Type);
 			}
 
@@ -49,7 +48,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 		}
 
 		public override void PrepairGenerics() {
-
 			foreach (var generic in Generics.Values) {
 				TargetMethod.GenericParameters.Add(generic);
 			}
@@ -62,6 +60,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				if (p.Index == 0 && !TargetMethod.IsStatic) {
 					continue;
 				}
+
 				p.Type = ConvertToGenericIfAvalible(p.Type);
 				p.Name = string.Empty;
 			}
@@ -69,7 +68,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void) {
 				TargetMethod.ReturnType = ConvertToGenericIfAvalible(TargetMethod.ReturnType);
 			}
-
 		}
 
 		public override MDToken GetToken() {

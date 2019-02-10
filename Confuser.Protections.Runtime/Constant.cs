@@ -34,6 +34,7 @@ namespace Confuser.Runtime {
 					o[d++] = (byte)(e >> 24);
 					k[j] ^= e;
 				}
+
 				s += 0x10;
 			}
 
@@ -66,8 +67,10 @@ namespace Confuser.Runtime {
 					Buffer.BlockCopy(b, (int)id, v, 0, s - 4);
 					ret = (T)(object)v;
 				}
+
 				return ret;
 			}
+
 			return default(T);
 		}
 	}
@@ -127,6 +130,7 @@ namespace Confuser.Runtime {
 				case 2:
 					return C;
 			}
+
 			return D;
 		}
 	}

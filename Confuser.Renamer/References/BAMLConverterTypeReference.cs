@@ -24,7 +24,8 @@ namespace Confuser.Renamer.References {
 
 		public bool UpdateNameReference(IConfuserContext context, INameService service) {
 			string name = sig.ReflectionName;
-			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
+			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace,
+				sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
 			if (!string.IsNullOrEmpty(prefix))
 				name = prefix + ":" + name;
 			if (propRec != null)

@@ -3,7 +3,6 @@ using System.Diagnostics;
 
 namespace Confuser.Helpers {
 	public static partial class InjectHelper {
-
 		private sealed class ChildContextRelease : IDisposable {
 			private readonly Action _releaseAction;
 			private bool _disposed = false;
@@ -19,6 +18,7 @@ namespace Confuser.Helpers {
 					if (disposing) {
 						_releaseAction.Invoke();
 					}
+
 					_disposed = true;
 				}
 			}

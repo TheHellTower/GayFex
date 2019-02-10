@@ -5,7 +5,8 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Helpers {
 	public sealed class LateMutationFieldUpdate {
-		private IList<(MethodDef Method, Instruction Instruction)> UpdateInstructions { get; } = new List<(MethodDef, Instruction)>();
+		private IList<(MethodDef Method, Instruction Instruction)> UpdateInstructions { get; } =
+			new List<(MethodDef, Instruction)>();
 
 		internal void AddUpdateInstruction(MethodDef method, Instruction instruction) =>
 			UpdateInstructions.Add((method, instruction));
@@ -23,7 +24,8 @@ namespace Confuser.Helpers {
 					else {
 						Debug.Fail("Instruction is not in method anymore?!");
 					}
-				} else {
+				}
+				else {
 					Debug.Fail("Method has no body anymore?!");
 				}
 			}

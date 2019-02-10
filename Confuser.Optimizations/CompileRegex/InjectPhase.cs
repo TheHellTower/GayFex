@@ -25,7 +25,8 @@ namespace Confuser.Optimizations.CompileRegex {
 
 		bool IProtectionPhase.ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
@@ -42,7 +43,8 @@ namespace Confuser.Optimizations.CompileRegex {
 				if (moduleRegexMethods == null) continue;
 
 				// .ToArray is required because the instructions are modified.
-				foreach (var result in MethodAnalyzer.GetRegexCalls(method, moduleRegexMethods, traceService).ToArray()) {
+				foreach (var result in MethodAnalyzer.GetRegexCalls(method, moduleRegexMethods, traceService)
+					.ToArray()) {
 					var compileResult = regexService1.GetCompiledRegex(method.Module, result.compileDef);
 					if (compileResult == null) continue;
 
@@ -73,12 +75,14 @@ namespace Confuser.Optimizations.CompileRegex {
 					}
 
 					Debug.Assert(newMethod != null, $"{nameof(newMethod)} != null");
-					Debug.Assert(method.Body.Instructions.Contains(result.mainInstruction), "Method does not contain main instruction?");
+					Debug.Assert(method.Body.Instructions.Contains(result.mainInstruction),
+						"Method does not contain main instruction?");
 
 					result.mainInstruction.OpCode = OpCodes.Call;
 					result.mainInstruction.Operand = newMethod;
 					logger.LogMsgInjectSuccessful(compileResult, method);
 				}
+
 				token.ThrowIfCancellationRequested();
 			}
 		}

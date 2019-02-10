@@ -9,9 +9,11 @@ namespace Confuser.Core {
 
 		IImmutableList<IDnlibDef> IProtectionParameters.Targets => ImmutableArray.Create<IDnlibDef>();
 
-		private EmptyProtectionParameters() { }
+		private EmptyProtectionParameters() {
+		}
 
-		T IProtectionParameters.GetParameter<T>(IConfuserContext context, IDnlibDef target, IProtectionParameter<T> parameter) {
+		T IProtectionParameters.GetParameter<T>(IConfuserContext context, IDnlibDef target,
+			IProtectionParameter<T> parameter) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (target == null) throw new ArgumentNullException(nameof(target));
 			if (parameter == null) throw new ArgumentNullException(nameof(parameter));

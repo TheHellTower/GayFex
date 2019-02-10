@@ -36,7 +36,9 @@ namespace Confuser.Protections.Constants {
 		internal TypeDef CfgCtxType;
 		internal MethodDef CfgCtxCtor;
 		internal MethodDef CfgCtxNext;
-		internal Dictionary<MethodDef, List<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)>> ReferenceRepl;
+
+		internal Dictionary<MethodDef, List<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)>>
+			ReferenceRepl;
 
 		internal readonly LateMutationFieldUpdate EncodingBufferSizeUpdate = new LateMutationFieldUpdate();
 		internal readonly LateMutationFieldUpdate KeySeedUpdate = new LateMutationFieldUpdate();

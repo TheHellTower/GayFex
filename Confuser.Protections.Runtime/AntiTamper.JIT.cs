@@ -28,9 +28,11 @@ namespace Confuser.Runtime {
 			var obj = GetFieldValue(hnd, "m_ptr");
 			if (obj is IntPtr) {
 				moduleHnd = (IntPtr)obj;
-			} else if (obj.GetType().ToString() == "System.Reflection.RuntimeModule") {
+			}
+			else if (obj.GetType().ToString() == "System.Reflection.RuntimeModule") {
 				moduleHnd = (IntPtr)GetFieldValue(obj, "m_pData");
-			} else {
+			}
+			else {
 				throw new ApplicationException($"Failed to get pointer for module handle: {hnd.ToString()}");
 			}
 
@@ -38,7 +40,8 @@ namespace Confuser.Runtime {
 		}
 
 		static object GetFieldValue(object obj, string fieldName) {
-			var field = obj.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			var field = obj.GetType().GetField(fieldName,
+				BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 			if (field == null)
 				throw new ApplicationException($"Could not get field {obj.GetType()}::{fieldName}");
 			return field.GetValue(obj);
@@ -54,9 +57,11 @@ namespace Confuser.Runtime {
 				ptr[0] = 0x74696a726f63736d; //mscorjit
 				ptr[1] = 0x000000006c6c642e; //.dll....
 			}
+
 			IntPtr jit = NativeMethods.LoadLibrary(new string((sbyte*)ptr));
 			ptr[0] = 0x000074694a746567; //getJit
-			var get = (getJit)Marshal.GetDelegateForFunctionPointer(NativeMethods.GetProcAddress(jit, new string((sbyte*)ptr)), typeof(getJit));
+			var get = (getJit)Marshal.GetDelegateForFunctionPointer(
+				NativeMethods.GetProcAddress(jit, new string((sbyte*)ptr)), typeof(getJit));
 			IntPtr hookPosition = *get();
 			IntPtr original = *(IntPtr*)hookPosition;
 
@@ -141,17 +146,23 @@ namespace Confuser.Runtime {
 			}
 		}
 
-		static uint HookHandler(IntPtr self, ICorJitInfo* comp, CORINFO_METHOD_INFO* info, uint flags, byte** nativeEntry, uint* nativeSizeOfCode) {
+		static uint HookHandler(IntPtr self, ICorJitInfo* comp, CORINFO_METHOD_INFO* info, uint flags,
+			byte** nativeEntry, uint* nativeSizeOfCode) {
 			if (info != null && info->scope == moduleHnd && info->ILCode[0] == 0x14) {
 				uint token;
 				if (ver5) {
-					var getMethodDef = (getMethodDefFromMethod)Marshal.GetDelegateForFunctionPointer(comp->vfptr[0x64], typeof(getMethodDefFromMethod));
+					var getMethodDef =
+						(getMethodDefFromMethod)Marshal.GetDelegateForFunctionPointer(comp->vfptr[0x64],
+							typeof(getMethodDefFromMethod));
 					token = getMethodDef((IntPtr)comp, info->ftn);
 				}
 				else {
-					ICorClassInfo* clsInfo = ICorStaticInfo.ICorClassInfo(ICorDynamicInfo.ICorStaticInfo(ICorJitInfo.ICorDynamicInfo(comp)));
+					ICorClassInfo* clsInfo =
+						ICorStaticInfo.ICorClassInfo(ICorDynamicInfo.ICorStaticInfo(ICorJitInfo.ICorDynamicInfo(comp)));
 					int gmdSlot = 12 + (ver4 ? 2 : 1);
-					var getMethodDef = (getMethodDefFromMethod)Marshal.GetDelegateForFunctionPointer(clsInfo->vfptr[gmdSlot], typeof(getMethodDefFromMethod));
+					var getMethodDef =
+						(getMethodDefFromMethod)Marshal.GetDelegateForFunctionPointer(clsInfo->vfptr[gmdSlot],
+							typeof(getMethodDefFromMethod));
 					token = getMethodDef((IntPtr)clsInfo, info->ftn);
 				}
 
@@ -164,11 +175,13 @@ namespace Confuser.Runtime {
 						offset = *(ptr + (mid << 1) + 1);
 						break;
 					}
+
 					if (midTok < token)
 						lo = mid + 1;
 					else
 						hi = mid - 1;
 				}
+
 				if (offset == null)
 					return originalDelegate(self, comp, info, flags, nativeEntry, nativeSizeOfCode);
 
@@ -229,6 +242,7 @@ namespace Confuser.Runtime {
 					Marshal.FreeHGlobal((IntPtr)newPtr);
 				}
 			}
+
 			return originalDelegate(self, comp, info, flags, nativeEntry, nativeSizeOfCode);
 		}
 
@@ -237,7 +251,8 @@ namespace Confuser.Runtime {
 		static bool hasLinkInfo;
 
 		[StructLayout(LayoutKind.Sequential, Size = 0x18)]
-		struct CORINFO_EH_CLAUSE { }
+		struct CORINFO_EH_CLAUSE {
+		}
 
 		[StructLayout(LayoutKind.Sequential, Pack = 1)]
 		struct CORINFO_METHOD_INFO {
@@ -281,10 +296,12 @@ namespace Confuser.Runtime {
 		}
 
 		[StructLayout(LayoutKind.Sequential, Size = 32)]
-		struct CORINFO_SIG_INST_x64 { }
+		struct CORINFO_SIG_INST_x64 {
+		}
 
 		[StructLayout(LayoutKind.Sequential, Size = 16)]
-		struct CORINFO_SIG_INST_x86 { }
+		struct CORINFO_SIG_INST_x86 {
+		}
 
 		[StructLayout(LayoutKind.Sequential)]
 		struct ICorClassInfo {
@@ -368,7 +385,8 @@ namespace Confuser.Runtime {
 			}
 
 			public static CorMethodInfoHook Hook(ICorJitInfo* comp, IntPtr ftn, CORINFO_EH_CLAUSE* clauses) {
-				ICorMethodInfo* mtdInfo = ICorStaticInfo.ICorMethodInfo(ICorDynamicInfo.ICorStaticInfo(ICorJitInfo.ICorDynamicInfo(comp)));
+				ICorMethodInfo* mtdInfo =
+					ICorStaticInfo.ICorMethodInfo(ICorDynamicInfo.ICorStaticInfo(ICorJitInfo.ICorDynamicInfo(comp)));
 				IntPtr* vfTbl = mtdInfo->vfptr;
 				const int SLOT_NUM = 0x1B;
 				var newVfTbl = (IntPtr*)Marshal.AllocHGlobal(SLOT_NUM * IntPtr.Size);
@@ -378,12 +396,13 @@ namespace Confuser.Runtime {
 					for (int i = 0; i < SLOT_NUM; i++) {
 						bool isEh = true;
 						for (var func = (byte*)vfTbl[i]; *func != 0xe9; func++)
-							if (IntPtr.Size == 8 ?
-								  (*func == 0x48 && *(func + 1) == 0x81 && *(func + 2) == 0xe9) :
-								  (*func == 0x83 && *(func + 1) == 0xe9)) {
+							if (IntPtr.Size == 8
+								? (*func == 0x48 && *(func + 1) == 0x81 && *(func + 2) == 0xe9)
+								: (*func == 0x83 && *(func + 1) == 0xe9)) {
 								isEh = false;
 								break;
 							}
+
 						if (isEh) {
 							ehNum = i;
 							break;
@@ -468,7 +487,8 @@ namespace Confuser.Runtime {
 		}
 
 		[UnmanagedFunctionPointer(CallingConvention.StdCall)]
-		delegate uint compileMethod(IntPtr self, ICorJitInfo* comp, CORINFO_METHOD_INFO* info, uint flags, byte** nativeEntry, uint* nativeSizeOfCode);
+		delegate uint compileMethod(IntPtr self, ICorJitInfo* comp, CORINFO_METHOD_INFO* info, uint flags,
+			byte** nativeEntry, uint* nativeSizeOfCode);
 
 		[UnmanagedFunctionPointer(CallingConvention.ThisCall)]
 		delegate void getEHinfo(IntPtr self, IntPtr ftn, uint EHnumber, CORINFO_EH_CLAUSE* clause);

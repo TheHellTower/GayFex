@@ -26,7 +26,8 @@ namespace Confuser.Optimizations.CompileRegex {
 
 		bool IProtectionPhase.ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 
@@ -84,7 +85,8 @@ namespace Confuser.Optimizations.CompileRegex {
 			}
 		}
 
-		private void MarkType(TypeDef typeDef, IConfuserContext context, IMarkerService markerService, INameService nameService) {
+		private void MarkType(TypeDef typeDef, IConfuserContext context, IMarkerService markerService,
+			INameService nameService) {
 			Debug.Assert(typeDef != null, $"{nameof(typeDef)} != null");
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(markerService != null, $"{nameof(markerService)} != null");
@@ -97,7 +99,8 @@ namespace Confuser.Optimizations.CompileRegex {
 				MarkDef(methodDef, context, markerService, nameService);
 		}
 
-		private void MarkDef(IDnlibDef def, IConfuserContext context, IMarkerService markerService, INameService nameService) {
+		private void MarkDef(IDnlibDef def, IConfuserContext context, IMarkerService markerService,
+			INameService nameService) {
 			Debug.Assert(def != null, $"{nameof(def)} != null");
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(markerService != null, $"{nameof(markerService)} != null");

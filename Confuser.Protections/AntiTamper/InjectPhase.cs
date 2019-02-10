@@ -18,22 +18,24 @@ namespace Confuser.Protections.AntiTamper {
 
 		public bool ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (!parameters.Targets.Any())
 				return;
 
 			AntiTamperMode mode = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.Mode);
 			IModeHandler modeHandler;
 			switch (mode) {
-			case AntiTamperMode.Normal:
-				modeHandler = new NormalMode();
-				break;
-			case AntiTamperMode.JIT:
-				modeHandler = new JITMode();
-				break;
-			default:
-				throw new UnreachableException();
+				case AntiTamperMode.Normal:
+					modeHandler = new NormalMode();
+					break;
+				case AntiTamperMode.JIT:
+					modeHandler = new JITMode();
+					break;
+				default:
+					throw new UnreachableException();
 			}
+
 			modeHandler.HandleInject(Parent, context, parameters);
 			context.Annotations.Set(context.CurrentModule, AntiTamperProtection.HandlerKey, modeHandler);
 		}

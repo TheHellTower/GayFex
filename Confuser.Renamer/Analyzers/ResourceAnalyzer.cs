@@ -11,20 +11,22 @@ namespace Confuser.Renamer.Analyzers {
 	internal class ResourceAnalyzer : IRenamer {
 		static readonly Regex ResourceNamePattern = new Regex("^(.*)\\.resources$");
 
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			if (!(def is ModuleDef module)) return;
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
 			string asmName = module.Assembly.Name.String;
 			if (!string.IsNullOrEmpty(module.Assembly.Culture) &&
-				asmName.EndsWith(".resources")) {
+			    asmName.EndsWith(".resources")) {
 				// Satellite assembly
 				var satellitePattern = new Regex(string.Format("^(.*)\\.{0}\\.resources$", module.Assembly.Culture));
 				string nameAsmName = asmName.Substring(0, asmName.Length - ".resources".Length);
 				ModuleDef mainModule = context.Modules.SingleOrDefault(mod => mod.Assembly.Name == nameAsmName);
 				if (mainModule == null) {
-					logger.LogCritical("Could not find main assembly of satellite assembly '{0}'.", module.Assembly.FullName);
+					logger.LogCritical("Could not find main assembly of satellite assembly '{0}'.",
+						module.Assembly.FullName);
 					throw new ConfuserException();
 				}
 
@@ -39,6 +41,7 @@ namespace Confuser.Renamer.Analyzers {
 						logger.LogWarning("Could not find resource type '{0}'.", typeName);
 						continue;
 					}
+
 					service.ReduceRenameMode(context, type, RenameMode.ASCII);
 					service.AddReference(context, type, new ResourceReference(res, type, format));
 				}
@@ -66,17 +69,20 @@ namespace Confuser.Renamer.Analyzers {
 						logger.LogWarning("Could not find resource type '{0}'.", typeName);
 						continue;
 					}
+
 					service.ReduceRenameMode(context, type, RenameMode.ASCII);
 					service.AddReference(context, type, new ResourceReference(res, type, format));
 				}
 			}
 		}
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 
-		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
+			IDnlibDef def) {
 			//
 		}
 	}

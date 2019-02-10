@@ -4,10 +4,9 @@ using System.Runtime.Serialization;
 
 namespace Confuser.Core.Parameter {
 	internal sealed class IntegerProtectionParameter : IProtectionParameter<int> {
-
 		public int DefaultValue { get; }
 
-		public string Name {get;}
+		public string Name { get; }
 
 		internal IntegerProtectionParameter(string name, int defaultValue) {
 			Debug.Assert(!string.IsNullOrWhiteSpace(name));

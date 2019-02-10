@@ -54,7 +54,9 @@ namespace Confuser.Protections.Constants {
 				repl.Add(Instruction.Create(OpCodes.Ldc_I4, (int)k2));
 				repl.Add(Instruction.Create(OpCodes.Xor));
 				return repl.ToArray();
-			};
+			}
+
+			;
 			return (processor, Tuple.Create(k1, k2));
 		}
 

@@ -21,23 +21,28 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal bool CacheRegexRunnerFieldsInLocalVariables { get; set; } = true;
 
-		internal RegexRunnerMethodCompiler(ModuleDef module, MethodDef method, RegexRunnerDef regexRunnerDef) : base(module, method) {
+		internal RegexRunnerMethodCompiler(ModuleDef module, MethodDef method, RegexRunnerDef regexRunnerDef) : base(
+			module, method) {
 			_regexRunnerDef = regexRunnerDef ?? throw new ArgumentNullException(nameof(regexRunnerDef));
 			_cachedFields = new Dictionary<FieldDef, Local>();
 
 			var typeRefFinder = new TypeRefFinder(module);
 
 			_cultureInfoTypeDef = typeRefFinder.FindType("System.Globalization.CultureInfo").ResolveTypeDefThrow();
-			_cultureGetInvariantCultureMethodDef = _cultureInfoTypeDef.FindMethod("get_InvariantCulture", MethodSig.CreateStatic(_cultureInfoTypeDef.ToTypeSig()));
+			_cultureGetInvariantCultureMethodDef = _cultureInfoTypeDef.FindMethod("get_InvariantCulture",
+				MethodSig.CreateStatic(_cultureInfoTypeDef.ToTypeSig()));
 
 			var charTypeSig = module.CorLibTypes.Char;
 			var stringTypeDef = module.CorLibTypes.String.ToTypeDefOrRef().ResolveTypeDefThrow();
-			_stringGetCharsMethodDef = stringTypeDef.FindMethod("get_Chars", MethodSig.CreateInstance(charTypeSig, module.CorLibTypes.Int32));
+			_stringGetCharsMethodDef = stringTypeDef.FindMethod("get_Chars",
+				MethodSig.CreateInstance(charTypeSig, module.CorLibTypes.Int32));
 
 			var charTypeDef = charTypeSig.ToTypeDefOrRef().ResolveTypeDefThrow();
 			_charToLowerMethodDef = charTypeDef.FindMethod("ToLower", MethodSig.CreateStatic(charTypeSig, charTypeSig));
-			_charToLowerCultureInfoMethodDef = charTypeDef.FindMethod("ToLower", MethodSig.CreateStatic(charTypeSig, charTypeSig, _cultureInfoTypeDef.ToTypeSig()));
-			_charToLowerInvariantMethodDef = charTypeDef.FindMethod("ToLowerInvariant", MethodSig.CreateStatic(charTypeSig, charTypeSig));
+			_charToLowerCultureInfoMethodDef = charTypeDef.FindMethod("ToLower",
+				MethodSig.CreateStatic(charTypeSig, charTypeSig, _cultureInfoTypeDef.ToTypeSig()));
+			_charToLowerInvariantMethodDef =
+				charTypeDef.FindMethod("ToLowerInvariant", MethodSig.CreateStatic(charTypeSig, charTypeSig));
 		}
 
 		internal override void FinishMethod() {
@@ -52,7 +57,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal void UpdateCachedField(FieldDef field) {
 			Debug.Assert(field != null, $"{nameof(field)} != null");
-			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef, @"The fields used are expected to be part of the RegexRunner class.");
+			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef,
+				@"The fields used are expected to be part of the RegexRunner class.");
 
 			if (_cachedFields.TryGetValue(field, out var local)) {
 				MvLocalToField(local, field);
@@ -61,7 +67,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal void UpdateFieldCache(FieldDef field) {
 			Debug.Assert(field != null, $"{nameof(field)} != null");
-			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef, @"The fields used are expected to be part of the RegexRunner class.");
+			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef,
+				@"The fields used are expected to be part of the RegexRunner class.");
 
 			if (_cachedFields.TryGetValue(field, out var local)) {
 				MvFieldToLocal(field, local);
@@ -70,12 +77,14 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal void LdRunnerField(FieldDef field) {
 			Debug.Assert(field != null, $"{nameof(field)} != null");
-			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef, @"The fields used are expected to be part of the RegexRunner class.");
+			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef,
+				@"The fields used are expected to be part of the RegexRunner class.");
 
 			if (CacheRegexRunnerFieldsInLocalVariables) {
 				if (!_cachedFields.TryGetValue(field, out var local)) {
 					_cachedFields[field] = local = RequireLocal(field.FieldType, false);
 				}
+
 				Ldloc(local);
 			}
 			else {
@@ -87,12 +96,14 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal void StRunnerField(FieldDef field, Action loadValue) {
 			Debug.Assert(field != null, $"{nameof(field)} != null");
-			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef, @"The fields used are expected to be part of the RegexRunner class.");
+			Debug.Assert(field.DeclaringType == _regexRunnerDef.RegexRunnerTypeDef,
+				@"The fields used are expected to be part of the RegexRunner class.");
 
 			if (CacheRegexRunnerFieldsInLocalVariables) {
 				if (!_cachedFields.TryGetValue(field, out var local)) {
 					_cachedFields[field] = local = RequireLocal(field.FieldType, false);
 				}
+
 				loadValue();
 				Stloc(local);
 			}
@@ -120,6 +131,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				Dup();
 				StRunnerField(_regexRunnerDef.runtextposFieldDef);
 			}
+
 			CallStringGetChars();
 		}
 
@@ -142,6 +154,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				Add();
 				StRunnerField(_regexRunnerDef.runtextposFieldDef);
 			}
+
 			CallStringGetChars();
 		}
 
@@ -156,6 +169,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				Ldc(-offset);
 				Sub();
 			}
+
 			CallStringGetChars();
 		}
 

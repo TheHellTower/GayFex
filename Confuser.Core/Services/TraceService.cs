@@ -100,7 +100,8 @@ namespace Confuser.Core.Services {
 
 			foreach (var eh in body.ExceptionHandlers) {
 				beforeDepths[offset2index[eh.TryStart.Offset]] = 0;
-				beforeDepths[offset2index[eh.HandlerStart.Offset]] = (eh.HandlerType != ExceptionHandlerType.Finally ? 1 : 0);
+				beforeDepths[offset2index[eh.HandlerStart.Offset]] =
+					(eh.HandlerType != ExceptionHandlerType.Finally ? 1 : 0);
 				if (eh.FilterStart != null)
 					beforeDepths[offset2index[eh.FilterStart.Offset]] = 1;
 			}
@@ -146,6 +147,7 @@ namespace Confuser.Core.Services {
 								beforeDepths[targetIndex] = currentStack;
 							fromInstrs.AddListEntry(offset2index[((Instruction)instr.Operand).Offset], instr);
 						}
+
 						break;
 					case FlowControl.Meta:
 						break;
@@ -182,7 +184,8 @@ namespace Confuser.Core.Services {
 		/// <exception cref="System.ArgumentException">The specified call instruction is invalid.</exception>
 		/// <exception cref="InvalidMethodException">The method body is invalid.</exception>
 		public int[] TraceArguments(Instruction instr) {
-			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
+			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt &&
+			    instr.OpCode.Code != Code.Newobj)
 				throw new ArgumentException("Invalid call instruction.", "instr");
 
 			int push, pop;
@@ -212,8 +215,10 @@ namespace Confuser.Core.Services {
 								working.Enqueue(offset2index[fromInstr.Offset]);
 							}
 						}
+
 					index--;
 				}
+
 				if (index < 0)
 					return null;
 

@@ -61,6 +61,7 @@ namespace Confuser.Renamer.Services {
 
 				return context.Annotations.Get(def, CanRenameKey, true);
 			}
+
 			return false;
 		}
 
@@ -106,6 +107,7 @@ namespace Confuser.Renamer.Services {
 				GetVTables().GetVTable((TypeDef)def);
 				SetOriginalNamespace(context, def, ((TypeDef)def).Namespace);
 			}
+
 			analyze.Analyze(this, context, EmptyProtectionParameters.Instance, def, true);
 		}
 
@@ -155,6 +157,7 @@ namespace Confuser.Renamer.Services {
 					return name.Substring(0, index);
 				}
 			}
+
 			count = null;
 			return name;
 		}
@@ -171,6 +174,7 @@ namespace Confuser.Renamer.Services {
 
 			return ObfuscateName(name, mode);
 		}
+
 		public string ObfuscateName(string name, RenameMode mode) {
 			return ObfuscateName(null, name, mode);
 		}
@@ -241,7 +245,8 @@ namespace Confuser.Renamer.Services {
 			return Renamers.OfType<T>().Single();
 		}
 
-		public void MarkHelper(IConfuserContext context, IDnlibDef def, IMarkerService marker, IConfuserComponent parentComp) {
+		public void MarkHelper(IConfuserContext context, IDnlibDef def, IMarkerService marker,
+			IConfuserComponent parentComp) {
 			if (marker.IsMarked(context, def))
 				return;
 			// TODO: Private definitions are not properly handled there. They get a wider visibility.
@@ -261,6 +266,7 @@ namespace Confuser.Renamer.Services {
 				if (!type.IsSpecialName && !type.IsRuntimeSpecialName)
 					type.Name = RandomName();
 			}
+
 			SetCanRename(context, def, false);
 			Analyze(context, def);
 			marker.Mark(context, def, parentComp);
@@ -269,18 +275,18 @@ namespace Confuser.Renamer.Services {
 		#region Charsets
 
 		static readonly char[] asciiCharset = Enumerable.Range(32, 95)
-														.Select(ord => (char)ord)
-														.Except(new[] { '.' })
-														.ToArray();
+			.Select(ord => (char)ord)
+			.Except(new[] {'.'})
+			.ToArray();
 
 		static readonly char[] letterCharset = Enumerable.Range(0, 26)
-														 .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
-														 .ToArray();
+			.SelectMany(ord => new[] {(char)('a' + ord), (char)('A' + ord)})
+			.ToArray();
 
 		static readonly char[] alphaNumCharset = Enumerable.Range(0, 26)
-														   .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
-														   .Concat(Enumerable.Range(0, 10).Select(ord => (char)('0' + ord)))
-														   .ToArray();
+			.SelectMany(ord => new[] {(char)('a' + ord), (char)('A' + ord)})
+			.Concat(Enumerable.Range(0, 10).Select(ord => (char)('0' + ord)))
+			.ToArray();
 
 		// Especially chosen, just to mess with people.
 		// Inspired by: http://xkcd.com/1137/ :D
@@ -288,7 +294,7 @@ namespace Confuser.Renamer.Services {
 			.Concat(Enumerable.Range(0x200b, 5).Select(ord => (char)ord))
 			.Concat(Enumerable.Range(0x2029, 6).Select(ord => (char)ord))
 			.Concat(Enumerable.Range(0x206a, 6).Select(ord => (char)ord))
-			.Except(new[] { '\u2029' })
+			.Except(new[] {'\u2029'})
 			.ToArray();
 
 		#endregion

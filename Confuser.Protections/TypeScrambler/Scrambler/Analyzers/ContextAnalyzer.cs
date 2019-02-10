@@ -11,9 +11,9 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
 	internal abstract class ContextAnalyzer<T> : ContextAnalyzer {
 		public override Type TargetType() => typeof(T);
 		public abstract void Process(ScannedMethod m, T o);
+
 		public override void ProcessOperand(ScannedMethod m, object o) {
 			Process(m, (T)o);
 		}
-
 	}
 }

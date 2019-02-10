@@ -29,7 +29,8 @@ namespace Confuser.Renamer.Services {
 		///   <see cref="SetCanRename(INameService, IConfuserContext, IDnlibDef, bool)"/>
 		///   or in case <paramref name="memberForwarded"/> is <see langword="null"/>.
 		/// </returns>
-		public static bool CanRename(this INameService service, IConfuserContext context, IMemberForwarded memberForwarded) {
+		public static bool CanRename(this INameService service, IConfuserContext context,
+			IMemberForwarded memberForwarded) {
 			if (service == null) throw new ArgumentNullException(nameof(service));
 			if (context == null) throw new ArgumentNullException(nameof(context));
 
@@ -55,7 +56,8 @@ namespace Confuser.Renamer.Services {
 		/// <exception cref="NotSupportedException">
 		///   <paramref name="memberForwarded"/> is neither a <see cref="MethodDef"/> nor a <see cref="FieldDef"/>
 		/// </exception>
-		public static void SetCanRename(this INameService service, IConfuserContext context, IMemberForwarded memberForwarded, bool val) {
+		public static void SetCanRename(this INameService service, IConfuserContext context,
+			IMemberForwarded memberForwarded, bool val) {
 			if (service == null) throw new ArgumentNullException(nameof(service));
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (memberForwarded == null) throw new ArgumentNullException(nameof(memberForwarded));
@@ -72,7 +74,8 @@ namespace Confuser.Renamer.Services {
 			var fieldDef = (memberForwarded as FieldDef);
 			if (fieldDef != null) return fieldDef;
 
-			throw new NotSupportedException("Unknown implementation of IMemberForwarded: " + memberForwarded.GetType().FullName);
+			throw new NotSupportedException("Unknown implementation of IMemberForwarded: " +
+			                                memberForwarded.GetType().FullName);
 		}
 	}
 }

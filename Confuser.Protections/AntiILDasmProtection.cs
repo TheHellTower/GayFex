@@ -13,7 +13,8 @@ namespace Confuser.Protections {
 
 		public string Name => "Anti IL Dasm Protection";
 
-		public string Description => "This protection marks the module with a attribute that discourage ILDasm from disassembling it.";
+		public string Description =>
+			"This protection marks the module with a attribute that discourage ILDasm from disassembling it.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Minimum;
 
@@ -23,7 +24,7 @@ namespace Confuser.Protections {
 			//
 		}
 
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new AntiILDasmProtectionPhase(this));
 	}
 }

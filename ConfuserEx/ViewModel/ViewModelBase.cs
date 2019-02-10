@@ -19,6 +19,7 @@ namespace ConfuserEx.ViewModel {
 				OnPropertyChanged(property);
 				return true;
 			}
+
 			return false;
 		}
 
@@ -28,6 +29,7 @@ namespace ConfuserEx.ViewModel {
 				OnPropertyChanged(property);
 				return true;
 			}
+
 			return false;
 		}
 	}

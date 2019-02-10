@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Confuser.Core {
-
 	/// <summary>
 	///     Base class of Confuser packers.
 	/// </summary>

@@ -27,7 +27,7 @@ namespace Confuser.Protections.Compress {
 			Debug.Assert(a.Length == 0x10, $"{nameof(a)}.Length == 0x10");
 			Debug.Assert(b.Length == 0x10, $"{nameof(b)}.Length == 0x10");
 			Debug.Assert(key.Length == 0x10, $"{nameof(key)}.Length == 0x10");
-			
+
 			var state = seed;
 			for (int i = 0; i < 0x10; i++) {
 				switch (state % 3) {
@@ -41,6 +41,7 @@ namespace Confuser.Protections.Compress {
 						key[i] = a[i] + b[i];
 						break;
 				}
+
 				state = (state * state) % 0x2E082D35;
 				switch (state % 3) {
 					case 0:
@@ -53,6 +54,7 @@ namespace Confuser.Protections.Compress {
 						key[i] *= k3;
 						break;
 				}
+
 				state = (state * state) % 0x2E082D35;
 			}
 		}
@@ -80,6 +82,7 @@ namespace Confuser.Protections.Compress {
 						result.Add(Instruction.Create(OpCodes.Add));
 						break;
 				}
+
 				state = (state * state) % 0x2E082D35;
 				switch (state % 3) {
 					case 0:
@@ -95,9 +98,11 @@ namespace Confuser.Protections.Compress {
 						result.Add(Instruction.Create(OpCodes.Mul));
 						break;
 				}
+
 				state = (state * state) % 0x2E082D35;
 				result.Add(Instruction.Create(OpCodes.Stelem_I4));
 			}
+
 			return result;
 		};
 	}

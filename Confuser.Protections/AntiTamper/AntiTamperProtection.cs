@@ -26,7 +26,7 @@ namespace Confuser.Protections {
 
 		internal AntiTamperProtectionParameters Parameters { get; } = new AntiTamperProtectionParameters();
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+		void IConfuserComponent.Initialize(IServiceCollection collection) =>
 			collection.AddTransient(typeof(IAntiTamperService), (p) => new AntiTamperService(this));
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {

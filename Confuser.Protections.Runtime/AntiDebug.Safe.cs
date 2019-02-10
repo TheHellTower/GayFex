@@ -7,9 +7,9 @@ namespace Confuser.Runtime {
 		public static void Initialize() {
 			string x = "COR";
 			var env = typeof(Environment);
-			var method = env.GetMethod("GetEnvironmentVariable", new[] { typeof(string) });
+			var method = env.GetMethod("GetEnvironmentVariable", new[] {typeof(string)});
 			if (method != null &&
-			    "1".Equals(method.Invoke(null, new object[] { x + "_ENABLE_PROFILING" })))
+			    "1".Equals(method.Invoke(null, new object[] {x + "_ENABLE_PROFILING"})))
 				Environment.FailFast(null);
 
 			var thread = new Thread(Worker);
@@ -25,6 +25,7 @@ namespace Confuser.Runtime {
 				th.Start(Thread.CurrentThread);
 				Thread.Sleep(500);
 			}
+
 			while (true) {
 				if (Debugger.IsAttached || Debugger.IsLogging())
 					Environment.FailFast(null);

@@ -36,7 +36,8 @@ namespace Confuser.Core {
 
 			var edges = new List<DependencyGraphEdge>();
 			var roots = new HashSet<IProtection>(protections.Select(lazy => lazy.Value));
-			var id2prot = protections.ToDictionary(lazy => lazy.Metadata.Id, lazy => lazy.Value, StringComparer.Ordinal);
+			var id2prot =
+				protections.ToDictionary(lazy => lazy.Metadata.Id, lazy => lazy.Value, StringComparer.Ordinal);
 
 			foreach (var prot in protections) {
 				Type protType = prot.GetType();
@@ -91,6 +92,7 @@ namespace Confuser.Core {
 						queue.Enqueue(edge.To); // Add new root node
 				}
 			}
+
 			if (edges.Count != 0)
 				throw new CircularDependencyException(edges[0].From, edges[0].To);
 		}

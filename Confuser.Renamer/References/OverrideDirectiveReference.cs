@@ -13,10 +13,12 @@ namespace Confuser.Renamer.References {
 			this.baseSlot = baseSlot;
 		}
 
-		void AddImportReference(IConfuserContext context, INameService service, ModuleDef module, MethodDef method, MemberRef methodRef) {
+		void AddImportReference(IConfuserContext context, INameService service, ModuleDef module, MethodDef method,
+			MemberRef methodRef) {
 			if (method.Module != module && context.Modules.Contains((ModuleDefMD)method.Module)) {
 				var declType = (TypeRef)methodRef.DeclaringType.ScopeType;
-				service.AddReference(context, method.DeclaringType, new TypeRefReference(declType, method.DeclaringType));
+				service.AddReference(context, method.DeclaringType,
+					new TypeRefReference(declType, method.DeclaringType));
 				service.AddReference(context, method, new MemberRefReference(methodRef, method));
 
 				var typeRefs = methodRef.MethodSig.Params.SelectMany(param => param.FindTypeRefs()).ToList();
@@ -34,18 +36,23 @@ namespace Confuser.Renamer.References {
 
 			IMethod target;
 			if (baseSlot.MethodDefDeclType is GenericInstSig declType) {
-				MemberRef targetRef = new MemberRefUser(method.Module, baseSlot.MethodDef.Name, baseSlot.MethodDef.MethodSig, declType.ToTypeDefOrRef());
+				MemberRef targetRef = new MemberRefUser(method.Module, baseSlot.MethodDef.Name,
+					baseSlot.MethodDef.MethodSig, declType.ToTypeDefOrRef());
 				targetRef = new Importer(method.Module, ImporterOptions.TryToUseTypeDefs).Import(targetRef);
-				service.AddReference(context, baseSlot.MethodDef, new MemberRefReference(targetRef, baseSlot.MethodDef));
+				service.AddReference(context, baseSlot.MethodDef,
+					new MemberRefReference(targetRef, baseSlot.MethodDef));
 
 				target = targetRef;
 			}
 			else {
 				target = baseSlot.MethodDef;
 				if (target.Module != method.Module) {
-					target = (IMethod)new Importer(method.Module, ImporterOptions.TryToUseTypeDefs).Import(baseSlot.MethodDef);
+					target =
+						(IMethod)new Importer(method.Module, ImporterOptions.TryToUseTypeDefs).Import(
+							baseSlot.MethodDef);
 					if (target is MemberRef)
-						service.AddReference(context, baseSlot.MethodDef, new MemberRefReference((MemberRef)target, baseSlot.MethodDef));
+						service.AddReference(context, baseSlot.MethodDef,
+							new MemberRefReference((MemberRef)target, baseSlot.MethodDef));
 				}
 			}
 
@@ -54,8 +61,9 @@ namespace Confuser.Renamer.References {
 				AddImportReference(context, service, method.Module, baseSlot.MethodDef, (MemberRef)target);
 
 			if (method.Overrides.Any(impl =>
-			                         new SigComparer().Equals(impl.MethodDeclaration.MethodSig, target.MethodSig) &&
-			                         new SigComparer().Equals(impl.MethodDeclaration.DeclaringType.ResolveTypeDef(), target.DeclaringType.ResolveTypeDef())))
+				new SigComparer().Equals(impl.MethodDeclaration.MethodSig, target.MethodSig) &&
+				new SigComparer().Equals(impl.MethodDeclaration.DeclaringType.ResolveTypeDef(),
+					target.DeclaringType.ResolveTypeDef())))
 				return true;
 
 			method.Overrides.Add(new MethodOverride(method, (IMethodDefOrRef)target));

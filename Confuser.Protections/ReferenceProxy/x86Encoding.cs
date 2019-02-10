@@ -16,8 +16,12 @@ using MethodBody = dnlib.DotNet.Writer.MethodBody;
 
 namespace Confuser.Protections.ReferenceProxy {
 	internal class x86Encoding : IRPEncoding {
-		readonly Dictionary<MethodDef, Tuple<MethodDef, Func<int, int>>> keys = new Dictionary<MethodDef, Tuple<MethodDef, Func<int, int>>>();
-		readonly List<Tuple<MethodDef, byte[], MethodBody>> nativeCodes = new List<Tuple<MethodDef, byte[], MethodBody>>();
+		readonly Dictionary<MethodDef, Tuple<MethodDef, Func<int, int>>> keys =
+			new Dictionary<MethodDef, Tuple<MethodDef, Func<int, int>>>();
+
+		readonly List<Tuple<MethodDef, byte[], MethodBody>> nativeCodes =
+			new List<Tuple<MethodDef, byte[], MethodBody>>();
+
 		bool addedHandler;
 
 		Helpers.PlaceholderProcessor IRPEncoding.EmitDecode(RPContext ctx) => (module, method, args) => {
@@ -39,8 +43,11 @@ namespace Confuser.Protections.ReferenceProxy {
 			var result = new Variable("{RESULT}");
 
 			CorLibTypeSig int32 = ctx.Module.CorLibTypes.Int32;
-			native = new MethodDefUser(ctx.Context.Registry.GetRequiredService<INameService>().RandomName(), MethodSig.CreateStatic(int32, int32), MethodAttributes.PinvokeImpl | MethodAttributes.PrivateScope | MethodAttributes.Static);
-			native.ImplAttributes = MethodImplAttributes.Native | MethodImplAttributes.Unmanaged | MethodImplAttributes.PreserveSig;
+			native = new MethodDefUser(ctx.Context.Registry.GetRequiredService<INameService>().RandomName(),
+				MethodSig.CreateStatic(int32, int32),
+				MethodAttributes.PinvokeImpl | MethodAttributes.PrivateScope | MethodAttributes.Static);
+			native.ImplAttributes = MethodImplAttributes.Native | MethodImplAttributes.Unmanaged |
+			                        MethodImplAttributes.PreserveSig;
 			ctx.Module.GlobalType.Methods.Add(native);
 
 			ctx.Context.Registry.GetRequiredService<IMarkerService>().Mark(ctx.Context, native, ctx.Protection);
@@ -52,15 +59,16 @@ namespace Confuser.Protections.ReferenceProxy {
 			do {
 				ctx.DynCipher.GenerateExpressionPair(
 					ctx.Random,
-					new VariableExpression { Variable = var }, new VariableExpression { Variable = result },
+					new VariableExpression {Variable = var}, new VariableExpression {Variable = result},
 					ctx.Depth, out expression, out inverse);
 
-				reg = codeGen.GenerateX86(inverse, (v, r) => { return new[] { x86Instruction.Create(x86OpCode.POP, new x86RegisterOperand(r)) }; });
+				reg = codeGen.GenerateX86(inverse,
+					(v, r) => { return new[] {x86Instruction.Create(x86OpCode.POP, new x86RegisterOperand(r))}; });
 			} while (reg == null);
 
 			byte[] code = CodeGenUtils.AssembleCode(codeGen, reg.Value);
 
-			expCompiled = new DMCodeGen(typeof(int), new[] { Tuple.Create("{VAR}", typeof(int)) })
+			expCompiled = new DMCodeGen(typeof(int), new[] {Tuple.Create("{VAR}", typeof(int))})
 				.GenerateCIL(expression)
 				.Compile<Func<int, int>>();
 
@@ -85,12 +93,12 @@ namespace Confuser.Protections.ReferenceProxy {
 					uint rid = writer.Metadata.GetRid(native.Item1);
 					RawMethodRow methodRow = writer.Metadata.TablesHeap.MethodTable[rid];
 					writer.Metadata.TablesHeap.MethodTable[rid] = new RawMethodRow(
-					  (uint)native.Item3.RVA,
-					  methodRow.ImplFlags,
-					  methodRow.Flags,
-					  methodRow.Name,
-					  methodRow.Signature,
-					  methodRow.ParamList);
+						(uint)native.Item3.RVA,
+						methodRow.ImplFlags,
+						methodRow.Flags,
+						methodRow.Name,
+						methodRow.Signature,
+						methodRow.ParamList);
 				}
 			}
 		}
@@ -103,6 +111,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				Compile(ctx, out keyFunc, out native);
 				keys[init] = ret = Tuple.Create(native, keyFunc);
 			}
+
 			return ret;
 		}
 

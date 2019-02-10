@@ -12,7 +12,6 @@ namespace Confuser.Helpers {
 		///     The injector actually does the injecting.
 		/// </summary>
 		private sealed class Injector : ImportMapper {
-
 			private readonly Dictionary<IMemberDef, IMemberDef> _injectedMembers;
 
 			private InjectContext InjectContext { get; }
@@ -25,7 +24,8 @@ namespace Confuser.Helpers {
 
 			private IImmutableList<IMethodInjectProcessor> MethodInjectProcessors { get; }
 
-			internal Injector(InjectContext injectContext, IInjectBehavior injectBehavior, IEnumerable<IMethodInjectProcessor> injectProcessors) {
+			internal Injector(InjectContext injectContext, IInjectBehavior injectBehavior,
+				IEnumerable<IMethodInjectProcessor> injectProcessors) {
 				InjectContext = injectContext ?? throw new ArgumentNullException(nameof(injectContext));
 				InjectBehavior = injectBehavior ?? throw new ArgumentNullException(nameof(injectBehavior));
 				PendingForInject = new Queue<IMemberDef>();
@@ -120,10 +120,12 @@ namespace Confuser.Helpers {
 			private static void CloneGenericParameters(ITypeOrMethodDef origin, ITypeOrMethodDef result) {
 				if (origin.HasGenericParameters)
 					foreach (var genericParam in origin.GenericParameters)
-						result.GenericParameters.Add(new GenericParamUser(genericParam.Number, genericParam.Flags, "-"));
+						result.GenericParameters.Add(new GenericParamUser(genericParam.Number, genericParam.Flags,
+							"-"));
 			}
 
-			private IReadOnlyCollection<IMemberDef> InjectRemaining(Importer importer, IImmutableList<IMethodInjectProcessor> methodInjectProcessors) {
+			private IReadOnlyCollection<IMemberDef> InjectRemaining(Importer importer,
+				IImmutableList<IMethodInjectProcessor> methodInjectProcessors) {
 				var resultBuilder = ImmutableList.CreateBuilder<IMemberDef>();
 
 				while (PendingForInject.Count > 0) {
@@ -141,6 +143,7 @@ namespace Confuser.Helpers {
 					else
 						Debug.Fail("Unexpected member in remaining import list:" + memberDef.GetType().Name);
 				}
+
 				return resultBuilder.ToImmutable();
 			}
 
@@ -148,7 +151,8 @@ namespace Confuser.Helpers {
 				var existingMappedMethodDef = InjectContext.ResolveMapped(methodDef);
 				if (existingMappedMethodDef != null) return existingMappedMethodDef;
 
-				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs, new GenericParamContext(), this);
+				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs,
+					new GenericParamContext(), this);
 				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
 				var result = InjectMethodDef(methodDef, importer, methodInjectProcessors);
 				InjectRemaining(importer, methodInjectProcessors);
@@ -159,7 +163,8 @@ namespace Confuser.Helpers {
 				var existingMappedTypeDef = InjectContext.ResolveMapped(typeDef);
 				if (existingMappedTypeDef != null) return existingMappedTypeDef;
 
-				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs, new GenericParamContext(), this);
+				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs,
+					new GenericParamContext(), this);
 				var methodInjectProcessors = MethodInjectProcessors.Add(new ImportProcessor(importer));
 				var result = InjectTypeDef(typeDef, importer);
 				foreach (var method in typeDef.Methods) CopyDef(method);
@@ -233,7 +238,7 @@ namespace Confuser.Helpers {
 				foreach (var arg in attribute.NamedArguments)
 					result.NamedArguments.Add(
 						new CANamedArgument(arg.IsField, importer.Import(arg.Type), arg.Name,
-						new CAArgument(importer.Import(arg.Argument.Type), arg.Argument.Value)));
+							new CAArgument(importer.Import(arg.Argument.Type), arg.Argument.Value)));
 
 				return result;
 			}
@@ -258,7 +263,8 @@ namespace Confuser.Helpers {
 				return newFieldDef;
 			}
 
-			private MethodDef InjectMethodDef(MethodDef methodDef, Importer importer, IEnumerable<IMethodInjectProcessor> methodInjectProcessors) {
+			private MethodDef InjectMethodDef(MethodDef methodDef, Importer importer,
+				IEnumerable<IMethodInjectProcessor> methodInjectProcessors) {
 				Debug.Assert(methodDef != null, $"{nameof(methodDef)} != null");
 				Debug.Assert(methodInjectProcessors != null, $"{nameof(methodInjectProcessors)} != null");
 
@@ -271,7 +277,9 @@ namespace Confuser.Helpers {
 				newMethodDef.Parameters.UpdateParameterTypes();
 
 				if (methodDef.ImplMap != null)
-					newMethodDef.ImplMap = new ImplMapUser(new ModuleRefUser(InjectContext.TargetModule, methodDef.ImplMap.Module.Name), methodDef.ImplMap.Name, methodDef.ImplMap.Attributes);
+					newMethodDef.ImplMap =
+						new ImplMapUser(new ModuleRefUser(InjectContext.TargetModule, methodDef.ImplMap.Module.Name),
+							methodDef.ImplMap.Name, methodDef.ImplMap.Attributes);
 
 				foreach (var ca in methodDef.CustomAttributes)
 					newMethodDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
@@ -280,7 +288,8 @@ namespace Confuser.Helpers {
 					methodDef.Body.SimplifyBranches();
 					methodDef.Body.SimplifyMacros(methodDef.Parameters);
 
-					newMethodDef.Body = new CilBody(methodDef.Body.InitLocals, new List<Instruction>(), new List<ExceptionHandler>(), new List<Local>());
+					newMethodDef.Body = new CilBody(methodDef.Body.InitLocals, new List<Instruction>(),
+						new List<ExceptionHandler>(), new List<Local>());
 					newMethodDef.Body.MaxStack = methodDef.Body.MaxStack;
 
 					var bodyMap = new Dictionary<object, object>();
@@ -307,7 +316,8 @@ namespace Confuser.Helpers {
 							instr.Operand = bodyMap[instr.Operand];
 
 						else if (instr.Operand is Instruction[] instructionArrayOp)
-							instr.Operand = (instructionArrayOp).Select(target => (Instruction)bodyMap[target]).ToArray();
+							instr.Operand = (instructionArrayOp).Select(target => (Instruction)bodyMap[target])
+								.ToArray();
 					}
 
 					foreach (var eh in methodDef.Body.ExceptionHandlers)
@@ -345,6 +355,7 @@ namespace Confuser.Helpers {
 					foreach (var otherMethod in eventDef.OtherMethods)
 						newEventDef.OtherMethods.Add(CopyDef(otherMethod));
 				}
+
 				newEventDef.DeclaringType = (TypeDef)importer.Import(eventDef.DeclaringType);
 
 				foreach (var ca in eventDef.CustomAttributes)
@@ -373,6 +384,7 @@ namespace Confuser.Helpers {
 					foreach (var otherMethod in propertyDef.OtherMethods)
 						newPropertyDef.OtherMethods.Add(CopyDef(otherMethod));
 				}
+
 				newPropertyDef.DeclaringType = (TypeDef)importer.Import(propertyDef.DeclaringType);
 
 				foreach (var ca in propertyDef.CustomAttributes)

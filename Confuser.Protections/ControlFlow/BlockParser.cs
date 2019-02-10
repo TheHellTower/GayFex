@@ -48,6 +48,7 @@ namespace Confuser.Protections.ControlFlow {
 						scopeStack.Pop();
 					}
 				}
+
 				foreach (ExceptionHandler eh in body.ExceptionHandlers.Reverse()) {
 					Tuple<ScopeBlock, ScopeBlock, ScopeBlock> ehScope = ehScopes[eh];
 					ScopeBlock parent = scopeStack.Count > 0 ? scopeStack.Peek() : null;
@@ -77,12 +78,14 @@ namespace Confuser.Protections.ControlFlow {
 					scope.Children.Add(block = new InstrBlock());
 				block.Instructions.Add(instr);
 			}
+
 			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
 				if (eh.TryEnd == null)
 					scopeStack.Pop();
 				if (eh.HandlerEnd == null)
 					scopeStack.Pop();
 			}
+
 			Debug.Assert(scopeStack.Count == 1);
 			return root;
 		}

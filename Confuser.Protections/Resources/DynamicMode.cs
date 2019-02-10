@@ -29,6 +29,7 @@ namespace Confuser.Protections.Resources {
 
 			return ret;
 		};
+
 		void IEncodeMode.Encrypt(ReadOnlySpan<uint> data, ReadOnlySpan<uint> key, Span<uint> dest) {
 			Debug.Assert(key.Length == dest.Length, $"{nameof(key)}.Length == {nameof(dest)}.Length");
 

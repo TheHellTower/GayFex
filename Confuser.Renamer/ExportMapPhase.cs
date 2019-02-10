@@ -20,7 +20,8 @@ namespace Confuser.Renamer {
 
 		public ExportMapPhase(NameProtection parent) => Parent = parent;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			var srv = (NameService)context.Registry.GetRequiredService<INameService>();
 
 			var usedFiles = new HashSet<string>();
@@ -44,15 +45,16 @@ namespace Confuser.Renamer {
 						fileMode = FileMode.Truncate;
 					else
 						fileMode = FileMode.Append;
-				} else
+				}
+				else
 					usedFiles.Add(path);
 
-				using (var writer = new StreamWriter(new FileStream(path, fileMode, FileAccess.Write, FileShare.None, 4096))) {
+				using (var writer =
+					new StreamWriter(new FileStream(path, fileMode, FileAccess.Write, FileShare.None, 4096))) {
 					foreach (var entry in map)
 						writer.WriteLine("{0}\t{1}", entry.Key, entry.Value);
 				}
 			}
-
 		}
 	}
 }

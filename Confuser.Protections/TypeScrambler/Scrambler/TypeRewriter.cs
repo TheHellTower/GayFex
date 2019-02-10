@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
 	internal sealed class TypeRewriter {
-
 		private IConfuserContext context;
 		private TypeService Service;
 
@@ -33,7 +32,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 		}
 
 		public void Process(MethodDef method) {
-
 			var service = context.Registry.GetService<TypeService>();
 
 			var il = method.Body.Instructions;
@@ -41,8 +39,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			for (int i = 0; i < il.Count; i++) {
 				RewriteFactory.Process(service, method, il, i);
 			}
-
 		}
-
 	}
 }

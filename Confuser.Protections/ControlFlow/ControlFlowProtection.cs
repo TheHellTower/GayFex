@@ -16,7 +16,8 @@ namespace Confuser.Protections {
 
 		public string Name => "Control Flow Protection";
 
-		public string Description => "This protection mangles the code in the methods so that decompilers cannot decompile the methods.";
+		public string Description =>
+			"This protection mangles the code in the methods so that decompilers cannot decompile the methods.";
 
 		public ProtectionPreset Preset => ProtectionPreset.Normal;
 
@@ -24,13 +25,13 @@ namespace Confuser.Protections {
 
 		internal ControlFlowProtectionParameters Parameters { get; } = new ControlFlowProtectionParameters();
 
-		void IControlFlowService.ExcludeMethod(IConfuserContext context, MethodDef method) => 
+		void IControlFlowService.ExcludeMethod(IConfuserContext context, MethodDef method) =>
 			context.GetParameters(method).RemoveParameters(this);
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+		void IConfuserComponent.Initialize(IServiceCollection collection) =>
 			collection.AddSingleton(typeof(IControlFlowService), this);
 
-		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) => 
+		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) =>
 			pipeline.InsertPreStage(PipelineStage.OptimizeMethods, new ControlFlowPhase(this));
 	}
 }

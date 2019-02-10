@@ -43,9 +43,12 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="protections">The protections.</param>
 		/// <param name="packers">The packers.</param>
-		public virtual void Initalize(IEnumerable<Lazy<IProtection, IProtectionMetadata>> protections, IEnumerable<Lazy<IPacker, IPackerMetadata>> packers) {
-			this.protections = protections.ToDictionary(prot => prot.Metadata.MarkerId ?? prot.Metadata.Id, prot => prot.Value, StringComparer.OrdinalIgnoreCase);
-			this.packers = packers.ToDictionary(packer => packer.Metadata.MarkerId ?? packer.Metadata.Id, packer => packer.Value, StringComparer.OrdinalIgnoreCase);
+		public virtual void Initalize(IEnumerable<Lazy<IProtection, IProtectionMetadata>> protections,
+			IEnumerable<Lazy<IPacker, IPackerMetadata>> packers) {
+			this.protections = protections.ToDictionary(prot => prot.Metadata.MarkerId ?? prot.Metadata.Id,
+				prot => prot.Value, StringComparer.OrdinalIgnoreCase);
+			this.packers = packers.ToDictionary(packer => packer.Metadata.MarkerId ?? packer.Metadata.Id,
+				packer => packer.Value, StringComparer.OrdinalIgnoreCase);
 		}
 
 		/// <summary>
@@ -85,6 +88,7 @@ namespace Confuser.Core {
 
 					return new StrongNameKey(rsa.ExportCspBlob(true));
 				}
+
 				return new StrongNameKey(path);
 			}
 			catch (Exception ex) {
@@ -100,7 +104,8 @@ namespace Confuser.Core {
 		/// <param name="proj">The project.</param>
 		/// <param name="context">The working context.</param>
 		/// <returns><see cref="MarkerResult" /> storing the marked modules and packer information.</returns>
-		protected internal virtual MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context, CancellationToken token) {
+		protected internal virtual MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context,
+			CancellationToken token) {
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 			IPacker packer = null;
 			Dictionary<string, string> packerParams = null;
@@ -110,6 +115,7 @@ namespace Confuser.Core {
 					logger.LogCritical("Cannot find packer with ID '{0}'.", proj.Packer.Id);
 					throw new ConfuserException();
 				}
+
 				if (proj.Debug)
 					logger.LogWarning("Generated Debug symbols might not be usable with packers!");
 
@@ -139,7 +145,11 @@ namespace Confuser.Core {
 				logger.LogInformation("Loading '{0}'...", module.Item1.Path);
 				Rules rules = ParseRules(proj, module.Item1, context);
 
-				context.Annotations.Set(module.Item2, SNKey, LoadSNKey(context, module.Item1.SNKeyPath == null ? null : Path.Combine(proj.BaseDirectory, module.Item1.SNKeyPath), module.Item1.SNKeyPassword));
+				context.Annotations.Set(module.Item2, SNKey,
+					LoadSNKey(context,
+						module.Item1.SNKeyPath == null
+							? null
+							: Path.Combine(proj.BaseDirectory, module.Item1.SNKeyPath), module.Item1.SNKeyPassword));
 				context.Annotations.Set(module.Item2, RulesKey, rules);
 
 				foreach (var def in module.Item2.FindDefinitions()) {
@@ -147,6 +157,7 @@ namespace Confuser.Core {
 					if (def is MethodDef method) {
 						var a = method.CustomDebugInfos;
 					}
+
 					token.ThrowIfCancellationRequested();
 				}
 
@@ -154,7 +165,9 @@ namespace Confuser.Core {
 				if (packerParams != null)
 					ProtectionParameters.GetParameters(context, module.Item2)[packer] = packerParams;
 			}
-			return new MarkerResult(modules.Select(module => module.Item2).ToImmutableArray(), packer, extModules.ToImmutable());
+
+			return new MarkerResult(modules.Select(module => module.Item2).ToImmutableArray(), packer,
+				extModules.ToImmutable());
 		}
 
 		/// <summary>
@@ -189,6 +202,7 @@ namespace Confuser.Core {
 					logger.LogCritical(ex, "Invalid rule pattern: {0}.", rule.Pattern);
 					throw new ConfuserException(ex);
 				}
+
 				foreach (var setting in rule) {
 					if (!protections.ContainsKey(setting.Id)) {
 						logger.LogCritical("Cannot find protection with ID '{0}'.", setting.Id);
@@ -196,6 +210,7 @@ namespace Confuser.Core {
 					}
 				}
 			}
+
 			return ret;
 		}
 
@@ -206,7 +221,8 @@ namespace Confuser.Core {
 		/// <param name="target">The target definition.</param>
 		/// <param name="rules">The rules.</param>
 		/// <param name="baseSettings">The base settings.</param>
-		protected void ApplyRules(IConfuserContext context, IDnlibDef target, Rules rules, ProtectionSettings baseSettings = null) {
+		protected void ApplyRules(IConfuserContext context, IDnlibDef target, Rules rules,
+			ProtectionSettings baseSettings = null) {
 			var ret = baseSettings == null ? new ProtectionSettings() : new ProtectionSettings(baseSettings);
 			foreach (var i in rules) {
 				if (!(bool)i.Value.Evaluate(target)) continue;
@@ -217,7 +233,8 @@ namespace Confuser.Core {
 				FillPreset(i.Key.Preset, ret);
 				foreach (var prot in i.Key) {
 					if (prot.Action == SettingItemAction.Add)
-						ret[protections[prot.Id]] = new Dictionary<string, string>(prot, StringComparer.OrdinalIgnoreCase);
+						ret[protections[prot.Id]] =
+							new Dictionary<string, string>(prot, StringComparer.OrdinalIgnoreCase);
 					else
 						ret.Remove(protections[prot.Id]);
 				}

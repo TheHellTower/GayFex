@@ -13,9 +13,10 @@ namespace Confuser.Protections.TypeScramble {
 			if (GenericsMapper.TryGetValue(m.TargetMethod.DeclaringType.MDToken, out typescan)) {
 				m.GenericCount += typescan.GenericCount;
 			}
+
 			AddScannedItemGeneral(m);
 		}
-		
+
 		public void AddScannedItem(ScannedType m) {
 			//AddScannedItemGeneral(m);
 		}
@@ -38,6 +39,5 @@ namespace Confuser.Protections.TypeScramble {
 			GenericsMapper.TryGetValue(token, out i);
 			return i;
 		}
-
 	}
 }

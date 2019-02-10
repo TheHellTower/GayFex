@@ -5,7 +5,8 @@ using System.Runtime.InteropServices;
 namespace Confuser.Runtime {
 	internal static class AntiDump {
 		[DllImport("kernel32.dll")]
-		static extern unsafe bool VirtualProtect(byte* lpAddress, int dwSize, uint flNewProtect, out uint lpflOldProtect);
+		static extern unsafe bool VirtualProtect(byte* lpAddress, int dwSize, uint flNewProtect,
+			out uint lpflOldProtect);
 
 		static unsafe void Initialize() {
 			uint old;
@@ -59,6 +60,7 @@ namespace Confuser.Runtime {
 					Marshal.Copy(new byte[8], 0, (IntPtr)ptr, 8);
 					ptr += 0x28;
 				}
+
 				VirtualProtect(mdDir, 0x48, 0x40, out old);
 				byte* mdHdr = bas + *(uint*)(mdDir + 8);
 				*(uint*)mdDir = 0;
@@ -88,18 +90,21 @@ namespace Confuser.Runtime {
 							mdHdr += 3;
 							break;
 						}
+
 						*mdHdr = 0;
 						mdHdr++;
 						if (*mdHdr == 0) {
 							mdHdr += 2;
 							break;
 						}
+
 						*mdHdr = 0;
 						mdHdr++;
 						if (*mdHdr == 0) {
 							mdHdr += 1;
 							break;
 						}
+
 						*mdHdr = 0;
 						mdHdr++;
 					}
@@ -132,6 +137,7 @@ namespace Confuser.Runtime {
 							importDir = importDir - vAdrs[i] + rAdrs[i];
 							break;
 						}
+
 					byte* importDirPtr = bas + importDir;
 					uint oftMod = *(uint*)importDirPtr;
 					for (int i = 0; i < sectNum; i++)
@@ -139,6 +145,7 @@ namespace Confuser.Runtime {
 							oftMod = oftMod - vAdrs[i] + rAdrs[i];
 							break;
 						}
+
 					byte* oftModPtr = bas + oftMod;
 					uint modName = *(uint*)(importDirPtr + 12);
 					for (int i = 0; i < sectNum; i++)
@@ -146,12 +153,14 @@ namespace Confuser.Runtime {
 							modName = modName - vAdrs[i] + rAdrs[i];
 							break;
 						}
+
 					uint funcName = *(uint*)oftModPtr + 2;
 					for (int i = 0; i < sectNum; i++)
 						if (vAdrs[i] <= funcName && funcName < vAdrs[i] + vSizes[i]) {
 							funcName = funcName - vAdrs[i] + rAdrs[i];
 							break;
 						}
+
 					VirtualProtect(bas + modName, 11, 0x40, out old);
 
 					*(uint*)@new = 0x6c64746e;
@@ -179,6 +188,7 @@ namespace Confuser.Runtime {
 						mdDir = mdDir - vAdrs[i] + rAdrs[i];
 						break;
 					}
+
 				byte* mdDirPtr = bas + mdDir;
 				VirtualProtect(mdDirPtr, 0x48, 0x40, out old);
 				uint mdHdr = *(uint*)(mdDirPtr + 8);
@@ -187,6 +197,7 @@ namespace Confuser.Runtime {
 						mdHdr = mdHdr - vAdrs[i] + rAdrs[i];
 						break;
 					}
+
 				*(uint*)mdDirPtr = 0;
 				*((uint*)mdDirPtr + 1) = 0;
 				*((uint*)mdDirPtr + 2) = 0;
@@ -216,18 +227,21 @@ namespace Confuser.Runtime {
 							mdHdrPtr += 3;
 							break;
 						}
+
 						*mdHdrPtr = 0;
 						mdHdrPtr++;
 						if (*mdHdrPtr == 0) {
 							mdHdrPtr += 2;
 							break;
 						}
+
 						*mdHdrPtr = 0;
 						mdHdrPtr++;
 						if (*mdHdrPtr == 0) {
 							mdHdrPtr += 1;
 							break;
 						}
+
 						*mdHdrPtr = 0;
 						mdHdrPtr++;
 					}

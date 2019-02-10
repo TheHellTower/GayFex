@@ -22,7 +22,8 @@ namespace Confuser.Optimizations.CompileRegex {
 
 		bool IProtectionPhase.ProcessAll => false;
 
-		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {
+		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
+			CancellationToken token) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
 

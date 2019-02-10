@@ -20,7 +20,7 @@ namespace Confuser.Protections.TypeScramble {
 
 		IReadOnlyDictionary<string, IProtectionParameter> IProtection.Parameters => ProtectionParameter.EmptyDictionary;
 
-		void IConfuserComponent.Initialize(IServiceCollection collection) => 
+		void IConfuserComponent.Initialize(IServiceCollection collection) =>
 			collection.AddSingleton(typeof(ITypeScrambleService), (p) => new TypeService());
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {

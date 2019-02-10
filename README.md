@@ -84,3 +84,8 @@ If you find ConfuserEx 2 helpful and want to donate to support my work on the pr
 **[Ki (yck1509)](https://github.com/yck1509)** for the original ConfuserEx.  
 **[0xd4d](https://github.com/0xd4d)** for his awesome work and extensive knowledge!  
 Members of **[Black Storm Forum](http://board.b-at-s.info/)** for their help!
+
+Thank you to [JetBrains](https://www.jetbrains.com/) for providing the open source licenses for their products I'm
+using to develop ConfuserEx 2. Most notably: 
+
+[<img src="Assets/resharper.png" height="50" />](https://www.jetbrains.com/resharper/)

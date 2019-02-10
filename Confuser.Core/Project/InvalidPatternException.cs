@@ -10,7 +10,8 @@ namespace Confuser.Core.Project {
 		/// </summary>
 		/// <param name="message">The message that describes the error.</param>
 		public InvalidPatternException(string message)
-			: base(message) { }
+			: base(message) {
+		}
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ConfuserException" /> class.
@@ -21,6 +22,7 @@ namespace Confuser.Core.Project {
 		///     Visual Basic) if no inner exception is specified.
 		/// </param>
 		public InvalidPatternException(string message, Exception innerException)
-			: base(message, innerException) { }
+			: base(message, innerException) {
+		}
 	}
 }

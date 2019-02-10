@@ -21,7 +21,8 @@ namespace Confuser.Optimizations.TailCall {
 
 		internal TailCallProtectionParameters Parameters { get; } = new TailCallProtectionParameters();
 
-		public void Initialize(IServiceCollection collection) { }
+		public void Initialize(IServiceCollection collection) {
+		}
 
 		public void PopulatePipeline(IProtectionPipeline pipeline) {
 			pipeline.InsertPreStage(PipelineStage.OptimizeMethods, new OptimizeRecursionPhase(this));

@@ -33,7 +33,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (_methodBody == null)
 				_methodBody = Method.Body = new CilBody();
 
-			if (_methodBody.HasInstructions) throw new ArgumentException("The compiler expects a target method with a empty body.", nameof(method));
+			if (_methodBody.HasInstructions)
+				throw new ArgumentException("The compiler expects a target method with a empty body.", nameof(method));
 			_instructions = _methodBody.Instructions;
 			_insertIndex = 0;
 
@@ -59,6 +60,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					return reusedLocal;
 				}
 			}
+
 			var local = new Local(sig);
 			_methodBody.Variables.Add(local);
 			return local;
@@ -70,6 +72,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (!_unusedLocals.TryGetValue(local.Type, out var unusedLocals)) {
 				unusedLocals = _unusedLocals[local.Type] = new List<Local>();
 			}
+
 			unusedLocals.Add(local);
 		}
 
@@ -113,14 +116,17 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						}
 					}
 				}
+
 				_labels[label] = instruction;
 			}
+
 			_labelsNextInstruction.Clear();
 		}
 
 		internal void Ldthis() {
 			var thisParameter = Method.Parameters[0];
-			Debug.Assert(thisParameter.IsHiddenThisParameter, "Tried to load \"this\", but method does not contain the parameter. Static method?");
+			Debug.Assert(thisParameter.IsHiddenThisParameter,
+				"Tried to load \"this\", but method does not contain the parameter. Static method?");
 
 			Add(Instruction.Create(OpCodes.Ldarg, thisParameter));
 		}
@@ -199,6 +205,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				_labels[label] = instr = new Instruction();
 				_unknownLabels.Add(label);
 			}
+
 			return instr;
 		}
 
@@ -229,7 +236,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			Debug.Assert(!method.IsStatic, "Virtual call to static method?");
 
 			Add(Instruction.Create(OpCodes.Callvirt, _importer.Import(method)));
-
 		}
 
 		internal void Call(MethodDef method) {

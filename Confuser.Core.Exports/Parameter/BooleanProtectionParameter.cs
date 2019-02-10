@@ -3,7 +3,6 @@ using System.Runtime.Serialization;
 
 namespace Confuser.Core.Parameter {
 	internal sealed class BooleanProtectionParameter : IProtectionParameter<bool> {
-
 		public bool DefaultValue { get; }
 
 		public string Name { get; }
@@ -30,6 +29,7 @@ namespace Confuser.Core.Parameter {
 				case "0":
 					return false;
 			}
+
 			throw new SerializationException($"Value {serializedValue} can't be deserialized to boolean.");
 		}
 

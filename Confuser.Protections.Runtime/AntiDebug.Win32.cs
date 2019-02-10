@@ -27,7 +27,7 @@ namespace Confuser.Runtime {
 			    Environment.GetEnvironmentVariable(x + "_ENABLE_PROFILING") != null)
 				Environment.FailFast(null);
 
-			var thread = new Thread(Worker) { IsBackground = true };
+			var thread = new Thread(Worker) {IsBackground = true};
 			thread.Start(null);
 		}
 
@@ -38,14 +38,15 @@ namespace Confuser.Runtime {
 		private static extern bool IsDebuggerPresent();
 
 		[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
-		private static extern void OutputDebugString([In,Optional] string str);
+		private static extern void OutputDebugString([In, Optional] string str);
 
 		private static void Worker(object thread) {
 			if (!(thread is Thread th)) {
-				th = new Thread(Worker) { IsBackground = true };
+				th = new Thread(Worker) {IsBackground = true};
 				th.Start(Thread.CurrentThread);
 				Thread.Sleep(500);
 			}
+
 			while (true) {
 				// Managed
 				if (Debugger.IsAttached || Debugger.IsLogging())
@@ -59,7 +60,9 @@ namespace Confuser.Runtime {
 				using (var ps = Process.GetCurrentProcess()) {
 					if (ps.Handle == IntPtr.Zero)
 						Environment.FailFast(CurrentProcessMsg);
-				};
+				}
+
+				;
 
 #if !NET20
 				// OutputDebugString

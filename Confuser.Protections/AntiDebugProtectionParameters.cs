@@ -2,6 +2,7 @@
 
 namespace Confuser.Protections {
 	internal sealed class AntiDebugProtectionParameters : ProtectionParametersBase {
-		internal IProtectionParameter<AntiDebugMode> Mode { get; } = ProtectionParameter.Enum("mode", AntiDebugMode.Safe);
+		internal IProtectionParameter<AntiDebugMode> Mode { get; } =
+			ProtectionParameter.Enum("mode", AntiDebugMode.Safe);
 	}
 }

@@ -17,22 +17,37 @@ namespace Confuser.MSBuild.Tasks {
 
 		public ILogger CreateLogger(string categoryName) => this;
 
-		public void Dispose() { }
+		public void Dispose() {
+		}
 
 		IDisposable ILogger.BeginScope<TState>(TState state) => NullScope.Instance;
 
 		bool ILogger.IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
 
-		void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
+		void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
+			Func<TState, Exception, string> formatter) {
 			var textBuilder = new StringBuilder();
 			switch (logLevel) {
-				case LogLevel.Critical: textBuilder.Append("[CRITICAL]"); break;
-				case LogLevel.Debug: textBuilder.Append("[DEBUG]"); break;
-				case LogLevel.Error: textBuilder.Append("[ERROR]"); break;
-				case LogLevel.Information: textBuilder.Append("[INFO]"); break;
-				case LogLevel.Trace: textBuilder.Append("[TRACE]"); break;
-				case LogLevel.Warning: textBuilder.Append("[WARN]"); break;
+				case LogLevel.Critical:
+					textBuilder.Append("[CRITICAL]");
+					break;
+				case LogLevel.Debug:
+					textBuilder.Append("[DEBUG]");
+					break;
+				case LogLevel.Error:
+					textBuilder.Append("[ERROR]");
+					break;
+				case LogLevel.Information:
+					textBuilder.Append("[INFO]");
+					break;
+				case LogLevel.Trace:
+					textBuilder.Append("[TRACE]");
+					break;
+				case LogLevel.Warning:
+					textBuilder.Append("[WARN]");
+					break;
 			}
+
 			textBuilder.Append(" ");
 			textBuilder.Append(formatter(state, exception));
 

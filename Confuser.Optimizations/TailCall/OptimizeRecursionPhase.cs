@@ -11,7 +11,6 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Optimizations.TailCall {
 	internal sealed class OptimizeRecursionPhase : IProtectionPhase {
-
 		internal OptimizeRecursionPhase(TailCallProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
@@ -95,6 +94,7 @@ namespace Confuser.Optimizations.TailCall {
 			if (TailCallUtils.IsTailCall(method, i)) {
 				return method.Body.Instructions[i].Operand == method;
 			}
+
 			return false;
 		}
 	}

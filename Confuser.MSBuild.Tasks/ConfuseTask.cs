@@ -8,11 +8,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Confuser.MSBuild.Tasks {
 	public sealed class ConfuseTask : Task {
-		[Required]
-		public ITaskItem Project { get; set; }
+		[Required] public ITaskItem Project { get; set; }
 
-		[Required, Output]
-		public ITaskItem OutputAssembly { get; set; }
+		[Required, Output] public ITaskItem OutputAssembly { get; set; }
 
 		public override bool Execute() {
 			var project = new ConfuserProject();

@@ -20,6 +20,7 @@ namespace Confuser.Protections.Resources {
 				result.Add(Instruction.Create(OpCodes.Xor));
 				result.Add(Instruction.Create(OpCodes.Stelem_I4));
 			}
+
 			return result;
 		};
 

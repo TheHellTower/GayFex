@@ -22,7 +22,8 @@ namespace Confuser.Protections.Compress {
 		internal bool CompatMode;
 		internal Helpers.LateMutationFieldUpdate KeyTokenLoadUpdate;
 
-		internal ReadOnlyMemory<byte> Encrypt(ICompressionService compress, ReadOnlyMemory<byte> source, uint seed, Action<double> progressFunc) {
+		internal ReadOnlyMemory<byte> Encrypt(ICompressionService compress, ReadOnlyMemory<byte> source, uint seed,
+			Action<double> progressFunc) {
 			if (compress == null) throw new ArgumentNullException(nameof(compress));
 			if (progressFunc == null) throw new ArgumentNullException(nameof(progressFunc));
 
@@ -36,6 +37,7 @@ namespace Confuser.Protections.Compress {
 				src[i] = (uint)state;
 				dst[i] = (uint)((state * state) % 0x444d56fb);
 			}
+
 			Span<uint> key = stackalloc uint[0x10];
 			Deriver.DeriveKey(dst, src, key);
 
@@ -45,6 +47,7 @@ namespace Confuser.Protections.Compress {
 				if ((i & 0xff) == 0)
 					state = (state * state) % 0x8a5cb7;
 			}
+
 			Span<byte> compressedData = compress.Compress(data.ToArray(), progressFunc);
 			Memory<byte> encryptedData = new byte[(compressedData.Length + 3) & ~3];
 
@@ -59,7 +62,7 @@ namespace Confuser.Protections.Compress {
 
 			return encryptedData;
 		}
-		
+
 		private static void EncryptData(ReadOnlySpan<byte> src, Span<byte> dst, Span<uint> key, int keyIndex) {
 			Debug.Assert(src.Length > 0 && src.Length <= 4, $"{nameof(src)}.Length > 0 && {nameof(src)}.Length <= 4");
 			Debug.Assert(dst.Length == 4, $"{nameof(dst)}.Length = 4");
