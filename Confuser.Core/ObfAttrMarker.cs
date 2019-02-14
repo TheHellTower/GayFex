@@ -88,24 +88,9 @@ namespace Confuser.Core {
 
 					case nameof(ObfuscationAttribute.Feature):
 						Debug.Assert(prop.Type.ElementType == ElementType.String);
-						string feature = (UTF8String)prop.Value;
+						string feature = (string)prop.Value;
 
-						var match = FeaturePattern.Match(feature);
-						if (match.Success) {
-							if (match.Groups[1].Success) {
-								var orderStr = match.Groups[1].Value;
-								if (!int.TryParse(orderStr, out int o))
-									logger.LogWarning("Failed to parse obfuscation attribute feature '{0}' in {1}",
-										feature, owner);
-								else
-									order = o;
-							}
-
-							info.FeatureName = match.Groups[2].Value;
-							if (match.Groups[3].Success)
-								info.FeatureValue = match.Groups[3].Value;
-						}
-
+						(info.FeatureName, info.FeatureValue, order) = ParseObfAttrFeatureValue(feature);
 						break;
 
 					default:
@@ -115,6 +100,32 @@ namespace Confuser.Core {
 			}
 
 			return (info, order, strip);
+		}
+
+		internal static (string FeatureName, string FeatureValue, int? Order) ParseObfAttrFeatureValue(string value) {
+			var match = FeaturePattern.Match(value);
+
+			if (!match.Success) return default;
+
+			int? order = null;
+			string featureName;
+			string featureValue;
+			if (match.Groups[1].Success) {
+				var orderStr = match.Groups[1].Value;
+				if (int.TryParse(orderStr, out int o))
+					order = o;
+			}
+
+			if (match.Groups[3].Success) {
+				featureName = match.Groups[2].Value;
+				featureValue = match.Groups[3].Value;
+			}
+			else {
+				featureName = "";
+				featureValue = match.Groups[2].Value;
+			}
+
+			return (featureName, featureValue, order);
 		}
 
 		private bool ToInfo(IConfuserContext context, ObfuscationAttributeInfo attr, out ProtectionSettingsInfo info) {
