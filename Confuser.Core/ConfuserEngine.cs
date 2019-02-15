@@ -34,7 +34,7 @@ namespace Confuser.Core {
 		/// </summary>
 		public static readonly string Version;
 
-		static readonly string Copyright;
+		private static readonly string Copyright;
 
 		static ConfuserEngine() {
 			Assembly assembly = typeof(ConfuserEngine).Assembly;
@@ -85,8 +85,8 @@ namespace Confuser.Core {
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddLogging(parameters.ConfigureLogging ?? delegate { });
 
-			var tempServiceProvder = serviceCollection.BuildServiceProvider();
-			var logger = tempServiceProvder.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+			var tempServiceProvider = serviceCollection.BuildServiceProvider();
+			var logger = tempServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
 			bool ok = false;
 			try {
@@ -138,65 +138,68 @@ namespace Confuser.Core {
 				}
 
 				// 1. Setup context
-				var context = new ConfuserContext(serviceCollection.BuildServiceProvider());
-				context.Project = parameters.Project.Clone();
-				context.PackerInitiated = parameters.PackerInitiated;
+				using (var context = new ConfuserContext(serviceCollection.BuildServiceProvider())) {
+					context.Project = parameters.Project.Clone();
+					context.PackerInitiated = parameters.PackerInitiated;
 
-				PrintInfo(context, logger);
+					PrintInfo(context, logger);
 
-				try {
-					var asmResolver = new AssemblyResolver();
-					asmResolver.EnableTypeDefCache = true;
-					asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
-					context.Resolver = asmResolver;
-					context.BaseDirectory = Path.Combine(Environment.CurrentDirectory,
-						parameters.Project.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) +
-						Path.DirectorySeparatorChar);
-					context.OutputDirectory = Path.Combine(parameters.Project.BaseDirectory,
-						parameters.Project.OutputDirectory.TrimEnd(Path.DirectorySeparatorChar) +
-						Path.DirectorySeparatorChar);
-					foreach (string probePath in parameters.Project.ProbePaths)
-						asmResolver.PostSearchPaths.Insert(0, Path.Combine(context.BaseDirectory, probePath));
+					try {
+						var asmResolver = new AssemblyResolver();
+						asmResolver.EnableTypeDefCache = true;
+						asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
+						context.Resolver = asmResolver;
+						context.BaseDirectory = Path.Combine(Environment.CurrentDirectory,
+							parameters.Project.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) +
+							Path.DirectorySeparatorChar);
+						context.OutputDirectory = Path.Combine(parameters.Project.BaseDirectory,
+							parameters.Project.OutputDirectory.TrimEnd(Path.DirectorySeparatorChar) +
+							Path.DirectorySeparatorChar);
+						foreach (string probePath in parameters.Project.ProbePaths)
+							asmResolver.PostSearchPaths.Insert(0, Path.Combine(context.BaseDirectory, probePath));
 
-					token.ThrowIfCancellationRequested();
+						token.ThrowIfCancellationRequested();
 
 
-					// 5. Load modules
-					logger.LogInformation("Loading input modules...");
-					marker.Initalize(prots, packers);
-					MarkerResult markings = marker.MarkProject(parameters.Project, context, token);
-					context.Modules = new ModuleSorter(markings.Modules).Sort().ToImmutableArray();
-					foreach (var module in context.Modules)
-						module.EnableTypeDefFindCache = false;
-					context.OutputModules = Enumerable.Repeat<byte[]>(null, context.Modules.Count).ToImmutableArray();
-					context.OutputSymbols = Enumerable.Repeat<byte[]>(null, context.Modules.Count).ToImmutableArray();
-					context.OutputPaths = Enumerable.Repeat<string>(null, context.Modules.Count).ToImmutableArray();
-					context.Packer = markings.Packer;
-					context.ExternalModules = markings.ExternalModules;
+						// 5. Load modules
+						logger.LogInformation("Loading input modules...");
+						marker.Initalize(prots, packers);
+						MarkerResult markings = marker.MarkProject(parameters.Project, context, token);
+						context.Modules = new ModuleSorter(markings.Modules).Sort().ToImmutableArray();
+						foreach (var module in context.Modules)
+							module.EnableTypeDefFindCache = false;
+						context.OutputModules =
+							Enumerable.Repeat(Memory<byte>.Empty, context.Modules.Count).ToImmutableArray();
+						context.OutputSymbols =
+							Enumerable.Repeat(Memory<byte>.Empty, context.Modules.Count).ToImmutableArray();
+						context.OutputPaths = Enumerable.Repeat<string>(null, context.Modules.Count).ToImmutableArray();
+						context.Packer = markings.Packer;
+						context.ExternalModules = markings.ExternalModules;
 
-					token.ThrowIfCancellationRequested();
+						token.ThrowIfCancellationRequested();
 
-					// 6. Build pipeline
-					logger.LogDebug("Building pipeline...");
-					var pipeline = new ProtectionPipeline();
-					context.Pipeline = pipeline;
-					foreach (var comp in sortedComponents) {
-						comp.PopulatePipeline(pipeline);
+						// 6. Build pipeline
+						logger.LogDebug("Building pipeline...");
+						var pipeline = new ProtectionPipeline();
+						context.Pipeline = pipeline;
+						foreach (var comp in sortedComponents) {
+							comp.PopulatePipeline(pipeline);
+						}
+
+						token.ThrowIfCancellationRequested();
+
+						//7. Run pipeline
+						RunPipeline(pipeline, context, token);
+
+						if (!context.PackerInitiated)
+							logger.LogInformation("Done.");
+
+						ok = true;
 					}
-
-					token.ThrowIfCancellationRequested();
-
-					//7. Run pipeline
-					RunPipeline(pipeline, context, token);
-
-					if (!context.PackerInitiated)
-						logger.LogInformation("Done.");
-
-					ok = true;
-				}
-				catch (Exception) {
-					PrintEnvironmentInfo(context, logger);
-					throw;
+					catch (Exception) {
+						PrintEnvironmentInfo(context, logger);
+						throw;
+					}
 				}
 			}
 			catch (AssemblyResolveException ex) {
@@ -310,7 +313,7 @@ namespace Confuser.Core {
 					logger.LogWarning("[{0}] SN Key is provided for an unsigned module, the output may not be working.",
 						module.Name);
 				else if (snKey != null && module.IsStrongNameSigned &&
-				         !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
+						 !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
 					logger.LogWarning(
 						"[{0}] Provided SN Key and signed module's public key do not match, the output may not be working.",
 						module.Name);
@@ -392,35 +395,35 @@ namespace Confuser.Core {
 			context.CurrentModuleWriterOptions.InitializeStrongNameSigning(context.CurrentModule, snKey);
 
 			foreach (var type in context.CurrentModule.GetTypes())
-			foreach (var method in type.Methods) {
-				token.ThrowIfCancellationRequested();
+				foreach (var method in type.Methods) {
+					token.ThrowIfCancellationRequested();
 
-				if (method.Body != null) {
-					method.Body.Instructions.SimplifyMacros(method.Body.Variables, method.Parameters);
+					if (method.Body != null) {
+						method.Body.Instructions.SimplifyMacros(method.Body.Variables, method.Parameters);
+					}
 				}
-			}
 		}
 
-		static void ProcessModule(ConfuserContext context, CancellationToken token) {
+		private static void ProcessModule(ConfuserContext context, CancellationToken token) {
 		}
 
-		static void OptimizeMethods(ConfuserContext context, CancellationToken token) {
+		private static void OptimizeMethods(ConfuserContext context, CancellationToken token) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
 			foreach (var type in context.CurrentModule.GetTypes())
-			foreach (var method in type.Methods) {
-				token.ThrowIfCancellationRequested();
+				foreach (var method in type.Methods) {
+					token.ThrowIfCancellationRequested();
 
-				if (method.Body != null) {
-					logger.LogTrace("Optimizing method '{0}'", method);
-					method.Body.Instructions.OptimizeMacros();
+					if (method.Body != null) {
+						logger.LogTrace("Optimizing method '{0}'", method);
+						method.Body.Instructions.OptimizeMacros();
+					}
 				}
-			}
 		}
 
-		static void EndModule(ConfuserContext context, CancellationToken token) {
+		private static void EndModule(ConfuserContext context, CancellationToken token) {
 			string output = context.Modules[context.CurrentModuleIndex].Location;
 			if (output != null) {
 				if (!Path.IsPathRooted(output))
@@ -434,7 +437,7 @@ namespace Confuser.Core {
 			context.OutputPaths = context.OutputPaths.SetItem(context.CurrentModuleIndex, output);
 		}
 
-		static void WriteModule(ConfuserContext context, CancellationToken token) {
+		private static void WriteModule(ConfuserContext context, CancellationToken token) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
@@ -466,7 +469,7 @@ namespace Confuser.Core {
 				context.CurrentModuleSymbol = pdb.ToArray();
 		}
 
-		static void DebugSymbols(ConfuserContext context, CancellationToken token) {
+		private static void DebugSymbols(ConfuserContext context, CancellationToken token) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
@@ -475,17 +478,18 @@ namespace Confuser.Core {
 			for (int i = 0; i < context.OutputModules.Count; i++) {
 				token.ThrowIfCancellationRequested();
 
-				if (context.OutputSymbols[i] == null)
+				if (context.OutputSymbols[i].IsEmpty)
 					continue;
 				string path = Path.GetFullPath(Path.Combine(context.OutputDirectory, context.OutputPaths[i]));
 				string dir = Path.GetDirectoryName(path);
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
-				File.WriteAllBytes(Path.ChangeExtension(path, "pdb"), context.OutputSymbols[i]);
+
+				File.WriteAllBytes(Path.ChangeExtension(path, "pdb"), context.OutputSymbols[i].ToArray());
 			}
 		}
 
-		static void Pack(ConfuserContext context, CancellationToken token) {
+		private static void Pack(ConfuserContext context, CancellationToken token) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 
 			if (context.Packer != null) {
@@ -524,7 +528,7 @@ namespace Confuser.Core {
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
 				logger.LogDebug("Saving to '{0}'...", path);
-				File.WriteAllBytes(path, context.OutputModules[i]);
+				File.WriteAllBytes(path, context.OutputModules[i].ToArray());
 			}
 		}
 
@@ -532,7 +536,7 @@ namespace Confuser.Core {
 		///     Prints the copyright stuff and environment information.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		static void PrintInfo(ConfuserContext context, ILogger logger) {
+		private static void PrintInfo(ConfuserContext context, ILogger logger) {
 			if (context.PackerInitiated) {
 				logger.LogInformation("Protecting packer stub...");
 			}
@@ -551,7 +555,7 @@ namespace Confuser.Core {
 			}
 		}
 
-		static IEnumerable<string> GetFrameworkVersions() {
+		private static IEnumerable<string> GetFrameworkVersions() {
 			// http://msdn.microsoft.com/en-us/library/hh925568.aspx
 
 			using (RegistryKey ndpKey =
@@ -600,7 +604,7 @@ namespace Confuser.Core {
 		///     Prints the environment information when error occurred.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		static void PrintEnvironmentInfo(ConfuserContext context, ILogger logger) {
+		private static void PrintEnvironmentInfo(ConfuserContext context, ILogger logger) {
 			if (context.PackerInitiated)
 				return;
 

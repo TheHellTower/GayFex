@@ -17,7 +17,7 @@ namespace Confuser.Protections.Compress {
 		internal List<(uint Offset, uint Flags, UTF8String Value)> ManifestResources;
 		internal int ModuleIndex;
 		internal string ModuleName;
-		internal byte[] OriginModule;
+		internal ReadOnlyMemory<byte> OriginModule;
 		internal ModuleDef OriginModuleDef;
 		internal bool CompatMode;
 		internal Helpers.LateMutationFieldUpdate KeyTokenLoadUpdate;
