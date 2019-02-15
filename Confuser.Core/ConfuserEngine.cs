@@ -1,27 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
+using dnlib.PE;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
-using System.Diagnostics;
 using CopyrightAttribute = System.Reflection.AssemblyCopyrightAttribute;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 using InformationalAttribute = System.Reflection.AssemblyInformationalVersionAttribute;
 using MethodAttributes = dnlib.DotNet.MethodAttributes;
 using MethodImplAttributes = dnlib.DotNet.MethodImplAttributes;
 using ProductAttribute = System.Reflection.AssemblyProductAttribute;
 using TypeAttributes = dnlib.DotNet.TypeAttributes;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
-using System.Text;
 
 namespace Confuser.Core {
 	/// <summary>
@@ -496,7 +497,7 @@ namespace Confuser.Core {
 			}
 		}
 
-		static void SaveModules(ConfuserContext context, CancellationToken token) {
+		private static void SaveModules(ConfuserContext context, CancellationToken token) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
@@ -506,7 +507,19 @@ namespace Confuser.Core {
 			for (int i = 0; i < context.OutputModules.Count; i++) {
 				token.ThrowIfCancellationRequested();
 
-				string path = Path.GetFullPath(Path.Combine(context.OutputDirectory, context.OutputPaths[i]));
+				var path = Path.GetFullPath(Path.Combine(context.OutputDirectory, context.OutputPaths[i]));
+
+				var sourceModule = context.Modules[i];
+				if (sourceModule.Metadata != null) {
+					var sourcePath = Path.GetFullPath(sourceModule.Metadata.PEImage.Filename);
+
+					if (string.Equals(path, sourcePath, StringComparison.OrdinalIgnoreCase)) {
+						// we are doing an in place obfuscation. We need to make sure that the handle to the file is closed
+						// in case a memory mapped file is in use to read the image.
+						(sourceModule.Metadata.PEImage as IInternalPEImage)?.UnsafeDisableMemoryMappedIO();
+					}
+				}
+
 				string dir = Path.GetDirectoryName(path);
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
