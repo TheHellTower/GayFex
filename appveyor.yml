@@ -40,3 +40,10 @@ for:
 
 on_failure:
 - appveyor PushArtifact msbuild.binlog
+
+notifications:
+- provider: Webhook
+  url: https://webhooks.gitter.im/e/7ff0ea601d40c1b3fcaa
+  on_build_success: false
+  on_build_failure: true
+  on_build_status_changed: true
