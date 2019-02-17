@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -19,7 +19,6 @@
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
     <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
-    <ProjectReference Include="..\WpfRenaming\WpfRenaming.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
 

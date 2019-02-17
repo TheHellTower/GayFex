@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp2.2</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <StartupObject>Confuser.CLI.Program</StartupObject>
     <Product>ConfuserEx Command-line</Product>
     <Description>Command-line interface of ConfuserEx</Description>
