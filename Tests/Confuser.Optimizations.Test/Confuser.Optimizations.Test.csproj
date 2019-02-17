@@ -22,6 +22,13 @@
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <None Update="TailCall\*.approved.txt">
+      <Link>%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <Import Project="..\ConfuserEx.Test.targets" Condition="Exists('..\ConfuserEx.Test.targets')" />
 
 </Project>
