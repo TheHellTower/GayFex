@@ -18,63 +18,61 @@ namespace Confuser.Optimizations.CompileRegex {
 
 			IMethodTrace methodTrace = null;
 			foreach (var instr in method.Body.Instructions) {
-				if ((instr.OpCode == OpCodes.Newobj || instr.OpCode == OpCodes.Call) &&
-				    instr.Operand is IMethod opMethod) {
-					var regexMethod = moduleRegexMethods.GetMatchingMethod(opMethod);
-					if (regexMethod != null) {
-						if (methodTrace == null) methodTrace = traceService.Trace(method);
+				if ((instr.OpCode != OpCodes.Newobj && instr.OpCode != OpCodes.Call) ||
+				    !(instr.Operand is IMethod opMethod)) continue;
 
-						var argumentInstr = methodTrace.TraceArguments(instr);
+				var regexMethod = moduleRegexMethods.GetMatchingMethod(opMethod);
+				if (regexMethod == null) continue;
+				if (methodTrace == null) methodTrace = traceService.Trace(method);
 
-						// Check if tracing the method arguments was successful
-						if (argumentInstr == null) continue;
+				var argumentInstr = methodTrace.TraceArguments(instr);
 
-						var result = new MethodAnalyzerResult {
-							mainInstruction = instr,
-							regexMethod = regexMethod
-						};
+				// Check if tracing the method arguments was successful
+				if (argumentInstr == null) continue;
 
-						var patternInstr = method.Body.Instructions[argumentInstr[regexMethod.PatternParameterIndex]];
-						if (patternInstr.OpCode != OpCodes.Ldstr) continue;
-						result.patternInstr = patternInstr;
+				var result = new MethodAnalyzerResult {
+					MainInstruction = instr,
+					RegexMethod = regexMethod
+				};
 
-						var pattern = patternInstr.Operand as string;
-						var options = RegexOptions.None;
+				var patternInstr = method.Body.Instructions[argumentInstr[regexMethod.PatternParameterIndex]];
+				if (patternInstr.OpCode != OpCodes.Ldstr) continue;
+				result.PatternInstruction = patternInstr;
 
-						if (regexMethod.OptionsParameterIndex >= 0) {
-							var optionsInstr =
-								method.Body.Instructions[argumentInstr[regexMethod.OptionsParameterIndex]];
-							if (optionsInstr.OpCode != OpCodes.Ldc_I4) continue;
-							options = (RegexOptions)optionsInstr.Operand;
+				var pattern = patternInstr.Operand as string;
+				var options = RegexOptions.None;
 
-							if ((options & RegexOptions.Compiled) != 0) {
-								options &= ~RegexOptions.Compiled;
-								result.explicitCompiled = true;
-							}
-							else
-								result.explicitCompiled = false;
+				if (regexMethod.OptionsParameterIndex >= 0) {
+					var optionsInstr =
+						method.Body.Instructions[argumentInstr[regexMethod.OptionsParameterIndex]];
+					if (optionsInstr.OpCode != OpCodes.Ldc_I4) continue;
+					options = (RegexOptions)optionsInstr.Operand;
 
-							result.optionsInstr = optionsInstr;
-						}
-						else {
-							result.explicitCompiled = false;
-						}
-
-						TimeSpan? timeout = null;
-						bool staticTimeout = true;
-						if (regexMethod.TimeoutParameterIndex >= 0) {
-							staticTimeout = false;
-							var timeoutInstr =
-								method.Body.Instructions[argumentInstr[regexMethod.TimeoutParameterIndex]];
-							var timeoutInstrs = ExtractTimespanFromCall(timeoutInstr, method, methodTrace, ref timeout,
-								ref staticTimeout);
-							result.timeoutInstrs = timeoutInstrs;
-						}
-
-						result.compileDef = new RegexCompileDef(pattern, options, timeout, staticTimeout);
-						yield return result;
+					if ((options & RegexOptions.Compiled) != 0) {
+						options &= ~RegexOptions.Compiled;
+						result.ExplicitCompiled = true;
 					}
+					else
+						result.ExplicitCompiled = false;
+
+					result.OptionsInstruction = optionsInstr;
 				}
+				else
+					result.ExplicitCompiled = false;
+
+				TimeSpan? timeout = null;
+				bool staticTimeout = true;
+				if (regexMethod.TimeoutParameterIndex >= 0) {
+					staticTimeout = false;
+					var timeoutInstr =
+						method.Body.Instructions[argumentInstr[regexMethod.TimeoutParameterIndex]];
+					var timeoutInstructions = ExtractTimespanFromCall(timeoutInstr, method, methodTrace, ref timeout,
+						ref staticTimeout);
+					result.TimeoutInstructions = timeoutInstructions;
+				}
+
+				result.CompileDef = new RegexCompileDef(pattern, options, timeout, staticTimeout);
+				yield return result;
 			}
 		}
 
@@ -84,7 +82,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(methodTrace != null, $"{nameof(methodTrace)} != null");
 
-			var instr = new List<Instruction>() {timeoutInstr};
+			var instr = new List<Instruction> {timeoutInstr};
 
 			if ((timeoutInstr.OpCode == OpCodes.Call)
 			    && (timeoutInstr.Operand is IMethod timespanCreateMethod)

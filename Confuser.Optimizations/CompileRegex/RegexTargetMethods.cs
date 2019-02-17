@@ -78,12 +78,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			if (method.DeclaringType.FullName != CompileRegexProtection._RegexTypeFullName) return null;
 
 			var sig = new SigComparer();
-			foreach (var testMethod in Methods) {
-				if (testMethod.Method.Name == method.Name && sig.Equals(testMethod.Method.MethodSig, method.MethodSig))
-					return testMethod;
-			}
-
-			return null;
+			return Methods.FirstOrDefault(testMethod => testMethod.Method.Name == method.Name && sig.Equals(testMethod.Method.MethodSig, method.MethodSig));
 		}
 
 		private static RegexTargetMethod ScanMethod(MethodDef method) {
@@ -95,17 +90,16 @@ namespace Confuser.Optimizations.CompileRegex {
 			var timeoutIndex = method.Parameters.Where(p => p.Name == "matchTimeout").Select(p => p.MethodSigIndex)
 				.DefaultIfEmpty(-1).First();
 
-			MethodDef equivalent = null;
-			if (!method.IsInstanceConstructor) {
-				var searchSig = MethodSig.CreateInstance(method.MethodSig.RetType);
-				for (int i = 0; i < method.MethodSig.Params.Count; i++) {
-					if (i != patternIndex && i != optionsIndex && i != timeoutIndex)
-						searchSig.Params.Add(method.MethodSig.Params[i]);
-				}
+			if (method.IsInstanceConstructor)
+				return new RegexTargetMethod(method, null, patternIndex, optionsIndex, timeoutIndex);
 
-				equivalent = method.DeclaringType.FindMethod(method.Name, searchSig);
+			var searchSig = MethodSig.CreateInstance(method.MethodSig.RetType);
+			for (int i = 0; i < method.MethodSig.Params.Count; i++) {
+				if (i != patternIndex && i != optionsIndex && i != timeoutIndex)
+					searchSig.Params.Add(method.MethodSig.Params[i]);
 			}
 
+			var equivalent = method.DeclaringType.FindMethod(method.Name, searchSig);
 			return new RegexTargetMethod(method, equivalent, patternIndex, optionsIndex, timeoutIndex);
 		}
 

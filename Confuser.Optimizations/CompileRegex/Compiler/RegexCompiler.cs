@@ -3,34 +3,27 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using OpCodes = dnlib.DotNet.Emit.OpCodes;
 using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
-	internal sealed class RegexCompiler {
+	internal sealed partial class RegexCompiler {
 		private readonly ModuleDef _targetModule;
 		private readonly RegexRunnerDef _regexRunnerDef;
 		private readonly TypeDef _regexTypeDef;
 		private readonly TypeDef _regexRunnerFactoryTypeDef;
 
-		private int _compiledExpressions = 0;
+		private int _compiledExpressions;
 
 		private int _expectedExpressions = 100;
-		private string _baseName = "ConfuserCompiledRegex";
 
-		internal string Namespace { get; set; }
+		private readonly RegexLWCGCompiler _realCompiler = new RegexLWCGCompiler();
 
-		internal string BaseName {
-			get => _baseName;
-			set {
-				if (value == null) throw new ArgumentNullException(nameof(value));
-				if (string.IsNullOrWhiteSpace(value))
-					throw new ArgumentException("The base name must not be empty.", nameof(value));
-				_baseName = value;
-			}
-		}
+		private string BaseName { get; } = "ConfuserCompiledRegex";
 
 		internal int ExpectedExpressions {
 			get => _expectedExpressions;
@@ -45,8 +38,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		internal RegexCompiler(ModuleDef targetModule) {
 			_targetModule = targetModule ?? throw new ArgumentNullException(nameof(targetModule));
 
-			var regexModule = targetModule.GetTypeRefs()
-				.Where(tr => tr.FullName == CompileRegexProtection._RegexTypeFullName).First().ResolveTypeDefThrow()
+			var regexModule = targetModule
+				.GetTypeRefs().First(tr => tr.FullName == CompileRegexProtection._RegexTypeFullName).ResolveTypeDefThrow()
 				.Module;
 
 			_regexRunnerDef = new RegexRunnerDef(regexModule);
@@ -70,25 +63,25 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				return false;
 			}
 
-			if (tree.Root != null) {
-				var uncheckedNodes = new Queue<RegexNode>();
-				var alreadyProcessed = new HashSet<RegexNode>();
-				uncheckedNodes.Enqueue(tree.Root);
-				alreadyProcessed.Add(tree.Root);
-				while (uncheckedNodes.Any()) {
-					var currentNode = uncheckedNodes.Dequeue();
-					if (IsUnsafe(currentNode._options)) return true;
+			if (tree.Root == null) return false;
 
-					var children = currentNode._children;
-					if (children != null)
-						foreach (var child in children)
-							if (alreadyProcessed.Add(child))
-								uncheckedNodes.Enqueue(child);
+			var uncheckedNodes = new Queue<RegexNode>();
+			var alreadyProcessed = new HashSet<RegexNode>();
+			uncheckedNodes.Enqueue(tree.Root);
+			alreadyProcessed.Add(tree.Root);
+			while (uncheckedNodes.Any()) {
+				var currentNode = uncheckedNodes.Dequeue();
+				if (IsUnsafe(currentNode._options)) return true;
 
-					var nextNode = currentNode._next;
-					if (nextNode != null && alreadyProcessed.Add(nextNode))
-						uncheckedNodes.Enqueue(nextNode);
-				}
+				var children = currentNode._children;
+				if (children != null)
+					foreach (var child in children)
+						if (alreadyProcessed.Add(child))
+							uncheckedNodes.Enqueue(child);
+
+				var nextNode = currentNode._next;
+				if (nextNode != null && alreadyProcessed.Add(nextNode))
+					uncheckedNodes.Enqueue(nextNode);
 			}
 
 			return false;
@@ -117,12 +110,9 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var compiledRegexFactoryTypeDef = CompileRegexFactory(baseName, compiledRegexRunnerTypeDef);
 			var compiledRegex = CompiledRegex(baseName, compiledRegexFactoryTypeDef, expression, code, tree);
 
-			var staticHelperMethods = new Dictionary<IRegexTargetMethod, MethodDef>();
-			foreach (var staticMethod in expression.TargetMethods) {
-				staticHelperMethods.Add(
-					staticMethod,
-					CompileStaticAccessMethod(compiledRegex, staticMethod, expression));
-			}
+			var staticHelperMethods = expression.TargetMethods.ToDictionary(
+				staticMethod => staticMethod,
+				staticMethod => CompileStaticAccessMethod(compiledRegex, staticMethod, expression));
 
 			return new RegexCompilerResult(
 				expression,
@@ -149,7 +139,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		#region CompileRegexRunner
 
 		private TypeDef CompileRegexRunner(string baseName, RegexCompileDef expression, RegexCode code) {
-			var runnerType = new TypeDefUser(Namespace, baseName + "Runner",
+			var runnerType = new TypeDefUser(baseName + "Runner",
 				_targetModule.Import(_regexRunnerDef.RegexRunnerTypeDef)) {
 				Visibility = TypeAttributes.NotPublic
 			};
@@ -157,46 +147,56 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			GenerateDefaultConstructor(runnerType);
 
-			var goMethod = CreateOverwriteMethodDef("Go", MethodSig.CreateInstance(_targetModule.CorLibTypes.Void),
+			var factory = _realCompiler.FactoryInstanceFromCode(code, expression.Options);
+
+			var goMethod = ReadMethodDef(factory.GoMethod);
+			var overrideGoMethod = CreateOverwriteMethodDef("Go", MethodSig.CreateInstance(_targetModule.CorLibTypes.Void),
 				_regexRunnerDef.RegexRunnerTypeDef);
-			goMethod.DeclaringType = runnerType;
-			GenerateGo(expression, goMethod, code);
+			overrideGoMethod.Body = goMethod.Body;
+			FixCheckTimeout(overrideGoMethod.Body);
 
-			var findFirstCharMethod = CreateOverwriteMethodDef("FindFirstChar",
+			var findFirstCharMethod = ReadMethodDef(factory.FindFirstCharMethod);
+			var overrideFindFirstCharMethod = CreateOverwriteMethodDef("FindFirstChar",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Boolean), _regexRunnerDef.RegexRunnerTypeDef);
-			findFirstCharMethod.DeclaringType = runnerType;
-			GenerateFindFirstChar(expression.Options, findFirstCharMethod, code);
+			overrideFindFirstCharMethod.Body = findFirstCharMethod.Body;
 
-			var initTrackCountMethod = CreateOverwriteMethodDef("InitTrackCount",
+			var initTrackCountMethod = ReadMethodDef(factory.InitTrackCountMethod);
+			var overrideInitTrackCountMethod = CreateOverwriteMethodDef("InitTrackCount",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Void), _regexRunnerDef.RegexRunnerTypeDef);
-			initTrackCountMethod.DeclaringType = runnerType;
-			GenerateInitTrackCount(initTrackCountMethod, code);
+			overrideInitTrackCountMethod.Body = initTrackCountMethod.Body;
+
+			overrideGoMethod.DeclaringType = runnerType;
+			overrideFindFirstCharMethod.DeclaringType = runnerType;
+			overrideInitTrackCountMethod.DeclaringType = runnerType;
 
 			return runnerType;
 		}
 
-		private void GenerateGo(RegexCompileDef expression, MethodDef goMethod, RegexCode code) {
-			var compiler = new RegexRunnerGoMethodCompiler(_targetModule, goMethod, _regexRunnerDef) {
-				CheckTimeout = expression.Timeout.HasValue || !expression.StaticTimeout
-			};
-			compiler.GenerateGo(expression.Options, code);
+		private void FixCheckTimeout(CilBody body) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+
+			if (_regexRunnerDef.CheckTimeoutMethodDef != null) return;
+
+			for (var i = body.Instructions.Count - 1; i >= 0; i--) {
+				var instr = body.Instructions[i];
+				if (instr.OpCode.Code != Code.Callvirt || !(instr.Operand is IMethodDefOrRef calledMethod) ||
+				    calledMethod.DeclaringType.FullName != _regexRunnerDef.RegexRunnerTypeDef.FullName ||
+				    calledMethod.Name != "CheckTimeout") continue;
+
+				// Found the timeout method, but there is no check timeout method in the version of .NET we are using.
+				body.RemoveInstruction(i);
+				body.RemoveInstruction(i - 1);
+				i++;
+			}
 		}
 
-		private void GenerateFindFirstChar(RegexOptions options, MethodDef findFirstCharMethod, RegexCode code) {
-			var compiler =
-				new RegexRunnerFindFirstCharMethodCompiler(_targetModule, findFirstCharMethod, _regexRunnerDef);
-			compiler.GenerateFindFirstChar(options, code);
-		}
+		private MethodDef ReadMethodDef(DynamicMethod method) {
+			var gpContext = new GenericParamContext();
+			var importer = new Importer(_targetModule, ImporterOptions.TryToUseDefs, gpContext, new Mapper(_targetModule, _regexRunnerDef));
+			var methodReader = new DynamicMethodBodyReader(_targetModule, method, importer, gpContext);
+			if (methodReader.Read()) return methodReader.GetMethod();
 
-		private void GenerateInitTrackCount(MethodDef findFirstCharMethod, RegexCode code) {
-			var compiler = new RegexRunnerMethodCompiler(_targetModule, findFirstCharMethod, _regexRunnerDef) {
-				CacheRegexRunnerFieldsInLocalVariables = false
-			};
-
-			compiler.StRunnerField(_regexRunnerDef.runtrackcountFieldDef, () => { compiler.Ldc(code.TrackCount); });
-			compiler.Ret();
-
-			compiler.FinishMethod();
+			throw new Exception("Can't read compiled method.");
 		}
 
 		#endregion
@@ -206,7 +206,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private TypeDef CompileRegexFactory(string baseName, TypeDef runnerType) {
 			var baseTypeRef = _targetModule.Import(_regexRunnerFactoryTypeDef);
 			var runnerDef = _targetModule.Import(_regexRunnerDef.RegexRunnerTypeDef);
-			var factoryType = new TypeDefUser(Namespace, baseName + "Factory", baseTypeRef) {
+			var factoryType = new TypeDefUser(baseName + "Factory", baseTypeRef) {
 				Visibility = TypeAttributes.NotPublic
 			};
 			_targetModule.AddAsNonNestedType(factoryType);
@@ -222,7 +222,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			compiler.Newobj(runnerType.FindDefaultConstructor());
 			compiler.Ret();
-			compiler.FinishMethod();
 
 			return factoryType;
 		}
@@ -234,7 +233,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			var newMethodDef = new MethodDefUser(name, methodSig) {
 				Attributes = (baseMethod.Attributes & ~(MethodAttributes.NewSlot | MethodAttributes.Abstract)) |
-				             MethodAttributes.Final,
+				             MethodAttributes.Final
 			};
 
 			newMethodDef.Overrides.Add(new MethodOverride(newMethodDef, _targetModule.Import(baseMethod)));
@@ -244,7 +243,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private (TypeDef TypeDef, MethodDef FactoryMethod, MethodDef FactoryTimeoutMethod) CompiledRegex(
 			string baseName, TypeDef factoryType, RegexCompileDef expression, RegexCode code, RegexTree tree) {
 			var baseTypeRef = _targetModule.Import(_regexTypeDef);
-			var regexType = new TypeDefUser(Namespace, baseName, baseTypeRef) {
+			var regexType = new TypeDefUser(baseName, baseTypeRef) {
 				Visibility = TypeAttributes.NotPublic
 			};
 			_targetModule.AddAsNonNestedType(regexType);
@@ -263,31 +262,29 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			body.Instructions.Add(OpCodes.Newobj.ToInstruction(defaultCtor));
 			body.Instructions.Add(OpCodes.Ret.ToInstruction());
 
-			MethodDefUser timeoutFactoryMethodDef = null;
-			if (!expression.StaticTimeout) {
-				var typeRefFinder = new TypeRefFinder(_targetModule);
-				var timespanTypeRef = typeRefFinder.FindType("System.TimeSpan");
-				if (timespanTypeRef is TypeDef timespanTypeDef) {
-					timespanTypeRef = _targetModule.Import(timespanTypeDef);
-				}
+			if (expression.StaticTimeout) return (regexType, factoryMethodDef, null);
 
-				var timespanTypeSig = timespanTypeRef.ToTypeSig();
-				var timeSpanCtor = CreateConstructorDef(timespanTypeSig);
-				timeSpanCtor.DeclaringType = regexType;
+			var typeRefFinder = new TypeRefFinder(_targetModule);
+			var timespanTypeRef = typeRefFinder.FindType("System.TimeSpan");
+			if (timespanTypeRef is TypeDef timespanTypeDef)
+				timespanTypeRef = _targetModule.Import(timespanTypeDef);
 
-				compiler = new RegexConstructorCompiler(_targetModule, timeSpanCtor);
-				compiler.GenerateTimeoutConstructor(defaultCtor);
+			var timespanTypeSig = timespanTypeRef.ToTypeSig();
+			var timeSpanCtor = CreateConstructorDef(timespanTypeSig);
+			timeSpanCtor.DeclaringType = regexType;
 
-				timeoutFactoryMethodDef = new MethodDefUser("GetRegex",
-					MethodSig.CreateStatic(baseTypeRef.ToTypeSig(), timespanTypeSig)) {
-					Attributes = MethodAttributes.Assembly | MethodAttributes.Static,
-					DeclaringType = regexType
-				};
-				body = timeoutFactoryMethodDef.Body = new CilBody();
-				body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-				body.Instructions.Add(OpCodes.Newobj.ToInstruction(timeSpanCtor));
-				body.Instructions.Add(OpCodes.Ret.ToInstruction());
-			}
+			compiler = new RegexConstructorCompiler(_targetModule, timeSpanCtor);
+			compiler.GenerateTimeoutConstructor(defaultCtor);
+
+			var timeoutFactoryMethodDef = new MethodDefUser("GetRegex",
+				MethodSig.CreateStatic(baseTypeRef.ToTypeSig(), timespanTypeSig)) {
+				Attributes = MethodAttributes.Assembly | MethodAttributes.Static,
+				DeclaringType = regexType
+			};
+			body = timeoutFactoryMethodDef.Body = new CilBody();
+			body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+			body.Instructions.Add(OpCodes.Newobj.ToInstruction(timeSpanCtor));
+			body.Instructions.Add(OpCodes.Ret.ToInstruction());
 
 			return (regexType, factoryMethodDef, timeoutFactoryMethodDef);
 		}
@@ -332,9 +329,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				body.Instructions.Add(OpCodes.Ldarg.ToInstruction(staticMethodDef.Parameters[timeoutIndex]));
 				body.Instructions.Add(OpCodes.Call.ToInstruction(factoryTimeoutMethod));
 			}
-			else {
+			else
 				body.Instructions.Add(OpCodes.Call.ToInstruction(factoryMethod));
-			}
 
 			foreach (var param in staticMethodDef.Parameters) {
 				if (param.MethodSigIndex == timeoutIndex) continue;
@@ -365,20 +361,20 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		}
 
 		private MethodDefUser CreateConstructorDef() {
-			var implFlags = MethodImplAttributes.IL | MethodImplAttributes.Managed;
-			var flags = MethodAttributes.Assembly |
-			            MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
-			            MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+			const MethodImplAttributes implFlags = MethodImplAttributes.IL | MethodImplAttributes.Managed;
+			const MethodAttributes flags = MethodAttributes.Assembly |
+			                               MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
+			                               MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
 			return new MethodDefUser(".ctor",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Void), implFlags, flags);
 		}
 
 		private MethodDefUser CreateConstructorDef(TypeSig param) {
-			var implFlags = MethodImplAttributes.IL | MethodImplAttributes.Managed;
-			var flags = MethodAttributes.Assembly |
-			            MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
-			            MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+			const MethodImplAttributes implFlags = MethodImplAttributes.IL | MethodImplAttributes.Managed;
+			const MethodAttributes flags = MethodAttributes.Assembly |
+			                               MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
+			                               MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
 			return new MethodDefUser(".ctor",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Void, param), implFlags, flags);

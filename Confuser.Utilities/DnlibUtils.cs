@@ -542,6 +542,12 @@ namespace Confuser {
 			}
 		}
 
+		public static void RemoveInstruction(this CilBody body, int index) {
+			if (body == null) throw new ArgumentNullException(nameof(body));
+
+			RemoveInstruction(body, index, body.Instructions[index]);
+		}
+
 		/// <summary>
 		/// This method removes an instruction from the body and fixes the references to the removed instruction.
 		/// </summary>
@@ -558,8 +564,17 @@ namespace Confuser {
 			}
 
 			var indexOfInstr = body.Instructions.IndexOf(instr);
+
+			RemoveInstruction(body, indexOfInstr, instr);
+		}
+
+		private static void RemoveInstruction(CilBody body, int indexOfInstr, Instruction instr) {
+			Debug.Assert(body != null, $"{nameof(body)} != null");
 			Debug.Assert(indexOfInstr >= 0, "Instruction not present in method.");
+			Debug.Assert(instr != null, $"{nameof(instr)} != null");
+
 			if (indexOfInstr < 0) return;
+			Debug.Assert(body.Instructions.IndexOf(instr) == indexOfInstr, "Instruction and index do not match.");
 
 			if (indexOfInstr < body.Instructions.Count - 1) {
 				body.UpdateReference(instr, body.Instructions[indexOfInstr + 1]);

@@ -10,7 +10,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			_module = module ?? throw new ArgumentNullException(nameof(module));
 
 		internal ITypeDefOrRef FindType(string fullName) {
-			var processedModules = new HashSet<ModuleDef>() {_module};
+			var processedModules = new HashSet<ModuleDef> {_module};
 			var modulesToScan = new Queue<ModuleDef>();
 			modulesToScan.Enqueue(_module);
 
@@ -25,9 +25,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 						return typeRef;
 
 					var resolvedType = typeRef.Resolve();
-					if (resolvedType != null && processedModules.Add(resolvedType.Module)) {
+					if (resolvedType != null && processedModules.Add(resolvedType.Module))
 						modulesToScan.Enqueue(resolvedType.Module);
-					}
 				}
 			}
 

@@ -3,15 +3,15 @@ using dnlib.DotNet.Emit;
 
 namespace Confuser.Optimizations.CompileRegex {
 	internal struct MethodAnalyzerResult {
-		internal Instruction mainInstruction;
+		internal Instruction MainInstruction { get; set; }
 
-		internal Instruction patternInstr;
-		internal Instruction optionsInstr;
-		internal IList<Instruction> timeoutInstrs;
+		internal Instruction PatternInstruction { get; set; }
+		internal Instruction OptionsInstruction { get; set; }
+		internal IList<Instruction> TimeoutInstructions { get; set; }
 
-		internal IRegexTargetMethod regexMethod;
-		internal RegexCompileDef compileDef;
+		internal IRegexTargetMethod RegexMethod { get; set; }
+		internal RegexCompileDef CompileDef { get; set; }
 
-		internal bool explicitCompiled;
+		internal bool ExplicitCompiled { get; set; }
 	}
 }

@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
+	[SuppressMessage("ReSharper", "StringLiteralTypo", Justification = "Lots of references to fields here.")]
+	[SuppressMessage("ReSharper", "IdentifierTypo", Justification = "Lots of references to fields here.")]
 	internal sealed class RegexConstructorCompiler : RegexMethodCompiler {
-		private readonly TypeDef _regexTypeDef;
 		private readonly MethodDef _regexCtorDef;
 		private readonly MethodDef _initializeReferencesMethodDef;
 
@@ -24,8 +26,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		private readonly ITypeDefOrRef _stringTypeRef;
 		private readonly ITypeDefOrRef _int32TypeRef;
-		private readonly TypeDef _timespanTypeDef;
-		private readonly TypeSig _timespanTypeSig;
 
 		private readonly MethodDef _timespanFromTicksMethodDef;
 
@@ -34,45 +34,46 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 
 			var typeRefFinder = new TypeRefFinder(module);
-			_regexTypeDef = typeRefFinder.FindType(CompileRegexProtection._RegexTypeFullName).ResolveTypeDefThrow();
-			_regexCtorDef = _regexTypeDef.FindDefaultConstructor();
-			_initializeReferencesMethodDef = _regexTypeDef.FindMethod("InitializeReferences",
+			var regexTypeDef = typeRefFinder.FindType(CompileRegexProtection._RegexTypeFullName).ResolveTypeDefThrow();
+			_regexCtorDef = regexTypeDef.FindDefaultConstructor();
+			_initializeReferencesMethodDef = regexTypeDef.FindMethod("InitializeReferences",
 				MethodSig.CreateInstance(module.CorLibTypes.Void));
 
 			const string ns = CompileRegexProtection._RegexNamespace;
 			var regexOptionsTypeSig = typeRefFinder.FindType(ns + ".RegexOptions").ToTypeSig();
 			var regexRunnerFactoryTypeSig = typeRefFinder.FindType(ns + ".RegexRunnerFactory").ToTypeSig();
-			_timespanTypeDef = typeRefFinder.FindType("System.TimeSpan").ResolveTypeDefThrow();
-			_timespanTypeSig = _timespanTypeDef.ToTypeSig();
+			var timespanTypeDef = typeRefFinder.FindType("System.TimeSpan").ResolveTypeDefThrow();
+			var timespanTypeSig = timespanTypeDef.ToTypeSig();
 
-			_patternFieldDef = _regexTypeDef.FindField("pattern", new FieldSig(module.CorLibTypes.String),
+			_patternFieldDef = regexTypeDef.FindField("pattern", new FieldSig(module.CorLibTypes.String),
 				SigComparerOptions.PrivateScopeFieldIsComparable);
-			_roptionsFieldDef = _regexTypeDef.FindField("roptions", new FieldSig(regexOptionsTypeSig),
+			_roptionsFieldDef = regexTypeDef.FindField("roptions", new FieldSig(regexOptionsTypeSig),
 				SigComparerOptions.PrivateScopeFieldIsComparable);
-			_regexFactoryFieldDef = _regexTypeDef.FindField("factory", new FieldSig(regexRunnerFactoryTypeSig),
+			_regexFactoryFieldDef = regexTypeDef.FindField("factory", new FieldSig(regexRunnerFactoryTypeSig),
 				SigComparerOptions.PrivateScopeFieldIsComparable);
-			_capsFieldDef = _regexTypeDef.FindField("caps");
-			_capnamesFieldDef = _regexTypeDef.FindField("capnames");
-			_capslistFieldDef = _regexTypeDef.FindField("capslist",
+			_capsFieldDef = regexTypeDef.FindField("caps");
+			_capnamesFieldDef = regexTypeDef.FindField("capnames");
+			_capslistFieldDef = regexTypeDef.FindField("capslist",
 				new FieldSig(new SZArraySig(module.CorLibTypes.String)),
 				SigComparerOptions.PrivateScopeFieldIsComparable);
-			_capsizeFieldDef = _regexTypeDef.FindField("capsize", new FieldSig(module.CorLibTypes.Int32),
+			_capsizeFieldDef = regexTypeDef.FindField("capsize", new FieldSig(module.CorLibTypes.Int32),
 				SigComparerOptions.PrivateScopeFieldIsComparable);
-			_internalMatchTimeoutFieldDef = _regexTypeDef.FindField("internalMatchTimeout",
-				new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
-			_validateMatchTimeoutMethodDef = _regexTypeDef.FindMethod("ValidateMatchTimeout",
-				MethodSig.CreateStatic(module.CorLibTypes.Void, _timespanTypeSig),
+			_internalMatchTimeoutFieldDef = regexTypeDef.FindField("internalMatchTimeout",
+				new FieldSig(timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
+			_validateMatchTimeoutMethodDef = regexTypeDef.FindMethod("ValidateMatchTimeout",
+				MethodSig.CreateStatic(module.CorLibTypes.Void, timespanTypeSig),
 				SigComparerOptions.PrivateScopeFieldIsComparable);
 
-			_defaultMatchTimeoutFieldDef = _regexTypeDef.FindField("DefaultMatchTimeout",
-				new FieldSig(_timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
+			_defaultMatchTimeoutFieldDef = regexTypeDef.FindField("DefaultMatchTimeout",
+				new FieldSig(timespanTypeSig), SigComparerOptions.PrivateScopeFieldIsComparable);
 
 			_stringTypeRef = module.CorLibTypes.String.ToTypeDefOrRef();
 			_int32TypeRef = module.CorLibTypes.Int32.ToTypeDefOrRef();
-			_timespanFromTicksMethodDef = _timespanTypeDef.FindMethod("FromTicks",
-				MethodSig.CreateStatic(_timespanTypeSig, module.CorLibTypes.Int64));
+			_timespanFromTicksMethodDef = timespanTypeDef.FindMethod("FromTicks",
+				MethodSig.CreateStatic(timespanTypeSig, module.CorLibTypes.Int64));
 		}
 
+		[SuppressMessage("ReSharper", "CommentTypo")]
 		internal void GenerateDefaultConstructor(TypeDef factory, RegexCompileDef expression, RegexCode code,
 			RegexTree tree) {
 			Debug.Assert(factory != null, $"{nameof(factory)} != null");
@@ -152,13 +153,13 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			Ret();
 		}
 
-		internal void GenerateCreateTable(FieldDef field, IDictionary ht) {
+		private void GenerateCreateTable(FieldDef field, IDictionary ht) {
 			Debug.Assert(field != null, $"{nameof(field)} != null");
 			Debug.Assert(ht != null, $"{nameof(ht)} != null");
 
 			var fieldTypeDef = field.FieldType.TryGetTypeRef().ResolveThrow();
 
-			var addMethod = fieldTypeDef.FindMethods("Add").Where(m => m.MethodSig.Params.Count == 2).FirstOrDefault();
+			var addMethod = fieldTypeDef.FindMethods("Add").FirstOrDefault(m => m.MethodSig.Params.Count == 2);
 			if (addMethod == null) throw new InvalidOperationException("There is no add method for this list?!");
 
 			Stfld(field, () => Newobj(fieldTypeDef.FindDefaultConstructor()));
@@ -170,17 +171,13 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				if (en.Key is int intKey) {
 					Ldc(intKey);
 
-					if (!addMethod.Parameters[0].Type.GetIsValueType()) {
-						Box(_int32TypeRef);
-					}
+					if (!addMethod.Parameters[0].Type.GetIsValueType()) Box(_int32TypeRef);
 				}
 				else
 					Ldstr((string)en.Key);
 
 				Ldc((int)en.Value);
-				if (!addMethod.Parameters[1].Type.GetIsValueType()) {
-					Box(_int32TypeRef);
-				}
+				if (!addMethod.Parameters[1].Type.GetIsValueType()) Box(_int32TypeRef);
 
 				Callvirt(addMethod);
 			}
