@@ -137,7 +137,6 @@ namespace Confuser.Core {
 		public IProtectionSettings GetParameters(IDnlibDef target) =>
 			ProtectionParameters.GetParameters(this, target);
 
-
 		private void Dispose(bool disposing) {
 			if (!disposing) return;
 			foreach (var moduleDef in Modules)

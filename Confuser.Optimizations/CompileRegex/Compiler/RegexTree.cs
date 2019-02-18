@@ -9,7 +9,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 	[SuppressMessage("ReSharper", "StringLiteralTypo")]
 	internal struct RegexTree {
-
 		internal static readonly Type RealRegexTreeType = RU.GetRegexType("RegexTree");
 
 		// These fields have different names and properties depending on the referenced assembly.

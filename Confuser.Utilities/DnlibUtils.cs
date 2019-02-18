@@ -601,7 +601,6 @@ namespace Confuser {
 				}
 			}
 
-
 			// Any now we have fixed everything and we can finally safely delete the instruction!
 			body.Instructions.RemoveAt(indexOfInstr);
 		}

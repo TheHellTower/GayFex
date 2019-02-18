@@ -45,7 +45,5 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var realRegexCode = writeMethod.Invoke(null, new[] { tree.RealRegexTree });
 			return new RegexCode(realRegexCode);
 		}
-
-
 	}
 }

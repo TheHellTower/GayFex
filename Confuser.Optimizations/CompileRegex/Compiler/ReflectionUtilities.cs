@@ -51,7 +51,6 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			return resultMethod;
 		}
 
-
 		internal static MethodInfo GetStaticMethod(Type declaringType, string name, params Type[] parameters) {
 			if (declaringType == null) throw new ArgumentNullException(nameof(declaringType));
 			if (parameters == null) throw new ArgumentNullException(nameof(parameters));
