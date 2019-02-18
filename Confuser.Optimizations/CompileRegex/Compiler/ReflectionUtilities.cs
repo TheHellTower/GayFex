@@ -66,7 +66,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (declaringType == null) throw new ArgumentNullException(nameof(declaringType));
 
 			var constructor = declaringType.GetConstructor(
-				BindingFlags.Instance | BindingFlags.NonPublic, null,
+				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null,
 				CallingConventions.Standard | CallingConventions.HasThis,
 				Type.EmptyTypes, null);
 			Debug.Assert(constructor != null, $"Failed to find default constructor in type {declaringType.FullName}");

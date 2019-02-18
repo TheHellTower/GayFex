@@ -194,9 +194,12 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var gpContext = new GenericParamContext();
 			var importer = new Importer(_targetModule, ImporterOptions.TryToUseDefs, gpContext, new Mapper(_targetModule, _regexRunnerDef));
 			var methodReader = new DynamicMethodBodyReader(_targetModule, method, importer, gpContext);
-			if (methodReader.Read()) return methodReader.GetMethod();
+			if (!methodReader.Read()) throw new Exception("Can't read compiled method.");
 
-			throw new Exception("Can't read compiled method.");
+			var methodDef = methodReader.GetMethod();
+			methodDef.Body.SimplifyBranches();
+			methodDef.Body.SimplifyMacros(methodDef.Parameters);
+			return methodDef;
 		}
 
 		#endregion
