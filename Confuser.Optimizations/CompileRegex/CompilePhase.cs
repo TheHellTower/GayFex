@@ -16,7 +16,7 @@ namespace Confuser.Optimizations.CompileRegex {
 		internal CompilePhase(CompileRegexProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		internal CompileRegexProtection Parent { get; }
+		private CompileRegexProtection Parent { get; }
 
 		IConfuserComponent IProtectionPhase.Parent => Parent;
 
@@ -42,7 +42,7 @@ namespace Confuser.Optimizations.CompileRegex {
 				if (!expressions.Any()) continue;
 
 				var skipBroken = parameters.GetParameter(context, module, Parent.Parameters.SkipBrokenExpressions);
-				var skipUnsafe = parameters.GetParameter(context, module, Parent.Parameters.I18nSafeMode);
+				var skipUnsafe = parameters.GetParameter(context, module, Parent.Parameters.I18NSafeMode);
 
 				logger.LogMsgRegexCompilingForModule(module, expressions.Length);
 
@@ -52,11 +52,11 @@ namespace Confuser.Optimizations.CompileRegex {
 
 				int compiledExpressions = 0;
 
+				// ReSharper disable once RemoveRedundantBraces
 				foreach (var expression in expressions) {
-					if (skipUnsafe && Compiler.RegexCompiler.IsCultureUnsafe(expression)) {
+					if (skipUnsafe && Compiler.RegexCompiler.IsCultureUnsafe(expression))
 						logger.LogMsgSkippedUnsafe(expression);
-					}
-					else {
+					else
 						try {
 							var result = compiler.Compile(expression);
 							regexService1?.AddCompiledRegex(module, result);
@@ -77,7 +77,6 @@ namespace Confuser.Optimizations.CompileRegex {
 								throw;
 							}
 						}
-					}
 				}
 
 				if (compiledExpressions > 0)
@@ -105,12 +104,10 @@ namespace Confuser.Optimizations.CompileRegex {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(markerService != null, $"{nameof(markerService)} != null");
 
-			if (nameService == null) {
+			if (nameService == null)
 				markerService.Mark(context, def, Parent);
-			}
-			else {
+			else
 				nameService.MarkHelper(context, def, markerService, Parent);
-			}
 		}
 	}
 }

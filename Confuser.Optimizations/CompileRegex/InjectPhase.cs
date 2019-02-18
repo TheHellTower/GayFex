@@ -35,8 +35,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			var traceService = context.Registry.GetRequiredService<ITraceService>();
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(CompileRegexProtection.Id);
 
-			Debug.Assert(regexService1 != null, $"{nameof(regexService1)} != null");
-			if (regexService1 == null) return;
+			if (regexService1 == null) throw new InvalidOperationException("Unexpected implementation of CompileRegexService");
 
 			foreach (var method in parameters.Targets.OfType<MethodDef>()) {
 				var moduleRegexMethods = regexService.GetRegexTargetMethods(method.Module);
@@ -45,41 +44,35 @@ namespace Confuser.Optimizations.CompileRegex {
 				// .ToArray is required because the instructions are modified.
 				foreach (var result in MethodAnalyzer.GetRegexCalls(method, moduleRegexMethods, traceService)
 					.ToArray()) {
-					var compileResult = regexService1.GetCompiledRegex(method.Module, result.compileDef);
+					var compileResult = regexService1.GetCompiledRegex(method.Module, result.CompileDef);
 					if (compileResult == null) continue;
 
 					MethodDef newMethod;
-					if (result.regexMethod.InstanceEquivalentMethod == null) {
-						if (result.compileDef.StaticTimeout) {
-							newMethod = compileResult.CreateMethod;
-						}
-						else {
-							newMethod = compileResult.CreateWithTimeoutMethod;
-						}
-					}
-					else {
-						compileResult.StaticHelperMethods.TryGetValue(result.regexMethod, out newMethod);
-					}
+					if (result.RegexMethod.InstanceEquivalentMethod == null)
+						newMethod = result.CompileDef.StaticTimeout
+							? compileResult.CreateMethod
+							: compileResult.CreateWithTimeoutMethod;
+					else
+						compileResult.StaticHelperMethods.TryGetValue(result.RegexMethod, out newMethod);
 
 					if (newMethod == null) {
-						logger.LogMsgNoMatchingTargetMethod(result.regexMethod, compileResult);
+						logger.LogMsgNoMatchingTargetMethod(result.RegexMethod, compileResult);
 						continue;
 					}
 
-					method.Body.RemoveInstruction(result.patternInstr);
-					if (result.optionsInstr != null)
-						method.Body.RemoveInstruction(result.optionsInstr);
-					if (result.compileDef.StaticTimeout && result.timeoutInstrs != null) {
-						foreach (var timeoutInstr in result.timeoutInstrs)
+					method.Body.RemoveInstruction(result.PatternInstruction);
+					if (result.OptionsInstruction != null)
+						method.Body.RemoveInstruction(result.OptionsInstruction);
+					if (result.CompileDef.StaticTimeout && result.TimeoutInstructions != null)
+						foreach (var timeoutInstr in result.TimeoutInstructions)
 							method.Body.RemoveInstruction(timeoutInstr);
-					}
 
 					Debug.Assert(newMethod != null, $"{nameof(newMethod)} != null");
-					Debug.Assert(method.Body.Instructions.Contains(result.mainInstruction),
+					Debug.Assert(method.Body.Instructions.Contains(result.MainInstruction),
 						"Method does not contain main instruction?");
 
-					result.mainInstruction.OpCode = OpCodes.Call;
-					result.mainInstruction.Operand = newMethod;
+					result.MainInstruction.OpCode = OpCodes.Call;
+					result.MainInstruction.Operand = newMethod;
 					logger.LogMsgInjectSuccessful(compileResult, method);
 				}
 

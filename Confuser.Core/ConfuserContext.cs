@@ -1,20 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Threading;
 using Confuser.Core.Project;
-using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Core {
-	/// <summary>
-	///     Context providing information on the current protection process.
-	/// </summary>
-	public class ConfuserContext : IConfuserContext {
-		readonly Annotations annotations = new Annotations();
-
+	/// <inheritdoc cref="IConfuserContext" />
+	public sealed class ConfuserContext : IConfuserContext, IDisposable {
 		/// <summary>
 		///     Gets the project being processed.
 		/// </summary>
@@ -27,9 +19,7 @@ namespace Confuser.Core {
 		///     Gets the annotation storage.
 		/// </summary>
 		/// <value>The annotation storage.</value>
-		public Annotations Annotations {
-			get { return annotations; }
-		}
+		public Annotations Annotations { get; } = new Annotations();
 
 		IAnnotations IConfuserContext.Annotations => Annotations;
 
@@ -47,16 +37,10 @@ namespace Confuser.Core {
 
 		IAssemblyResolver IConfuserContext.Resolver => Resolver;
 
-		/// <summary>
-		///     Gets the modules being protected.
-		/// </summary>
-		/// <value>The modules being protected.</value>
+		/// <inheritdoc />
 		public IImmutableList<ModuleDefMD> Modules { get; internal set; }
 
-		/// <summary>
-		///     Gets the external modules.
-		/// </summary>
-		/// <value>The external modules.</value>
+		/// <inheritdoc />
 		public IImmutableList<ReadOnlyMemory<byte>> ExternalModules { get; internal set; }
 
 		/// <summary>
@@ -85,55 +69,35 @@ namespace Confuser.Core {
 
 		IProtectionPipeline IConfuserContext.Pipeline => Pipeline;
 
-		/// <summary>
-		///     Gets the <c>byte[]</c> of modules after protected, or null if module is not protected yet.
-		/// </summary>
-		/// <value>The list of <c>byte[]</c> of protected modules.</value>
-		public IImmutableList<byte[]> OutputModules { get; internal set; }
+		/// <inheritdoc />
+		public IImmutableList<Memory<byte>> OutputModules { get; internal set; }
 
-		/// <summary>
-		///     Gets the <c>byte[]</c> of module debug symbols after protected, or null if module is not protected yet.
-		/// </summary>
-		/// <value>The list of <c>byte[]</c> of module debug symbols.</value>
-		public IImmutableList<byte[]> OutputSymbols { get; internal set; }
+		/// <inheritdoc />
+		public IImmutableList<Memory<byte>> OutputSymbols { get; internal set; }
 
-		/// <summary>
-		///     Gets the relative output paths of module, or null if module is not protected yet.
-		/// </summary>
-		/// <value>The relative output paths of protected modules.</value>
+		/// <inheritdoc />
 		public IImmutableList<string> OutputPaths { get; internal set; }
 
-		/// <summary>
-		///     Gets the current module index.
-		/// </summary>
-		/// <value>The current module index.</value>
+		/// <inheritdoc />
 		public int CurrentModuleIndex { get; internal set; }
 
-		/// <summary>
-		///     Gets the current module.
-		/// </summary>
-		/// <value>The current module.</value>
-		public ModuleDefMD CurrentModule {
-			get { return CurrentModuleIndex == -1 ? null : Modules[CurrentModuleIndex]; }
-		}
+		/// <inheritdoc />
+		public ModuleDefMD CurrentModule => CurrentModuleIndex == -1 ? null : Modules[CurrentModuleIndex];
 
-		/// <summary>
-		///     Gets the writer options of the current module.
-		/// </summary>
-		/// <value>The writer options.</value>
+		/// <inheritdoc />
 		public ModuleWriterOptionsBase CurrentModuleWriterOptions { get; internal set; }
 
 		/// <summary>
 		///     Gets output <c>byte[]</c> of the current module
 		/// </summary>
 		/// <value>The output <c>byte[]</c>.</value>
-		public byte[] CurrentModuleOutput { get; internal set; }
+		public Memory<byte> CurrentModuleOutput { get; internal set; }
 
 		/// <summary>
 		///     Gets output <c>byte[]</c> debug symbol of the current module
 		/// </summary>
 		/// <value>The output <c>byte[]</c> debug symbol.</value>
-		public byte[] CurrentModuleSymbol { get; internal set; }
+		public Memory<byte> CurrentModuleSymbol { get; internal set; }
 
 		internal ConfuserContext(IServiceProvider serviceProvider) {
 			Registry = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -151,24 +115,40 @@ namespace Confuser.Core {
 
 			if (CurrentModuleWriterOptions is NativeModuleWriterOptions)
 				return (NativeModuleWriterOptions)CurrentModuleWriterOptions;
-			var newOptions = new NativeModuleWriterOptions(CurrentModule, true);
+
 			// Clone the current options to the new options
-			newOptions.AddCheckSum = CurrentModuleWriterOptions.AddCheckSum;
-			newOptions.Cor20HeaderOptions = CurrentModuleWriterOptions.Cor20HeaderOptions;
-			newOptions.Logger = CurrentModuleWriterOptions.Logger;
-			newOptions.MetadataLogger = CurrentModuleWriterOptions.MetadataLogger;
-			newOptions.MetadataOptions = CurrentModuleWriterOptions.MetadataOptions;
-			newOptions.ModuleKind = CurrentModuleWriterOptions.ModuleKind;
-			newOptions.PEHeadersOptions = CurrentModuleWriterOptions.PEHeadersOptions;
-			newOptions.ShareMethodBodies = CurrentModuleWriterOptions.ShareMethodBodies;
-			newOptions.StrongNameKey = CurrentModuleWriterOptions.StrongNameKey;
-			newOptions.StrongNamePublicKey = CurrentModuleWriterOptions.StrongNamePublicKey;
-			newOptions.Win32Resources = CurrentModuleWriterOptions.Win32Resources;
+			var newOptions = new NativeModuleWriterOptions(CurrentModule, true) {
+				AddCheckSum = CurrentModuleWriterOptions.AddCheckSum,
+				Cor20HeaderOptions = CurrentModuleWriterOptions.Cor20HeaderOptions,
+				Logger = CurrentModuleWriterOptions.Logger,
+				MetadataLogger = CurrentModuleWriterOptions.MetadataLogger,
+				MetadataOptions = CurrentModuleWriterOptions.MetadataOptions,
+				ModuleKind = CurrentModuleWriterOptions.ModuleKind,
+				PEHeadersOptions = CurrentModuleWriterOptions.PEHeadersOptions,
+				ShareMethodBodies = CurrentModuleWriterOptions.ShareMethodBodies,
+				StrongNameKey = CurrentModuleWriterOptions.StrongNameKey,
+				StrongNamePublicKey = CurrentModuleWriterOptions.StrongNamePublicKey,
+				Win32Resources = CurrentModuleWriterOptions.Win32Resources
+			};
 			CurrentModuleWriterOptions = newOptions;
 			return newOptions;
 		}
 
 		public IProtectionSettings GetParameters(IDnlibDef target) =>
 			ProtectionParameters.GetParameters(this, target);
+
+
+		private void Dispose(bool disposing) {
+			if (!disposing) return;
+			foreach (var moduleDef in Modules)
+				moduleDef.Dispose();
+		}
+
+		public void Dispose() {
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		~ConfuserContext() => Dispose(false);
 	}
 }

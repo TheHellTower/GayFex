@@ -34,7 +34,7 @@ namespace Confuser.Core.Services {
 				var dir = Path.GetDirectoryName(path);
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
-				File.WriteAllBytes(path, context.OutputModules[i]);
+				File.WriteAllBytes(path, context.OutputModules[i].ToArray());
 			}
 
 			File.WriteAllBytes(Path.Combine(tmpDir, fileName), module);
@@ -90,7 +90,7 @@ namespace Confuser.Core.Services {
 				throw new ConfuserException(ex);
 			}
 
-			context.OutputModules = ImmutableArray.Create<byte[]>(File.ReadAllBytes(Path.Combine(outDir, fileName)));
+			context.OutputModules = ImmutableArray.Create<Memory<byte>>(File.ReadAllBytes(Path.Combine(outDir, fileName)));
 			context.OutputPaths = ImmutableArray.Create(fileName);
 		}
 

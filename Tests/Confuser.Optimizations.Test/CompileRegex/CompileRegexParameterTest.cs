@@ -13,7 +13,7 @@ namespace Confuser.Optimizations.CompileRegex {
 			var parameters = new CompileRegexProtectionParameters();
 			IReadOnlyDictionary<string, IProtectionParameter> paramDict = parameters;
 
-			Assert.Contains(CreateEntry(parameters.I18nSafeMode), paramDict);
+			Assert.Contains(CreateEntry(parameters.I18NSafeMode), paramDict);
 			Assert.Contains(CreateEntry(parameters.OnlyCompiled), paramDict);
 			Assert.Contains(CreateEntry(parameters.SkipBrokenExpressions), paramDict);
 		}

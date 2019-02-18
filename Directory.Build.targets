@@ -6,6 +6,7 @@
   
   <ItemGroup Label="Nuget Dependency Versions">
     <PackageReference Update="@(PackageReference)">
+      <Version Condition="'%(Identity)' == 'Antlr4'">4.6.6</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Build.Tasks.Core'">15.7.*</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Extensions.CommandLineUtils'">1.1.1</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Extensions.DependencyInjection'">2.2.0</Version>
@@ -14,16 +15,16 @@
       <Version Condition="'%(Identity)' == 'Microsoft.Extensions.Logging.Abstractions'">2.2.0</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Extensions.Logging.Console'">2.2.0</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Win32.Registry'">4.5.0</Version>
-      <Version Condition="'%(Identity)' == 'NuGet.Frameworks'">4.9.2</Version>
+      <Version Condition="'%(Identity)' == 'NuGet.Frameworks'">4.9.3</Version>
       <Version Condition="'%(Identity)' == 'System.Buffers'">4.5.0</Version>
       <Version Condition="'%(Identity)' == 'System.Collections.Immutable'">1.5.0</Version>
       <Version Condition="'%(Identity)' == 'System.ComponentModel.Composition'">4.5.0</Version>
       <Version Condition="'%(Identity)' == 'System.Console'">4.3.1</Version>
       <Version Condition="'%(Identity)' == 'System.IO.Packaging'">4.5.0</Version>
-      <Version Condition="'%(Identity)' == 'System.Memory'">4.5.1</Version>
+      <Version Condition="'%(Identity)' == 'System.Memory'">4.5.2</Version>
       <Version Condition="'%(Identity)' == 'System.Reflection.Emit.ILGeneration'">4.3.0</Version>
       <Version Condition="'%(Identity)' == 'System.Reflection.Emit.Lightweight'">4.3.0</Version>
-      <Version Condition="'%(Identity)' == 'System.Runtime'">4.3.0</Version>
+      <Version Condition="'%(Identity)' == 'System.Runtime'">4.3.1</Version>
       <Version Condition="'%(Identity)' == 'System.Security.Cryptography.Primitives'">4.3.0</Version>
       <Version Condition="'%(Identity)' == 'System.Text.RegularExpressions'">4.3.0</Version>
       <Version Condition="'%(Identity)' == 'System.Threading'">4.3.0</Version>

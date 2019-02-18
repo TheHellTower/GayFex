@@ -58,16 +58,16 @@ namespace Confuser.Core {
 		string OutputDirectory { get; }
 
 		/// <summary>
-		///     Gets the <c>byte[]</c> of modules after protected, or null if module is not protected yet.
+		///     Gets the <see cref="Memory{T}"/> of modules after protected, or null if module is not protected yet.
 		/// </summary>
-		/// <value>The list of <c>byte[]</c> of protected modules.</value>
-		IImmutableList<byte[]> OutputModules { get; }
+		/// <value>The list of <see cref="Memory{T}"/> of protected modules.</value>
+		IImmutableList<Memory<byte>> OutputModules { get; }
 
 		/// <summary>
-		///     Gets the <c>byte[]</c> of module debug symbols after protected, or null if module is not protected yet.
+		///     Gets the <see cref="Memory{T}"/> of module debug symbols after protected, or null if module is not protected yet.
 		/// </summary>
-		/// <value>The list of <c>byte[]</c> of module debug symbols.</value>
-		IImmutableList<byte[]> OutputSymbols { get; }
+		/// <value>The list of <see cref="Memory{T}"/> of module debug symbols.</value>
+		IImmutableList<Memory<byte>> OutputSymbols { get; }
 
 		/// <summary>
 		///     Gets the relative output paths of module, or null if module is not protected yet.

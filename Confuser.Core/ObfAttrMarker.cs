@@ -12,6 +12,7 @@ using Confuser.Core.Project;
 using dnlib.DotNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MethodSemanticsAttributes = dnlib.DotNet.MethodSemanticsAttributes;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Core {

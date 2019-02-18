@@ -98,10 +98,10 @@ namespace Confuser.Protections.Compress {
 							return;
 
 						// Add File reference
-						byte[] hash = SHA1.Create().ComputeHash(Parent.ctx.OriginModule);
+						var hash = SHA1.Create().ComputeHash(Parent.ctx.OriginModule.ToArray());
 						uint hashBlob = writer.Metadata.BlobHeap.Add(hash);
 
-						MDTable<RawFileRow> fileTbl = writer.Metadata.TablesHeap.FileTable;
+						var fileTbl = writer.Metadata.TablesHeap.FileTable;
 						uint fileRid = fileTbl.Add(new RawFileRow(
 							(uint)FileAttributes.ContainsMetadata,
 							writer.Metadata.StringsHeap.Add("koi"),

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <RootNamespace>Confuser.Optimizations</RootNamespace>
   </PropertyGroup>
@@ -20,6 +20,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Confuser.Optimizations\Confuser.Optimizations.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <None Update="TailCall\*.approved.txt">
+      <Link>%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Import Project="..\ConfuserEx.Test.targets" Condition="Exists('..\ConfuserEx.Test.targets')" />

@@ -13,7 +13,7 @@ namespace Confuser.Optimizations.CompileRegex {
 		internal ExtractPhase(CompileRegexProtection parent) =>
 			Parent = parent ?? throw new ArgumentNullException(nameof(parent));
 
-		internal CompileRegexProtection Parent { get; }
+		private CompileRegexProtection Parent { get; }
 
 		IConfuserComponent IProtectionPhase.Parent => Parent;
 
@@ -43,14 +43,12 @@ namespace Confuser.Optimizations.CompileRegex {
 					var onlyExplicit = parameters.GetParameter(context, method, Parent.Parameters.OnlyCompiled);
 
 					foreach (var result in MethodAnalyzer.GetRegexCalls(method, moduleRegexMethods, traceService)) {
-						logger.LogMsgFoundRegexReferenceInMethod(method, result.regexMethod);
+						logger.LogMsgFoundRegexReferenceInMethod(method, result.RegexMethod);
 
-						if (!onlyExplicit || result.explicitCompiled) {
-							regexService.RecordExpression(modulesAndMethods.Key, result.compileDef, result.regexMethod);
-						}
-						else {
+						if (!onlyExplicit || result.ExplicitCompiled)
+							regexService.RecordExpression(modulesAndMethods.Key, result.CompileDef, result.RegexMethod);
+						else
 							logger.LogMsgSkippedRegexNotCompiled(method);
-						}
 					}
 
 					token.ThrowIfCancellationRequested();

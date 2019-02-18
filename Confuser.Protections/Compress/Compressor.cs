@@ -336,7 +336,7 @@ namespace Confuser.Protections {
 					}
 					case ModuleWriterEvent.MDBeginAddResources when !_ctx.CompatMode: {
 						// Compute hash
-						byte[] hash = SHA1.Create().ComputeHash(_ctx.OriginModule);
+						var hash = SHA1.Create().ComputeHash(_ctx.OriginModule.ToArray());
 						uint hashBlob = writer.Metadata.BlobHeap.Add(hash);
 
 						var fileTbl = writer.Metadata.TablesHeap.FileTable;

@@ -11,7 +11,7 @@ namespace Confuser.Optimizations.CompileRegex {
 		/// Expressions that use the case insensitive mode and not the culture invariant mode, may yield incorrect
 		/// results for some cultures. Enabling this option will disable the compilation of those expressions.
 		/// </summary>
-		internal IProtectionParameter<bool> I18nSafeMode { get; } = ProtectionParameter.Boolean("i18nSafe", false);
+		internal IProtectionParameter<bool> I18NSafeMode { get; } = ProtectionParameter.Boolean("i18nSafe", false);
 
 		/// <summary>
 		/// In case this option is enabled, broken expressions will be skipped. Otherwise they will cause ConfuserEx
