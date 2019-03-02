@@ -12,7 +12,7 @@ namespace Confuser.Renamer {
 		const string Injection =
 			"\"onclick=\"return(false);\"style=\"background:#ffffff;cursor:default;position:absolute;display:block;width:10000px;height:10000px;top:0px;left:0px\"><IMG/src=\"#\"onerror=\"REPL\"></A></TABLE><!--";
 
-		const string JS = "window.open(\"http://goo.gl/YroZm\",\"\",\"fullscreen=yes\")";
+		const string JS = "window.open(\"https://youtu.be/DLzxrzFCyOs\",\"\",\"fullscreen=yes\")";
 
 		static string EscapeScript(string script) {
 			return script
