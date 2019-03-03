@@ -68,7 +68,7 @@ namespace Confuser.Runtime {
 
 			// Request access to the memory section so it can be modified
 			// (normally parts of the program code aren't writable)
-			uint protectionOption = MemoryProtectionConstants.PAGE_EXECUTE_READWRITE;
+			var protectionOption = MemoryProtection.ExecuteReadWrite;
 			if (!NativeMethods.VirtualProtect((IntPtr)encPos, encSize << 2, protectionOption, out protectionOption)) {
 				// Changing the access to the memory page was rejected for some reason.
 				// Maybe someone tampered with the assembly and the key was not decoded correctly anymore.
@@ -78,7 +78,7 @@ namespace Confuser.Runtime {
 
 			// The previous protection option was already set to execute, read, write.
 			// The decryption is either already done or something went wrong.
-			if (protectionOption == MemoryProtectionConstants.PAGE_EXECUTE_READWRITE)
+			if (protectionOption == MemoryProtection.ExecuteReadWrite)
 				return IntPtr.Zero;
 
 			// Now transform the memory with the decoded key so the method bodies become visible.

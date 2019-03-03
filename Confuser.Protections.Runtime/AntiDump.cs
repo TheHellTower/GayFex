@@ -3,38 +3,40 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Confuser.Runtime {
+	// ReSharper disable once UnusedMember.Global
+	/// <remarks>
+	/// This method is invoked from the module initializer. The reference is build during injection.
+	/// </remarks>
 	internal static class AntiDump {
-		[DllImport("kernel32.dll")]
-		static extern unsafe bool VirtualProtect(byte* lpAddress, int dwSize, uint flNewProtect,
-			out uint lpflOldProtect);
-
-		static unsafe void Initialize() {
-			uint old;
-			Module module = typeof(AntiDump).Module;
+		// ReSharper disable once UnusedMember.Global
+		/// <remarks>
+		/// This method is invoked from the module initializer. The reference is build during injection.
+		/// </remarks>
+		private static unsafe void Initialize() {
+			var module = typeof(AntiDump).Module;
 			var bas = (byte*)Marshal.GetHINSTANCE(module);
-			byte* ptr = bas + 0x3c;
-			byte* ptr2;
-			ptr = ptr2 = bas + *(uint*)ptr;
+			var ptr = bas + 0x3c;
+			ptr = bas + *(uint*)ptr;
 			ptr += 0x6;
 			ushort sectNum = *(ushort*)ptr;
 			ptr += 14;
 			ushort optSize = *(ushort*)ptr;
-			ptr = ptr2 = ptr + 0x4 + optSize;
+			ptr = ptr + 0x4 + optSize;
 
-			byte* @new = stackalloc byte[11];
+			var @new = stackalloc byte[11];
 			if (module.FullyQualifiedName[0] != '<') //Mapped
 			{
 				//VirtualProtect(ptr - 16, 8, 0x40, out old);
 				//*(uint*)(ptr - 12) = 0;
-				byte* mdDir = bas + *(uint*)(ptr - 16);
+				var mdDir = bas + *(uint*)(ptr - 16);
 				//*(uint*)(ptr - 16) = 0;
 
 				if (*(uint*)(ptr - 0x78) != 0) {
-					byte* importDir = bas + *(uint*)(ptr - 0x78);
-					byte* oftMod = bas + *(uint*)importDir;
-					byte* modName = bas + *(uint*)(importDir + 12);
-					byte* funcName = bas + *(uint*)oftMod + 2;
-					VirtualProtect(modName, 11, 0x40, out old);
+					var importDir = bas + *(uint*)(ptr - 0x78);
+					var oftMod = bas + *(uint*)importDir;
+					var modName = bas + *(uint*)(importDir + 12);
+					var funcName = bas + *(uint*)oftMod + 2;
+					NativeMethods.VirtualProtect(new IntPtr(modName), 11, MemoryProtection.ExecuteReadWrite, out _);
 
 					*(uint*)@new = 0x6c64746e;
 					*((uint*)@new + 1) = 0x6c642e6c;
@@ -44,7 +46,7 @@ namespace Confuser.Runtime {
 					for (int i = 0; i < 11; i++)
 						*(modName + i) = *(@new + i);
 
-					VirtualProtect(funcName, 11, 0x40, out old);
+					NativeMethods.VirtualProtect(new IntPtr(funcName), 11, MemoryProtection.ExecuteReadWrite, out _);
 
 					*(uint*)@new = 0x6f43744e;
 					*((uint*)@new + 1) = 0x6e69746e;
@@ -56,19 +58,19 @@ namespace Confuser.Runtime {
 				}
 
 				for (int i = 0; i < sectNum; i++) {
-					VirtualProtect(ptr, 8, 0x40, out old);
+					NativeMethods.VirtualProtect(new IntPtr(ptr), 8, MemoryProtection.ExecuteReadWrite, out _);
 					Marshal.Copy(new byte[8], 0, (IntPtr)ptr, 8);
 					ptr += 0x28;
 				}
 
-				VirtualProtect(mdDir, 0x48, 0x40, out old);
-				byte* mdHdr = bas + *(uint*)(mdDir + 8);
+				NativeMethods.VirtualProtect(new IntPtr(mdDir), 0x48, MemoryProtection.ExecuteReadWrite, out _);
+				var mdHdr = bas + *(uint*)(mdDir + 8);
 				*(uint*)mdDir = 0;
 				*((uint*)mdDir + 1) = 0;
 				*((uint*)mdDir + 2) = 0;
 				*((uint*)mdDir + 3) = 0;
 
-				VirtualProtect(mdHdr, 4, 0x40, out old);
+				NativeMethods.VirtualProtect(new IntPtr(mdHdr), 4, MemoryProtection.ExecuteReadWrite, out _);
 				*(uint*)mdHdr = 0;
 				mdHdr += 12;
 				mdHdr += *(uint*)mdHdr;
@@ -77,13 +79,13 @@ namespace Confuser.Runtime {
 				ushort numOfStream = *mdHdr;
 				mdHdr += 2;
 				for (int i = 0; i < numOfStream; i++) {
-					VirtualProtect(mdHdr, 8, 0x40, out old);
+					NativeMethods.VirtualProtect(new IntPtr(mdHdr), 8, MemoryProtection.ExecuteReadWrite, out _);
 					//*(uint*)mdHdr = 0;
 					mdHdr += 4;
 					//*(uint*)mdHdr = 0;
 					mdHdr += 4;
 					for (int ii = 0; ii < 8; ii++) {
-						VirtualProtect(mdHdr, 4, 0x40, out old);
+						NativeMethods.VirtualProtect(new IntPtr(mdHdr), 4, MemoryProtection.ExecuteReadWrite, out _);
 						*mdHdr = 0;
 						mdHdr++;
 						if (*mdHdr == 0) {
@@ -122,7 +124,7 @@ namespace Confuser.Runtime {
 				var vSizes = new uint[sectNum];
 				var rAdrs = new uint[sectNum];
 				for (int i = 0; i < sectNum; i++) {
-					VirtualProtect(ptr, 8, 0x40, out old);
+					NativeMethods.VirtualProtect(new IntPtr(ptr), 8, MemoryProtection.ExecuteReadWrite, out _);
 					Marshal.Copy(new byte[8], 0, (IntPtr)ptr, 8);
 					vAdrs[i] = *(uint*)(ptr + 12);
 					vSizes[i] = *(uint*)(ptr + 8);
@@ -138,7 +140,7 @@ namespace Confuser.Runtime {
 							break;
 						}
 
-					byte* importDirPtr = bas + importDir;
+					var importDirPtr = bas + importDir;
 					uint oftMod = *(uint*)importDirPtr;
 					for (int i = 0; i < sectNum; i++)
 						if (vAdrs[i] <= oftMod && oftMod < vAdrs[i] + vSizes[i]) {
@@ -146,7 +148,7 @@ namespace Confuser.Runtime {
 							break;
 						}
 
-					byte* oftModPtr = bas + oftMod;
+					var oftModPtr = bas + oftMod;
 					uint modName = *(uint*)(importDirPtr + 12);
 					for (int i = 0; i < sectNum; i++)
 						if (vAdrs[i] <= modName && modName < vAdrs[i] + vSizes[i]) {
@@ -161,7 +163,7 @@ namespace Confuser.Runtime {
 							break;
 						}
 
-					VirtualProtect(bas + modName, 11, 0x40, out old);
+					NativeMethods.VirtualProtect(new IntPtr(bas + modName), 11, MemoryProtection.ExecuteReadWrite, out _);
 
 					*(uint*)@new = 0x6c64746e;
 					*((uint*)@new + 1) = 0x6c642e6c;
@@ -171,7 +173,7 @@ namespace Confuser.Runtime {
 					for (int i = 0; i < 11; i++)
 						*(bas + modName + i) = *(@new + i);
 
-					VirtualProtect(bas + funcName, 11, 0x40, out old);
+					NativeMethods.VirtualProtect(new IntPtr(bas + funcName), 11, MemoryProtection.ExecuteReadWrite, out _);
 
 					*(uint*)@new = 0x6f43744e;
 					*((uint*)@new + 1) = 0x6e69746e;
@@ -189,8 +191,8 @@ namespace Confuser.Runtime {
 						break;
 					}
 
-				byte* mdDirPtr = bas + mdDir;
-				VirtualProtect(mdDirPtr, 0x48, 0x40, out old);
+				var mdDirPtr = bas + mdDir;
+				NativeMethods.VirtualProtect(new IntPtr(mdDirPtr), 0x48, MemoryProtection.ExecuteReadWrite, out _);
 				uint mdHdr = *(uint*)(mdDirPtr + 8);
 				for (int i = 0; i < sectNum; i++)
 					if (vAdrs[i] <= mdHdr && mdHdr < vAdrs[i] + vSizes[i]) {
@@ -204,8 +206,8 @@ namespace Confuser.Runtime {
 				*((uint*)mdDirPtr + 3) = 0;
 
 
-				byte* mdHdrPtr = bas + mdHdr;
-				VirtualProtect(mdHdrPtr, 4, 0x40, out old);
+				var mdHdrPtr = bas + mdHdr;
+				NativeMethods.VirtualProtect(new IntPtr(mdHdrPtr), 4, MemoryProtection.ExecuteReadWrite, out _);
 				*(uint*)mdHdrPtr = 0;
 				mdHdrPtr += 12;
 				mdHdrPtr += *(uint*)mdHdrPtr;
@@ -214,13 +216,13 @@ namespace Confuser.Runtime {
 				ushort numOfStream = *mdHdrPtr;
 				mdHdrPtr += 2;
 				for (int i = 0; i < numOfStream; i++) {
-					VirtualProtect(mdHdrPtr, 8, 0x40, out old);
+					NativeMethods.VirtualProtect(new IntPtr(mdHdrPtr), 8, MemoryProtection.ExecuteReadWrite, out _);
 					//*(uint*)mdHdrPtr = 0;
 					mdHdrPtr += 4;
 					//*(uint*)mdHdrPtr = 0;
 					mdHdrPtr += 4;
 					for (int ii = 0; ii < 8; ii++) {
-						VirtualProtect(mdHdrPtr, 4, 0x40, out old);
+						NativeMethods.VirtualProtect(new IntPtr(mdHdrPtr), 4, MemoryProtection.ExecuteReadWrite, out _);
 						*mdHdrPtr = 0;
 						mdHdrPtr++;
 						if (*mdHdrPtr == 0) {
