@@ -15,8 +15,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
-    <ProjectReference Include="..\NeutralResx\NeutralResx.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+    <ProjectReference Include="..\VisualBasicRenamingResx\VisualBasicRenamingResx.vbproj" />
   </ItemGroup>
 
 </Project>
