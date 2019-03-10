@@ -66,14 +66,13 @@ namespace Confuser.Runtime {
 			IntPtr original = *(IntPtr*)hookPosition;
 
 			IntPtr trampoline;
-			uint oldPl;
 			if (IntPtr.Size == 8) {
 				trampoline = Marshal.AllocHGlobal(16);
 				var tptr = (ulong*)trampoline;
 				tptr[0] = 0xffffffffffffb848;
 				tptr[1] = 0x90909090e0ffffff;
 
-				NativeMethods.VirtualProtect(trampoline, 12, 0x40, out oldPl);
+				NativeMethods.VirtualProtect(trampoline, 12, MemoryProtection.ExecuteReadWrite, out _);
 				Marshal.WriteIntPtr(trampoline, 2, original);
 			}
 			else {
@@ -81,7 +80,7 @@ namespace Confuser.Runtime {
 				var tptr = (ulong*)trampoline;
 				tptr[0] = 0x90e0ffffffffffb8;
 
-				NativeMethods.VirtualProtect(trampoline, 7, 0x40, out oldPl);
+				NativeMethods.VirtualProtect(trampoline, 7, MemoryProtection.ExecuteReadWrite, out _);
 				Marshal.WriteIntPtr(trampoline, 1, original);
 			}
 
@@ -91,9 +90,9 @@ namespace Confuser.Runtime {
 			RuntimeHelpers.PrepareDelegate(originalDelegate);
 			RuntimeHelpers.PrepareDelegate(handler);
 
-			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, 0x40, out oldPl);
+			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, MemoryProtection.ExecuteReadWrite, out var oldPl);
 			Marshal.WriteIntPtr(hookPosition, Marshal.GetFunctionPointerForDelegate(handler));
-			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, oldPl, out oldPl);
+			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, oldPl, out _);
 		}
 
 		static void ExtractLocalVars(CORINFO_METHOD_INFO* info, uint len, byte* localVar) {
