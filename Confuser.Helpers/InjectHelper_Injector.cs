@@ -54,6 +54,12 @@ namespace Confuser.Helpers {
 					foreach (var m in source.Methods)
 						PendingForInject.Enqueue(m);
 
+				if (source.IsEnum) {
+					// The backing value field of a enum is required.
+					foreach (var valueField in source.Fields.Where(f => !f.IsStatic))
+						PendingForInject.Enqueue(valueField);
+				}
+
 				return typeDefUser;
 			}
 
@@ -184,7 +190,7 @@ namespace Confuser.Helpers {
 				if (existingTypeDef != null) return existingTypeDef;
 
 				var newTypeDef = CopyDef(typeDef);
-				newTypeDef.BaseType = (ITypeDefOrRef)importer.Import(typeDef.BaseType);
+				newTypeDef.BaseType = importer.Import(typeDef.BaseType);
 
 				if (typeDef.DeclaringType != null)
 					newTypeDef.DeclaringType = InjectTypeDef(typeDef.DeclaringType, importer);
@@ -217,7 +223,7 @@ namespace Confuser.Helpers {
 			private InterfaceImplUser InjectInterfaceImpl(InterfaceImpl interfaceImpl, Importer importer) {
 				if (interfaceImpl == null) throw new ArgumentNullException(nameof(interfaceImpl));
 
-				var typeDefOrRef = (ITypeDefOrRef)importer.Import(interfaceImpl.Interface);
+				var typeDefOrRef = importer.Import(interfaceImpl.Interface);
 				if (!(typeDefOrRef is TypeDef typeDef))
 					typeDef = ((TypeRef)typeDefOrRef).Resolve();
 				if (typeDef != null && !typeDef.IsInterface)
@@ -322,7 +328,7 @@ namespace Confuser.Helpers {
 
 					foreach (var eh in methodDef.Body.ExceptionHandlers)
 						newMethodDef.Body.ExceptionHandlers.Add(new ExceptionHandler(eh.HandlerType) {
-							CatchType = eh.CatchType == null ? null : (ITypeDefOrRef)importer.Import(eh.CatchType),
+							CatchType = eh.CatchType == null ? null : importer.Import(eh.CatchType),
 							TryStart = (Instruction)bodyMap[eh.TryStart],
 							TryEnd = (Instruction)bodyMap[eh.TryEnd],
 							HandlerStart = (Instruction)bodyMap[eh.HandlerStart],
