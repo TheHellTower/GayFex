@@ -21,7 +21,6 @@ build:
   project: Confuser2.sln
   verbosity: minimal 
   parallel: true
-  publish_core_console: true
 
 artifacts:
 - path: Release/bin
