@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
+    <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+    <ProjectReference Include="..\VisualBasicRenamingResx\VisualBasicRenamingResx.vbproj" />
+  </ItemGroup>
+
+  <Import Project="..\ConfuserEx.Test.targets" Condition="Exists('..\ConfuserEx.Test.targets')" />
+
+</Project>
