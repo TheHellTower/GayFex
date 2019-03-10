@@ -10,8 +10,13 @@
 
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Test'))">
     <_ConfuserUnitTestTargetProjectName>$(MSBuildProjectName.Replace('.Test', ''))</_ConfuserUnitTestTargetProjectName>
-    <_ConfuserUnitTestTargetProject>..\$(_ConfuserUnitTestTargetProjectName)\$(_ConfuserUnitTestTargetProjectName).csproj</_ConfuserUnitTestTargetProject>
-    <_ConfuserUnitTestTargetProject Condition="!Exists('$(_ConfuserUnitTestTargetProject)')"></_ConfuserUnitTestTargetProject>
+    <_ConfuserUnitTestTargetProject>
+      ..\$(_ConfuserUnitTestTargetProjectName)\$(_ConfuserUnitTestTargetProjectName).csproj
+    </_ConfuserUnitTestTargetProject>
+    <_ConfuserUnitTestTargetProject Condition="!Exists('$(_ConfuserUnitTestTargetProject)')">
+      ..\$(_ConfuserUnitTestTargetProjectName)\$(_ConfuserUnitTestTargetProjectName).vbproj
+    </_ConfuserUnitTestTargetProject>
+    <_ConfuserUnitTestTargetProject Condition="!Exists('$(_ConfuserUnitTestTargetProject)')" />
   </PropertyGroup>
 
   <PropertyGroup>
