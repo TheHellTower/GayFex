@@ -2,7 +2,15 @@
 using SevenZip.Compression.LZMA;
 
 namespace Confuser.Core.Runtime {
-	internal static partial class Lzma {
+	// ReSharper disable once UnusedMember.Global
+	/// <remarks>
+	/// This class is injected into the code of the assembly to project. The reference is build during injection.
+	/// </remarks>
+	internal static class Lzma {
+		// ReSharper disable once UnusedMember.Global
+		/// <remarks>
+		/// This method is invoked from the module initializer. The reference is build during injection.
+		/// </remarks>
 		public static byte[] Decompress(byte[] data) {
 			var s = new MemoryStream(data);
 			var decoder = new Decoder();
@@ -11,8 +19,8 @@ namespace Confuser.Core.Runtime {
 			decoder.SetDecoderProperties(prop);
 			long outSize = 0;
 			for (int i = 0; i < 8; i++) {
-				int v = s.ReadByte();
-				outSize |= ((long)(byte)v) << (8 * i);
+				var v = (byte)s.ReadByte();
+				outSize |= (long)v << (8 * i);
 			}
 
 			var b = new byte[(int)outSize];
