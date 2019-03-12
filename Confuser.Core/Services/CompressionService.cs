@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Confuser.Helpers;
@@ -10,21 +9,21 @@ using SevenZip.Compression.LZMA;
 
 namespace Confuser.Core.Services {
 	internal class CompressionService : ICompressionService {
-		static readonly object Decompressor = new object();
+		private static readonly object Decompressor = new object();
 
-		private readonly IServiceProvider serviceProvider;
+		private readonly IServiceProvider _serviceProvider;
 
 		internal CompressionService(IServiceProvider provider) =>
-			serviceProvider = provider ?? throw new ArgumentNullException(nameof(provider));
+			_serviceProvider = provider ?? throw new ArgumentNullException(nameof(provider));
 
 		/// <inheritdoc />
 		public MethodDef GetRuntimeDecompressor(IConfuserContext context, ModuleDef module, Action<IDnlibDef> init) {
 			var injectResult = context.Annotations.GetOrCreate(module, Decompressor, m => {
-				var rt = serviceProvider.GetRequiredService<CoreRuntimeService>().GetRuntimeModule();
-				var marker = context.Registry.GetRequiredService<IMarkerService>();
+				var rt = _serviceProvider.GetRequiredService<CoreRuntimeService>().GetRuntimeModule();
 
-				var decompressMethod = rt.GetRuntimeType("Confuser.Core.Runtime.Lzma", module).Methods
-					.Where(method => method.Name == "Decompress").Single();
+				var decompressMethod = rt.GetRuntimeType("Confuser.Core.Runtime.Lzma", module)
+					.Methods
+					.Single(method => method.Name == "Decompress");
 				return InjectHelper.Inject(decompressMethod, module,
 					InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 			});
