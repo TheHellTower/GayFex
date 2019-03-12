@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Xml;
 using Confuser.CLI.Properties;
@@ -125,9 +126,12 @@ namespace Confuser.CLI {
 				return retVal;
 			});
 
-			var original = Console.ForegroundColor;
+			var originalColor = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.White;
-			var originalTitle = Console.Title;
+
+			string originalTitle = null;
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				originalTitle = Console.Title;
 			Console.Title = Resources.ConsoleTitle;
 
 			try {
@@ -146,8 +150,9 @@ namespace Confuser.CLI {
 				return -1;
 			}
 			finally {
-				Console.ForegroundColor = original;
-				Console.Title = originalTitle;
+				Console.ForegroundColor = originalColor;
+				if (originalTitle != null)
+					Console.Title = originalTitle;
 			}
 		}
 
