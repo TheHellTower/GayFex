@@ -41,14 +41,7 @@ namespace Confuser.Core {
 			throw new ArgumentException($"{component.Name} has no parameters", nameof(component));
 		}
 
-		public bool HasParameters(IConfuserComponent component) {
-			if (component == null) return false;
-			if (TryGetValue(component, out var p)) {
-				return p.Any();
-			}
-
-			return false;
-		}
+		public bool HasParameters(IConfuserComponent component) => component != null && ContainsKey(component);
 
 		/// <summary>
 		///     Determines whether the settings is empty.

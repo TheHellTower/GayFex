@@ -20,7 +20,7 @@ namespace Confuser.Renamer.Services {
 		private readonly ReadOnlyMemory<byte> nameSeed;
 		readonly IRandomGenerator random;
 		readonly VTableStorage storage;
-		AnalyzePhase analyze;
+		private readonly NameProtection _parent;
 
 		readonly HashSet<string> identifiers = new HashSet<string>();
 		readonly byte[] nameId = new byte[8];
@@ -28,7 +28,8 @@ namespace Confuser.Renamer.Services {
 		readonly Dictionary<string, string> nameMap2 = new Dictionary<string, string>();
 		internal ReversibleRenamer reversibleRenamer;
 
-		internal NameService(IServiceProvider provider) {
+		internal NameService(IServiceProvider provider, NameProtection parent) {
+			_parent = parent ?? throw new ArgumentNullException(nameof(parent));
 			storage = new VTableStorage(provider);
 			random = provider.GetRequiredService<IRandomService>().GetRandomGenerator(NameProtection._FullId);
 			nameSeed = random.NextBytes(20);
@@ -51,18 +52,10 @@ namespace Confuser.Renamer.Services {
 		public bool CanRename(IConfuserContext context, IDnlibDef def) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
 
-			if (def != null) {
-				if (analyze == null)
-					analyze = context.Pipeline.FindPhase<AnalyzePhase>();
+			if (def == null || !context.GetParameters(def).HasParameters(_parent))
+				return false;
 
-				var prot = analyze.Parent;
-				if (!context.GetParameters(def).HasParameters(prot))
-					return false;
-
-				return context.Annotations.Get(def, CanRenameKey, true);
-			}
-
-			return false;
+			return context.Annotations.Get(def, CanRenameKey, true);
 		}
 
 		public void SetCanRename(IConfuserContext context, IDnlibDef def, bool val) {
@@ -73,11 +66,11 @@ namespace Confuser.Renamer.Services {
 		}
 
 		public void SetParam(IConfuserContext context, IDnlibDef def, string name, string value) {
-			context.GetParameters(def).SetParameter(analyze.Parent, name, value);
+			context.GetParameters(def).SetParameter(_parent, name, value);
 		}
 
 		public string GetParam(IConfuserContext context, IDnlibDef def, string name) {
-			return context.GetParameters(def).GetParameter(analyze.Parent, name);
+			return context.GetParameters(def).GetParameter(_parent, name);
 		}
 
 		public RenameMode GetRenameMode(IConfuserContext context, object obj) {
@@ -99,8 +92,7 @@ namespace Confuser.Renamer.Services {
 		}
 
 		public void Analyze(IConfuserContext context, IDnlibDef def) {
-			if (analyze == null)
-				analyze = context.Pipeline.FindPhase<AnalyzePhase>();
+			var analyze = context.Pipeline.FindPhase<AnalyzePhase>();
 
 			SetOriginalName(context, def, def.Name);
 			if (def is TypeDef) {
