@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -556,8 +557,11 @@ namespace Confuser.Core {
 		}
 
 		private static IEnumerable<string> GetFrameworkVersions() {
+			// This function only works on Windows and on the mono runtime on other systems.
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Type.GetType("Mono.Runtime") == null)
+				yield break;
+			
 			// http://msdn.microsoft.com/en-us/library/hh925568.aspx
-
 			using (RegistryKey ndpKey =
 				RegistryKey.OpenRemoteBaseKey(RegistryHive.LocalMachine, "")
 					.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\")) {
@@ -605,33 +609,45 @@ namespace Confuser.Core {
 		/// </summary>
 		/// <param name="context">The working context.</param>
 		private static void PrintEnvironmentInfo(ConfuserContext context, ILogger logger) {
-			if (context.PackerInitiated)
-				return;
+			try {
+				if (context.PackerInitiated)
+					return;
 
-			var buildMsg = new StringBuilder();
+				var buildMsg = new StringBuilder();
 
-			buildMsg.AppendLine("---BEGIN DEBUG INFO---");
-			buildMsg.AppendLine("Installed Framework Versions:");
-			foreach (string ver in GetFrameworkVersions()) {
-				buildMsg.AppendFormat("    {0}", ver.Trim()).AppendLine();
-			}
+				buildMsg.AppendLine("---BEGIN DEBUG INFO---");
+				var firstFramework = true;
+				foreach (string ver in GetFrameworkVersions()) {
+					if (firstFramework) {
+						buildMsg.AppendLine("Installed Framework Versions:");
+						firstFramework = false;
+					}
 
-			buildMsg.AppendLine();
-
-			if (context.Resolver != null) {
-				buildMsg.AppendLine("Cached assemblies:");
-				foreach (var asm in context.Resolver.GetCachedAssemblies().Where(def => def != null)) {
-					if (string.IsNullOrEmpty(asm.ManifestModule.Location))
-						buildMsg.AppendFormat("    {0}", asm.FullName).AppendLine();
-					else
-						buildMsg.AppendFormat("    {0} ({1})", asm.FullName, asm.ManifestModule.Location).AppendLine();
-					foreach (var reference in asm.Modules.OfType<ModuleDefMD>().SelectMany(m => m.GetAssemblyRefs()))
-						buildMsg.AppendFormat("        {0}", reference.FullName).AppendLine();
+					buildMsg.AppendFormat("    {0}", ver.Trim()).AppendLine();
 				}
-			}
 
-			buildMsg.AppendLine("---END DEBUG INFO---");
-			logger.LogDebug(buildMsg.ToString());
+				if (!firstFramework) buildMsg.AppendLine();
+
+				if (context.Resolver != null) {
+					buildMsg.AppendLine("Cached assemblies:");
+					foreach (var asm in context.Resolver.GetCachedAssemblies().Where(def => def != null)) {
+						if (string.IsNullOrEmpty(asm.ManifestModule.Location))
+							buildMsg.AppendFormat("    {0}", asm.FullName).AppendLine();
+						else
+							buildMsg.AppendFormat("    {0} ({1})", asm.FullName, asm.ManifestModule.Location)
+								.AppendLine();
+						foreach (var reference in asm.Modules.OfType<ModuleDefMD>()
+							.SelectMany(m => m.GetAssemblyRefs()))
+							buildMsg.AppendFormat("        {0}", reference.FullName).AppendLine();
+					}
+				}
+
+				buildMsg.AppendLine("---END DEBUG INFO---");
+				logger.LogDebug(buildMsg.ToString());
+			}
+			catch {
+				// Ignored
+			}
 		}
 	}
 }
