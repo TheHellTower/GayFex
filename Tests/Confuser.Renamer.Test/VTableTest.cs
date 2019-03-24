@@ -22,8 +22,20 @@ namespace Confuser.Renamer.Test {
 			var options = new ModuleCreationOptions(asmResolver.DefaultModuleContext) {
 				TryToLoadPdbFromDisk = false
 			};
+
+			var refClass = new VTableTestRefClass();
+			Assert.Equal(1, refClass.TestMethod(new List<string>()));
+			Assert.Equal(2, refClass.TestMethod2(new List<string>()));
+			var refInterface = refClass as VTableTestRefInterface<string>;
+			Assert.NotNull(refInterface);
+			Assert.Equal(1, refInterface.TestMethod(new List<string>()));
+			Assert.Equal(2, refInterface.TestMethod2(new List<string>()));
+			int CallGenericFunction<T>(VTableTestRefInterface<T> refIfc) => refIfc.TestMethod(new List<T>());
+			Assert.Equal(1, CallGenericFunction(refInterface));
+
 			var moduleDef = ModuleDefMD.Load(typeof(VTableTest).Module, options);
 			var refClassTypeDef = moduleDef.Find("Confuser.Renamer.Test.VTableTestRefClass", false);
+
 
 			Assert.NotNull(refClassTypeDef);
 			var vTableStorage = new VTableStorage(new XUnitLogger(outputHelper));
@@ -33,11 +45,13 @@ namespace Confuser.Renamer.Test {
 	}
 
 	internal class VTableTestRefClass : VTableTestRefInterface<string> {
-		public void TestMethod(List<string> values) { }
+		public int TestMethod(List<string> values) => 1;
+		public int TestMethod2(List<string> values) => 2;
 	}
 
 	internal interface VTableTestRefInterface<T> {
-		void TestMethod(List<string> values);
-		void TestMethod(List<T> values);
+		int TestMethod(List<string> values);
+		int TestMethod(List<T> values);
+		int TestMethod2(List<string> values);
 	}
 }
