@@ -193,7 +193,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private MethodDef ReadMethodDef(DynamicMethod method) {
 			var gpContext = new GenericParamContext();
 			var importer = new Importer(_targetModule, ImporterOptions.TryToUseDefs, gpContext, new Mapper(_targetModule, _regexRunnerDef));
-			var methodReader = new DynamicMethodBodyReader(_targetModule, method, importer, gpContext);
+			var methodReader = new DynamicMethodBodyReader(_targetModule, method, importer);
 			if (!methodReader.Read()) throw new Exception("Can't read compiled method.");
 
 			var methodDef = methodReader.GetMethod();
