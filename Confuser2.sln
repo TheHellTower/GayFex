@@ -95,6 +95,8 @@ Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "VisualBasicRenamingResx", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualBasicRenamingResx.Test", "Tests\VisualBasicRenamingResx.Test\VisualBasicRenamingResx.Test.csproj", "{40C6A1BB-69AA-4869-81EE-41917D0B009A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer.Test", "Tests\Confuser.Renamer.Test\Confuser.Renamer.Test.csproj", "{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		SevenZip\SevenZip.projitems*{7477ae82-d0be-4c24-91c1-6abcb6c18b8f}*SharedItemsImports = 13
@@ -244,6 +246,10 @@ Global
 		{40C6A1BB-69AA-4869-81EE-41917D0B009A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40C6A1BB-69AA-4869-81EE-41917D0B009A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40C6A1BB-69AA-4869-81EE-41917D0B009A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -267,6 +273,7 @@ Global
 		{BD5ED48A-68B6-485D-84F7-13CBFDF3B193} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{4B2CE997-8157-40B4-B42F-51CE33954AAC} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{40C6A1BB-69AA-4869-81EE-41917D0B009A} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}
