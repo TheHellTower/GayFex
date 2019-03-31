@@ -537,8 +537,12 @@ namespace Confuser {
 				var unprocessedScopes = new Queue<PdbScope>();
 				unprocessedScopes.Enqueue(body.PdbMethod.Scope);
 
-				while (unprocessedScopes.Any())
-					yield return unprocessedScopes.Dequeue();
+				while (unprocessedScopes.Any()) {
+					var currentScope = unprocessedScopes.Dequeue();
+					yield return currentScope;
+					foreach (var childScope in currentScope.Scopes)
+						unprocessedScopes.Enqueue(childScope);
+				}
 			}
 		}
 
