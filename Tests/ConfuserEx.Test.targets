@@ -86,24 +86,15 @@
         <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETStandard'">netstandard%(TargetFrameworkVersion)</_tfm>
         <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp'">netcoreapp%(TargetFrameworkVersion)</_tfm>
       </_ConfuserTestProjectBuildOutput>
-      <_ConfuserTestProjectCopy Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory)%(Filename)%(Extension)')">
-        <Link>%(_tfm)/%(Filename)%(Extension)</Link>
-      </_ConfuserTestProjectCopy>
-      <_ConfuserTestProjectCopy Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory)%(Filename).pdb')">
-        <Link>%(_tfm)/%(Filename).pdb</Link>
-      </_ConfuserTestProjectCopy>
-      <_ConfuserTestProjectCopy Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory)%(Filename)%(Extension).config')">
-        <Link>%(_tfm)/%(Filename)%(Extension).config</Link>
-      </_ConfuserTestProjectCopy>
-      <_ConfuserTestProjectCopy Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory).deps.json')">
-        <Link>%(_tfm)/%(Filename).deps.json</Link>
-      </_ConfuserTestProjectCopy>
-      <_ConfuserTestProjectCopy Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory).runtimeconfig.json')">
-        <Link>%(_tfm)/%(Filename).runtimeconfig.json</Link>
-      </_ConfuserTestProjectCopy>
     </ItemGroup>
+
+    <CreateItem Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory)**/%(Filename).*')">
+      <Output ItemName="_ConfuserTestProjectCopy" TaskParameter="Include" />
+    </CreateItem>
+
     <ItemGroup>
       <None Include="@(_ConfuserTestProjectCopy)" Condition="Exists('%(FullPath)')">
+        <Link>%(_ConfuserTestProjectCopy._tfm)\%(RecursiveDir)%(Filename)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
