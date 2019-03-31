@@ -139,8 +139,10 @@ namespace Confuser.Core {
 
 		private void Dispose(bool disposing) {
 			if (!disposing) return;
-			foreach (var moduleDef in Modules)
-				moduleDef.Dispose();
+
+			if (Modules != null)
+				foreach (var moduleDef in Modules)
+					moduleDef.Dispose();
 		}
 
 		public void Dispose() {
