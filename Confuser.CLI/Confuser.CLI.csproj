@@ -8,6 +8,7 @@
     <Description>Command-line interface of ConfuserEx</Description>
     <PackageLicenseFile>license/LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/mkaring/ConfuserEx</PackageProjectUrl>
+    <RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
