@@ -29,6 +29,4 @@
     </None>
   </ItemGroup>
 
-  <Import Project="..\ConfuserEx.Test.targets" Condition="Exists('..\ConfuserEx.Test.targets')" />
-
 </Project>
