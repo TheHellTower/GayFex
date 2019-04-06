@@ -222,7 +222,7 @@ namespace Confuser.Renamer {
 			}
 
 			if (nameMap1.ContainsKey(name))
-				return nameMap1[name];
+				return MakeGenericName(nameMap1[name], count);
 
 			byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed);
 			for (int i = 0; i < 100; i++) {
