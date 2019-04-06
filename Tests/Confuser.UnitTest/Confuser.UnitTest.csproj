@@ -15,7 +15,4 @@
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
   </ItemGroup>
 
-  <Import Project="..\ConfuserEx.Test.targets" Condition="Exists('..\ConfuserEx.Test.targets')" />
-  <Import Project="..\ConfuserEx.Common.targets" Condition="Exists('..\ConfuserEx.Common.targets')" />
-
 </Project>

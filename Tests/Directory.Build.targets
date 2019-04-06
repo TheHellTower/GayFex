@@ -1,0 +1,7 @@
+<!--EXTERNAL_PROPERTIES: MSBuildThisFileDirectory-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)ConfuserEx.Test.targets" />
+
+</Project>

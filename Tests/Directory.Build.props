@@ -1,8 +1,13 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"> 
+<!--EXTERNAL_PROPERTIES: MSBuildThisFileDirectory-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Assembly Signing">
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Confuser.Test.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ConfuserTestTargetProject />
+  </ItemDefinitionGroup>
 
 </Project>

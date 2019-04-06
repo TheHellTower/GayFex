@@ -1,5 +1,10 @@
 <!--EXTERNAL_PROPERTIES: MSBuildThisFileDirectory-->
+<!--EXTERNAL_PROPERTIES: MSBuildThisFileName-->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Confuser.Test.snk" Link="Confuser.Test.snk">
@@ -8,106 +13,91 @@
     </None>
   </ItemGroup>
 
-  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Test'))">
-    <_ConfuserUnitTestTargetProjectName>$(MSBuildProjectName.Replace('.Test', ''))</_ConfuserUnitTestTargetProjectName>
-    <_ConfuserUnitTestTargetProject>
-      ..\$(_ConfuserUnitTestTargetProjectName)\$(_ConfuserUnitTestTargetProjectName).csproj
-    </_ConfuserUnitTestTargetProject>
-    <_ConfuserUnitTestTargetProject Condition="!Exists('$(_ConfuserUnitTestTargetProject)')">
-      ..\$(_ConfuserUnitTestTargetProjectName)\$(_ConfuserUnitTestTargetProjectName).vbproj
-    </_ConfuserUnitTestTargetProject>
-    <_ConfuserUnitTestTargetProject Condition="!Exists('$(_ConfuserUnitTestTargetProject)')" />
+  <PropertyGroup>
+    <BuildConfuserTestProjectReferenceDependsOn>
+      _ConfuserTestProjectGetTargetFrameworks;
+      _ConfuserTestProjectCreateTargetFrameworkList;
+      _ConfuserTestProjectBuildAndCopy;
+    </BuildConfuserTestProjectReferenceDependsOn>
   </PropertyGroup>
 
   <PropertyGroup>
-    <ConfuserUnitTestAssemblyDependsOn>
-      _ConfuserUnitTestAssemblyGetTargetFrameworks;
-      _ConfuserUnitTestAssemblyCreateTargetFrameworkList;
-      _ConfuserUnitTestAssemblyGetOutputPaths;
-      _ConfuserUnitTestAssemblyBuildAndCopyToOutput;
-    </ConfuserUnitTestAssemblyDependsOn>
+    <ConfuserRuntimeConfiguration Condition="'$(ConfuserRuntimeConfiguration)' == ''">$(Configuration)</ConfuserRuntimeConfiguration>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <ConfuserUnitTestAssemblyConfiguration Condition="'$(ConfuserUnitTestAssemblyConfiguration=' == ''">$(Configuration)</ConfuserUnitTestAssemblyConfiguration>
-  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ConfuserTestTargetProject>
+      <Configuration>$(ConfuserRuntimeConfiguration)</Configuration>
+    </ConfuserTestTargetProject>
+  </ItemDefinitionGroup>
 
-  <Target Name="ConfuserUnitTestAssembly"
-          AfterTargets="CopyFilesToOutputDirectory"
-          DependsOnTargets="$(ConfuserUnitTestAssemblyDependsOn)"
-          Condition="'$(_ConfuserUnitTestTargetProject)' != ''" />
+  <Target Name="BuildConfuserTestProjectReference"
+          AfterTargets="PrepareForBuild"
+          DependsOnTargets="$(BuildConfuserTestProjectReferenceDependsOn)"
+          Condition="'@(ConfuserTestTargetProject)' != ''" />
 
-  <PropertyGroup>
-    <CleanConfuserRuntimeDependsOn>
-      _ConfuserUnitTestAssemblyGetTargetFrameworks;
-      _ConfuserUnitTestAssemblyCreateTargetFrameworkList;
-      _ConfuserUnitTestAssemblyGetOutputPaths;
-      _ConfuserUnitTestAssemblyCleanupProjects;
-    </CleanConfuserRuntimeDependsOn>
-  </PropertyGroup>
+  <Target Name="_ConfuserTestProjectGetTargetFrameworks">
 
-  <Target Name="CleanConfuserRuntime"
-          AfterTargets="CleanReferencedProjects"
-          DependsOnTargets="$(CleanConfuserRuntimeDependsOn)"
-          Condition="'$(_ConfuserUnitTestTargetProject)' != ''" />
+    <ItemGroup>
+      <ConfuserTestTargetProject Update="@(ConfuserTestTargetProject)">
+        <SetConfiguration Condition="'%(ConfuserTestTargetProject.Configuration)' == ''">Configuration=%(ConfuserTestTargetProject.Configuration)</SetConfiguration>
+        <RemoveGlobalProperties>%(ConfuserTestTargetProject.RemoveGlobalProperties);TargetFramework;RuntimeIdentifier</RemoveGlobalProperties>
+      </ConfuserTestTargetProject>
+    </ItemGroup>
 
-  <Target Name="_ConfuserUnitTestAssemblyGetTargetFrameworks">
-    <MSBuild Projects="$(_ConfuserUnitTestTargetProject)"
+    <MSBuild Projects="@(ConfuserTestTargetProject)"
              Targets="GetTargetFrameworks"
              BuildInParallel="$(BuildInParallel)"
-             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration)"
-             RemoveProperties="TargetFramework;RuntimeIdentifier"
-             SkipNonExistentTargets="true">
-      <Output TaskParameter="TargetOutputs" ItemName="_ConfuserUnitTestAssemblyTargets" />
+             ContinueOnError="$(ContinueOnError)"
+             Properties="%(ConfuserTestTargetProject.SetConfiguration)"
+             RemoveProperties="%(ConfuserTestTargetProject.RemoveGlobalProperties)">
+      <Output TaskParameter="TargetOutputs" ItemName="_BuildConfuserTestProjectReferenceTargets" />
     </MSBuild>
+
     <ItemGroup>
-      <_ConfuserUnitTestAssemblyTargetFrameworks Include="@(_ConfuserUnitTestAssemblyTargets->'%(TargetFrameworks)')" />
+      <_BuildConfuserTestProjectReferenceTargetFrameworks Include="@(_BuildConfuserTestProjectReferenceTargets->'%(TargetFrameworks)')" />
     </ItemGroup>
+
   </Target>
 
-  <Target Name="_ConfuserUnitTestAssemblyCreateTargetFrameworkList">
+  <Target Name="_ConfuserTestProjectCreateTargetFrameworkList">
     <PropertyGroup>
-      <_ConfuserUnitTestAssemblyTargets2>@(_ConfuserUnitTestAssemblyTargetFrameworks)</_ConfuserUnitTestAssemblyTargets2>
-      <_ConfuserUnitTestAssemblyProjectFile>%(_ConfuserUnitTestAssemblyTargetFrameworks.MSBuildSourceProjectFile)</_ConfuserUnitTestAssemblyProjectFile>
-  </PropertyGroup>
-    <ItemGroup>
-      <_ConfuserUnitTestAssemblyTargetFramework Include="$(_ConfuserUnitTestAssemblyTargets2.Split(';'))">
-        <MSBuildSourceProjectFile>$(_ConfuserUnitTestAssemblyProjectFile)</MSBuildSourceProjectFile>
-      </_ConfuserUnitTestAssemblyTargetFramework>
-    </ItemGroup>
-  </Target>
-
-  <Target Name="_ConfuserUnitTestAssemblyGetOutputPaths">
-    <PropertyGroup>
-      <_ConfuserUnitTestOutputPath>$(MSBuildProjectDirectory)\$(OutDir)$(MSBuildProjectName).dll</_ConfuserUnitTestOutputPath>
+      <_BuildConfuserTestProjectReferenceTargetFrameworks2>@(_BuildConfuserTestProjectReferenceTargetFrameworks)</_BuildConfuserTestProjectReferenceTargetFrameworks2>
+      <_BuildConfuserTestProjectReferenceProjectFile>%(_BuildConfuserTestProjectReferenceTargetFrameworks.MSBuildSourceProjectFile)</_BuildConfuserTestProjectReferenceProjectFile>
     </PropertyGroup>
     <ItemGroup>
-      <_ConfuserUnitTestAssemblyTargetFramework Update="@(_ConfuserUnitTestAssemblyTargetFramework)">
-        <MSBuildSourceDirectoryName>$([System.IO.Path]::GetDirectoryName(%(MSBuildSourceProjectFile)))</MSBuildSourceDirectoryName>
-      </_ConfuserUnitTestAssemblyTargetFramework>
-      <_ConfuserUnitTestAssemblyTargetFramework Update="@(_ConfuserUnitTestAssemblyTargetFramework)">
-        <MSBuildSourceRelativeDirectoryName>$([MSBuild]::MakeRelative('%(MSBuildSourceDirectoryName)', '$(_ConfuserUnitTestOutputPath)'))</MSBuildSourceRelativeDirectoryName>
-      </_ConfuserUnitTestAssemblyTargetFramework>
-      <_ConfuserUnitTestAssemblyTargetFramework Update="@(_ConfuserUnitTestAssemblyTargetFramework)">
-        <MSBuildSourceRelativeDirectoryName>$([System.IO.Path]::GetDirectoryName(%(MSBuildSourceRelativeDirectoryName)))\%(Identity)\</MSBuildSourceRelativeDirectoryName>
-      </_ConfuserUnitTestAssemblyTargetFramework>
+      <_BuildConfuserTestProjectReferenceTargetFramework Include="$(_BuildConfuserTestProjectReferenceTargetFrameworks2.Split(';'))">
+        <MSBuildSourceProjectFile>$(_BuildConfuserTestProjectReferenceProjectFile)</MSBuildSourceProjectFile>
+      </_BuildConfuserTestProjectReferenceTargetFramework>
     </ItemGroup>
   </Target>
 
-  <Target Name="_ConfuserUnitTestAssemblyBuildAndCopyToOutput">
-    <MSBuild Projects="%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceProjectFile)"
-             Targets="Publish"
-             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);PublishDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName);SelfContained=false"
-             RemoveProperties="RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
-             BuildInParallel="$(BuildInParallel)" />
-  </Target>
+  <Target Name="_ConfuserTestProjectBuildAndCopy">
+    <MSBuild Projects="%(_BuildConfuserTestProjectReferenceTargetFramework.MSBuildSourceProjectFile)"
+             Targets="Build"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration);TargetFramework=%(_BuildConfuserTestProjectReferenceTargetFramework.Identity)"
+             RemoveProperties="TargetFrameworks;RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
+             BuildInParallel="$(BuildInParallel)">
+      <Output TaskParameter="TargetOutputs" ItemName="_ConfuserTestProjectBuildOutput" />
+    </MSBuild>
+    <ItemGroup>
+      <_ConfuserTestProjectBuildOutput Update="@(_ConfuserTestProjectBuildOutput)">
+        <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETFramework'">net$([System.String]::Copy('%(TargetFrameworkVersion)').Replace('.', ''))</_tfm>
+        <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETStandard'">netstandard%(TargetFrameworkVersion)</_tfm>
+        <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp'">netcoreapp%(TargetFrameworkVersion)</_tfm>
+      </_ConfuserTestProjectBuildOutput>
+    </ItemGroup>
 
-  <Target Name="_ConfuserUnitTestAssemblyCleanupProjects">
-    <MSBuild Projects="%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceProjectFile)"
-             Targets="Clean"
-             Properties="Configuration=$(ConfuserUnitTestAssemblyConfiguration);TargetFrameworks=;TargetFramework=%(_ConfuserUnitTestAssemblyTargetFramework.Identity);OutDir=%(_ConfuserUnitTestAssemblyTargetFramework.MSBuildSourceRelativeDirectoryName)"
-             RemoveProperties="RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
-             BuildInParallel="$(BuildInParallel)" />
+    <CreateItem Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory)**/%(Filename).*')">
+      <Output ItemName="_ConfuserTestProjectCopy" TaskParameter="Include" />
+    </CreateItem>
+
+    <ItemGroup>
+      <None Include="@(_ConfuserTestProjectCopy)" Condition="Exists('%(FullPath)')">
+        <Link>%(_ConfuserTestProjectCopy._tfm)\%(RecursiveDir)%(Filename)%(Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
   </Target>
 
   <ItemGroup Label="Nuget Dependency Versions">
