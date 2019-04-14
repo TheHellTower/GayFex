@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Resources;
 using System.Text.RegularExpressions;
+using System.Web;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.BAML;
@@ -75,57 +77,35 @@ namespace Confuser.Renamer.Analyzers {
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
 			foreach (var res in wpfResInfo.Values)
-			foreach (var doc in res.Values) {
-				List<IBAMLReference> references;
-				if (bamlRefs.TryGetValue(doc.DocumentName, out references)) {
-					var newName = doc.DocumentName.ToUpperInvariant();
+				foreach (var doc in res.Values) {
+					var decodedName = HttpUtility.UrlDecode(doc.DocumentName);
+					var encodedName = doc.DocumentName;
+					if (bamlRefs.TryGetValue(decodedName, out var references)) {
+						var decodedDirectory = decodedName.Substring(0, decodedName.LastIndexOf('/') + 1);
+						var encodedDirectory = encodedName.Substring(0, encodedName.LastIndexOf('/') + 1);
 
-					#region old code
+						var fileName = service.RandomName(RenameMode.Letters).ToLowerInvariant();
+						if (decodedName.EndsWith(".BAML", StringComparison.OrdinalIgnoreCase))
+							fileName += ".baml";
+						else if (decodedName.EndsWith(".XAML", StringComparison.OrdinalIgnoreCase))
+							fileName += ".xaml";
 
-					//if (newName.EndsWith(".BAML"))
-					//    newName = service.RandomName(RenameMode.Letters).ToLowerInvariant() + ".baml";
-					//else if (newName.EndsWith(".XAML"))
-					//    newName = service.RandomName(RenameMode.Letters).ToLowerInvariant() + ".xaml";
+						string decodedNewName = decodedDirectory + fileName;
+						string encodedNewName = encodedDirectory + fileName;
 
-					#endregion
+                        logger.LogDebug("Preserving virtual paths. Replaced {0} with {1}", decodedName, decodedNewName);
 
-					#region Niks patch fix
+						bool renameOk = references.All(r => r.CanRename(decodedName, decodedNewName) || r.CanRename(encodedName, encodedNewName));
 
-					/*
-					 * Nik's patch for maintaining relative paths. If the xaml file is referenced in this manner
-					 * "/some.namespace;component/somefolder/somecontrol.xaml"
-					 * then we want to keep the relative path and namespace intact. We should be obfuscating it like this - /some.namespace;component/somefolder/asjdjh2398498dswk.xaml
-					* */
-
-					string[] completePath = newName.Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries);
-					string newShinyName = string.Empty;
-					for (int i = 0; i <= completePath.Length - 2; i++) {
-						newShinyName += completePath[i].ToLowerInvariant() + "/";
-					}
-
-					if (newName.EndsWith(".BAML"))
-						newName = newShinyName + service.RandomName(RenameMode.Letters).ToLowerInvariant() + ".baml";
-					else if (newName.EndsWith(".XAML"))
-						newName = newShinyName + service.RandomName(RenameMode.Letters).ToLowerInvariant() + ".xaml";
-
-					logger.LogDebug("Preserving virtual paths. Replaced {0} with {1}", doc.DocumentName, newName);
-
-					#endregion
-
-					bool renameOk = true;
-					foreach (var bamlRef in references)
-						if (!bamlRef.CanRename(doc.DocumentName, newName)) {
-							renameOk = false;
-							break;
+						if (renameOk) {
+							foreach (var bamlRef in references) {
+								bamlRef.Rename(decodedName, decodedNewName);
+								bamlRef.Rename(encodedName, encodedNewName);
+							}
+							doc.DocumentName = encodedNewName;
 						}
-
-					if (renameOk) {
-						foreach (var bamlRef in references)
-							bamlRef.Rename(doc.DocumentName, newName);
-						doc.DocumentName = newName;
 					}
 				}
-			}
 		}
 
 		public void PostRename(IConfuserContext context, INameService service, IProtectionParameters parameters,

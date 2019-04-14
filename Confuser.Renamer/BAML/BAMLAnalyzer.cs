@@ -565,8 +565,6 @@ namespace Confuser.Renamer.BAML {
 						var bamlRefs = service.FindRenamer<WPFAnalyzer>().bamlRefs;
 						bamlRefs.AddListEntry(baml, reference);
 						bamlRefs.AddListEntry(xaml, reference);
-						bamlRefs.AddListEntry(Uri.EscapeUriString(baml), reference);
-						bamlRefs.AddListEntry(Uri.EscapeUriString(xaml), reference);
 					}
 				}
 			}

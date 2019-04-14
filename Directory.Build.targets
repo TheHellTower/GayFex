@@ -25,6 +25,7 @@
       <Version Condition="'%(Identity)' == 'System.Reflection.Emit.ILGeneration'">4.3.0</Version>
       <Version Condition="'%(Identity)' == 'System.Reflection.Emit.Lightweight'">4.3.0</Version>
       <Version Condition="'%(Identity)' == 'System.Runtime'">4.3.1</Version>
+      <Version Condition="'%(Identity)' == 'System.Runtime.Extensions'">4.3.1</Version>
       <Version Condition="'%(Identity)' == 'System.Security.Cryptography.Primitives'">4.3.0</Version>
       <Version Condition="'%(Identity)' == 'System.Text.RegularExpressions'">4.3.0</Version>
       <Version Condition="'%(Identity)' == 'System.Threading'">4.3.0</Version>
