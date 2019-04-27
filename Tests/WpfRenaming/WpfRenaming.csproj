@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
     <ExtrasEnableWpfProjectSetup>true</ExtrasEnableWpfProjectSetup>
+    <ExtrasDisableExtrasSdkLegacyCompat>true</ExtrasDisableExtrasSdkLegacyCompat>
     <MyType>Custom</MyType>
   </PropertyGroup>
 
