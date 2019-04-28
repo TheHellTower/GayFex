@@ -6,16 +6,14 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Core.Services {
-	internal class TraceService : ITraceService {
+	public sealed class TraceService : ITraceService {
 		readonly Dictionary<MethodDef, MethodTrace> cache = new Dictionary<MethodDef, MethodTrace>();
-		ConfuserContext context;
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="TraceService" /> class.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		public TraceService(ConfuserContext context) {
-			this.context = context;
+		public TraceService() {
 		}
 
 
@@ -246,6 +244,9 @@ namespace Confuser.Core.Services {
 					return null;
 			}
 
+			while (method.Body.Instructions[beginInstrIndex].OpCode.Code == Code.Dup)
+				beginInstrIndex--;
+
 			// Trace the index of arguments
 			seen.Clear();
 			var working2 = new Queue<Tuple<int, Stack<int>>>();
@@ -260,17 +261,22 @@ namespace Confuser.Core.Services {
 				while (index != instrIndex && index < method.Body.Instructions.Count) {
 					Instruction currentInstr = Instructions[index];
 					currentInstr.CalculateStackUsage(out push, out pop);
-					int stackUsage = pop - push;
-					if (stackUsage < 0) {
-						Debug.Assert(stackUsage == -1); // i.e. push
-						evalStack.Push(index);
+					if (currentInstr.OpCode.Code == Code.Dup) {
+						// Special case duplicate. This causes the current value on the stack to be duplicated.
+						// To show this behaviour, we'll fetch the last object on the eval stack and add it back twice.
+						Debug.Assert(pop == 1 && push == 2 && evalStack.Count > 0);
+						var lastIdx = evalStack.Pop();
+						evalStack.Push(lastIdx);
+						evalStack.Push(lastIdx);
 					}
 					else {
-						if (evalStack.Count < stackUsage)
-							return null;
-
-						for (int i = 0; i < stackUsage; i++)
+						for (var i = 0; i < pop; i++) {
 							evalStack.Pop();
+						}
+						Debug.Assert(push <= 1); // Instructions shouldn't put more than one value on the stack.
+						for (var i = 0; i < push; i++) {
+							evalStack.Push(index);
+						}
 					}
 
 					object instrOperand = currentInstr.Operand;

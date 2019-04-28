@@ -74,7 +74,7 @@ namespace Confuser.Core {
 		protected internal override void Initialize(ConfuserContext context) {
 			context.Registry.RegisterService(_RandomServiceId, typeof(IRandomService), new RandomService(parameters.Project.Seed));
 			context.Registry.RegisterService(_MarkerServiceId, typeof(IMarkerService), new MarkerService(context, marker));
-			context.Registry.RegisterService(_TraceServiceId, typeof(ITraceService), new TraceService(context));
+			context.Registry.RegisterService(_TraceServiceId, typeof(ITraceService), new TraceService());
 			context.Registry.RegisterService(_RuntimeServiceId, typeof(IRuntimeService), new RuntimeService());
 			context.Registry.RegisterService(_CompressionServiceId, typeof(ICompressionService), new CompressionService(context));
 			context.Registry.RegisterService(_APIStoreId, typeof(IAPIStore), new APIStore(context));
