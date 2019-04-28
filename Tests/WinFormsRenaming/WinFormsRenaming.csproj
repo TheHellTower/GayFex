@@ -3,9 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
     <ExtrasEnableWinFormsProjectSetup>true</ExtrasEnableWinFormsProjectSetup>
-    <ExtrasEnableUserControlDesigner>true</ExtrasEnableUserControlDesigner>
+    <ExtrasDisableExtrasSdkLegacyCompat>true</ExtrasDisableExtrasSdkLegacyCompat>
     <MyType>Windows</MyType>
-    <DefineConstants>_MYFORMS=True</DefineConstants>
   </PropertyGroup>
 
 </Project>
