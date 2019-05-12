@@ -36,4 +36,8 @@
     <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleToTest Include="Confuser.Renamer.Test" />
+  </ItemGroup>
+
 </Project>

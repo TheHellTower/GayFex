@@ -4,6 +4,7 @@
     <TargetFrameworks>net40;net471</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ExtrasEnableWpfProjectSetup>true</ExtrasEnableWpfProjectSetup>
+    <ExtrasDisableExtrasSdkLegacyCompat>true</ExtrasDisableExtrasSdkLegacyCompat>
     <MyType>Custom</MyType>
   </PropertyGroup>
 

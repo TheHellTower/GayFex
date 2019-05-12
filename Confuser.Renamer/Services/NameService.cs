@@ -39,7 +39,8 @@ namespace Confuser.Renamer.Services {
 				new VTableAnalyzer(),
 				new TypeBlobAnalyzer(),
 				new ResourceAnalyzer(),
-				new LdtokenEnumAnalyzer()
+				new LdtokenEnumAnalyzer(),
+				new ReflectionAnalyzer()
 			);
 		}
 

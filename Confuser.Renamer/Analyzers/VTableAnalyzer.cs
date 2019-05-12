@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Confuser.Core;
 using Confuser.Renamer.References;
 using Confuser.Renamer.Services;
@@ -52,10 +53,8 @@ namespace Confuser.Renamer.Analyzers {
 					foreach (var slot in slots) {
 						if (slot.Overrides == null)
 							continue;
-						// Better on safe side, add references to both methods.
-						service.AddReference(context, method, new OverrideDirectiveReference(slot, slot.Overrides));
-						service.AddReference(context, slot.Overrides.MethodDef,
-							new OverrideDirectiveReference(slot, slot.Overrides));
+
+						SetupOverwriteReferences(context, service, slot, method.Module);
 					}
 				}
 				else {
@@ -67,6 +66,84 @@ namespace Confuser.Renamer.Analyzers {
 					}
 				}
 			}
+		}
+
+		private static void AddImportReference(IConfuserContext context, INameService service, ModuleDef module, MethodDef method, MemberRef methodRef) {
+			if (method.Module != module && context.Modules.Contains((ModuleDefMD)module)) {
+				var declType = (TypeRef)methodRef.DeclaringType.ScopeType;
+				service.AddReference(context, method.DeclaringType, new TypeRefReference(declType, method.DeclaringType));
+				service.AddReference(context, method, new MemberRefReference(methodRef, method));
+
+				var typeRefs = methodRef.MethodSig.Params.SelectMany(param => param.FindTypeRefs()).ToList();
+				typeRefs.AddRange(methodRef.MethodSig.RetType.FindTypeRefs());
+				typeRefs.AddRange(methodRef.DeclaringType.ToTypeSig().FindTypeRefs());
+				foreach (var typeRef in typeRefs) {
+					SetupTypeReference(context, service, module, typeRef);
+				}
+			}
+		}
+
+		private static void SetupTypeReference(IConfuserContext context, INameService service, ModuleDef module, ITypeDefOrRef typeDefOrRef) {
+			if (!(typeDefOrRef is TypeRef typeRef)) return;
+
+			var def = typeRef.ResolveTypeDefThrow();
+			if (def.Module != module && context.Modules.Contains((ModuleDefMD)def.Module))
+				service.AddReference(context, def, new TypeRefReference(typeRef, def));
+		}
+
+		private static GenericInstSig SetupSignatureReferences(IConfuserContext context, INameService service, ModuleDef module, GenericInstSig typeSig) {
+			var genericType = SetupSignatureReferences(context, service, module, typeSig.GenericType);
+			var genericArguments = typeSig.GenericArguments.Select(a => SetupSignatureReferences(context, service, module, a)).ToList();
+			return new GenericInstSig(genericType, genericArguments);
+		}
+
+		private static T SetupSignatureReferences<T>(IConfuserContext context, INameService service, ModuleDef module, T typeSig) where T : TypeSig {
+			var asTypeRef = typeSig.TryGetTypeRef();
+			if (asTypeRef != null) {
+				SetupTypeReference(context, service, module, asTypeRef);
+			}
+			return typeSig;
+		}
+
+		private static void SetupOverwriteReferences(IConfuserContext context, INameService service, VTableSlot slot, ModuleDef module) {
+			var methodDef = slot.MethodDef;
+			var baseSlot = slot.Overrides;
+			var baseMethodDef = baseSlot.MethodDef;
+
+			var overrideRef = new OverrideDirectiveReference(slot, baseSlot);
+			service.AddReference(context, methodDef, overrideRef);
+			service.AddReference(context, slot.Overrides.MethodDef, overrideRef);
+
+			var importer = new Importer(module, ImporterOptions.TryToUseTypeDefs);
+
+			IMethod target;
+			if (baseSlot.MethodDefDeclType is GenericInstSig declType) {
+				var signature = SetupSignatureReferences(context, service, module, declType);
+				MemberRef targetRef = new MemberRefUser(module, baseMethodDef.Name, baseMethodDef.MethodSig, signature.ToTypeDefOrRef());
+				targetRef = importer.Import(targetRef);
+				service.AddReference(context, baseMethodDef, new MemberRefReference(targetRef, baseMethodDef));
+
+				target = targetRef;
+			}
+			else {
+				target = baseMethodDef;
+				if (target.Module != module) {
+					target = importer.Import(baseMethodDef);
+					if (target is MemberRef memberRef)
+						service.AddReference(context, baseMethodDef, new MemberRefReference(memberRef, baseMethodDef));
+				}
+			}
+
+			target.MethodSig = importer.Import(methodDef.MethodSig);
+			if (target is MemberRef methodRef)
+				AddImportReference(context, service, module, baseMethodDef, methodRef);
+
+			if (methodDef.Overrides.Any(impl =>
+									 new SigComparer().Equals(impl.MethodDeclaration.MethodSig, target.MethodSig) &&
+									 new SigComparer().Equals(impl.MethodDeclaration.DeclaringType.ResolveTypeDef(), target.DeclaringType.ResolveTypeDef())))
+				return;
+
+			methodDef.Overrides.Add(new MethodOverride(methodDef, (IMethodDefOrRef)target));
 		}
 
 		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
@@ -81,13 +158,13 @@ namespace Confuser.Renamer.Analyzers {
 
 			var methods = new HashSet<IMethodDefOrRef>(MethodDefOrRefComparer.Instance);
 			method.Overrides
-				.RemoveWhere(impl => MethodDefOrRefComparer.Instance.Equals(impl.MethodDeclaration, method));
+				  .RemoveWhere(impl => MethodDefOrRefComparer.Instance.Equals(impl.MethodDeclaration, method));
 		}
 
 		private sealed class MethodDefOrRefComparer : IEqualityComparer<IMethodDefOrRef> {
 			public static readonly MethodDefOrRefComparer Instance = new MethodDefOrRefComparer();
 
-			MethodDefOrRefComparer() {
+			private MethodDefOrRefComparer() {
 			}
 
 			public bool Equals(IMethodDefOrRef x, IMethodDefOrRef y) =>

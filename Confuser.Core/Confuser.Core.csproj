@@ -56,6 +56,7 @@
 
   <ItemGroup>
     <InternalsVisibleToTest Include="Confuser.Core.Test" />
+    <InternalsVisibleToTest Include="Confuser.Renamer.Test" />
   </ItemGroup>
 
   <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />
