@@ -29,62 +29,75 @@ namespace Confuser.Core {
 		/// <param name="prot">The packer protection that applies to the stub.</param>
 		protected void ProtectStub(ConfuserContext context, string fileName, byte[] module, StrongNameKey snKey, Protection prot = null) {
 			string tmpDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-			string outDir = Path.Combine(tmpDir, Path.GetRandomFileName());
-			Directory.CreateDirectory(tmpDir);
-
-			for (int i = 0; i < context.OutputModules.Count; i++) {
-				string path = Path.GetFullPath(Path.Combine(tmpDir, context.OutputPaths[i]));
-				var dir = Path.GetDirectoryName(path);
-				if (!Directory.Exists(dir))
-					Directory.CreateDirectory(dir);
-				File.WriteAllBytes(path, context.OutputModules[i]);
-			}
-			File.WriteAllBytes(Path.Combine(tmpDir, fileName), module);
-
-			var proj = new ConfuserProject();
-			proj.Seed = context.Project.Seed;
-			foreach (Rule rule in context.Project.Rules)
-				proj.Rules.Add(rule);
-			proj.Add(new ProjectModule {
-				Path = fileName
-			});
-			proj.BaseDirectory = tmpDir;
-			proj.OutputDirectory = outDir;
-			foreach (var path in context.Project.ProbePaths)
-				proj.ProbePaths.Add(path);
-			proj.ProbePaths.Add(context.Project.BaseDirectory);
-
-			PluginDiscovery discovery = null;
-			if (prot != null) {
-				var rule = new Rule {
-					Preset = ProtectionPreset.None,
-					Inherit = true,
-					Pattern = "true"
-				};
-				rule.Add(new SettingItem<Protection> {
-					Id = prot.Id,
-					Action = SettingItemAction.Add
-				});
-				proj.Rules.Add(rule);
-				discovery = new PackerDiscovery(prot);
-			}
-
 			try {
-				ConfuserEngine.Run(new ConfuserParameters {
-					Logger = new PackerLogger(context.Logger),
-					PluginDiscovery = discovery,
-					Marker = new PackerMarker(snKey),
-					Project = proj,
-					PackerInitiated = true
-				}, context.token).Wait();
-			}
-			catch (AggregateException ex) {
-				context.Logger.Error("Failed to protect packer stub.");
-				throw new ConfuserException(ex);
-			}
+				string outDir = Path.Combine(tmpDir, Path.GetRandomFileName());
+				Directory.CreateDirectory(tmpDir);
 
-			context.OutputModules = new[] { File.ReadAllBytes(Path.Combine(outDir, fileName)) };
-			context.OutputPaths = new[] { fileName };
+				for (int i = 0; i < context.OutputModules.Count; i++) {
+					string path = Path.GetFullPath(Path.Combine(tmpDir, context.OutputPaths[i]));
+					var dir = Path.GetDirectoryName(path);
+					if (!Directory.Exists(dir))
+						Directory.CreateDirectory(dir);
+					File.WriteAllBytes(path, context.OutputModules[i]);
+				}
+
+				File.WriteAllBytes(Path.Combine(tmpDir, fileName), module);
+
+				var proj = new ConfuserProject();
+				proj.Seed = context.Project.Seed;
+				foreach (Rule rule in context.Project.Rules)
+					proj.Rules.Add(rule);
+				proj.Add(new ProjectModule {Path = fileName});
+				proj.BaseDirectory = tmpDir;
+				proj.OutputDirectory = outDir;
+				foreach (var path in context.Project.ProbePaths)
+					proj.ProbePaths.Add(path);
+				proj.ProbePaths.Add(context.Project.BaseDirectory);
+
+				PluginDiscovery discovery = null;
+				if (prot != null) {
+					var rule = new Rule {
+						Preset = ProtectionPreset.None,
+						Inherit = true,
+						Pattern = "true"
+					};
+					rule.Add(new SettingItem<Protection> {
+						Id = prot.Id,
+						Action = SettingItemAction.Add
+					});
+					proj.Rules.Add(rule);
+					discovery = new PackerDiscovery(prot);
+				}
+
+				try {
+					ConfuserEngine
+						.Run(
+							new ConfuserParameters {
+								Logger = new PackerLogger(context.Logger),
+								PluginDiscovery = discovery,
+								Marker = new PackerMarker(snKey),
+								Project = proj,
+								PackerInitiated = true
+							}, context.token).Wait();
+				}
+				catch (AggregateException ex) {
+					context.Logger.Error("Failed to protect packer stub.");
+					throw new ConfuserException(ex);
+				}
+
+				context.OutputModules = new[] {File.ReadAllBytes(Path.Combine(outDir, fileName))};
+				context.OutputPaths = new[] {fileName};
+			}
+			finally {
+				try {
+					if (Directory.Exists(tmpDir)) {
+						Directory.Delete(tmpDir, true);
+					}
+				}
+				catch (IOException ex) {
+					context.Logger.WarnException("Failed to remove temporary files of packer.", ex);
+				}
+			}
 		}
 	}
 
