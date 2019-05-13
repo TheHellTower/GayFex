@@ -11,7 +11,7 @@ namespace Confuser.Core.Services
 	///     The trace result of a method.
 	/// </summary>
 	internal sealed class MethodTrace : IMethodTrace {
-		private Dictionary<int, List<Instruction>> _fromInstrs;
+		private Dictionary<int, List<Instruction>> _fromInstructions;
 		private Dictionary<uint, int> _offset2Index;
 
 		/// <summary>
@@ -36,26 +36,13 @@ namespace Confuser.Core.Services
 		///     Gets the map of offset to index.
 		/// </summary>
 		/// <value>The map.</value>
-		public Func<uint, int> OffsetToIndexMap => offset => _offset2Index[offset];
+		private Func<uint, int> OffsetToIndexMap => offset => _offset2Index[offset];
 
 		/// <summary>
 		///     Gets the stack depths of method body.
 		/// </summary>
 		/// <value>The stack depths.</value>
 		private int[] BeforeStackDepths { get; set; }
-
-		/// <summary>
-		///     Gets the stack depths of method body.
-		/// </summary>
-		/// <value>The stack depths.</value>
-		private int[] AfterStackDepths { get; set; }
-
-		/// <summary>
-		///     Determines whether the specified instruction is the target of a branch instruction.
-		/// </summary>
-		/// <param name="instrIndex">The index of instruction.</param>
-		/// <returns><c>true</c> if the specified instruction is a branch target; otherwise, <c>false</c>.</returns>
-		public bool IsBranchTarget(int instrIndex) => _fromInstrs.ContainsKey(instrIndex);
 
 		/// <summary>
 		///     Perform the actual tracing.
@@ -70,7 +57,7 @@ namespace Confuser.Core.Services
 			_offset2Index = new Dictionary<uint, int>();
 			var beforeDepths = new int[instructions.Length];
 			var afterDepths = new int[instructions.Length];
-			_fromInstrs = new Dictionary<int, List<Instruction>>();
+			_fromInstructions = new Dictionary<int, List<Instruction>>();
 
 			for (int i = 0; i < instructions.Length; i++) {
 				_offset2Index.Add(instructions[i].Offset, i);
@@ -102,7 +89,7 @@ namespace Confuser.Core.Services
 						int index = OffsetToIndexMap(((Instruction)instr.Operand).Offset);
 						if (beforeDepths[index] == int.MinValue)
 							beforeDepths[index] = currentStack;
-						_fromInstrs.AddListEntry(OffsetToIndexMap(((Instruction)instr.Operand).Offset), instr);
+						_fromInstructions.AddListEntry(OffsetToIndexMap(((Instruction)instr.Operand).Offset), instr);
 						currentStack = 0;
 						break;
 					case FlowControl.Break:
@@ -112,19 +99,18 @@ namespace Confuser.Core.Services
 							currentStack = 0;
 						break;
 					case FlowControl.Cond_Branch:
-						if (instr.OpCode.Code == Code.Switch) {
+						if (instr.OpCode.Code == Code.Switch)
 							foreach (var target in (Instruction[])instr.Operand) {
 								int targetIndex = OffsetToIndexMap(target.Offset);
 								if (beforeDepths[targetIndex] == int.MinValue)
 									beforeDepths[targetIndex] = currentStack;
-								_fromInstrs.AddListEntry(OffsetToIndexMap(target.Offset), instr);
+								_fromInstructions.AddListEntry(OffsetToIndexMap(target.Offset), instr);
 							}
-						}
 						else {
 							int targetIndex = OffsetToIndexMap(((Instruction)instr.Operand).Offset);
 							if (beforeDepths[targetIndex] == int.MinValue)
 								beforeDepths[targetIndex] = currentStack;
-							_fromInstrs.AddListEntry(OffsetToIndexMap(((Instruction)instr.Operand).Offset), instr);
+							_fromInstructions.AddListEntry(OffsetToIndexMap(((Instruction)instr.Operand).Offset), instr);
 						}
 
 						break;
@@ -150,7 +136,6 @@ namespace Confuser.Core.Services
 					throw new InvalidMethodException("Bad method body.");
 
 			BeforeStackDepths = beforeDepths;
-			AfterStackDepths = afterDepths;
 
 			return this;
 		}
@@ -186,13 +171,12 @@ namespace Confuser.Core.Services
 					if (BeforeStackDepths[index] == targetStack)
 						break;
 
-					if (_fromInstrs.ContainsKey(index))
-						foreach (var fromInstr in _fromInstrs[index]) {
+					if (_fromInstructions.ContainsKey(index))
+						foreach (var fromInstr in _fromInstructions[index])
 							if (!seen.Contains(fromInstr.Offset)) {
 								seen.Add(fromInstr.Offset);
 								working.Enqueue(OffsetToIndexMap(fromInstr.Offset));
 							}
-						}
 
 					index--;
 				}
