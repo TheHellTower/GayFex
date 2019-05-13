@@ -11,7 +11,7 @@ namespace Confuser.Core {
 	///     The annotations are stored using <see cref="WeakReference" />
 	/// </remarks>
 	public sealed class Annotations : IAnnotations {
-		readonly Dictionary<object, ListDictionary> annotations =
+		private readonly Dictionary<object, ListDictionary> _annotations =
 			new Dictionary<object, ListDictionary>(WeakReferenceComparer.Instance);
 
 		/// <summary>
@@ -22,22 +22,21 @@ namespace Confuser.Core {
 		/// <param name="key">The key of annotation.</param>
 		/// <param name="defValue">The default value if the specified annotation does not exists on the object.</param>
 		/// <returns>The value of annotation, or default value if the annotation does not exist.</returns>
-		/// <exception cref="System.ArgumentNullException">
+		/// <exception cref="ArgumentNullException">
 		///     <paramref name="obj" /> or <paramref name="key" /> is <c>null</c>.
 		/// </exception>
 		public TValue Get<TValue>(object obj, object key, TValue defValue = default(TValue)) {
 			if (obj == null)
-				throw new ArgumentNullException("obj");
+				throw new ArgumentNullException(nameof(obj));
 			if (key == null)
-				throw new ArgumentNullException("key");
+				throw new ArgumentNullException(nameof(key));
 
-			ListDictionary objAnno;
-			if (!annotations.TryGetValue(obj, out objAnno))
+			if (!_annotations.TryGetValue(obj, out var objAnno))
 				return defValue;
 			if (!objAnno.Contains(key))
 				return defValue;
 
-			Type valueType = typeof(TValue);
+			var valueType = typeof(TValue);
 			if (valueType.IsValueType)
 				return (TValue)Convert.ChangeType(objAnno[key], typeof(TValue));
 			return (TValue)objAnno[key];
@@ -51,22 +50,21 @@ namespace Confuser.Core {
 		/// <param name="key">The key of annotation.</param>
 		/// <param name="defValueFactory">The default value factory function.</param>
 		/// <returns>The value of annotation, or default value if the annotation does not exist.</returns>
-		/// <exception cref="System.ArgumentNullException">
+		/// <exception cref="ArgumentNullException">
 		///     <paramref name="obj" /> or <paramref name="key" /> is <c>null</c>.
 		/// </exception>
 		public TValue GetLazy<TValue>(object obj, object key, Func<object, TValue> defValueFactory) {
 			if (obj == null)
-				throw new ArgumentNullException("obj");
+				throw new ArgumentNullException(nameof(obj));
 			if (key == null)
-				throw new ArgumentNullException("key");
+				throw new ArgumentNullException(nameof(key));
 
-			ListDictionary objAnno;
-			if (!annotations.TryGetValue(obj, out objAnno))
+			if (!_annotations.TryGetValue(obj, out var objAnno))
 				return defValueFactory(key);
 			if (!objAnno.Contains(key))
 				return defValueFactory(key);
 
-			Type valueType = typeof(TValue);
+			var valueType = typeof(TValue);
 			if (valueType.IsValueType)
 				return (TValue)Convert.ChangeType(objAnno[key], typeof(TValue));
 			return (TValue)objAnno[key];
@@ -80,21 +78,20 @@ namespace Confuser.Core {
 		/// <param name="key">The key of annotation.</param>
 		/// <param name="factory">The factory function to create the annotation value when the annotation does not exist.</param>
 		/// <returns>The value of annotation, or the newly created value.</returns>
-		/// <exception cref="System.ArgumentNullException">
+		/// <exception cref="ArgumentNullException">
 		///     <paramref name="obj" /> or <paramref name="key" /> is <c>null</c>.
 		/// </exception>
 		public TValue GetOrCreate<TValue>(object obj, object key, Func<object, TValue> factory) {
 			if (obj == null)
-				throw new ArgumentNullException("obj");
+				throw new ArgumentNullException(nameof(obj));
 			if (key == null)
-				throw new ArgumentNullException("key");
+				throw new ArgumentNullException(nameof(key));
 
-			ListDictionary objAnno;
-			if (!annotations.TryGetValue(obj, out objAnno))
-				objAnno = annotations[new WeakReferenceKey(obj)] = new ListDictionary();
+			if (!_annotations.TryGetValue(obj, out var objAnno))
+				objAnno = _annotations[new WeakReferenceKey(obj)] = new ListDictionary();
 			TValue ret;
 			if (objAnno.Contains(key)) {
-				Type valueType = typeof(TValue);
+				var valueType = typeof(TValue);
 				if (valueType.IsValueType)
 					return (TValue)Convert.ChangeType(objAnno[key], typeof(TValue));
 				return (TValue)objAnno[key];
@@ -111,18 +108,17 @@ namespace Confuser.Core {
 		/// <param name="obj">The object.</param>
 		/// <param name="key">The key of annotation.</param>
 		/// <param name="value">The value of annotation.</param>
-		/// <exception cref="System.ArgumentNullException">
+		/// <exception cref="ArgumentNullException">
 		///     <paramref name="obj" /> or <paramref name="key" /> is <c>null</c>.
 		/// </exception>
 		public void Set<TValue>(object obj, object key, TValue value) {
 			if (obj == null)
-				throw new ArgumentNullException("obj");
+				throw new ArgumentNullException(nameof(obj));
 			if (key == null)
-				throw new ArgumentNullException("key");
+				throw new ArgumentNullException(nameof(key));
 
-			ListDictionary objAnno;
-			if (!annotations.TryGetValue(obj, out objAnno))
-				objAnno = annotations[new WeakReferenceKey(obj)] = new ListDictionary();
+			if (!_annotations.TryGetValue(obj, out var objAnno))
+				objAnno = _annotations[new WeakReferenceKey(obj)] = new ListDictionary();
 			objAnno[key] = value;
 		}
 
@@ -130,15 +126,15 @@ namespace Confuser.Core {
 		///     Trims the annotations of unreachable objects from this instance.
 		/// </summary>
 		public void Trim() {
-			foreach (object key in annotations.Where(kvp => !((WeakReferenceKey)kvp.Key).IsAlive)
+			foreach (var key in _annotations.Where(kvp => !((WeakReferenceKey)kvp.Key).IsAlive)
 				.Select(kvp => kvp.Key))
-				annotations.Remove(key);
+				_annotations.Remove(key);
 		}
 
 		/// <summary>
 		///     Equality comparer of weak references.
 		/// </summary>
-		class WeakReferenceComparer : IEqualityComparer<object> {
+		private sealed class WeakReferenceComparer : IEqualityComparer<object> {
 			/// <summary>
 			///     The singleton instance of this comparer.
 			/// </summary>
@@ -147,11 +143,11 @@ namespace Confuser.Core {
 			/// <summary>
 			///     Prevents a default instance of the <see cref="WeakReferenceComparer" /> class from being created.
 			/// </summary>
-			WeakReferenceComparer() {
+			private WeakReferenceComparer() {
 			}
 
 			/// <inheritdoc />
-			public new bool Equals(object x, object y) {
+			bool IEqualityComparer<object>.Equals(object x, object y) {
 				if (y is WeakReferenceKey && !(x is WeakReference))
 					return Equals(y, x);
 				var xWeak = x as WeakReferenceKey;
@@ -160,40 +156,33 @@ namespace Confuser.Core {
 					return xWeak.IsAlive && yWeak.IsAlive && ReferenceEquals(xWeak.Target, yWeak.Target);
 				}
 
-				if (xWeak != null && yWeak == null) {
+				if (xWeak != null) {
 					return xWeak.IsAlive && ReferenceEquals(xWeak.Target, y);
 				}
 
-				if (xWeak == null && yWeak == null) {
-					return xWeak.IsAlive && ReferenceEquals(xWeak.Target, y);
+				if (yWeak == null) {
+					return ReferenceEquals(x, y);
 				}
 
 				throw new UnreachableException();
 			}
 
 			/// <inheritdoc />
-			public int GetHashCode(object obj) {
-				if (obj is WeakReferenceKey)
-					return ((WeakReferenceKey)obj).HashCode;
-				return obj.GetHashCode();
-			}
+			public int GetHashCode(object obj) => obj is WeakReferenceKey key ? key.HashCode : obj.GetHashCode();
 		}
 
 		/// <summary>
 		///     Represent a key using <see cref="WeakReference" />.
 		/// </summary>
-		class WeakReferenceKey : WeakReference {
+		private sealed class WeakReferenceKey : WeakReference {
 			/// <inheritdoc />
-			public WeakReferenceKey(object target)
-				: base(target) {
-				HashCode = target.GetHashCode();
-			}
+			public WeakReferenceKey(object target) : base(target) => HashCode = target.GetHashCode();
 
 			/// <summary>
 			///     Gets the hash code of the target object.
 			/// </summary>
 			/// <value>The hash code.</value>
-			public int HashCode { get; private set; }
+			public int HashCode { get; }
 		}
 	}
 }

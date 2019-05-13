@@ -29,8 +29,7 @@ namespace Confuser.Protections.ReferenceProxy {
 
 		public string Name => "Encoding reference proxies";
 
-		RPContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters,
-			RPStore store) {
+		private RPContext ParseParameters(MethodDef method, IConfuserContext context, IProtectionParameters parameters, RPStore store) {
 			var ret = new RPContext {
 				Mode = parameters.GetParameter(context, method, Parent.Parameters.Mode),
 				Encoding = parameters.GetParameter(context, method, Parent.Parameters.Encoding),
@@ -134,14 +133,11 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			var ctx = ParseParameters(context.CurrentModule, context, parameters, store);
 
-			if (store.mild != null)
-				store.mild.Finalize(ctx);
-
-			if (store.strong != null)
-				store.strong.Finalize(ctx);
+			store.mild?.Finalize(ctx);
+			store.strong?.Finalize(ctx);
 		}
 
-		void ProcessMethod(RPContext ctx) {
+		private static void ProcessMethod(RPContext ctx) {
 			if (ctx.Marker.GetHelperParent(ctx.Method) != null)
 				return;
 
