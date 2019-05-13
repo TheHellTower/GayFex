@@ -51,12 +51,13 @@ namespace Confuser.Optimizations.TailCall {
 			using (logger?.LogBeginTailCallsScope(method)) {
 				logger?.LogMsgScanningForTailCall(method);
 
-				var trace = traceService.Trace(method);
+				IMethodTrace trace = null;
 
 				var instructions = method.Body.Instructions;
 				var instructionCount = instructions.Count;
 				var modified = false;
 				for (var i = 0; i < instructionCount; i++) {
+					if (trace == null) trace = traceService.Trace(method);
 					if (!IsUnoptimizedTailCall(method, i, trace)) continue;
 
 					logger?.LogMsgFoundTailCallInMethod(method, instructions[i]);
@@ -69,6 +70,7 @@ namespace Confuser.Optimizations.TailCall {
 						instructions.Insert(i + 1, Instruction.Create(OpCodes.Ret));
 						i++;
 						instructionCount++;
+						trace = null; // Force the method trace to be initialized again (method body changed!)
 					}
 
 					modified = true;

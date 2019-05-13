@@ -24,9 +24,7 @@ namespace Confuser.Renamer.Analyzers {
 		internal void Analyze(IConfuserContext context, INameService nameService, ITraceService traceService, IReadOnlyList<ModuleDef> moduleDefs, MethodDef method) {
 			IMethodTrace methodTrace = null;
 			IMethodTrace GetMethodTrace() {
-				if (methodTrace == null)
-					methodTrace = traceService.Trace(method);
-				return methodTrace;
+				return methodTrace ?? (methodTrace = traceService.Trace(method));
 			}
 
 			foreach (var instr in method.Body.Instructions) {
