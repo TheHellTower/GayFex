@@ -87,7 +87,7 @@ namespace Confuser.Protections.ControlFlow {
 
 			foreach (var method in parameters.Targets.OfType<MethodDef>()) //.WithProgress(logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
-					ProcessMethod(method.Body, ParseParameters(method, context, parameters, random, disabledOpti));
+					ProcessMethod(method, ParseParameters(method, context, parameters, random, disabledOpti));
 					token.ThrowIfCancellationRequested();
 				}
 		}
@@ -98,9 +98,9 @@ namespace Confuser.Protections.ControlFlow {
 			return Jump;
 		}
 
-		void ProcessMethod(CilBody body, CFContext ctx) {
-			uint maxStack;
-			if (!MaxStackCalculator.GetMaxStack(body.Instructions, body.ExceptionHandlers, out maxStack)) {
+		void ProcessMethod(MethodDef methodDef, CFContext ctx) {
+			var body = methodDef.Body;
+			if (!MaxStackCalculator.GetMaxStack(body.Instructions, body.ExceptionHandlers, out var maxStack)) {
 				var logger = ctx.Context.Registry.GetRequiredService<ILoggerFactory>()
 					.CreateLogger(ControlFlowProtection._Id);
 				logger.LogCritical("Failed to calculate maxstack.");
@@ -122,6 +122,8 @@ namespace Confuser.Protections.ControlFlow {
 					}
 				};
 			}
+
+			methodDef.CustomDebugInfos.RemoveWhere(cdi => cdi is PdbStateMachineHoistedLocalScopesCustomDebugInfo);
 
 			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
 				var index = body.Instructions.IndexOf(eh.TryEnd) + 1;
