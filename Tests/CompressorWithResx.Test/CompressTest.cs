@@ -22,6 +22,7 @@ namespace CompressorWithResx.Test {
 		[Trait("Category", "Packer")]
 		[Trait("Packer", "compressor")]
 		public async Task CompressAndExecuteTest(string framework, string compatKey, string deriverKey, string resourceProtectionMode) {
+			if (framework == "net20") return; // Skip for runners that do not support the skip attribute properly (JetBrains).
 			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
