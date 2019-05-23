@@ -69,11 +69,15 @@ namespace RefProxyProtection.Test {
 
 		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
 			foreach (var framework in new string[] { "net20", "net40", "net471" })
-				foreach (var mode in new string[] { "Mild", "Strong" })
-					foreach (var encoding in new string[] { "Normal", "Expression", "x86" })
-						foreach (var internalAlso in new string[] { "true", "false" })
-							foreach (var typeErasure in new string[] { "true", "false" })
-								yield return new object[] { framework, mode, encoding, internalAlso, typeErasure };
+				foreach (var mode in new string[] { "Mild", "Strong" }) {
+					if (mode == "Mild")
+						yield return new object[] { framework, mode, "Normal", "false", "false" };
+					else
+						foreach (var encoding in new string[] { "Normal", "Expression", "x86" })
+							foreach (var internalAlso in new string[] { "true", "false" })
+								foreach (var typeErasure in new string[] { "true", "false" })
+									yield return new object[] { framework, mode, encoding, internalAlso, typeErasure };
+				}
 		}
 	}
 }
