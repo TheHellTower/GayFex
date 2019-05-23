@@ -56,7 +56,7 @@ namespace Confuser.Helpers {
 
 				_nameService.SetOriginalName(_context, injected, injected.Name);
 
-				if (!injected.IsSpecialName && !injected.DeclaringType.IsDelegate)
+				if (!injected.IsSpecialName && !injected.DeclaringType.IsDelegate && !injected.IsOverride())
 					injected.Name = GetName(injected.Name);
 
 				// There is no need for this to be renamed again.
@@ -141,7 +141,7 @@ namespace Confuser.Helpers {
 			public override void Process(MethodDef source, MethodDefUser injected, Importer importer) {
 				base.Process(source, injected, importer);
 
-				if (!injected.HasOverrides && injected.IsPublic)
+				if (!injected.HasOverrides && injected.IsPublic && !injected.IsOverride())
 					injected.Access = MethodAttributes.Assembly;
 			}
 

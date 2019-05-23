@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Confuser.Helpers {
+﻿namespace Confuser.Helpers {
 	public enum MutationField {
 		KeyI0,
 		KeyI1,

@@ -411,6 +411,19 @@ namespace Confuser {
 			return evt.AllMethods().Any(IsExplicitlyImplementedInterfaceMember);
 		}
 
+		public static bool IsOverride(this MethodDef method) {
+			if (method == null) throw new ArgumentNullException(nameof(method));
+			if (!method.IsVirtual || method.IsPrivate) return false;
+
+			var cmpType = method.DeclaringType.BaseType?.ResolveTypeDefThrow();
+			while (cmpType != null) {
+				if (cmpType.FindMethod(method.Name, method.MethodSig) != null) return true;
+				cmpType = cmpType.BaseType?.ResolveTypeDefThrow();
+			}
+
+			return false;
+		}
+
 		private static IEnumerable<MethodDef> AllMethods(this EventDef evt) {
 			return new[] {evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod}
 				.Concat(evt.OtherMethods)
