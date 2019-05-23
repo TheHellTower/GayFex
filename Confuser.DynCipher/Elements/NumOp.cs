@@ -29,7 +29,7 @@ namespace Confuser.DynCipher.Elements {
 					break;
 				case CryptoNumOps.Mul:
 					Key = random.NextUInt32() | 1;
-					InverseKey = MathsUtils.modInv(Key);
+					InverseKey = MathsUtils.ModInv(Key);
 					break;
 				case CryptoNumOps.Xnor:
 					Key = random.NextUInt32();

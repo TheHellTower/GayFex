@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2035
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.452
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core", "Confuser.Core\Confuser.Core.csproj", "{BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92}"
 EndProject
@@ -96,6 +96,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualBasicRenamingResx.Test", "Tests\VisualBasicRenamingResx.Test\VisualBasicRenamingResx.Test.csproj", "{40C6A1BB-69AA-4869-81EE-41917D0B009A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer.Test", "Tests\Confuser.Renamer.Test\Confuser.Renamer.Test.csproj", "{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.DynCipher.Test", "Tests\Confuser.DynCipher.Test\Confuser.DynCipher.Test.csproj", "{1ABEF9C1-76CD-4FFB-BFFC-FF6955A0F495}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -250,6 +252,10 @@ Global
 		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1ABEF9C1-76CD-4FFB-BFFC-FF6955A0F495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ABEF9C1-76CD-4FFB-BFFC-FF6955A0F495}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ABEF9C1-76CD-4FFB-BFFC-FF6955A0F495}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ABEF9C1-76CD-4FFB-BFFC-FF6955A0F495}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -274,6 +280,7 @@ Global
 		{4B2CE997-8157-40B4-B42F-51CE33954AAC} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{40C6A1BB-69AA-4869-81EE-41917D0B009A} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{1ABEF9C1-76CD-4FFB-BFFC-FF6955A0F495} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}

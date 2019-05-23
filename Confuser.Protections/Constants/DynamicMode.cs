@@ -49,7 +49,7 @@ namespace Confuser.Protections.Constants {
 			IReadOnlyList<Instruction> processor(ModuleDef module, MethodDef method, IReadOnlyList<Instruction> arg) {
 				var repl = new List<Instruction>(arg.Count + 4);
 				repl.AddRange(arg);
-				repl.Add(Instruction.Create(OpCodes.Ldc_I4, (int)MathsUtils.modInv(k1)));
+				repl.Add(Instruction.Create(OpCodes.Ldc_I4, (int)MathsUtils.ModInv(k1)));
 				repl.Add(Instruction.Create(OpCodes.Mul));
 				repl.Add(Instruction.Create(OpCodes.Ldc_I4, (int)k2));
 				repl.Add(Instruction.Create(OpCodes.Xor));
@@ -63,7 +63,7 @@ namespace Confuser.Protections.Constants {
 		public uint Encode(object data, CEContext ctx, uint id) {
 			var key = (Tuple<uint, uint>)data;
 			uint ret = (id ^ key.Item2) * key.Item1;
-			Debug.Assert(((ret * MathsUtils.modInv(key.Item1)) ^ key.Item2) == id);
+			Debug.Assert(((ret * MathsUtils.ModInv(key.Item1)) ^ key.Item2) == id);
 			return ret;
 		}
 

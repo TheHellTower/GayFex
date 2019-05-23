@@ -38,7 +38,7 @@ namespace Confuser.DynCipher.Elements {
 						Value = b,
 						Target = a
 					}).Emit(new AssignmentStatement {
-						Value = tmp * (LiteralExpression)MathsUtils.modInv(Key),
+						Value = tmp * (LiteralExpression)MathsUtils.ModInv(Key),
 						Target = b
 					});
 				}
@@ -58,7 +58,7 @@ namespace Confuser.DynCipher.Elements {
 						Value = (a & notMask) | (b & mask),
 						Target = a
 					}).Emit(new AssignmentStatement {
-						Value = (b & notMask) | (tmp * (LiteralExpression)MathsUtils.modInv(Key)),
+						Value = (b & notMask) | (tmp * (LiteralExpression)MathsUtils.ModInv(Key)),
 						Target = b
 					});
 				}
