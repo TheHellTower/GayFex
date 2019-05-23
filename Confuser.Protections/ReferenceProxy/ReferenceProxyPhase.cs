@@ -133,7 +133,6 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			var ctx = ParseParameters(context.CurrentModule, context, parameters, store);
 
-			store.mild?.Finalize(ctx);
 			store.strong?.Finalize(ctx);
 		}
 

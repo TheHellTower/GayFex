@@ -11,13 +11,13 @@ namespace Confuser.Protections {
 	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
 	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
 	[AfterProtection(AntiDebugProtection._FullId, AntiDumpProtection._FullId)]
-	[BeforeProtection(ControlFlowProtection._FullId)]
+	[BeforeProtection(ControlFlowProtection._FullId, "Cx2.TailCall")]
 	internal sealed class ReferenceProxyProtection : IProtection, IReferenceProxyService {
 		public const string _Id = "ref proxy";
 		public const string _FullId = "Ki.RefProxy";
 
-		internal static object TargetExcluded = new object();
-		internal static object Targeted = new object();
+		internal static readonly object TargetExcluded = new object();
+		internal static readonly object Targeted = new object();
 
 		public string Name => "Reference Proxy Protection";
 

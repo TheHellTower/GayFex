@@ -1,41 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.ReferenceProxy {
-	internal class NormalEncoding : IRPEncoding {
-		readonly Dictionary<MethodDef, Tuple<int, int>> keys = new Dictionary<MethodDef, Tuple<int, int>>();
+	internal sealed class NormalEncoding : IRPEncoding {
+		private readonly Dictionary<MethodDef, (int Key, int InvKey)> _keys
+			= new Dictionary<MethodDef, (int, int)>();
 
 		Helpers.PlaceholderProcessor IRPEncoding.EmitDecode(RPContext ctx) => (module, method, args) => {
-			var key = GetKey(ctx.Random, method);
+			var (key, _) = GetKey(ctx.Random, method);
 			var ret = new List<Instruction>(args.Count + 2);
 			if (ctx.Random.NextBoolean()) {
-				ret.Add(Instruction.Create(OpCodes.Ldc_I4, key.Item1));
+				ret.Add(Instruction.Create(OpCodes.Ldc_I4, key));
 				ret.AddRange(args);
 			}
 			else {
 				ret.AddRange(args);
-				ret.Add(Instruction.Create(OpCodes.Ldc_I4, key.Item1));
+				ret.Add(Instruction.Create(OpCodes.Ldc_I4, key));
 			}
 
 			ret.Add(Instruction.Create(OpCodes.Mul));
 			return ret;
 		};
 
-		public int Encode(MethodDef init, RPContext ctx, int value) {
-			Tuple<int, int> key = GetKey(ctx.Random, init);
-			return value * key.Item2;
+		int IRPEncoding.Encode(MethodDef init, RPContext ctx, int value) {
+			// Encode the value with the key of the specified method.
+			var (_, invKey) = GetKey(ctx.Random, init);
+			return value * invKey;
 		}
 
-		Tuple<int, int> GetKey(IRandomGenerator random, MethodDef init) {
-			Tuple<int, int> ret;
-			if (!keys.TryGetValue(init, out ret)) {
-				int key = random.NextInt32() | 1;
-				keys[init] = ret = Tuple.Create(key, (int)MathsUtils.modInv((uint)key));
-			}
+		private (int Key, int InvKey) GetKey(IRandomGenerator random, MethodDef init) {
+			if (_keys.TryGetValue(init, out var ret)) return ret;
+
+			// The key for the initialization method is not generated yet. Generate the int32 key now.
+			int key = random.NextInt32() | 1;
+			_keys[init] = ret = (key, (int)MathsUtils.ModInv((uint)key));
 
 			return ret;
 		}

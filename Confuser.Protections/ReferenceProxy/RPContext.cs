@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
@@ -43,12 +44,15 @@ namespace Confuser.Protections.ReferenceProxy {
 		internal bool TypeErasure;
 
 		internal void MarkMember(IDnlibDef def) {
-			if (Name == null) {
+			Debug.Assert(Marker != null, nameof(Marker) + " != null");
+#if DEBUG
+			Marker.Mark(Context, def, Protection);
+#else
+			if (Name == null)
 				Marker.Mark(Context, def, Protection);
-			}
-			else {
+			else
 				Name.MarkHelper(Context, def, Marker, Protection);
-			}
+#endif
 		}
 	}
 }

@@ -20,6 +20,8 @@ namespace Confuser.Runtime {
 			FieldInfo fieldInfo = FieldInfo.GetFieldFromHandle(field);
 			byte[] sig = fieldInfo.Module.ResolveSignature(fieldInfo.MetadataToken);
 			int len = sig.Length;
+			// Load the meta data token of the optional C modifier.
+			// This points to a random key in this assembly. It's token is used as base value or the key.
 			int key = fieldInfo.GetOptionalCustomModifiers()[0].MetadataToken;
 
 			key += (fieldInfo.Name[Mutation.KeyI0] ^ sig[--len]) << Mutation.KeyI4;

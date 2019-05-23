@@ -8,9 +8,8 @@ using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.ReferenceProxy {
-	internal abstract class RPMode {
+	internal abstract partial class RPMode {
 		public abstract void ProcessCall(RPContext ctx, int instrIndex);
-		public abstract void Finalize(RPContext ctx);
 
 		static ITypeDefOrRef Import(RPContext ctx, TypeDef typeDef) {
 			ITypeDefOrRef retTypeRef = new Importer(ctx.Module, ImporterOptions.TryToUseTypeDefs).Import(typeDef);
@@ -59,60 +58,6 @@ namespace Confuser.Protections.ReferenceProxy {
 					retType = module.CorLibTypes.Object;
 				return MethodSig.CreateStatic(retType, paramTypes.ToArray());
 			}
-		}
-
-		protected static TypeDef GetDelegateType(RPContext ctx, MethodSig sig) {
-			TypeDef ret;
-			if (ctx.Delegates.TryGetValue(sig, out ret))
-				return ret;
-
-			ret = new TypeDefUser(
-				ctx.Name.ObfuscateName(ctx.Method.Module, ctx.Method.DeclaringType.Namespace, RenameMode.Unicode),
-				ctx.Name.RandomName(), ctx.Module.CorLibTypes.GetTypeRef("System", "MulticastDelegate"));
-			ret.Attributes = TypeAttributes.NotPublic | TypeAttributes.Sealed;
-
-			var ctor = new MethodDefUser(".ctor",
-				MethodSig.CreateInstance(ctx.Module.CorLibTypes.Void, ctx.Module.CorLibTypes.Object,
-					ctx.Module.CorLibTypes.IntPtr));
-			ctor.Attributes = MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName |
-			                  MethodAttributes.SpecialName;
-			ctor.ImplAttributes = MethodImplAttributes.Runtime;
-			ret.Methods.Add(ctor);
-
-			var invoke = new MethodDefUser("Invoke", sig.Clone());
-			invoke.MethodSig.HasThis = true;
-			invoke.Attributes = MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Virtual |
-			                    MethodAttributes.NewSlot;
-			invoke.ImplAttributes = MethodImplAttributes.Runtime;
-			ret.Methods.Add(invoke);
-
-			ctx.Module.Types.Add(ret);
-
-			foreach (IDnlibDef def in ret.FindDefinitions()) {
-				ctx.Marker.Mark(ctx.Context, def, ctx.Protection);
-				ctx.Name?.SetCanRename(ctx.Context, def, false);
-			}
-
-			ctx.Delegates[sig] = ret;
-			return ret;
-		}
-
-		private sealed class TypeRefReference : INameReference<TypeDef> {
-			readonly TypeDef typeDef;
-			readonly TypeRef typeRef;
-
-			public TypeRefReference(TypeRef typeRef, TypeDef typeDef) {
-				this.typeRef = typeRef;
-				this.typeDef = typeDef;
-			}
-
-			public bool UpdateNameReference(IConfuserContext context, INameService service) {
-				typeRef.Namespace = typeDef.Namespace;
-				typeRef.Name = typeDef.Name;
-				return true;
-			}
-
-			public bool ShouldCancelRename() => false;
 		}
 	}
 }
