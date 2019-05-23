@@ -37,6 +37,7 @@ _ReSharper*/
 packages/
 /Confuser.Test
 *.sln.*
+!*.sln.DotSettings
 gh-pages/
 *.received.txt
 Publish
