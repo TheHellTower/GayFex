@@ -215,12 +215,15 @@ namespace Confuser.Core.Services
 						evalStack.Push(lastIdx);
 					}
 					else {
-						for (var i = 0; i < pop; i++) 
-							evalStack.Pop();
-
 						Debug.Assert(push <= 1); // Instructions shouldn't put more than one value on the stack.
-						for (var i = 0; i < push; i++) 
-							evalStack.Push(index);
+
+						var diff = push - pop;
+						if (diff < 0)
+							for (var i = 0; i < -diff; i++)
+								evalStack.Pop();
+						else
+							for (var i = 0; i < diff; i++) 
+								evalStack.Push(index);
 					}
 
 					switch (currentInstr.Operand)

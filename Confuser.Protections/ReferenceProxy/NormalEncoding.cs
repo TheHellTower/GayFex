@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using dnlib.DotNet;
@@ -12,6 +13,7 @@ namespace Confuser.Protections.ReferenceProxy {
 		Helpers.PlaceholderProcessor IRPEncoding.EmitDecode(RPContext ctx) => (module, method, args) => {
 			var (key, _) = GetKey(ctx.Random, method);
 			var ret = new List<Instruction>(args.Count + 2);
+
 			if (ctx.Random.NextBoolean()) {
 				ret.Add(Instruction.Create(OpCodes.Ldc_I4, key));
 				ret.AddRange(args);
@@ -36,7 +38,7 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			// The key for the initialization method is not generated yet. Generate the int32 key now.
 			int key = random.NextInt32() | 1;
-			_keys[init] = ret = (key, (int)MathsUtils.ModInv((uint)key));
+			_keys[init] = ret = (key, unchecked((int)MathsUtils.ModInv((uint)key)));
 
 			return ret;
 		}

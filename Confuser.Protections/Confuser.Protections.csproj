@@ -8,6 +8,7 @@
   <PropertyGroup Label="Assembly Information">
     <Title>ConfuserEx Protections</Title>
     <Description>Protections and packers of ConfuserEx</Description>
+      <ConfuserRuntimeConfiguration>Release</ConfuserRuntimeConfiguration>
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">

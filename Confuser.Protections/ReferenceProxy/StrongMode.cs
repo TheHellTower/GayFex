@@ -8,7 +8,6 @@ using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 using Confuser.Helpers;
-using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
@@ -128,7 +127,7 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			// Create proxy field
 			if (proxy.Field == null)
-				proxy = (CreateField(ctx, delegateType, key), proxy.BridgeMethod);
+				proxy = (CreateField(ctx, delegateType), proxy.BridgeMethod);
 
 			if (proxy.Field == null)
 				return;
@@ -163,7 +162,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			var key = (instr.OpCode.Code, target, ctx.EncodingHandler);
 			if (!_fields.TryGetValue(key, out var proxy)) {
 				// Create proxy field
-				proxy = (CreateField(ctx, delegateType, key), null);
+				proxy = (CreateField(ctx, delegateType), null);
 				_fields[key] = proxy;
 			}
 
@@ -221,10 +220,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			return method;
 		}
 
-		private FieldDef CreateField(
-			RPContext ctx, 
-			TypeDef delegateType, 
-			(Code OpCode, IMethod TargetMethod, IRPEncoding Encoding) key) {
+		private FieldDef CreateField(RPContext ctx, TypeDef delegateType) {
 			// Details will be filled in during metadata writing
 			TypeDef randomType;
 			do {
@@ -276,7 +272,6 @@ namespace Confuser.Protections.ReferenceProxy {
 				return _keyAttrs[index].RefProxyKeyTypeDef;
 
 			using (InjectHelper.CreateChildContext()) {
-				var name = ctx.Context.Registry.GetService<INameService>();
 				var marker = ctx.Context.Registry.GetRequiredService<IMarkerService>();
 
 				var rtType = GetRuntimeType("Confuser.Runtime.RefProxyKey", ctx);
