@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Globalization;
 using System.Text;
 
 namespace Confuser.DynCipher.AST {
@@ -9,7 +9,7 @@ namespace Confuser.DynCipher.AST {
 
 		public override string ToString() {
 			var ret = new StringBuilder();
-			ret.AppendFormat("for (int i = {0}; i < {1}; i++)", Begin, Limit);
+			ret.AppendFormat(CultureInfo.InvariantCulture, "for (int i = {0}; i < {1}; i++)", Begin, Limit);
 			ret.AppendLine();
 			ret.Append(base.ToString());
 			return ret.ToString();

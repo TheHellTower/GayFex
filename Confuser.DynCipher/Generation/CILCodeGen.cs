@@ -47,7 +47,7 @@ namespace Confuser.DynCipher.Generation {
 		}
 
 		public void Commit(CilBody body) {
-			foreach (Local i in localMap.Values) {
+			foreach (var i in localMap.Values) {
 				body.InitLocals = true;
 				body.Variables.Add(i);
 			}
@@ -62,7 +62,7 @@ namespace Confuser.DynCipher.Generation {
 			EmitStatement(statement);
 		}
 
-		void EmitLoad(Expression exp) {
+		private void EmitLoad(Expression exp) {
 			if (exp is ArrayIndexExpression) {
 				var arrIndex = (ArrayIndexExpression)exp;
 				EmitLoad(arrIndex.Array);
@@ -137,7 +137,7 @@ namespace Confuser.DynCipher.Generation {
 				throw new NotSupportedException();
 		}
 
-		void EmitStore(Expression exp, Expression value) {
+		private void EmitStore(Expression exp, Expression value) {
 			if (exp is ArrayIndexExpression) {
 				var arrIndex = (ArrayIndexExpression)exp;
 				EmitLoad(arrIndex.Array);
@@ -154,7 +154,7 @@ namespace Confuser.DynCipher.Generation {
 				throw new NotSupportedException();
 		}
 
-		void EmitStatement(Statement statement) {
+		private void EmitStatement(Statement statement) {
 			if (statement is AssignmentStatement) {
 				var assignment = (AssignmentStatement)statement;
 				EmitStore(assignment.Target, assignment.Value);
@@ -175,14 +175,14 @@ namespace Confuser.DynCipher.Generation {
 				 *      blt     lop
 				 *      pop
 				 */
-				Instruction lbl = Instruction.Create(OpCodes.Nop);
-				Instruction dup = Instruction.Create(OpCodes.Dup);
+				var lbl = Instruction.Create(OpCodes.Nop);
+				var dup = Instruction.Create(OpCodes.Dup);
 				Emit(Instruction.CreateLdcI4(loop.Begin));
 				Emit(Instruction.Create(OpCodes.Br, dup));
 				Emit(Instruction.CreateLdcI4(loop.Begin));
 				Emit(lbl);
 
-				foreach (Statement child in loop.Statements)
+				foreach (var child in loop.Statements)
 					EmitStatement(child);
 
 				Emit(Instruction.CreateLdcI4(1));
@@ -193,7 +193,7 @@ namespace Confuser.DynCipher.Generation {
 				Emit(Instruction.Create(OpCodes.Pop));
 			}
 			else if (statement is StatementBlock) {
-				foreach (Statement child in ((StatementBlock)statement).Statements)
+				foreach (var child in ((StatementBlock)statement).Statements)
 					EmitStatement(child);
 			}
 			else

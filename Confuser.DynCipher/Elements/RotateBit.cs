@@ -1,5 +1,4 @@
-﻿using System;
-using Confuser.Core.Services;
+﻿using Confuser.Core.Services;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 
@@ -18,9 +17,8 @@ namespace Confuser.DynCipher.Elements {
 		}
 
 		public override void Emit(CipherGenContext context) {
-			Expression val = context.GetDataExpression(DataIndexes[0]);
-			VariableExpression tmp;
-			using (context.AcquireTempVar(out tmp)) {
+			var val = context.GetDataExpression(DataIndexes[0]);
+			using (context.AcquireTempVar(out var tmp)) {
 				if (IsAlternate)
 					context.Emit(new AssignmentStatement {
 						Value = (val >> (32 - Bits)),
@@ -41,7 +39,7 @@ namespace Confuser.DynCipher.Elements {
 		}
 
 		public override void EmitInverse(CipherGenContext context) {
-			Expression val = context.GetDataExpression(DataIndexes[0]);
+			var val = context.GetDataExpression(DataIndexes[0]);
 			VariableExpression tmp;
 			using (context.AcquireTempVar(out tmp)) {
 				if (IsAlternate)

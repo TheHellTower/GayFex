@@ -1,5 +1,4 @@
-﻿using System;
-using Confuser.Core.Services;
+﻿using Confuser.Core.Services;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 
@@ -13,16 +12,13 @@ namespace Confuser.DynCipher.Elements {
 		public uint Key { get; private set; }
 
 		public override void Initialize(IRandomGenerator random) {
-			if (random.NextInt32(3) == 0)
-				Mask = 0xffffffff;
-			else
-				Mask = random.NextUInt32();
+			Mask = random.NextInt32(3) == 0 ? 0xffffffff : random.NextUInt32();
 			Key = random.NextUInt32() | 1;
 		}
 
-		void EmitCore(CipherGenContext context) {
-			Expression a = context.GetDataExpression(DataIndexes[0]);
-			Expression b = context.GetDataExpression(DataIndexes[1]);
+		private void EmitCore(CipherGenContext context) {
+			var a = context.GetDataExpression(DataIndexes[0]);
+			var b = context.GetDataExpression(DataIndexes[1]);
 			VariableExpression tmp;
 
 			if (Mask == 0xffffffff) {
@@ -32,13 +28,13 @@ namespace Confuser.DynCipher.Elements {
 				 */
 				using (context.AcquireTempVar(out tmp)) {
 					context.Emit(new AssignmentStatement {
-						Value = a * (LiteralExpression)Key,
+						Value = a * Key,
 						Target = tmp
 					}).Emit(new AssignmentStatement {
 						Value = b,
 						Target = a
 					}).Emit(new AssignmentStatement {
-						Value = tmp * (LiteralExpression)MathsUtils.ModInv(Key),
+						Value = tmp * MathsUtils.ModInv(Key),
 						Target = b
 					});
 				}
@@ -52,13 +48,13 @@ namespace Confuser.DynCipher.Elements {
 				 */
 				using (context.AcquireTempVar(out tmp)) {
 					context.Emit(new AssignmentStatement {
-						Value = (a & mask) * (LiteralExpression)Key,
+						Value = (a & mask) * Key,
 						Target = tmp
 					}).Emit(new AssignmentStatement {
 						Value = (a & notMask) | (b & mask),
 						Target = a
 					}).Emit(new AssignmentStatement {
-						Value = (b & notMask) | (tmp * (LiteralExpression)MathsUtils.ModInv(Key)),
+						Value = (b & notMask) | (tmp * MathsUtils.ModInv(Key)),
 						Target = b
 					});
 				}

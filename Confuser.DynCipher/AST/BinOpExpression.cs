@@ -1,22 +1,18 @@
 ﻿using System;
 
 namespace Confuser.DynCipher.AST {
-	public enum BinOps {
-		Add,
-		Sub,
-		Div,
-		Mul,
-		Or,
-		And,
-		Xor,
-		Lsh,
-		Rsh
-	}
-
 	public class BinOpExpression : Expression {
 		public Expression Left { get; set; }
 		public Expression Right { get; set; }
 		public BinOps Operation { get; set; }
+
+		public BinOpExpression() {}
+
+		public BinOpExpression(Expression left, BinOps operation, Expression right) {
+			Left = left ?? throw new ArgumentNullException(nameof(left));
+			Operation = operation;
+			Right = right ?? throw new ArgumentNullException(nameof(right));
+		}
 
 		public override string ToString() {
 			string op;
@@ -49,10 +45,11 @@ namespace Confuser.DynCipher.AST {
 					op = ">>";
 					break;
 				default:
-					throw new Exception();
+					op = "?";
+					break;
 			}
 
-			return string.Format("({0} {1} {2})", Left, op, Right);
+			return $"({Left} {op} {Right})";
 		}
 	}
 }

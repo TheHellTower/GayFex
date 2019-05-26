@@ -1,14 +1,16 @@
 ﻿using System;
 
 namespace Confuser.DynCipher.AST {
-	public enum UnaryOps {
-		Not,
-		Negate
-	}
-
 	public class UnaryOpExpression : Expression {
 		public Expression Value { get; set; }
 		public UnaryOps Operation { get; set; }
+
+		public UnaryOpExpression() { }
+
+		public UnaryOpExpression(UnaryOps operation, Expression value) {
+			Operation = operation;
+			Value = value ?? throw new ArgumentNullException(nameof(value));
+		}
 
 		public override string ToString() {
 			string op;
@@ -20,7 +22,8 @@ namespace Confuser.DynCipher.AST {
 					op = "-";
 					break;
 				default:
-					throw new Exception();
+					op = "?";
+					break;
 			}
 
 			return op + Value;

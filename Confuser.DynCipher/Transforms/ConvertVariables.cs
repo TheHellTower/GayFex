@@ -1,9 +1,8 @@
-﻿using System;
-using Confuser.DynCipher.AST;
+﻿using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Transforms {
 	internal class ConvertVariables {
-		static Expression ReplaceVar(Expression exp, Variable buff) {
+		private static Expression ReplaceVar(Expression exp, Variable buff) {
 			if (exp is VariableExpression) {
 				if (((VariableExpression)exp).Variable.Name[0] != 'v') return exp;
 				return new ArrayIndexExpression {
@@ -26,7 +25,7 @@ namespace Confuser.DynCipher.Transforms {
 			return exp;
 		}
 
-		static Statement ReplaceVar(Statement st, Variable buff) {
+		private static Statement ReplaceVar(Statement st, Variable buff) {
 			if (st is AssignmentStatement) {
 				((AssignmentStatement)st).Value = ReplaceVar(((AssignmentStatement)st).Value, buff);
 				((AssignmentStatement)st).Target = ReplaceVar(((AssignmentStatement)st).Target, buff);

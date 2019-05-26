@@ -1,5 +1,4 @@
-﻿using System;
-using Confuser.Core.Services;
+﻿using Confuser.Core.Services;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 
@@ -15,8 +14,8 @@ namespace Confuser.DynCipher.Elements {
 		public override void Initialize(IRandomGenerator random) {
 		}
 
-		void EmitCore(CipherGenContext context) {
-			Expression val = context.GetDataExpression(Index);
+		private void EmitCore(CipherGenContext context) {
+			var val = context.GetDataExpression(Index);
 
 			context.Emit(new AssignmentStatement {
 				Value = val ^ context.GetKeyExpression(Index),

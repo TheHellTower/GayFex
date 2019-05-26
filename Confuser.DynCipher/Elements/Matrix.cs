@@ -12,7 +12,7 @@ namespace Confuser.DynCipher.Elements {
 		public uint[,] Key { get; private set; }
 		public uint[,] InverseKey { get; private set; }
 
-		static uint[,] GenerateUnimodularMatrix(IRandomGenerator random) {
+		private static uint[,] GenerateUnimodularMatrix(IRandomGenerator random) {
 			Func<uint> next = () => (uint)random.NextInt32(4);
 
 			uint[,] l = {
@@ -31,7 +31,7 @@ namespace Confuser.DynCipher.Elements {
 			return mul(l, u);
 		}
 
-		static uint[,] mul(uint[,] a, uint[,] b) {
+		private static uint[,] mul(uint[,] a, uint[,] b) {
 			int n = a.GetLength(0), p = b.GetLength(1);
 			int m = a.GetLength(1);
 			if (b.GetLength(0) != m) return null;
@@ -47,7 +47,7 @@ namespace Confuser.DynCipher.Elements {
 			return ret;
 		}
 
-		static uint cofactor4(uint[,] mat, int i, int j) {
+		private static uint cofactor4(uint[,] mat, int i, int j) {
 			var sub = new uint[3, 3];
 			for (int ci = 0, si = 0; ci < 4; ci++, si++) {
 				if (ci == i) {
@@ -70,7 +70,7 @@ namespace Confuser.DynCipher.Elements {
 			return (uint)(-ret);
 		}
 
-		static uint det3(uint[,] mat) {
+		private static uint det3(uint[,] mat) {
 			return mat[0, 0] * mat[1, 1] * mat[2, 2] +
 			       mat[0, 1] * mat[1, 2] * mat[2, 0] +
 			       mat[0, 2] * mat[1, 0] * mat[2, 1] -
@@ -79,7 +79,7 @@ namespace Confuser.DynCipher.Elements {
 			       mat[0, 0] * mat[1, 2] * mat[2, 1];
 		}
 
-		static uint[,] transpose4(uint[,] mat) {
+		private static uint[,] transpose4(uint[,] mat) {
 			var ret = new uint[4, 4];
 			for (int i = 0; i < 4; i++)
 			for (int j = 0; j < 4; j++)
@@ -97,30 +97,27 @@ namespace Confuser.DynCipher.Elements {
 			Key = transpose4(cof);
 		}
 
-		void EmitCore(CipherGenContext context, uint[,] k) {
-			Expression a = context.GetDataExpression(DataIndexes[0]);
-			Expression b = context.GetDataExpression(DataIndexes[1]);
-			Expression c = context.GetDataExpression(DataIndexes[2]);
-			Expression d = context.GetDataExpression(DataIndexes[3]);
+		private void EmitCore(CipherGenContext context, uint[,] k) {
+			var a = context.GetDataExpression(DataIndexes[0]);
+			var b = context.GetDataExpression(DataIndexes[1]);
+			var c = context.GetDataExpression(DataIndexes[2]);
+			var d = context.GetDataExpression(DataIndexes[3]);
 
-			VariableExpression ta, tb, tc, td;
-
-			Func<uint, LiteralExpression> l = v => (LiteralExpression)v;
-			using (context.AcquireTempVar(out ta))
-			using (context.AcquireTempVar(out tb))
-			using (context.AcquireTempVar(out tc))
-			using (context.AcquireTempVar(out td)) {
+			using (context.AcquireTempVar(out var ta))
+			using (context.AcquireTempVar(out var tb))
+			using (context.AcquireTempVar(out var tc))
+			using (context.AcquireTempVar(out var td)) {
 				context.Emit(new AssignmentStatement {
-						Value = a * l(k[0, 0]) + b * l(k[0, 1]) + c * l(k[0, 2]) + d * l(k[0, 3]),
+						Value = a * k[0, 0] + b * k[0, 1] + c * k[0, 2] + d * k[0, 3],
 						Target = ta
 					}).Emit(new AssignmentStatement {
-						Value = a * l(k[1, 0]) + b * l(k[1, 1]) + c * l(k[1, 2]) + d * l(k[1, 3]),
+						Value = a * k[1, 0] + b * k[1, 1] + c * k[1, 2] + d * k[1, 3],
 						Target = tb
 					}).Emit(new AssignmentStatement {
-						Value = a * l(k[2, 0]) + b * l(k[2, 1]) + c * l(k[2, 2]) + d * l(k[2, 3]),
+						Value = a * k[2, 0] + b * k[2, 1] + c * k[2, 2] + d * k[2, 3],
 						Target = tc
 					}).Emit(new AssignmentStatement {
-						Value = a * l(k[3, 0]) + b * l(k[3, 1]) + c * l(k[3, 2]) + d * l(k[3, 3]),
+						Value = a * k[3, 0] + b * k[3, 1] + c * k[3, 2] + d * k[3, 3],
 						Target = td
 					})
 					.Emit(new AssignmentStatement {Value = ta, Target = a})

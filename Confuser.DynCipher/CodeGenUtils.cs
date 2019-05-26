@@ -37,7 +37,7 @@ namespace Confuser.DynCipher {
 				writer.Write(new byte[] {0xeb, 0x01});
 				writer.Write(new byte[] {0x51});
 
-				foreach (x86Instruction i in codeGen.Instructions)
+				foreach (var i in codeGen.Instructions)
 					writer.Write(i.Assemble());
 
 				if (reg != x86Register.EAX)

@@ -8,15 +8,15 @@ using Confuser.DynCipher.Transforms;
 
 namespace Confuser.DynCipher.Generation {
 	internal class CipherGenerator {
-		const int MAT_RATIO = 4;
-		const int NUMOP_RATIO = 10;
-		const int SWAP_RATIO = 6;
-		const int BINOP_RATIO = 9;
-		const int ROTATE_RATIO = 6;
-		const int RATIO_SUM = MAT_RATIO + NUMOP_RATIO + SWAP_RATIO + BINOP_RATIO + ROTATE_RATIO;
-		const double VARIANCE = 0.2;
+		private const int MAT_RATIO = 4;
+		private const int NUMOP_RATIO = 10;
+		private const int SWAP_RATIO = 6;
+		private const int BINOP_RATIO = 9;
+		private const int ROTATE_RATIO = 6;
+		private const int RATIO_SUM = MAT_RATIO + NUMOP_RATIO + SWAP_RATIO + BINOP_RATIO + ROTATE_RATIO;
+		private const double VARIANCE = 0.2;
 
-		static void PostProcessStatements(StatementBlock block, IRandomGenerator random) {
+		private static void PostProcessStatements(StatementBlock block, IRandomGenerator random) {
 			MulToShiftTransform.Run(block);
 			NormalizeBinOpTransform.Run(block);
 			ExpansionTransform.Run(block);
@@ -45,10 +45,10 @@ namespace Confuser.DynCipher.Generation {
 			random.Shuffle(elems);
 
 
-			int[] x = Enumerable.Range(0, 16).ToArray();
+			var x = Enumerable.Range(0, 16).ToArray();
 			int index = 16;
 			bool overdue = false;
-			foreach (CryptoElement elem in elems) {
+			foreach (var elem in elems) {
 				elem.Initialize(random);
 				for (int i = 0; i < elem.DataCount; i++) {
 					if (index == 16) {
@@ -67,14 +67,14 @@ namespace Confuser.DynCipher.Generation {
 			}
 
 			var encryptContext = new CipherGenContext(random, 16);
-			foreach (CryptoElement elem in elems)
+			foreach (var elem in elems)
 				elem.Emit(encryptContext);
 			encrypt = encryptContext.Block;
 			PostProcessStatements(encrypt, random);
 
 
 			var decryptContext = new CipherGenContext(random, 16);
-			foreach (CryptoElement elem in Enumerable.Reverse(elems))
+			foreach (var elem in Enumerable.Reverse(elems))
 				elem.EmitInverse(decryptContext);
 			decrypt = decryptContext.Block;
 			PostProcessStatements(decrypt, random);

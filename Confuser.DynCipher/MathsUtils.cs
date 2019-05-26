@@ -14,7 +14,7 @@
 		/// </returns>
 		/// <remarks>
 		/// The modular inverse of <paramref name="n"/> modulo <paramref name="m"/> is
-		/// the unique natural number <c>0 < n0 < m</c> such that <c>n * n0 = 1 mod m</c>.
+		/// the unique natural number <c>0 &lt; n0 &lt; m</c> such that <c>n * n0 = 1 mod m</c>.
 		/// </remarks>
 		public static ulong ModInv(ulong n, ulong m) {
 			ulong a = m, b = n % m;

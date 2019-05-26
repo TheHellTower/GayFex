@@ -7,8 +7,8 @@ using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Generation {
 	public class x86CodeGen {
-		List<x86Instruction> instrs;
-		bool[] usedRegs;
+		private List<x86Instruction> instrs;
+		private bool[] usedRegs;
 
 		public IList<x86Instruction> Instructions {
 			get { return instrs; }
@@ -36,7 +36,7 @@ namespace Confuser.DynCipher.Generation {
 			}
 		}
 
-		x86Register GetFreeRegister() {
+		private x86Register GetFreeRegister() {
 			for (int i = 0; i < 8; i++)
 				if (!usedRegs[i])
 					return (x86Register)i;
@@ -44,17 +44,17 @@ namespace Confuser.DynCipher.Generation {
 			throw new Exception("Register overflowed.");
 		}
 
-		void TakeRegister(x86Register reg) {
+		private void TakeRegister(x86Register reg) {
 			usedRegs[(int)reg] = true;
 			if ((int)reg > MaxUsedRegister)
 				MaxUsedRegister = (int)reg;
 		}
 
-		void ReleaseRegister(x86Register reg) {
+		private void ReleaseRegister(x86Register reg) {
 			usedRegs[(int)reg] = false;
 		}
 
-		x86Register Normalize(x86Instruction instr) {
+		private x86Register Normalize(x86Instruction instr) {
 			if (instr.Operands.Length == 2 &&
 			    instr.Operands[0] is x86ImmediateOperand &&
 			    instr.Operands[1] is x86ImmediateOperand) {
@@ -64,7 +64,7 @@ namespace Confuser.DynCipher.Generation {
                  * mov reg, imm1
                  * op reg, imm2
                  */
-				x86Register reg = GetFreeRegister();
+				var reg = GetFreeRegister();
 				instrs.Add(x86Instruction.Create(x86OpCode.MOV, new x86RegisterOperand(reg), instr.Operands[0]));
 				instr.Operands[0] = new x86RegisterOperand(reg);
 				instrs.Add(instr);
@@ -80,7 +80,7 @@ namespace Confuser.DynCipher.Generation {
                  * mov reg, imm
                  * op reg
                  */
-				x86Register reg = GetFreeRegister();
+				var reg = GetFreeRegister();
 				instrs.Add(x86Instruction.Create(x86OpCode.MOV, new x86RegisterOperand(reg), instr.Operands[0]));
 				instr.Operands[0] = new x86RegisterOperand(reg);
 				instrs.Add(instr);
@@ -98,7 +98,7 @@ namespace Confuser.DynCipher.Generation {
                  * add reg, imm
                  */
 
-				x86Register reg = ((x86RegisterOperand)instr.Operands[1]).Register;
+				var reg = ((x86RegisterOperand)instr.Operands[1]).Register;
 				instrs.Add(x86Instruction.Create(x86OpCode.NEG, new x86RegisterOperand(reg)));
 				instr.OpCode = x86OpCode.ADD;
 				instr.Operands[1] = instr.Operands[0];
@@ -117,7 +117,7 @@ namespace Confuser.DynCipher.Generation {
                  * op reg, imm
                  */
 
-				x86Register reg = ((x86RegisterOperand)instr.Operands[1]).Register;
+				var reg = ((x86RegisterOperand)instr.Operands[1]).Register;
 				instr.Operands[1] = instr.Operands[0];
 				instr.Operands[0] = new x86RegisterOperand(reg);
 				instrs.Add(instr);
@@ -136,7 +136,7 @@ namespace Confuser.DynCipher.Generation {
 			return ((x86RegisterOperand)instr.Operands[0]).Register;
 		}
 
-		Ix86Operand Emit(Expression exp, Func<Variable, x86Register, IEnumerable<x86Instruction>> loadArg) {
+		private Ix86Operand Emit(Expression exp, Func<Variable, x86Register, IEnumerable<x86Instruction>> loadArg) {
 			if (exp is BinOpExpression) {
 				var binOp = (BinOpExpression)exp;
 				x86Register reg;
@@ -193,7 +193,7 @@ namespace Confuser.DynCipher.Generation {
 				return new x86ImmediateOperand((int)((LiteralExpression)exp).Value);
 
 			if (exp is VariableExpression) {
-				x86Register reg = GetFreeRegister();
+				var reg = GetFreeRegister();
 				TakeRegister(reg);
 				instrs.AddRange(loadArg(((VariableExpression)exp).Variable, reg));
 				return new x86RegisterOperand(reg);

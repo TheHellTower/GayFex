@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Transforms {
 	internal class MulToShiftTransform {
-		static uint NumberOfSetBits(uint i) {
+		private static uint NumberOfSetBits(uint i) {
 			i = i - ((i >> 1) & 0x55555555);
 			i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
 			return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 		}
 
-		static Expression ProcessExpression(Expression exp) {
+		private static Expression ProcessExpression(Expression exp) {
 			if (exp is BinOpExpression) {
 				var binOp = (BinOpExpression)exp;
 				if (binOp.Operation == BinOps.Mul && binOp.Right is LiteralExpression) {
@@ -36,8 +35,8 @@ namespace Confuser.DynCipher.Transforms {
 							n++;
 						}
 
-						BinOpExpression x = sum.OfType<BinOpExpression>().First();
-						foreach (Expression i in sum.Except(new[] {x}))
+						var x = sum.OfType<BinOpExpression>().First();
+						foreach (var i in sum.Except(new[] {x}))
 							x += i;
 						return x;
 					}
@@ -57,7 +56,7 @@ namespace Confuser.DynCipher.Transforms {
 			return exp;
 		}
 
-		static void ProcessStatement(Statement st) {
+		private static void ProcessStatement(Statement st) {
 			if (st is AssignmentStatement) {
 				var assign = (AssignmentStatement)st;
 				assign.Target = ProcessExpression(assign.Target);
@@ -66,7 +65,7 @@ namespace Confuser.DynCipher.Transforms {
 		}
 
 		public static void Run(StatementBlock block) {
-			foreach (Statement st in block.Statements)
+			foreach (var st in block.Statements)
 				ProcessStatement(st);
 		}
 	}

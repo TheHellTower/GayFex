@@ -6,11 +6,11 @@ using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Generation {
 	public class DMCodeGen {
-		readonly DynamicMethod dm;
-		readonly ILGenerator ilGen;
+		private readonly DynamicMethod dm;
+		private readonly ILGenerator ilGen;
 
-		readonly Dictionary<string, LocalBuilder> localMap = new Dictionary<string, LocalBuilder>();
-		readonly Dictionary<string, int> paramMap;
+		private readonly Dictionary<string, LocalBuilder> localMap = new Dictionary<string, LocalBuilder>();
+		private readonly Dictionary<string, int> paramMap;
 
 		public DMCodeGen(Type returnType, Tuple<string, Type>[] parameters) {
 			dm = new DynamicMethod("", returnType, parameters.Select(param => param.Item2).ToArray(), true);
@@ -60,7 +60,7 @@ namespace Confuser.DynCipher.Generation {
 			return this;
 		}
 
-		void EmitLoad(Expression exp) {
+		private void EmitLoad(Expression exp) {
 			if (exp is ArrayIndexExpression) {
 				var arrIndex = (ArrayIndexExpression)exp;
 				EmitLoad(arrIndex.Array);
@@ -135,7 +135,7 @@ namespace Confuser.DynCipher.Generation {
 				throw new NotSupportedException();
 		}
 
-		void EmitStore(Expression exp, Expression value) {
+		private void EmitStore(Expression exp, Expression value) {
 			if (exp is ArrayIndexExpression) {
 				var arrIndex = (ArrayIndexExpression)exp;
 				EmitLoad(arrIndex.Array);
@@ -152,7 +152,7 @@ namespace Confuser.DynCipher.Generation {
 				throw new NotSupportedException();
 		}
 
-		void EmitStatement(Statement statement) {
+		private void EmitStatement(Statement statement) {
 			if (statement is AssignmentStatement) {
 				var assignment = (AssignmentStatement)statement;
 				EmitStore(assignment.Target, assignment.Value);
@@ -173,14 +173,14 @@ namespace Confuser.DynCipher.Generation {
                  *      blt     lop
                  *      pop
                  */
-				Label lbl = ilGen.DefineLabel();
-				Label dup = ilGen.DefineLabel();
+				var lbl = ilGen.DefineLabel();
+				var dup = ilGen.DefineLabel();
 				ilGen.Emit(OpCodes.Ldc_I4, loop.Begin);
 				ilGen.Emit(OpCodes.Br, dup);
 				ilGen.Emit(OpCodes.Ldc_I4, loop.Begin);
 				ilGen.MarkLabel(lbl);
 
-				foreach (Statement child in loop.Statements)
+				foreach (var child in loop.Statements)
 					EmitStatement(child);
 
 				ilGen.Emit(OpCodes.Ldc_I4_1);
@@ -192,7 +192,7 @@ namespace Confuser.DynCipher.Generation {
 				ilGen.Emit(OpCodes.Pop);
 			}
 			else if (statement is StatementBlock) {
-				foreach (Statement child in ((StatementBlock)statement).Statements)
+				foreach (var child in ((StatementBlock)statement).Statements)
 					EmitStatement(child);
 			}
 			else

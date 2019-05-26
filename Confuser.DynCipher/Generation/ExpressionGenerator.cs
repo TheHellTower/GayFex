@@ -5,7 +5,7 @@ using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Generation {
 	internal class ExpressionGenerator {
-		static Expression GenerateExpression(IRandomGenerator random, Expression current, uint currentDepth,
+		private static Expression GenerateExpression(IRandomGenerator random, Expression current, uint currentDepth,
 			uint targetDepth) {
 			if (currentDepth == targetDepth || (currentDepth > targetDepth / 3 && random.NextUInt32(100) > 85))
 				return current;
@@ -40,110 +40,125 @@ namespace Confuser.DynCipher.Generation {
 			throw new UnreachableException();
 		}
 
-		static void SwapOperands(IRandomGenerator random, Expression exp) {
-			if (exp is BinOpExpression) {
-				var binExp = (BinOpExpression)exp;
-				if (random.NextBoolean()) {
-					Expression tmp = binExp.Left;
-					binExp.Left = binExp.Right;
-					binExp.Right = tmp;
+		private static void SwapOperands(IRandomGenerator random, Expression exp) {
+			switch (exp) {
+				case BinOpExpression binExp: {
+					if (random.NextBoolean()) {
+						var tmp = binExp.Left;
+						binExp.Left = binExp.Right;
+						binExp.Right = tmp;
+					}
+
+					SwapOperands(random, binExp.Left);
+					SwapOperands(random, binExp.Right);
+					break;
 				}
 
-				SwapOperands(random, binExp.Left);
-				SwapOperands(random, binExp.Right);
+				case UnaryOpExpression unaryExp:
+					SwapOperands(random, unaryExp.Value);
+					break;
+				case LiteralExpression _:
+				case VariableExpression _:
+					return;
+				default:
+					throw new UnreachableException();
 			}
-			else if (exp is UnaryOpExpression)
-				SwapOperands(random, ((UnaryOpExpression)exp).Value);
-			else if (exp is LiteralExpression || exp is VariableExpression)
-				return;
-			else
-				throw new UnreachableException();
 		}
 
-		static bool HasVariable(Expression exp, Dictionary<Expression, bool> hasVar) {
-			bool ret;
-			if (!hasVar.TryGetValue(exp, out ret)) {
-				if (exp is VariableExpression)
-					ret = true;
-				else if (exp is LiteralExpression)
-					ret = false;
-				else if (exp is BinOpExpression) {
-					var binExp = (BinOpExpression)exp;
-					ret = HasVariable(binExp.Left, hasVar) || HasVariable(binExp.Right, hasVar);
-				}
-				else if (exp is UnaryOpExpression) {
-					ret = HasVariable(((UnaryOpExpression)exp).Value, hasVar);
-				}
-				else
-					throw new UnreachableException();
+		private static bool HasVariable(Expression exp, IDictionary<Expression, bool> hasVar) {
+			if (hasVar.TryGetValue(exp, out var ret)) return ret;
 
-				hasVar[exp] = ret;
+			switch (exp) {
+				case VariableExpression _:
+					ret = true;
+					break;
+				case LiteralExpression _:
+					ret = false;
+					break;
+				case BinOpExpression binExp: {
+					ret = HasVariable(binExp.Left, hasVar) || HasVariable(binExp.Right, hasVar);
+					break;
+				}
+
+				case UnaryOpExpression unaryExp:
+					ret = HasVariable(unaryExp.Value, hasVar);
+					break;
+				default:
+					throw new UnreachableException();
 			}
+
+			hasVar[exp] = ret;
 
 			return ret;
 		}
 
-		static Expression GenerateInverse(Expression exp, Expression var, Dictionary<Expression, bool> hasVar) {
-			Expression result = var;
+		private static Expression GenerateInverse(Expression exp, Expression var, Dictionary<Expression, bool> hasVar) {
+			var result = var;
 			while (!(exp is VariableExpression)) {
 				Debug.Assert(hasVar[exp]);
-				if (exp is UnaryOpExpression) {
-					var unaryOp = (UnaryOpExpression)exp;
-					result = new UnaryOpExpression {
-						Operation = unaryOp.Operation,
-						Value = result
-					};
-					exp = unaryOp.Value;
-				}
-				else if (exp is BinOpExpression) {
-					var binOp = (BinOpExpression)exp;
-					bool leftHasVar = hasVar[binOp.Left];
-					Expression varExp = leftHasVar ? binOp.Left : binOp.Right;
-					Expression constExp = leftHasVar ? binOp.Right : binOp.Left;
-
-					if (binOp.Operation == BinOps.Add)
-						result = new BinOpExpression {
-							Operation = BinOps.Sub,
-							Left = result,
-							Right = constExp
+				switch (exp) {
+					case UnaryOpExpression unaryOp: {
+						result = new UnaryOpExpression {
+							Operation = unaryOp.Operation,
+							Value = result
 						};
-
-					else if (binOp.Operation == BinOps.Sub) {
-						if (leftHasVar) {
-							// v - k = r => v = r + k
-							result = new BinOpExpression {
-								Operation = BinOps.Add,
-								Left = result,
-								Right = constExp
-							};
-						}
-						else {
-							// k - v = r => v = k - r
-							result = new BinOpExpression {
-								Operation = BinOps.Sub,
-								Left = constExp,
-								Right = result
-							};
-						}
+						exp = unaryOp.Value;
+						break;
 					}
-					else if (binOp.Operation == BinOps.Mul) {
-						Debug.Assert(constExp is LiteralExpression);
-						uint val = ((LiteralExpression)constExp).Value;
-						val = MathsUtils.ModInv(val);
-						result = new BinOpExpression {
-							Operation = BinOps.Mul,
-							Left = result,
-							Right = (LiteralExpression)val
-						};
-					}
-					else if (binOp.Operation == BinOps.Xor)
-						result = new BinOpExpression {
-							Operation = BinOps.Xor,
-							Left = result,
-							Right = constExp
-						};
 
-					exp = varExp;
+					case BinOpExpression binOp: {
+						bool leftHasVar = hasVar[binOp.Left];
+						var varExp = leftHasVar ? binOp.Left : binOp.Right;
+						var constExp = leftHasVar ? binOp.Right : binOp.Left;
+
+						switch (binOp.Operation) {
+							case BinOps.Add:
+								result = new BinOpExpression {
+									Operation = BinOps.Sub,
+									Left = result,
+									Right = constExp
+								};
+								break;
+							case BinOps.Sub when leftHasVar:
+								// v - k = r => v = r + k
+								result = new BinOpExpression {
+									Operation = BinOps.Add,
+									Left = result,
+									Right = constExp
+								};
+								break;
+							case BinOps.Sub:
+								// k - v = r => v = k - r
+								result = new BinOpExpression {
+									Operation = BinOps.Sub,
+									Left = constExp,
+									Right = result
+								};
+								break;
+							case BinOps.Mul: {
+								Debug.Assert(constExp is LiteralExpression);
+								uint val = ((LiteralExpression)constExp).Value;
+								val = MathsUtils.ModInv(val);
+								result = new BinOpExpression {
+									Operation = BinOps.Mul,
+									Left = result,
+									Right = (LiteralExpression)val
+								};
+								break;
+							}
+
+							case BinOps.Xor:
+								result = new BinOpExpression {
+									Operation = BinOps.Xor,
+									Left = result,
+									Right = constExp
+								};
+								break;
+						}
+
+						exp = varExp;
+						break;
+					}
 				}
 			}
 
@@ -161,7 +176,7 @@ namespace Confuser.DynCipher.Generation {
 			inverse = GenerateInverse(expression, result, hasVar);
 		}
 
-		enum ExpressionOps {
+		private enum ExpressionOps {
 			Add,
 			Sub,
 			Mul,

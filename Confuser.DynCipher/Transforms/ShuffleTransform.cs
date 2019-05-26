@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Confuser.Core.Services;
 using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Transforms {
 	internal static class ShuffleTransform {
-		const int ITERATION = 20;
+		private const int ITERATION = 20;
 
 		private static IEnumerable<Variable> GetVariableUsage(Expression exp) {
 			switch (exp) {
@@ -49,9 +48,9 @@ namespace Confuser.DynCipher.Transforms {
 
 		// Cannot go before the statements that use the variable defined at the statement
 		// Cannot go further than the statements that override the variable used at the statement
-		static int SearchUpwardKill(TransformContext context, Statement st, StatementBlock block, int startIndex) {
-			Variable[] usage = context.Usages[st];
-			Variable[] definition = context.Definitions[st];
+		private static int SearchUpwardKill(TransformContext context, Statement st, StatementBlock block, int startIndex) {
+			var usage = context.Usages[st];
+			var definition = context.Definitions[st];
 			for (int i = startIndex - 1; i >= 0; i--) {
 				if (context.Usages[block.Statements[i]].Intersect(definition).Count() > 0 ||
 					context.Definitions[block.Statements[i]].Intersect(usage).Count() > 0)
@@ -61,9 +60,9 @@ namespace Confuser.DynCipher.Transforms {
 			return 0;
 		}
 
-		static int SearchDownwardKill(TransformContext context, Statement st, StatementBlock block, int startIndex) {
-			Variable[] usage = context.Usages[st];
-			Variable[] definition = context.Definitions[st];
+		private static int SearchDownwardKill(TransformContext context, Statement st, StatementBlock block, int startIndex) {
+			var usage = context.Usages[st];
+			var definition = context.Definitions[st];
 			for (int i = startIndex + 1; i < block.Statements.Count; i++) {
 				if (context.Usages[block.Statements[i]].Intersect(definition).Count() > 0 ||
 					context.Definitions[block.Statements[i]].Intersect(usage).Count() > 0)
@@ -80,9 +79,9 @@ namespace Confuser.DynCipher.Transforms {
 				Definitions = block.Statements.ToDictionary(s => s, s => GetVariableDefinition(s).ToArray())
 			};
 			for (int i = 0; i < ITERATION; i++) {
-				foreach (Statement st in context.Statements) {
+				foreach (var st in context.Statements) {
 					int index = block.Statements.IndexOf(st);
-					Variable[] vars = GetVariableUsage(st).Concat(GetVariableDefinition(st)).ToArray();
+					var vars = GetVariableUsage(st).Concat(GetVariableDefinition(st)).ToArray();
 
 					// Statement can move between defIndex & useIndex without side effects
 					int defIndex = SearchUpwardKill(context, st, block, index);
@@ -98,7 +97,7 @@ namespace Confuser.DynCipher.Transforms {
 			}
 		}
 
-		class TransformContext {
+		private class TransformContext {
 			public Dictionary<Statement, Variable[]> Definitions;
 			public Statement[] Statements;
 			public Dictionary<Statement, Variable[]> Usages;

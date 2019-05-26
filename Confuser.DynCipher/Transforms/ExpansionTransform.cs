@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Confuser.DynCipher.AST;
 
 namespace Confuser.DynCipher.Transforms {
 	internal class ExpansionTransform {
-		static bool ProcessStatement(Statement st, StatementBlock block) {
+		private static bool ProcessStatement(Statement st, StatementBlock block) {
 			if (st is AssignmentStatement) {
 				var assign = (AssignmentStatement)st;
 				if (assign.Value is BinOpExpression) {
@@ -36,9 +35,9 @@ namespace Confuser.DynCipher.Transforms {
 			bool workDone;
 			do {
 				workDone = false;
-				Statement[] copy = block.Statements.ToArray();
+				var copy = block.Statements.ToArray();
 				block.Statements.Clear();
-				foreach (Statement st in copy)
+				foreach (var st in copy)
 					workDone |= ProcessStatement(st, block);
 			} while (workDone);
 		}
