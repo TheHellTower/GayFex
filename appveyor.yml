@@ -26,16 +26,17 @@ artifacts:
 - path: Release/bin
   name: ConfuserEx
   type: zip
+- path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
+  name: ConfuserEx.MSBuild
 
 for:
 -
   branches:
-    only:
+    except:
       - master
 
-  artifacts:
-  - path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
-    name: ConfuserEx.MSBuild
+  build:
+    publish_nuget: false
 
 on_failure:
 - appveyor PushArtifact msbuild.binlog
@@ -47,10 +48,15 @@ notifications:
   on_build_failure: true
 
 deploy:
+- provider: GitHub
   tag: $(APPVEYOR_REPO_TAG_NAME)
   description: "ConfuserEx $(APPVEYOR_REPO_TAG_NAME) Release"
-  provider: GitHub
   auth_token:
     secure: NTT+Z1zBxbj+w8jroqhYJnI2urxSt0gq3MUmDavUPVKZL+YX4krR4xJQ5OmHYhcG
+  on:
+    APPVEYOR_REPO_TAG: true
+- provider: NuGet
+  api_key:
+    secure: 2eArlJvohLPPZqV6hx7bSjZBY+G4OFCp9VMecUH3YvferKQIqwVoa1BGMWGgDw51
   on:
     APPVEYOR_REPO_TAG: true
