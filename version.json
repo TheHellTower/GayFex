@@ -6,7 +6,7 @@
   "semVer1NumericIdentifierPadding": 4,
   "publicReleaseRefSpec": [
     "^refs/heads/release",
-    "^refs/tags/\\d+\\.\\d+(?:\\.\\d+)?"
+    "^refs/tags/v\\d+\\.\\d+(?:\\.\\d+)?"
   ],
   "cloudBuild": {
     "setVersionVariables": true,
