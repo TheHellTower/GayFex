@@ -18,6 +18,7 @@ namespace WinFormsRenaming.Test {
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
 		[Trait("Technology", "Windows Forms")]
+		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/54")]
 		public async Task RenameWindowsFormsTest() {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
@@ -33,10 +34,13 @@ namespace WinFormsRenaming.Test {
 				new SettingItem<Protection>("rename")
 			});
 
+			void AssertLog(string message) {
+				Assert.DoesNotContain("Failed to extract binding property name in", message);
+			}
 
 			var parameters = new ConfuserParameters {
 				Project = proj,
-				Logger = new XunitLogger(outputHelper)
+				Logger = new XunitLogger(outputHelper, AssertLog)
 			};
 
 			await ConfuserEngine.Run(parameters);
