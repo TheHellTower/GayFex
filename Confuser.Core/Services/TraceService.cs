@@ -298,6 +298,16 @@ namespace Confuser.Core.Services {
 						index++;
 				}
 
+				if (evalStack.Count > argCount) {
+					// There are too many instructions on the eval stack.
+					// That means that there are instructions for following commands.
+					// To handle things properly we're only using the required amount on the top of the stack.
+					var tmp = evalStack.ToArray();
+					evalStack.Clear();
+					foreach(var idx in tmp.Take(argCount).Reverse())
+						evalStack.Push(idx);
+				}
+
 				if (evalStack.Count != argCount)
 					return null;
 				if (ret != null && !evalStack.SequenceEqual(ret))
