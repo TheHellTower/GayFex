@@ -5,6 +5,7 @@ source https://api.nuget.org/v3/index.json
 source https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json
 
 nuget Antlr4 ~> 4.6
+nuget Antlr4.Runtime ~> 4.6
 nuget dnlib ~> 3.2
 nuget Microsoft.Build.Tasks.Core ~> 15
 nuget Microsoft.CodeAnalysis.FxCopAnalyzers copy_local: true

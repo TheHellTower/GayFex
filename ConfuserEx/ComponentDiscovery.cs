@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
 using Confuser.Core;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace ConfuserEx {
 	internal class ComponentDiscovery {

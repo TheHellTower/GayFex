@@ -35,13 +35,13 @@ NUGET
       Microsoft.Win32.Registry (>= 4.3) - restriction: || (&& (== net461) (>= netstandard2.0)) (== netcoreapp2.2) (== netstandard2.0)
       System.Collections.Immutable (>= 1.5) - restriction: || (&& (== net461) (>= netstandard2.0)) (== net472) (== netcoreapp2.2) (== netstandard2.0)
       System.Text.Encoding.CodePages (>= 4.0.1) - restriction: || (&& (== net461) (>= netstandard2.0)) (== netcoreapp2.2) (== netstandard2.0)
-    Microsoft.CodeAnalysis.FxCopAnalyzers (2.9.3)
+    Microsoft.CodeAnalysis.FxCopAnalyzers (2.9.3) - copy_local: true
       Microsoft.CodeAnalysis.VersionCheckAnalyzer (2.9.3)
       Microsoft.CodeQuality.Analyzers (2.9.3)
       Microsoft.NetCore.Analyzers (2.9.3)
       Microsoft.NetFramework.Analyzers (2.9.3)
-    Microsoft.CodeAnalysis.VersionCheckAnalyzer (2.9.3)
-    Microsoft.CodeQuality.Analyzers (2.9.3)
+    Microsoft.CodeAnalysis.VersionCheckAnalyzer (2.9.3) - copy_local: true
+    Microsoft.CodeQuality.Analyzers (2.9.3) - copy_local: true
     Microsoft.Extensions.CommandLineUtils (1.1.1)
       NETStandard.Library (>= 1.6.1) - restriction: || (&& (== net461) (< net451)) (&& (== net472) (< net451)) (== netcoreapp2.2) (== netstandard2.0)
     Microsoft.Extensions.Configuration (2.2) - restriction: || (&& (== net461) (>= netstandard2.0)) (== net472) (== netcoreapp2.2) (== netstandard2.0)
@@ -78,10 +78,10 @@ NUGET
     Microsoft.Extensions.Primitives (2.2) - restriction: || (&& (== net461) (>= netstandard2.0)) (== net472) (== netcoreapp2.2) (== netstandard2.0)
       System.Memory (>= 4.5.1) - restriction: || (&& (== net461) (>= netstandard2.0)) (== net472) (== netcoreapp2.2) (== netstandard2.0)
       System.Runtime.CompilerServices.Unsafe (>= 4.5.1) - restriction: || (&& (== net461) (>= netstandard2.0)) (== net472) (== netcoreapp2.2) (== netstandard2.0)
-    Microsoft.NetCore.Analyzers (2.9.3)
+    Microsoft.NetCore.Analyzers (2.9.3) - copy_local: true
     Microsoft.NETCore.Platforms (2.2.1) - restriction: || (&& (== net461) (< net45)) (&& (== net461) (>= netcoreapp2.0)) (&& (== net472) (< net45)) (== netcoreapp2.2) (== netstandard2.0)
     Microsoft.NETCore.Targets (2.1) - restriction: || (&& (== net461) (< net45)) (&& (== net472) (< net45)) (== netcoreapp2.2) (== netstandard2.0)
-    Microsoft.NetFramework.Analyzers (2.9.3)
+    Microsoft.NetFramework.Analyzers (2.9.3) - copy_local: true
     Microsoft.VisualStudio.Setup.Configuration.Interop (1.16.30) - restriction: || (== net461) (== net472) (&& (== netcoreapp2.2) (>= net46)) (&& (== netcoreapp2.2) (>= net472)) (&& (== netstandard2.0) (>= net46)) (&& (== netstandard2.0) (>= net472))
     Microsoft.Win32.Registry (4.5)
       System.Buffers (>= 4.4) - restriction: || (&& (== net461) (>= monoandroid)) (&& (== net461) (>= monotouch)) (&& (== net461) (< net46) (>= netstandard2.0)) (&& (== net461) (>= xamarinios)) (&& (== net461) (>= xamarinmac)) (&& (== net461) (>= xamarintvos)) (&& (== net461) (>= xamarinwatchos)) (&& (== net472) (>= monoandroid) (< netstandard2.0)) (&& (== net472) (>= monotouch)) (&& (== net472) (< net46)) (&& (== net472) (>= xamarinios)) (&& (== net472) (>= xamarinmac)) (&& (== net472) (>= xamarintvos)) (&& (== net472) (>= xamarinwatchos)) (&& (== netcoreapp2.2) (>= monoandroid) (< netstandard2.0)) (&& (== netcoreapp2.2) (>= monotouch)) (&& (== netcoreapp2.2) (< netcoreapp2.0)) (&& (== netcoreapp2.2) (>= xamarinios)) (&& (== netcoreapp2.2) (>= xamarinmac)) (&& (== netcoreapp2.2) (>= xamarintvos)) (&& (== netcoreapp2.2) (>= xamarinwatchos)) (== netstandard2.0)
