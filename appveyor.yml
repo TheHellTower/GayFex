@@ -10,6 +10,7 @@ skip_commits:
   - license.md
 
 cache:
+  - packages
   - '%USERPROFILE%\.nuget\packages' 
   - '%LocalAppData%\NuGet\Cache'
   - '%LocalAppData%\NuGet\v3-cache'
