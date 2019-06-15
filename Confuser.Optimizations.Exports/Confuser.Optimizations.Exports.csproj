@@ -11,11 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="dnlib" />
     <PackageReference Include="System.ValueTuple" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
   </ItemGroup>
 
 </Project>

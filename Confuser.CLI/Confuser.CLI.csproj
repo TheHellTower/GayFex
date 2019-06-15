@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
     <StartupObject>Confuser.CLI.Program</StartupObject>
     <Product>ConfuserEx Command-line</Product>
     <Description>Command-line interface of ConfuserEx</Description>
@@ -11,7 +11,7 @@
     <RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\$(Configuration)\bin</OutputPath>
   </PropertyGroup>

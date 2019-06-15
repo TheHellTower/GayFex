@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
@@ -12,6 +12,7 @@
 
   <ItemGroup Label="Nuget Dependencies">
     <PackageReference Include="Antlr4" />
+    <PackageReference Include="dnlib" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Win32.Registry" />
@@ -25,10 +26,9 @@
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
+      <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+      <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
     <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
-    <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
-    <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Runtime Project Dependencies">

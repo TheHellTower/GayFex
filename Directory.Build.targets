@@ -7,6 +7,7 @@
   <ItemGroup Label="Nuget Dependency Versions">
     <PackageReference Update="@(PackageReference)">
       <Version Condition="'%(Identity)' == 'Antlr4'">4.6.6</Version>
+      <Version Condition="'%(Identity)' == 'dnlib'">3.2.0</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Build.Tasks.Core'">15.7.*</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Extensions.CommandLineUtils'">1.1.1</Version>
       <Version Condition="'%(Identity)' == 'Microsoft.Extensions.DependencyInjection'">2.2.0</Version>

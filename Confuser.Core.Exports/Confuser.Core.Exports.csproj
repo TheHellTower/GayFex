@@ -5,15 +5,12 @@
     <RootNamespace>Confuser.Core</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup Label="Project Dependencies">
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
-  </ItemGroup>
-
   <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="dnlib" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="System.Buffers" />
     <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.Buffers" />
   </ItemGroup>
 
 </Project>

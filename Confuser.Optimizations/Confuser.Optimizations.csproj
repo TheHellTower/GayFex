@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
     <EnableCodeAnalysis>true</EnableCodeAnalysis>
   </PropertyGroup>
 
@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
+    <PackageReference Include="dnlib" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="System.ComponentModel.Composition" />

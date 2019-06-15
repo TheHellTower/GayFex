@@ -80,10 +80,6 @@
       <Name>Confuser.Core</Name>
       <Project>{BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92}</Project>
     </ProjectReference>
-    <ProjectReference Include="dnlib\src\dnlib.csproj">
-      <Name>dnlib</Name>
-      <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
-    </ProjectReference>
   </ItemGroup>
   <!-- Import the SHFB build targets -->
   <Import Project="$(SHFBROOT)\SandcastleHelpFileBuilder.targets" />
