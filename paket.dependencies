@@ -1,4 +1,4 @@
-storage: none
+storage: symlink
 framework: net461, net472, netcoreapp2.2, netstandard2.0
 
 source https://api.nuget.org/v3/index.json
@@ -7,6 +7,7 @@ source https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json
 nuget Antlr4 ~> 4.6
 nuget dnlib ~> 3.2
 nuget Microsoft.Build.Tasks.Core ~> 15
+nuget Microsoft.CodeAnalysis.FxCopAnalyzers copy_local: true
 nuget Microsoft.Extensions.CommandLineUtils ~> 1.1
 nuget Microsoft.Extensions.DependencyInjection ~> 2.2
 nuget Microsoft.Extensions.DependencyInjection.Abstractions ~> 2.2
@@ -15,7 +16,7 @@ nuget Microsoft.Extensions.Logging.Abstractions ~> 2.2
 nuget Microsoft.Extensions.Logging.Console ~> 2.2
 nuget Microsoft.Win32.Registry ~> 4
 nuget MvvmLightLibs ~> 5.4
-nuget Nerdbank.GitVersioning
+nuget Nerdbank.GitVersioning copy_local: true
 nuget NuGet.Frameworks ~> 5
 nuget System.Buffers ~> 4
 nuget System.Collections ~> 4

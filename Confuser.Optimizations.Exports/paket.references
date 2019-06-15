@@ -1,2 +1,4 @@
 dnlib
 System.ValueTuple
+Microsoft.CodeAnalysis.FxCopAnalyzers
+Nerdbank.GitVersioning

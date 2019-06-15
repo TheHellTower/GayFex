@@ -1,5 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Microsoft.NetFramework.Analyzers\build\Microsoft.NetFramework.Analyzers.props" Condition="Exists('..\packages\Microsoft.NetFramework.Analyzers\build\Microsoft.NetFramework.Analyzers.props')" Label="Paket" />
+  <Import Project="..\packages\Microsoft.NetCore.Analyzers\build\Microsoft.NetCore.Analyzers.props" Condition="Exists('..\packages\Microsoft.NetCore.Analyzers\build\Microsoft.NetCore.Analyzers.props')" Label="Paket" />
+  <Import Project="..\packages\Microsoft.CodeQuality.Analyzers\build\Microsoft.CodeQuality.Analyzers.props" Condition="Exists('..\packages\Microsoft.CodeQuality.Analyzers\build\Microsoft.CodeQuality.Analyzers.props')" Label="Paket" />
+  <Import Project="..\packages\Microsoft.CodeAnalysis.VersionCheckAnalyzer\build\Microsoft.CodeAnalysis.VersionCheckAnalyzer.props" Condition="Exists('..\packages\Microsoft.CodeAnalysis.VersionCheckAnalyzer\build\Microsoft.CodeAnalysis.VersionCheckAnalyzer.props')" Label="Paket" />
+  <Import Project="..\packages\Microsoft.CodeAnalysis.FxCopAnalyzers\build\Microsoft.CodeAnalysis.FxCopAnalyzers.props" Condition="Exists('..\packages\Microsoft.CodeAnalysis.FxCopAnalyzers\build\Microsoft.CodeAnalysis.FxCopAnalyzers.props')" Label="Paket" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -242,49 +247,81 @@
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.7.2'">
       <ItemGroup>
         <Reference Include="CommonServiceLocator">
-          <HintPath>..\..\..\..\.nuget\packages\commonservicelocator\2.0.4\lib\net47\CommonServiceLocator.dll</HintPath>
+          <HintPath>..\packages\CommonServiceLocator\lib\net47\CommonServiceLocator.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
       </ItemGroup>
     </When>
   </Choose>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.VersionCheckAnalyzer\analyzers\dotnet\Microsoft.CodeAnalysis.VersionCheckAnalyzer.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Microsoft.CodeQuality.Analyzers\analyzers\dotnet\cs\Humanizer.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+    <Analyzer Include="..\packages\Microsoft.CodeQuality.Analyzers\analyzers\dotnet\cs\Microsoft.CodeQuality.Analyzers.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+    <Analyzer Include="..\packages\Microsoft.CodeQuality.Analyzers\analyzers\dotnet\cs\Microsoft.CodeQuality.CSharp.Analyzers.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+  </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.7.2'">
       <ItemGroup>
         <Reference Include="Microsoft.Extensions.Logging.Abstractions">
-          <HintPath>..\..\..\..\.nuget\packages\microsoft.extensions.logging.abstractions\2.2.0\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+          <HintPath>..\packages\Microsoft.Extensions.Logging.Abstractions\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
       </ItemGroup>
     </When>
   </Choose>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Microsoft.NetCore.Analyzers\analyzers\dotnet\cs\Microsoft.NetCore.Analyzers.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+    <Analyzer Include="..\packages\Microsoft.NetCore.Analyzers\analyzers\dotnet\cs\Microsoft.NetCore.CSharp.Analyzers.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Microsoft.NetFramework.Analyzers\analyzers\dotnet\cs\Microsoft.NetFramework.Analyzers.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+    <Analyzer Include="..\packages\Microsoft.NetFramework.Analyzers\analyzers\dotnet\cs\Microsoft.NetFramework.CSharp.Analyzers.dll">
+      <Paket>True</Paket>
+    </Analyzer>
+  </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.7.2'">
       <ItemGroup>
         <Reference Include="GalaSoft.MvvmLight">
-          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\GalaSoft.MvvmLight.dll</HintPath>
+          <HintPath>..\packages\MvvmLightLibs\lib\net45\GalaSoft.MvvmLight.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
         <Reference Include="GalaSoft.MvvmLight.Extras">
-          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\GalaSoft.MvvmLight.Extras.dll</HintPath>
+          <HintPath>..\packages\MvvmLightLibs\lib\net45\GalaSoft.MvvmLight.Extras.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
         <Reference Include="GalaSoft.MvvmLight.Platform">
-          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
+          <HintPath>..\packages\MvvmLightLibs\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
         <Reference Include="System.Windows.Interactivity">
-          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\System.Windows.Interactivity.dll</HintPath>
+          <HintPath>..\packages\MvvmLightLibs\lib\net45\System.Windows.Interactivity.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
       </ItemGroup>
     </When>
   </Choose>
-  <Import Project="..\..\..\..\.nuget\packages\nerdbank.gitversioning\2.3.181\build\Nerdbank.GitVersioning.targets" Condition="Exists('..\..\..\..\.nuget\packages\nerdbank.gitversioning\2.3.181\build\Nerdbank.GitVersioning.targets')" Label="Paket" />
+  <Import Project="..\packages\Nerdbank.GitVersioning\build\Nerdbank.GitVersioning.targets" Condition="Exists('..\packages\Nerdbank.GitVersioning\build\Nerdbank.GitVersioning.targets')" Label="Paket" />
 </Project>

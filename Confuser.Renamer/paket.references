@@ -6,3 +6,5 @@ System.IO.Packaging
 System.Memory
 System.Runtime.Extensions
 System.ValueTuple
+Microsoft.CodeAnalysis.FxCopAnalyzers
+Nerdbank.GitVersioning

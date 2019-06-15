@@ -5,3 +5,5 @@ System.ComponentModel.Composition
 System.Collections.Immutable
 System.Text.RegularExpressions
 System.ValueTuple
+Microsoft.CodeAnalysis.FxCopAnalyzers
+Nerdbank.GitVersioning

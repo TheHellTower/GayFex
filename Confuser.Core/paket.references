@@ -1,8 +1,10 @@
 Antlr4
 dnlib
+Microsoft.CodeAnalysis.FxCopAnalyzers
 Microsoft.Extensions.DependencyInjection
 Microsoft.Extensions.Logging
 Microsoft.Win32.Registry
+Nerdbank.GitVersioning
 NuGet.Frameworks
 System.Collections.Immutable
 System.ComponentModel.Composition

@@ -1,3 +1,5 @@
 dnlib
 System.Collections.Immutable
 System.Memory
+Microsoft.CodeAnalysis.FxCopAnalyzers
+Nerdbank.GitVersioning
