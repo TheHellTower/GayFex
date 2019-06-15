@@ -11,11 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\dnlib\src\DotNet\GenericArguments.cs" Link="GenericArguments.cs" />
-    <Compile Include="..\dnlib\src\DotNet\RecursionCounter.cs" Link="RecursionCounter.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="System.Web" Condition="'$(TargetFramework)' == 'net461'" />
   </ItemGroup>
 
