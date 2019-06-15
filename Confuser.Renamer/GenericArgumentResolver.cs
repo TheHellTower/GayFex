@@ -6,9 +6,9 @@ namespace Confuser.Renamer {
 	/// <summary>
 	///     Resolves generic arguments
 	/// </summary>
-	public struct GenericArgumentResolver {
-		GenericArguments genericArguments;
-		RecursionCounter recursionCounter;
+	public ref struct GenericArgumentResolver {
+		private GenericArguments _genericArguments;
+		private RecursionCounter _recursionCounter;
 
 		/// <summary>
 		///     Resolves the type signature with the specified generic arguments.
@@ -18,15 +18,12 @@ namespace Confuser.Renamer {
 		/// <returns>Resolved type signature.</returns>
 		/// <exception cref="System.ArgumentException">No generic arguments to resolve.</exception>
 		public static TypeSig Resolve(TypeSig typeSig, IList<TypeSig> typeGenArgs) {
-			if (typeGenArgs == null)
-				throw new ArgumentException("No generic arguments to resolve.");
+			if (typeGenArgs == null) throw new ArgumentException("No generic arguments to resolve.");
 
 			var resolver = new GenericArgumentResolver();
-			resolver.genericArguments = new GenericArguments();
-			resolver.recursionCounter = new RecursionCounter();
-
-			if (typeGenArgs != null)
-				resolver.genericArguments.PushTypeArgs(typeGenArgs);
+			resolver._genericArguments = new GenericArguments();
+			resolver._recursionCounter = new RecursionCounter();
+			resolver._genericArguments.PushTypeArgs(typeGenArgs);
 
 			return resolver.ResolveGenericArgs(typeSig);
 		}
@@ -43,56 +40,52 @@ namespace Confuser.Renamer {
 				throw new ArgumentException("No generic arguments to resolve.");
 
 			var resolver = new GenericArgumentResolver();
-			resolver.genericArguments = new GenericArguments();
-			resolver.recursionCounter = new RecursionCounter();
-
-			if (typeGenArgs != null)
-				resolver.genericArguments.PushTypeArgs(typeGenArgs);
+			resolver._genericArguments = new GenericArguments();
+			resolver._recursionCounter = new RecursionCounter();
+			resolver._genericArguments.PushTypeArgs(typeGenArgs);
 
 			return resolver.ResolveGenericArgs(methodSig);
 		}
 
-		bool ReplaceGenericArg(ref TypeSig typeSig) {
-			if (genericArguments == null)
-				return false;
-			TypeSig newTypeSig = genericArguments.Resolve(typeSig);
-			if (newTypeSig != typeSig) {
-				typeSig = newTypeSig;
-				return true;
-			}
-			return false;
+		private bool ReplaceGenericArg(ref TypeSig typeSig) {
+			var newTypeSig = _genericArguments.Resolve(typeSig);
+			if (newTypeSig == typeSig) return false;
+
+			typeSig = newTypeSig;
+			return true;
+
 		}
 
-		MethodSig ResolveGenericArgs(MethodSig sig) {
+		private MethodSig ResolveGenericArgs(MethodSig sig) {
 			if (sig == null)
 				return null;
-			if (!recursionCounter.Increment())
+			if (!_recursionCounter.Increment())
 				return null;
 
-			MethodSig result = ResolveGenericArgs(new MethodSig(sig.GetCallingConvention()), sig);
+			var result = ResolveGenericArgs(new MethodSig(sig.GetCallingConvention()), sig);
 
-			recursionCounter.Decrement();
+			_recursionCounter.Decrement();
 			return result;
 		}
 
-		MethodSig ResolveGenericArgs(MethodSig sig, MethodSig old) {
+		private MethodSig ResolveGenericArgs(MethodSig sig, MethodSig old) {
 			sig.RetType = ResolveGenericArgs(old.RetType);
-			foreach (TypeSig p in old.Params)
+			foreach (var p in old.Params)
 				sig.Params.Add(ResolveGenericArgs(p));
 			sig.GenParamCount = old.GenParamCount;
 			if (sig.ParamsAfterSentinel != null) {
-				foreach (TypeSig p in old.ParamsAfterSentinel)
+				foreach (var p in old.ParamsAfterSentinel)
 					sig.ParamsAfterSentinel.Add(ResolveGenericArgs(p));
 			}
 			return sig;
 		}
 
-		TypeSig ResolveGenericArgs(TypeSig typeSig) {
-			if (!recursionCounter.Increment())
+		private TypeSig ResolveGenericArgs(TypeSig typeSig) {
+			if (!_recursionCounter.Increment())
 				return null;
 
 			if (ReplaceGenericArg(ref typeSig)) {
-				recursionCounter.Decrement();
+				_recursionCounter.Decrement();
 				return typeSig;
 			}
 
@@ -105,10 +98,10 @@ namespace Confuser.Renamer {
 					result = new ByRefSig(ResolveGenericArgs(typeSig.Next));
 					break;
 				case ElementType.Var:
-					result = new GenericVar((typeSig as GenericVar).Number);
+					result = new GenericVar(((GenericVar) typeSig).Number);
 					break;
 				case ElementType.ValueArray:
-					result = new ValueArraySig(ResolveGenericArgs(typeSig.Next), (typeSig as ValueArraySig).Size);
+					result = new ValueArraySig(ResolveGenericArgs(typeSig.Next), ((ValueArraySig) typeSig).Size);
 					break;
 				case ElementType.SZArray:
 					result = new SZArraySig(ResolveGenericArgs(typeSig.Next));
@@ -134,15 +127,15 @@ namespace Confuser.Renamer {
 				case ElementType.Array:
 					var arraySig = (ArraySig)typeSig;
 					var sizes = new List<uint>(arraySig.Sizes);
-					var lbounds = new List<int>(arraySig.LowerBounds);
-					result = new ArraySig(ResolveGenericArgs(typeSig.Next), arraySig.Rank, sizes, lbounds);
+					var lBounds = new List<int>(arraySig.LowerBounds);
+					result = new ArraySig(ResolveGenericArgs(typeSig.Next), arraySig.Rank, sizes, lBounds);
 					break;
 				case ElementType.GenericInst:
 					var gis = (GenericInstSig)typeSig;
 					var genArgs = new List<TypeSig>(gis.GenericArguments.Count);
-					foreach (TypeSig ga in gis.GenericArguments) {
+					foreach (var ga in gis.GenericArguments)
 						genArgs.Add(ResolveGenericArgs(ga));
-					}
+					
 					result = new GenericInstSig(ResolveGenericArgs(gis.GenericType) as ClassOrValueTypeSig, genArgs);
 					break;
 
@@ -151,7 +144,7 @@ namespace Confuser.Renamer {
 					break;
 			}
 
-			recursionCounter.Decrement();
+			_recursionCounter.Decrement();
 
 			return result;
 		}
