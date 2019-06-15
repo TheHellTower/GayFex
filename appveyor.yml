@@ -23,6 +23,7 @@ install:
 
 before_build:
 - cmd: .paket\paket.exe restore
+- cmd: msbuild Confuser2.sln @appveyor_restore.rsp /m
 
 build:
   project: Confuser2.sln
