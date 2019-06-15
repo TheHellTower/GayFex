@@ -1,3 +1,3 @@
-Microsoft.Extensions.Logging.Abstractions
-MvvmLightLibs
-Nerdbank.GitVersioning
+Microsoft.Extensions.Logging.Abstractions framework: net472
+MvvmLightLibs framework: net472
+Nerdbank.GitVersioning framework: net472
