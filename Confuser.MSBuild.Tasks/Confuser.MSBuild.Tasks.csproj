@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Label="Nuget Package Settings">
@@ -44,10 +44,10 @@
     </CreateItem>
   </Target>
   
-  <Target Name="IncludeConfuserStandardDependencyFiles" Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
+  <Target Name="IncludeConfuserStandardDependencyFiles" Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <ItemGroup>
-      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netcoreapp2.1\*.dll" />
-      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netcoreapp2.1\*.pdb" />
+      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.dll" />
+      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.pdb" />
     </ItemGroup>
     <CreateItem Include="@(ConfuserNetStandardDependencies)" AdditionalMetadata="PackagePath=netstandard">
       <Output TaskParameter="Include" ItemName="TfmSpecificPackageFile" />
