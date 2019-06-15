@@ -9,8 +9,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{7C4F71
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core", "Confuser.Core\Confuser.Core.csproj", "{BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E2ADCFC4-8505-4EFC-9A7D-54BA491B8AD3} = {E2ADCFC4-8505-4EFC-9A7D-54BA491B8AD3}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Protections", "Confuser.Protections\Confuser.Protections.csproj", "{3EAB01B5-9B49-48D8-BFA1-5493B26CCB71}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6DC546B6-3618-4447-AD48-875624EDF47C} = {6DC546B6-3618-4447-AD48-875624EDF47C}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.CLI", "Confuser.CLI\Confuser.CLI.csproj", "{CE61ADEE-C032-43EC-ACD8-E4A742F894A3}"
 EndProject
@@ -60,6 +66,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming.Test", "Tests\WpfRenaming.Test\WpfRenaming.Test.csproj", "{30B8883F-A0A2-4256-ADCF-A790525D3696}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Helpers", "Confuser.Helpers\Confuser.Helpers.csproj", "{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{075579B3-1C11-419F-AE69-A6899F6E2F1A} = {075579B3-1C11-419F-AE69-A6899F6E2F1A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RefProxyProtection", "Tests\RefProxyProtection\RefProxyProtection.csproj", "{22516193-DE4E-49E3-AFC8-4474D8297C18}"
 EndProject
