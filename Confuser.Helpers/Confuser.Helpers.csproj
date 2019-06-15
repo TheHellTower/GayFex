@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -10,12 +11,6 @@
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
   </ItemGroup>
 
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="dnlib" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.ValueTuple" />
-  </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

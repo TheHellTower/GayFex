@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -15,13 +16,6 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\$(Configuration)\bin</OutputPath>
   </PropertyGroup>
-
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
-    <PackageReference Include="System.Console" />
-    <PackageReference Include="System.Runtime" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
@@ -53,5 +47,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
   </ItemGroup>
+
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

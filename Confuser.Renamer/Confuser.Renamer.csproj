@@ -14,17 +14,6 @@
     <Reference Include="System.Web" Condition="'$(TargetFramework)' == 'net461'" />
   </ItemGroup>
 
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.ComponentModel.Composition" />
-    <PackageReference Include="System.IO.Packaging" />
-    <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.Runtime.Extensions" />
-    <PackageReference Include="System.ValueTuple" />
-  </ItemGroup>
-
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
@@ -34,5 +23,7 @@
   <ItemGroup>
     <InternalsVisibleToTest Include="Confuser.Renamer.Test" />
   </ItemGroup>
+
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

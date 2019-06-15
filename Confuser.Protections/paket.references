@@ -1,0 +1,17 @@
+Microsoft.Extensions.DependencyInjection.Abstractions
+Microsoft.Extensions.Logging.Abstractions
+System.Buffers
+System.Collections
+System.Collections.Immutable
+System.ComponentModel
+System.ComponentModel.Composition
+System.Diagnostics.Debug
+System.Diagnostics.Tools
+System.Linq
+System.Memory
+System.Resources.ResourceManager
+System.Runtime
+System.Runtime.Extensions
+System.Security.Cryptography.Algorithms
+System.Security.Cryptography.Primitives
+System.ValueTuple

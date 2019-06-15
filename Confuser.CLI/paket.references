@@ -1,0 +1,4 @@
+Microsoft.Extensions.CommandLineUtils
+Microsoft.Extensions.Logging.Console
+System.Console
+System.Runtime

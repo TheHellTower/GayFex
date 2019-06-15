@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
@@ -10,16 +11,6 @@
     <Description>Optimizations of ConfuserEx</Description>
   </PropertyGroup>
 
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="dnlib" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="System.ComponentModel.Composition" />
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.Text.RegularExpressions" />
-    <PackageReference Include="System.ValueTuple" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Optimizations.Exports\Confuser.Optimizations.Exports.csproj" />
@@ -30,5 +21,7 @@
   <ItemGroup>
     <InternalsVisibleToTest Include="Confuser.Optimizations.Test" />
   </ItemGroup>
+
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

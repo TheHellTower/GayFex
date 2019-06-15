@@ -1,0 +1,7 @@
+dnlib
+Microsoft.Extensions.DependencyInjection.Abstractions
+Microsoft.Extensions.Logging.Abstractions
+System.ComponentModel.Composition
+System.Collections.Immutable
+System.Text.RegularExpressions
+System.ValueTuple

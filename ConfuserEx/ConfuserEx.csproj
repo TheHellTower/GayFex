@@ -15,7 +15,6 @@
     <WarningLevel>4</WarningLevel>
     <Utf8Output>true</Utf8Output>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -230,17 +229,6 @@
   <ItemGroup>
     <Resource Include="Resources\TeamLogo.png" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions">
-      <Version>2.2.0</Version>
-    </PackageReference>
-    <PackageReference Include="MvvmLightLibs">
-      <Version>5.4.1</Version>
-    </PackageReference>
-    <PackageReference Include="Nerdbank.GitVersioning">
-      <Version>2.1.65</Version>
-    </PackageReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -249,4 +237,105 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Import Project="..\.paket\paket.targets" />
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.0'">
+      <ItemGroup>
+        <Reference Include="CommonServiceLocator">
+          <HintPath>..\..\..\..\.nuget\packages\commonservicelocator\2.0.4\lib\net40\CommonServiceLocator.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
+      <ItemGroup>
+        <Reference Include="CommonServiceLocator">
+          <HintPath>..\..\..\..\.nuget\packages\commonservicelocator\2.0.4\lib\net46\CommonServiceLocator.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.7.1' Or $(TargetFrameworkVersion) == 'v4.7.2')">
+      <ItemGroup>
+        <Reference Include="CommonServiceLocator">
+          <HintPath>..\..\..\..\.nuget\packages\commonservicelocator\2.0.4\lib\net47\CommonServiceLocator.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="($(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.7.1' Or $(TargetFrameworkVersion) == 'v4.7.2')) Or ($(TargetFrameworkIdentifier) == '.NETCoreApp' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v2.1' Or $(TargetFrameworkVersion) == 'v2.2')) Or ($(TargetFrameworkIdentifier) == '.NETStandard' And $(TargetFrameworkVersion) == 'v2.0')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+          <HintPath>..\..\..\..\.nuget\packages\microsoft.extensions.logging.abstractions\2.2.0\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.0'">
+      <ItemGroup>
+        <Reference Include="GalaSoft.MvvmLight">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net40\GalaSoft.MvvmLight.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="GalaSoft.MvvmLight.Extras">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net40\GalaSoft.MvvmLight.Extras.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="System.Windows.Interactivity">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net40\System.Windows.Interactivity.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.7.1' Or $(TargetFrameworkVersion) == 'v4.7.2')">
+      <ItemGroup>
+        <Reference Include="GalaSoft.MvvmLight">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\GalaSoft.MvvmLight.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="GalaSoft.MvvmLight.Extras">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\GalaSoft.MvvmLight.Extras.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="GalaSoft.MvvmLight.Platform">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="System.Windows.Interactivity">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\net45\System.Windows.Interactivity.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="($(TargetFrameworkIdentifier) == '.NETCoreApp' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v2.1' Or $(TargetFrameworkVersion) == 'v2.2')) Or ($(TargetFrameworkIdentifier) == '.NETStandard' And ($(TargetFrameworkVersion) == 'v1.0' Or $(TargetFrameworkVersion) == 'v2.0'))">
+      <ItemGroup>
+        <Reference Include="GalaSoft.MvvmLight">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\portable-net45+wp8+wpa81+netcore45+monoandroid1+xamarin.ios10\GalaSoft.MvvmLight.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="GalaSoft.MvvmLight.Extras">
+          <HintPath>..\..\..\..\.nuget\packages\mvvmlightlibs\5.4.1.1\lib\portable-net45+wp8+wpa81+netcore45+monoandroid1+xamarin.ios10\GalaSoft.MvvmLight.Extras.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Import Project="..\..\..\..\.nuget\packages\nerdbank.gitversioning\2.3.181\build\Nerdbank.GitVersioning.targets" Condition="Exists('..\..\..\..\.nuget\packages\nerdbank.gitversioning\2.3.181\build\Nerdbank.GitVersioning.targets')" Label="Paket" />
 </Project>

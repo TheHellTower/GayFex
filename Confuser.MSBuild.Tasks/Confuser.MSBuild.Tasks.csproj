@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
@@ -16,10 +17,6 @@
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeConfuserDependencyFiles</TargetsForTfmSpecificContentInPackage>
     <IncludeBuildOutput>false</IncludeBuildOutput>
   </PropertyGroup>
-
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Build.Tasks.Core" />
-  </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" PrivateAssets="all" />
@@ -46,7 +43,7 @@
       <Output TaskParameter="Include" ItemName="TfmSpecificPackageFile" />
     </CreateItem>
   </Target>
-
+  
   <Target Name="IncludeConfuserStandardDependencyFiles" Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
     <ItemGroup>
       <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netcoreapp2.1\*.dll" />
@@ -56,5 +53,7 @@
       <Output TaskParameter="Include" ItemName="TfmSpecificPackageFile" />
     </CreateItem>
   </Target>
+
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

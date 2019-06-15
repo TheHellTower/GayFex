@@ -10,24 +10,9 @@
     <Description>Core framework of ConfuserEx</Description>
   </PropertyGroup>
 
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Antlr4" />
-    <PackageReference Include="dnlib" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="Microsoft.Win32.Registry" />
-    <PackageReference Include="NuGet.Frameworks" />
-    <PackageReference Include="System.Buffers" />
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.ComponentModel.Composition" />
-    <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.ValueTuple" />
-    <PackageReference Include="System.Xml.XmlDocument" />
-  </ItemGroup>
-
   <ItemGroup Label="Project Dependencies">
-      <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
-      <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
+    <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
     <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
   </ItemGroup>
 
@@ -60,5 +45,6 @@
   </ItemGroup>
 
   <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

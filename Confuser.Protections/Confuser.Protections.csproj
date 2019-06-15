@@ -8,28 +8,8 @@
   <PropertyGroup Label="Assembly Information">
     <Title>ConfuserEx Protections</Title>
     <Description>Protections and packers of ConfuserEx</Description>
-      <ConfuserRuntimeConfiguration>Release</ConfuserRuntimeConfiguration>
+    <ConfuserRuntimeConfiguration>Release</ConfuserRuntimeConfiguration>
   </PropertyGroup>
-
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="System.Buffers" />
-    <PackageReference Include="System.Collections" />
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.ComponentModel" />
-    <PackageReference Include="System.ComponentModel.Composition" />
-    <PackageReference Include="System.Diagnostics.Debug" />
-    <PackageReference Include="System.Diagnostics.Tools" />
-    <PackageReference Include="System.Linq" />
-    <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.Resources.ResourceManager" />
-    <PackageReference Include="System.Runtime" />
-    <PackageReference Include="System.Runtime.Extensions" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" />
-    <PackageReference Include="System.Security.Cryptography.Primitives" />
-    <PackageReference Include="System.ValueTuple" />
-  </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\Confuser.DynCipher\Confuser.DynCipher.csproj" />
@@ -41,5 +21,7 @@
   <ItemGroup Label="Runtime Project Dependencies">
     <ConfuserRuntimeReference Include="..\Confuser.Protections.Runtime\Confuser.Protections.Runtime.csproj" />
   </ItemGroup>
+
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>
