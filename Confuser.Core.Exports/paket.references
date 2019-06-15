@@ -1,5 +1,4 @@
 dnlib
 Microsoft.Extensions.DependencyInjection.Abstractions
-System.Buffers
 System.Collections.Immutable
 System.Memory

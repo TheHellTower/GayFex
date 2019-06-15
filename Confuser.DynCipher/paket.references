@@ -1,12 +1,5 @@
 Microsoft.Extensions.DependencyInjection.Abstractions
-System.Collections
 System.ComponentModel.Composition
-System.Diagnostics.Debug
 System.Diagnostics.Tools
 System.Linq
-System.Reflection.Emit.ILGeneration
 System.Reflection.Emit.Lightweight
-System.Reflection.Primitives
-System.Resources.ResourceManager
-System.Runtime
-System.Runtime.Extensions

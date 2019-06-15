@@ -4,9 +4,7 @@ Microsoft.Extensions.DependencyInjection
 Microsoft.Extensions.Logging
 Microsoft.Win32.Registry
 NuGet.Frameworks
-System.Buffers
 System.Collections.Immutable
 System.ComponentModel.Composition
-System.Memory
 System.ValueTuple
 System.Xml.XmlDocument
