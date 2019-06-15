@@ -1,0 +1,6 @@
+dnlib
+Microsoft.Extensions.DependencyInjection.Abstractions
+Nerdbank.GitVersioning
+System.Collections.Immutable
+System.Memory
+Microsoft.CodeAnalysis.FxCopAnalyzers

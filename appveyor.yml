@@ -2,11 +2,19 @@ version: '{build}'
 image: Visual Studio 2017
 configuration: Release
 platform: Any CPU
+
 skip_commits:
   files:
   - doc/*
   - readme.md
   - license.md
+
+cache:
+  - packages
+  - '%USERPROFILE%\.nuget\packages' 
+  - '%LocalAppData%\NuGet\Cache'
+  - '%LocalAppData%\NuGet\v3-cache'
+  - paket-files -> packet.lock
 
 nuget:
   disable_publish_on_pr: true
@@ -15,6 +23,7 @@ install:
 - cmd: git submodule update --init --recursive
 
 before_build:
+- cmd: .paket\paket.exe restore
 - cmd: msbuild Confuser2.sln @appveyor_restore.rsp /m
 
 build:

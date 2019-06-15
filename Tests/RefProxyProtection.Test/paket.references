@@ -1,0 +1,4 @@
+group Test
+xunit
+xunit.runner.visualstudio
+dotnet-xunit

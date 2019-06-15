@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net20;net40;net471</TargetFrameworks>
@@ -14,8 +15,6 @@
     <DefineConstants>$(DefineConstants);UNICODE_CONSOLE_UNSUPPORTED</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.0" Condition="'$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'net40'" />
-  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 
 </Project>

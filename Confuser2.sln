@@ -3,9 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28803.452
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{7C4F71CC-C2FD-4AD0-AC56-A4F3C1F982E4}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core", "Confuser.Core\Confuser.Core.csproj", "{BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E2ADCFC4-8505-4EFC-9A7D-54BA491B8AD3} = {E2ADCFC4-8505-4EFC-9A7D-54BA491B8AD3}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Protections", "Confuser.Protections\Confuser.Protections.csproj", "{3EAB01B5-9B49-48D8-BFA1-5493B26CCB71}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6DC546B6-3618-4447-AD48-875624EDF47C} = {6DC546B6-3618-4447-AD48-875624EDF47C}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.CLI", "Confuser.CLI\Confuser.CLI.csproj", "{CE61ADEE-C032-43EC-ACD8-E4A742F894A3}"
 EndProject
@@ -14,8 +25,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.DynCipher", "Confuser.DynCipher\Confuser.DynCipher.csproj", "{E832E9B8-2158-4FC0-89A1-56C6ECC10F6B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfuserEx", "ConfuserEx\ConfuserEx.csproj", "{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib", "dnlib\src\dnlib.csproj", "{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{356BDB31-853E-43BB-8F9A-D8AC08F69EBB}"
 	ProjectSection(SolutionItems) = preProject
@@ -33,6 +42,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		global.json = global.json
 		LICENSE.md = LICENSE.md
 		README.md = README.md
+		version.json = version.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core.Exports", "Confuser.Core.Exports\Confuser.Core.Exports.csproj", "{1508B4CD-F272-4EEF-AB49-21F1C3661E69}"
@@ -56,6 +66,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfRenaming.Test", "Tests\WpfRenaming.Test\WpfRenaming.Test.csproj", "{30B8883F-A0A2-4256-ADCF-A790525D3696}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Helpers", "Confuser.Helpers\Confuser.Helpers.csproj", "{8E3797E3-5BB7-473E-A4F7-F2020EC3BEDD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{075579B3-1C11-419F-AE69-A6899F6E2F1A} = {075579B3-1C11-419F-AE69-A6899F6E2F1A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RefProxyProtection", "Tests\RefProxyProtection\RefProxyProtection.csproj", "{22516193-DE4E-49E3-AFC8-4474D8297C18}"
 EndProject
@@ -132,10 +145,6 @@ Global
 		{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8AF54053-37AA-4D06-90A8-CCEFDFDF902F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{32223BE8-3E78-489C-92ED-7900B26DFF43}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{32223BE8-3E78-489C-92ED-7900B26DFF43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32223BE8-3E78-489C-92ED-7900B26DFF43}.Release|Any CPU.ActiveCfg = Release|Any CPU

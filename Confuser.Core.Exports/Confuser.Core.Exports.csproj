@@ -1,19 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Confuser.Core</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup Label="Project Dependencies">
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.Buffers" />
-  </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

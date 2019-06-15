@@ -1,17 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Confuser</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup Label="Project Dependencies">
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.Memory" />
-  </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

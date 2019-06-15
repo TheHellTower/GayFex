@@ -126,7 +126,7 @@ namespace Confuser.Core {
 							});
 
 					var paramKvp = selectedParameters.Select(sp => sp.Name + "='" + sp.Value.Replace("'", "\'", StringComparison.Ordinal) + "'");
-					var expression = (enable ? "+" : "-") + protectionId + "(" + string.Join(';', paramKvp) + ")";
+					var expression = (enable ? "+" : "-") + protectionId + "(" + string.Join(";", paramKvp) + ")";
 
 					var newSettings = ObfAttrParser.ParseProtection(protections, settings, expression, logger);
 					logger.CheckErrors();

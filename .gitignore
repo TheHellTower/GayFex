@@ -1,11 +1,18 @@
 # Visual Studio Cache files (starting with VS 2015)
 .vs/
 
+# VSCode local files
+.vscode/
+
 # Launch Settings
 launchSettings.json
 
 #ignore thumbnails created by windows
 Thumbs.db
+
+# Files of Paket dependency manager
+paket-files/
+
 #Ignore files build by Visual Studio
 *.obj
 *.exe

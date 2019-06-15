@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
     <StartupObject>Confuser.CLI.Program</StartupObject>
     <Product>ConfuserEx Command-line</Product>
     <Description>Command-line interface of ConfuserEx</Description>
@@ -11,17 +12,10 @@
     <RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\$(Configuration)\bin</OutputPath>
   </PropertyGroup>
-
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
-    <PackageReference Include="System.Console" />
-    <PackageReference Include="System.Runtime" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
@@ -53,5 +47,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
   </ItemGroup>
+
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

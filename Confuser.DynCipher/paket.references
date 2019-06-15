@@ -1,0 +1,7 @@
+Microsoft.Extensions.DependencyInjection.Abstractions
+System.ComponentModel.Composition
+System.Diagnostics.Tools
+System.Linq
+System.Reflection.Emit.Lightweight
+Microsoft.CodeAnalysis.FxCopAnalyzers
+Nerdbank.GitVersioning

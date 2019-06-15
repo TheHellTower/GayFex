@@ -43,4 +43,6 @@
     <ProjectReference Include="..\Confuser.Helpers.Runtime\Confuser.Helpers.Runtime.csproj" />
   </ItemGroup>
 
+  <Import Project="..\.paket\Paket.Restore.targets" />
+  
 </Project>

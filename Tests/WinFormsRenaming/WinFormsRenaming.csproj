@@ -1,4 +1,5 @@
-﻿<Project Sdk="MSBuild.Sdk.Extras">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="MSBuild.Sdk.Extras">
 
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
@@ -6,5 +7,7 @@
     <ExtrasDisableExtrasSdkLegacyCompat>true</ExtrasDisableExtrasSdkLegacyCompat>
     <MyType>Windows</MyType>
   </PropertyGroup>
+
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 
 </Project>

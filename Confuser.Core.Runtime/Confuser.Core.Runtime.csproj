@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net20;net40;netstandard1.0;netstandard2.0</TargetFrameworks>
@@ -16,5 +17,6 @@
   </ItemGroup>
 
   <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>

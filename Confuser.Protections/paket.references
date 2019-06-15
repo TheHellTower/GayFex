@@ -1,0 +1,11 @@
+Microsoft.Extensions.DependencyInjection.Abstractions
+Microsoft.Extensions.Logging.Abstractions
+System.Collections.Immutable
+System.ComponentModel
+System.ComponentModel.Composition
+System.Diagnostics.Tools
+System.Memory
+System.Security.Cryptography.Algorithms
+System.ValueTuple
+Microsoft.CodeAnalysis.FxCopAnalyzers
+Nerdbank.GitVersioning

@@ -1,7 +1,7 @@
 {
   "version": "2.0.0-alpha.{height}",
   "nugetPackageVersion": {
-    "semVer": 1
+    "semVer": 2
   },
   "semVer1NumericIdentifierPadding": 4,
   "publicReleaseRefSpec": [

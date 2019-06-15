@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
@@ -11,23 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\dnlib\src\DotNet\GenericArguments.cs" Link="GenericArguments.cs" />
-    <Compile Include="..\dnlib\src\DotNet\RecursionCounter.cs" Link="RecursionCounter.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="System.Web" Condition="'$(TargetFramework)' == 'net461'" />
-  </ItemGroup>
-
-  <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="System.Collections.Immutable" />
-    <PackageReference Include="System.ComponentModel.Composition" />
-    <PackageReference Include="System.IO.Packaging" />
-    <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.Runtime.Extensions" />
-    <PackageReference Include="System.ValueTuple" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
@@ -39,5 +23,7 @@
   <ItemGroup>
     <InternalsVisibleToTest Include="Confuser.Renamer.Test" />
   </ItemGroup>
+
+  <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>
