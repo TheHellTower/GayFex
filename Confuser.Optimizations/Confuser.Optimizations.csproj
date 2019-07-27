@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <EnableCodeAnalysis>true</EnableCodeAnalysis>
   </PropertyGroup>
 
