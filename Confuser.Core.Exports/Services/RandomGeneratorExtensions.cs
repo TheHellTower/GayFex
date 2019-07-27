@@ -128,6 +128,24 @@ namespace Confuser.Core.Services {
 			NextUInt32(generator) / ((double)uint.MaxValue + 1);
 
 		/// <summary>
+		///     Returns a randomly selected value from the enum of the type <typeparamref name="T"/>.
+		/// </summary>
+		/// <typeparam name="T">The type of the enum</typeparam>
+		/// <param name="generator">The generator used to generate the values.</param>
+		/// <returns>One randomly selected value from the enum</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="generator"/> is <see langword="null" /></exception>
+		/// <exception cref="NotSupportedException"><typeparamref name="T"/> is not e <see langword="enum" /> type</exception>
+		public static T NextMember<T>(this IRandomGenerator generator) where T : struct {
+			if (!typeof(T).IsEnum)
+				throw new NotSupportedException(
+					string.Format(Properties.Resources.Culture, Properties.Resources.ExceptionGenericHasToBeEnum, typeof(T).FullName));
+
+			var values = Enum.GetValues(typeof(T));
+			var index = NextInt32(generator, 0, values.Length);
+			return (T)values.GetValue(index);
+		}
+
+		/// <summary>
 		///     Shuffles the element in the specified list.
 		/// </summary>
 		/// <typeparam name="T">The element type of the list.</typeparam>
