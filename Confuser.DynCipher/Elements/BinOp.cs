@@ -9,9 +9,8 @@ namespace Confuser.DynCipher.Elements {
 
 		public CryptoBinOps Operation { get; private set; }
 
-		public override void Initialize(IRandomGenerator random) {
-			Operation = (CryptoBinOps)random.NextInt32(3);
-		}
+		public override void Initialize(IRandomGenerator random) => 
+			Operation = random.NextMember<CryptoBinOps>();
 
 		public override void Emit(CipherGenContext context) {
 			var a = context.GetDataExpression(DataIndexes[0]);

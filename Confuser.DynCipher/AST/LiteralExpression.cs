@@ -1,6 +1,6 @@
 ﻿namespace Confuser.DynCipher.AST {
 	public class LiteralExpression : Expression {
-		public uint Value { get; set; }
+		public uint Value { get; }
 
 		public LiteralExpression(uint val) => Value = val;
 		public LiteralExpression(int val) => Value = unchecked((uint)val);

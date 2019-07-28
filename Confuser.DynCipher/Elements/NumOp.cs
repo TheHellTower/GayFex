@@ -13,7 +13,7 @@ namespace Confuser.DynCipher.Elements {
 		public CryptoNumOps Operation { get; private set; }
 
 		public override void Initialize(IRandomGenerator random) {
-			Operation = (CryptoNumOps)(random.NextInt32(4));
+			Operation = random.NextMember<CryptoNumOps>();
 			switch (Operation) {
 				case CryptoNumOps.Add:
 				case CryptoNumOps.Xor:

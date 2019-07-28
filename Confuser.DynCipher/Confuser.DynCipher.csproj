@@ -15,6 +15,10 @@
     <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
   <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>
