@@ -16,7 +16,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		// the fact that the structure is internal.
 		private static DynamicMethod _writeMethodProxy;
 
-		private static DynamicMethod GetWriteMethodProxy() {
+		private static MethodInfo GetWriteMethodProxy() {
 			if (_writeMethodProxy != null) return _writeMethodProxy;
 
 			var proxyMethod = new DynamicMethod("RegexWriterWriteMethodProxy",
@@ -34,9 +34,23 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		}
 
 		internal static RegexCode Write(RegexTree tree) {
-			var writeMethod = GetWriteMethodProxy();
+			// TODO: This is pretty ugly code. Can be done better once .NET Standard 2.1 is used, to use the .IsByRefLike property of the type.
+			object realRegexCode = null;
+			if (_writeMethodProxy is null)
+				try {
+					realRegexCode = _writeMethod.Invoke(null, new[] {tree.RealRegexTree});
+				}
+				catch (NotSupportedException) {}
+			// The NotSupportedException is thrown in case the .NET Core runtime is used.
+			// Reflection on RegexWriter (ref struct) does not work in this case. So we'll need a workaround.
+			// We'll try to build a dynamic method to call the method we need.
 
-			var realRegexCode = writeMethod.Invoke(null, new[] { tree.RealRegexTree });
+			// ReSharper disable once InvertIf
+			if (realRegexCode == null) {
+				var writeMethod = GetWriteMethodProxy();
+				realRegexCode = writeMethod.Invoke(null, new[] { tree.RealRegexTree });
+			}
+
 			return new RegexCode(realRegexCode);
 		}
 	}
