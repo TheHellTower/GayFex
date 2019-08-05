@@ -89,7 +89,7 @@ namespace Confuser.Core {
 
 					case nameof(ObfuscationAttribute.Feature):
 						Debug.Assert(prop.Type.ElementType == ElementType.String);
-						string feature = (string)prop.Value;
+						string feature = prop.Value as string ?? (prop.Value as UTF8String)?.String;
 
 						(info.FeatureName, info.FeatureValue, order) = ParseObfAttrFeatureValue(feature);
 						break;
