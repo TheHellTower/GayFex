@@ -119,7 +119,7 @@ namespace Confuser.Core {
 						}
 					}
 					if (!string.IsNullOrEmpty(info.Settings)) {
-						if ((type == ApplyInfoType.ParentInfo && info.Condition != null && info.ApplyToMember) ||
+						if ((type == ApplyInfoType.ParentInfo && info.ApplyToMember) ||
 							type == ApplyInfoType.CurrentInfoOnly ||
 							(type == ApplyInfoType.CurrentInfoInherits && info.Condition == null && info.ApplyToMember)) {
 							parser.ParseProtectionString(settings, info.Settings);
