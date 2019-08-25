@@ -193,6 +193,9 @@ namespace Confuser.Core {
 				if (strip)
 					item.CustomAttributes.RemoveAt(i);
 
+				if (!(item is ITypeDefOrRef))
+					info.ApplyToMembers = false;
+
 				ret.Add(Tuple.Create(order, info));
 			}
 			ret.Reverse();
