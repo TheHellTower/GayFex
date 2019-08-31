@@ -119,7 +119,7 @@ namespace Confuser.Core {
 						}
 					}
 					if (!string.IsNullOrEmpty(info.Settings)) {
-						if ((type == ApplyInfoType.ParentInfo && info.Condition != null && info.ApplyToMember) ||
+						if ((type == ApplyInfoType.ParentInfo && info.ApplyToMember) ||
 							type == ApplyInfoType.CurrentInfoOnly ||
 							(type == ApplyInfoType.CurrentInfoInherits && info.Condition == null && info.ApplyToMember)) {
 							parser.ParseProtectionString(settings, info.Settings);
@@ -192,6 +192,9 @@ namespace Confuser.Core {
 				}
 				if (strip)
 					item.CustomAttributes.RemoveAt(i);
+
+				if (!(item is ITypeDefOrRef))
+					info.ApplyToMembers = false;
 
 				ret.Add(Tuple.Create(order, info));
 			}
