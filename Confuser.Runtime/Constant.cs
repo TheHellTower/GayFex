@@ -41,7 +41,9 @@ namespace Confuser.Runtime {
 		}
 
 		static T Get<T>(uint id) {
-			if (Assembly.GetExecutingAssembly() == Assembly.GetCallingAssembly()) {
+			// op_equality is not available on .NET Framework 2.0 and older. To ensure compatibility,
+			// we'll be using equals.
+			if (Assembly.GetExecutingAssembly().Equals(Assembly.GetCallingAssembly())) {
 				id = (uint)Mutation.Placeholder((int)id);
 				uint t = id >> 30;
 
