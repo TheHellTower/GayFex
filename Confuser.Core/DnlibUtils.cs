@@ -433,6 +433,8 @@ namespace Confuser.Core {
 					eh.HandlerStart = newInstr;
 				if (eh.HandlerEnd == target)
 					eh.HandlerEnd = newInstr;
+				if (eh.FilterStart == target)
+					eh.FilterStart = newInstr;
 			}
 			foreach (Instruction instr in body.Instructions) {
 				if (instr.Operand == target)
