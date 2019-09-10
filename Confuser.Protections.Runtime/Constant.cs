@@ -42,7 +42,7 @@ namespace Confuser.Runtime {
 		}
 
 		internal static T Get<T>(uint id) {
-			if (Assembly.GetExecutingAssembly() == Assembly.GetCallingAssembly()) {
+			if (Assembly.GetExecutingAssembly().Equals(Assembly.GetCallingAssembly())) {
 				id = (uint)Mutation.Placeholder((int)id);
 				uint t = id >> 30;
 

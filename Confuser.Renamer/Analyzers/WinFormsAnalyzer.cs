@@ -130,7 +130,7 @@ namespace Confuser.Renamer.Analyzers {
 					continue;
 				}
 
-				var argumentIndex = 0;
+				var argumentIndex = 1;
 				var propertyName = ResolveNameInstruction(method, args, ref argumentIndex);
 				if (propertyName.OpCode.Code != Code.Ldstr) {
 					if (!erred)

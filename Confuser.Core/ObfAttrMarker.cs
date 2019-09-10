@@ -54,6 +54,9 @@ namespace Confuser.Core {
 				if (strip)
 					item.CustomAttributes.RemoveAt(i);
 
+				if (!(item is ITypeDefOrRef))
+					info.ApplyToMembers = false;
+
 				ret.Add((order, info));
 			}
 
@@ -357,7 +360,7 @@ namespace Confuser.Core {
 				else if (string.Equals(attr.FeatureName, "external module", StringComparison.OrdinalIgnoreCase)) {
 					if (!isMain)
 						throw new ArgumentException("Only main module can add external modules.");
-					var rawModule = new ProjectModule {Path = attr.FeatureValue}.LoadRaw(project.BaseDirectory);
+					var rawModule = new ProjectModule { Path = attr.FeatureValue }.LoadRaw(project.BaseDirectory);
 					extModules.Add(rawModule);
 				}
 				else {

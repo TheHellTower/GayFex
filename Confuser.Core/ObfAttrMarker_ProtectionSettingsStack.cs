@@ -106,16 +106,16 @@ namespace Confuser.Core {
 
 					if (info.Condition == null && info.Exclude) {
 						if (type == ApplyInfoType.CurrentInfoOnly ||
-						    (type == ApplyInfoType.CurrentInfoInherits && info.ApplyToMember)) {
+							(type == ApplyInfoType.CurrentInfoInherits && info.ApplyToMember)) {
 							settings.Clear();
 						}
 					}
 
 					if (!string.IsNullOrEmpty(info.Settings)) {
-						if ((type == ApplyInfoType.ParentInfo && info.Condition != null && info.ApplyToMember) ||
-						    type == ApplyInfoType.CurrentInfoOnly ||
-						    (type == ApplyInfoType.CurrentInfoInherits && info.Condition == null &&
-						     info.ApplyToMember)) {
+						if ((type == ApplyInfoType.ParentInfo && info.ApplyToMember) ||
+							type == ApplyInfoType.CurrentInfoOnly ||
+							(type == ApplyInfoType.CurrentInfoInherits && info.Condition == null &&
+							 info.ApplyToMember)) {
 							ObfAttrParser.ParseProtection(protections, settings, info.Settings, logger);
 						}
 					}

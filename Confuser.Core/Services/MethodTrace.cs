@@ -5,8 +5,7 @@ using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace Confuser.Core.Services
-{
+namespace Confuser.Core.Services {
 	/// <summary>
 	///     The trace result of a method.
 	/// </summary>
@@ -149,7 +148,7 @@ namespace Confuser.Core.Services
 		/// <exception cref="InvalidMethodException">The method body is invalid.</exception>
 		public int[] TraceArguments(Instruction instr) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt &&
-			    instr.OpCode.Code != Code.Newobj)
+				instr.OpCode.Code != Code.Newobj)
 				throw new ArgumentException("Invalid call instruction.", nameof(instr));
 
 			instr.CalculateStackUsage(pushes: out var push, out var pop); // pop is number of arguments
@@ -222,14 +221,12 @@ namespace Confuser.Core.Services
 							for (var i = 0; i < -diff; i++)
 								evalStack.Pop();
 						else
-							for (var i = 0; i < diff; i++) 
+							for (var i = 0; i < diff; i++)
 								evalStack.Push(index);
 					}
 
-					switch (currentInstr.Operand)
-					{
-						case Instruction instruction:
-						{
+					switch (currentInstr.Operand) {
+						case Instruction instruction: {
 							int targetIndex = OffsetToIndexMap(instruction.Offset);
 							if (currentInstr.OpCode.FlowControl == FlowControl.Branch)
 								index = targetIndex;
@@ -241,8 +238,7 @@ namespace Confuser.Core.Services
 							break;
 						}
 
-						case Instruction[] targetInstructions:
-						{
+						case Instruction[] targetInstructions: {
 							foreach (var targetInstr in targetInstructions)
 								working2.Enqueue((OffsetToIndexMap(targetInstr.Offset), new Stack<int>(evalStack)));
 							index++;
@@ -253,6 +249,16 @@ namespace Confuser.Core.Services
 							index++;
 							break;
 					}
+				}
+
+				if (evalStack.Count > argCount) {
+					// There are too many instructions on the eval stack.
+					// That means that there are instructions for following commands.
+					// To handle things properly we're only using the required amount on the top of the stack.
+					var tmp = evalStack.ToArray();
+					evalStack.Clear();
+					foreach (var idx in tmp.Take(argCount).Reverse())
+						evalStack.Push(idx);
 				}
 
 				if (evalStack.Count != argCount)

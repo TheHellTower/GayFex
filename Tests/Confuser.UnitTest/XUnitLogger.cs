@@ -7,17 +7,21 @@ using Xunit.Abstractions;
 
 namespace Confuser.UnitTest {
 	public sealed class XunitLogger : ILogger, ILoggerProvider {
-		private readonly ITestOutputHelper outputHelper;
-		private readonly StringBuilder errorMessages;
+		private readonly ITestOutputHelper _outputHelper;
+		private readonly StringBuilder _errorMessages;
+		private readonly Action<string> _outputAction;
 
-		public XunitLogger(ITestOutputHelper outputHelper) {
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
-			errorMessages = new StringBuilder();
+		public XunitLogger(ITestOutputHelper outputHelper) : this(outputHelper, null) { }
+
+		public XunitLogger(ITestOutputHelper outputHelper, Action<string> outputAction) {
+			_outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+			_errorMessages = new StringBuilder();
+			_outputAction = outputAction;
 		}
 
 		public void CheckErrors() {
-			if (errorMessages.Length > 0)
-				Assert.True(false, errorMessages.ToString());
+			if (_errorMessages.Length > 0)
+				Assert.True(false, _errorMessages.ToString());
 		}
 
 		public ILogger CreateLogger(string categoryName) => this;
@@ -50,10 +54,12 @@ namespace Confuser.UnitTest {
 			switch (logLevel) {
 				case LogLevel.Critical:
 				case LogLevel.Error:
-					errorMessages.AppendLine(result);
+					_errorMessages.AppendLine(result);
 					break;
 			}
-			outputHelper.WriteLine(result);
+
+			_outputAction?.Invoke(result);
+			_outputHelper.WriteLine(result);
 		}
 	}
 }

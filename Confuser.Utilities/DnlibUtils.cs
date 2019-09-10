@@ -516,6 +516,9 @@ namespace Confuser {
 
 				if (oldInstr.Equals(exHandler.HandlerStart))
 					exHandler.HandlerStart = newInstr;
+
+				if (oldInstr.Equals(exHandler.FilterStart))
+					exHandler.FilterStart = newInstr;
 			}
 
 			foreach (var currentScope in body.GetPdbScopes()) {

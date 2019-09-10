@@ -10,11 +10,9 @@ skip_commits:
   - license.md
 
 cache:
-  - packages
-  - '%USERPROFILE%\.nuget\packages' 
-  - '%LocalAppData%\NuGet\Cache'
-  - '%LocalAppData%\NuGet\v3-cache'
+  - packages -> packet.lock
   - paket-files -> packet.lock
+  - '%USERPROFILE%\.nuget\packages -> packet.lock, global.json'
 
 nuget:
   disable_publish_on_pr: true

@@ -116,7 +116,7 @@ namespace Confuser.Renamer.Analyzers {
 
 			var importer = new Importer(module, ImporterOptions.TryToUseTypeDefs);
 
-			IMethod target;
+			IMethodDefOrRef target;
 			if (baseSlot.MethodDefDeclType is GenericInstSig declType) {
 				var signature = SetupSignatureReferences(context, service, module, declType);
 				MemberRef targetRef = new MemberRefUser(module, baseMethodDef.Name, baseMethodDef.MethodSig, signature.ToTypeDefOrRef());
@@ -128,7 +128,7 @@ namespace Confuser.Renamer.Analyzers {
 			else {
 				target = baseMethodDef;
 				if (target.Module != module) {
-					target = importer.Import(baseMethodDef);
+					target = (IMethodDefOrRef)importer.Import(baseMethodDef);
 					if (target is MemberRef memberRef)
 						service.AddReference(context, baseMethodDef, new MemberRefReference(memberRef, baseMethodDef));
 				}
@@ -138,12 +138,27 @@ namespace Confuser.Renamer.Analyzers {
 			if (target is MemberRef methodRef)
 				AddImportReference(context, service, module, baseMethodDef, methodRef);
 
-			if (methodDef.Overrides.Any(impl =>
-									 new SigComparer().Equals(impl.MethodDeclaration.MethodSig, target.MethodSig) &&
-									 new SigComparer().Equals(impl.MethodDeclaration.DeclaringType.ResolveTypeDef(), target.DeclaringType.ResolveTypeDef())))
+			if (methodDef.Overrides.Any(impl => IsMatchingOverride(impl, target)))
 				return;
 
-			methodDef.Overrides.Add(new MethodOverride(methodDef, (IMethodDefOrRef)target));
+			methodDef.Overrides.Add(new MethodOverride(methodDef, target));
+		}
+
+		private static bool IsMatchingOverride(MethodOverride methodOverride, IMethodDefOrRef targetMethod) {
+			SigComparer comparer = default;
+
+			var targetDeclTypeDef = targetMethod.DeclaringType.ResolveTypeDef();
+			var overrideDeclTypeDef = methodOverride.MethodDeclaration.DeclaringType.ResolveTypeDef();
+			if (!comparer.Equals(targetDeclTypeDef, overrideDeclTypeDef))
+				return false;
+
+			var targetMethodSig = targetMethod.MethodSig;
+			var overrideMethodSig = methodOverride.MethodDeclaration.MethodSig;
+			if (methodOverride.MethodDeclaration.DeclaringType is TypeSpec spec && spec.TypeSig is GenericInstSig genericInstSig) {
+				overrideMethodSig = GenericArgumentResolver.Resolve(overrideMethodSig, genericInstSig.GenericArguments);
+			}
+
+			return comparer.Equals(targetMethodSig, overrideMethodSig);
 		}
 
 		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,

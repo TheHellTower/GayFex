@@ -9,12 +9,6 @@
     <MyType>Custom</MyType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net20'">
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-    <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
-
   <ItemGroup>
     <None Update="UserControl1.xaml">
       <Generator>MSBuild:Compile</Generator>

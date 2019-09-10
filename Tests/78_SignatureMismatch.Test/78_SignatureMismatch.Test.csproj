@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RootNamespace>SignatureMismatch.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
+    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
+    <ProjectReference Include="..\78_SignatureMismatch\78_SignatureMismatch.csproj" />
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>
