@@ -129,4 +129,7 @@
     <value>Unmatched parenthesis.
 {0}</value>
   </data>
+  <data name="ResourceAnalyzer_Analyze_CouldNotFindResourceType" xml:space="preserve">
+    <value>Could not find backing code for resource type '{0}', protections may not apply to that type.</value>
+  </data>
 </root>
