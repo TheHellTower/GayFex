@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
     <ProjectReference Include="..\..\dnlib\src\dnlib.csproj" />
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
 
 </Project>

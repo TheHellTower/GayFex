@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
@@ -19,13 +20,15 @@ namespace Confuser.Renamer.Test.Analyzers {
 			Assert.NotNull(method2);
 		}
 
+		[SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "It's not a test!")]
 		public void TestReferenceField1() {
 			var field1 = typeof(ReflectionAnalyzerTest).GetField(nameof(_referenceField));
 			Assert.Null(field1);
 			var field2 = typeof(ReflectionAnalyzerTest).GetField(nameof(_referenceField), BindingFlags.NonPublic | BindingFlags.Instance);
 			Assert.NotNull(field2);
 		}
-
+		
+		[SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "It's not a test!")]
 		public void TestReferenceProperty1() {
 			var prop1 = typeof(ReflectionAnalyzerTest).GetProperty(nameof(ReferenceProperty));
 			Assert.Null(prop1);
@@ -37,7 +40,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 		public void TestReferenceMethod1Test() {
 			TestReferenceMethod1();
 
-			var moduleDef = LoadTestModuleDef();
+			var moduleDef = Helpers.LoadTestModuleDef();
 			var thisTypeDef = moduleDef.Find("Confuser.Renamer.Test.Analyzers.ReflectionAnalyzerTest", false);
 			var refMethod = thisTypeDef.FindMethod(nameof(TestReferenceMethod1));
 
@@ -56,7 +59,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 		public void TestReferenceField1Test() {
 			TestReferenceField1();
 
-			var moduleDef = LoadTestModuleDef();
+			var moduleDef = Helpers.LoadTestModuleDef();
 			var thisTypeDef = moduleDef.Find("Confuser.Renamer.Test.Analyzers.ReflectionAnalyzerTest", false);
 			var refMethod = thisTypeDef.FindMethod(nameof(TestReferenceField1));
 			var refField = thisTypeDef.FindField(nameof(_referenceField));
@@ -76,7 +79,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 		public void TestReferenceProperty1Test() {
 			TestReferenceProperty1();
 
-			var moduleDef = LoadTestModuleDef();
+			var moduleDef = Helpers.LoadTestModuleDef();
 			var thisTypeDef = moduleDef.Find("Confuser.Renamer.Test.Analyzers.ReflectionAnalyzerTest", false);
 			var refMethod = thisTypeDef.FindMethod(nameof(TestReferenceProperty1));
 			var refProp = thisTypeDef.FindProperty(nameof(ReferenceProperty));
@@ -90,15 +93,6 @@ namespace Confuser.Renamer.Test.Analyzers {
 			analyzer.Analyze(nameService, traceService, new List<ModuleDef>() { moduleDef }, refMethod);
 
 			Mock.Get(nameService).VerifyAll();
-		}
-
-		private static ModuleDef LoadTestModuleDef() {
-			var asmResolver = new AssemblyResolver { EnableTypeDefCache = true };
-			asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
-			var options = new ModuleCreationOptions(asmResolver.DefaultModuleContext) {
-				TryToLoadPdbFromDisk = false
-			};
-			return ModuleDefMD.Load(typeof(VTableTest).Module, options);
 		}
 	}
 }

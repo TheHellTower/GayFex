@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using dnlib.DotNet;
+using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -16,13 +16,6 @@ namespace Confuser.Renamer.Test {
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/34")]
 		public void DuplicatedMethodSignatureTest() {
-			var asmResolver = new AssemblyResolver();
-			asmResolver.EnableTypeDefCache = true;
-			asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
-			var options = new ModuleCreationOptions(asmResolver.DefaultModuleContext) {
-				TryToLoadPdbFromDisk = false
-			};
-
 			var refClass = new VTableTestRefClass();
 			Assert.Equal(1, refClass.TestMethod(new List<string>()));
 			Assert.Equal(2, refClass.TestMethod2(new List<string>()));
@@ -33,12 +26,11 @@ namespace Confuser.Renamer.Test {
 			int CallGenericFunction<T>(VTableTestRefInterface<T> refIfc) => refIfc.TestMethod(new List<T>());
 			Assert.Equal(1, CallGenericFunction(refInterface));
 
-			var moduleDef = ModuleDefMD.Load(typeof(VTableTest).Module, options);
+			var moduleDef = Helpers.LoadTestModuleDef();
 			var refClassTypeDef = moduleDef.Find("Confuser.Renamer.Test.VTableTestRefClass", false);
-
-
+			
 			Assert.NotNull(refClassTypeDef);
-			var vTableStorage = new VTableStorage(new XUnitLogger(outputHelper));
+			var vTableStorage = new VTableStorage(new XunitLogger(outputHelper));
 			var refClassVTable = vTableStorage.GetVTable(refClassTypeDef);
 			Assert.NotNull(refClassVTable);
 		}
