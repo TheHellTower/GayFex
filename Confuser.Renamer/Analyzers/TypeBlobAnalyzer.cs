@@ -72,21 +72,48 @@ namespace Confuser.Renamer.Analyzers {
 				if (!modules.Contains((ModuleDefMD)attrType.Module))
 					continue;
 
-				foreach (CANamedArgument fieldArg in attr.Fields) {
-					FieldDef field = attrType.FindField(fieldArg.Name, new FieldSig(fieldArg.Type));
-					if (field == null)
-						logger.WarnFormat("Failed to resolve CA field '{0}::{1} : {2}'.", attrType, fieldArg.Name, fieldArg.Type);
+				foreach (var arg in attr.NamedArguments) {
+					var memberDef = FindArgumentMemberDef(arg, attrType);
+					if (memberDef == null)
+						logger.WarnFormat(
+							arg.IsField ? "Failed to resolve CA field '{0}::{1} : {2}'." : "Failed to resolve CA property '{0}::{1} : {2}'.",
+							attrType, arg.Name, arg.Type);
 					else
-						service.AddReference(field, new CAMemberReference(fieldArg, field));
-				}
-				foreach (CANamedArgument propertyArg in attr.Properties) {
-					PropertyDef property = attrType.FindProperty(propertyArg.Name, new PropertySig(true, propertyArg.Type));
-					if (property == null)
-						logger.WarnFormat("Failed to resolve CA property '{0}::{1} : {2}'.", attrType, propertyArg.Name, propertyArg.Type);
-					else
-						service.AddReference(property, new CAMemberReference(propertyArg, property));
+						service.AddReference(memberDef, new CAMemberReference(arg, memberDef));
 				}
 			}
+		}
+
+		private static IMemberDef FindArgumentMemberDef(CANamedArgument arg, TypeDef attrType) {
+			if (arg.IsField)
+				return FindArgumentMemberDef(arg.Name, new FieldSig(arg.Type), attrType);
+
+			if (arg.IsProperty)
+				return FindArgumentMemberDef(arg.Name, new PropertySig(true, arg.Type), attrType);
+
+			throw new UnreachableException();
+		}
+
+		private static IMemberDef FindArgumentMemberDef(UTF8String name, FieldSig fieldSig, TypeDef attrType) {
+			while (attrType != null) {
+				var field = attrType.FindField(name, fieldSig);
+
+				if (field != null) return field;
+				attrType = attrType.DeclaringType;
+			}
+
+			return null;
+		}
+
+		private static IMemberDef FindArgumentMemberDef(UTF8String name, CallingConventionSig propertySig, TypeDef attrType) {
+			while (attrType != null) {
+				var property = attrType.FindProperty(name, propertySig);
+
+				if (property != null) return property;
+				attrType = attrType.BaseType.ResolveTypeDef();
+			}
+
+			return null;
 		}
 
 		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
