@@ -20,6 +20,8 @@ namespace Confuser.Renamer.Analyzers {
 		}
 
 		public void Analyze(INameService nameService, ITraceService traceService, IReadOnlyList<ModuleDef> moduleDefs, MethodDef method) {
+			if (!method.HasBody) return;
+
 			MethodTrace methodTrace = null;
 			MethodTrace GetMethodTrace() {
 				if (methodTrace == null)
