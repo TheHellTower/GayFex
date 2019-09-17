@@ -1,15 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
+using Confuser.UnitTest;
 using dnlib.DotNet;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
+using ILogger = Confuser.Core.ILogger;
 
 namespace Confuser.Renamer.Test.Analyzers {
 	public sealed class ReflectionAnalyzerTest {
 		private string _referenceField;
+		private readonly ITestOutputHelper _outputHelper;
+
+		public ReflectionAnalyzerTest(ITestOutputHelper outputHelper) =>
+			_outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+
+		private ILogger CreateLogger() => new XunitLogger(_outputHelper);
 
 		private string ReferenceProperty { get; }
 
@@ -18,6 +28,8 @@ namespace Confuser.Renamer.Test.Analyzers {
 			Assert.Null(method1);
 			var method2 = typeof(ReflectionAnalyzerTest).GetMethod(nameof(TestReferenceMethod1), BindingFlags.NonPublic | BindingFlags.Instance);
 			Assert.NotNull(method2);
+			var method3 = typeof(ReflectionAnalyzerTest).GetMethod(nameof(TestReferenceMethod1), BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, new Type[] { typeof(string) }, null);
+			Assert.Null(method3);
 		}
 
 		[SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "It's not a test!")]
@@ -50,7 +62,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 
 			var traceService = new TraceService();
 			var analyzer = new ReflectionAnalyzer();
-			analyzer.Analyze(nameService, traceService, new List<ModuleDef>() { moduleDef }, refMethod);
+			analyzer.Analyze(nameService, traceService, new List<ModuleDef>() { moduleDef }, CreateLogger(), refMethod);
 
 			Mock.Get(nameService).VerifyAll();
 		}
@@ -70,7 +82,8 @@ namespace Confuser.Renamer.Test.Analyzers {
 
 			var traceService = new TraceService();
 			var analyzer = new ReflectionAnalyzer();
-			analyzer.Analyze(nameService, traceService, new List<ModuleDef>() { moduleDef }, refMethod);
+
+			analyzer.Analyze(nameService, traceService, new List<ModuleDef>() { moduleDef }, CreateLogger(), refMethod);
 
 			Mock.Get(nameService).VerifyAll();
 		}
@@ -90,7 +103,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 
 			var traceService = new TraceService();
 			var analyzer = new ReflectionAnalyzer();
-			analyzer.Analyze(nameService, traceService, new List<ModuleDef>() { moduleDef }, refMethod);
+			analyzer.Analyze(nameService, traceService, new List<ModuleDef>() { moduleDef }, CreateLogger(), refMethod);
 
 			Mock.Get(nameService).VerifyAll();
 		}

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Services;
+using Confuser.Renamer.Properties;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using ILogger = Confuser.Core.ILogger;
 
 namespace Confuser.Renamer.Analyzers {
 	/// <summary>
@@ -16,10 +16,10 @@ namespace Confuser.Renamer.Analyzers {
 		void IRenamer.Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
 			if (!(def is MethodDef method) || !method.HasBody) return;
 
-			Analyze(service, context.Registry.GetService<ITraceService>(), context.Modules.Cast<ModuleDef>().ToArray(), method);
+			Analyze(service, context.Registry.GetService<ITraceService>(), context.Modules.Cast<ModuleDef>().ToArray(), context.Logger, method);
 		}
 
-		public void Analyze(INameService nameService, ITraceService traceService, IReadOnlyList<ModuleDef> moduleDefs, MethodDef method) {
+		public void Analyze(INameService nameService, ITraceService traceService, IReadOnlyList<ModuleDef> moduleDefs, ILogger logger, MethodDef method) {
 			if (!method.HasBody) return;
 
 			MethodTrace methodTrace = null;
@@ -47,7 +47,10 @@ namespace Confuser.Renamer.Analyzers {
 						if (getMember != null) {
 							var trace = GetMethodTrace();
 							var arguments = trace.TraceArguments(instr);
-							if (arguments.Length >= 2) {
+							if (arguments == null) {
+								logger.WarnFormat(Resources.ReflectionAnalyzer_Analyze_TracingArgumentsFailed, calledMethod.FullName, method.FullName);
+							} 
+							else if (arguments.Length >= 2) {
 								var types = GetReferencedTypes(method.Body.Instructions[arguments[0]], method, trace);
 								var names = GetReferencedNames(method.Body.Instructions[arguments[1]]);
 
