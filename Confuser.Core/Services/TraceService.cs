@@ -285,13 +285,13 @@ namespace Confuser.Core.Services {
 						if (currentInstr.OpCode.FlowControl == FlowControl.Branch)
 							index = targetIndex;
 						else {
-							working2.Enqueue(Tuple.Create(targetIndex, new Stack<int>(evalStack)));
+							working2.Enqueue(Tuple.Create(targetIndex, CopyStack(evalStack)));
 							index++;
 						}
 					}
 					else if (currentInstr.Operand is Instruction[]) {
 						foreach (Instruction targetInstr in (Instruction[])currentInstr.Operand)
-							working2.Enqueue(Tuple.Create(offset2index[targetInstr.Offset], new Stack<int>(evalStack)));
+							working2.Enqueue(Tuple.Create(offset2index[targetInstr.Offset], CopyStack(evalStack)));
 						index++;
 					}
 					else
@@ -320,6 +320,14 @@ namespace Confuser.Core.Services {
 
 			Array.Reverse(ret);
 			return ret;
+		}
+
+		public static Stack<T> CopyStack<T>(Stack<T> original)
+		{
+			var arr = new T[original.Count];
+			original.CopyTo(arr, 0);
+			Array.Reverse(arr);
+			return new Stack<T>(arr);
 		}
 	}
 }

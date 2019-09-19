@@ -71,6 +71,15 @@ namespace Confuser.Renamer.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Tracing arguments for {0} call in {1} failed. What ever member is referenced here by reflection won&apos;t be properly handled by the name obfuscation. ähnelt.
+        /// </summary>
+        internal static string ReflectionAnalyzer_Analyze_TracingArgumentsFailed {
+            get {
+                return ResourceManager.GetString("ReflectionAnalyzer_Analyze_TracingArgumentsFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Could not find backing code for resource type &apos;{0}&apos;, protections may not apply to that type. ähnelt.
         /// </summary>
         internal static string ResourceAnalyzer_Analyze_CouldNotFindResourceType {

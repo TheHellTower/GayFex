@@ -59,9 +59,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualBasicRenamingResx.Tes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer.Test", "Tests\Confuser.Renamer.Test\Confuser.Renamer.Test.csproj", "{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "78_SignatureMismatch", "Tests\78_SignatureMismatch\78_SignatureMismatch.csproj", "{CD257C0A-9071-42B4-A2FF-180622DBCA96}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "78_SignatureMismatch", "Tests\78_SignatureMismatch\78_SignatureMismatch.csproj", "{CD257C0A-9071-42B4-A2FF-180622DBCA96}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "78_SignatureMismatch.Test", "Tests\78_SignatureMismatch.Test\78_SignatureMismatch.Test.csproj", "{8489A9CE-AB1A-4D8D-8824-D9E18B9945FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Core.Test", "Tests\Confuser.Core.Test\Confuser.Core.Test.csproj", "{055BC73F-FCAE-4361-B035-2E156A101EA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -161,6 +163,10 @@ Global
 		{8489A9CE-AB1A-4D8D-8824-D9E18B9945FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8489A9CE-AB1A-4D8D-8824-D9E18B9945FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8489A9CE-AB1A-4D8D-8824-D9E18B9945FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{055BC73F-FCAE-4361-B035-2E156A101EA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{055BC73F-FCAE-4361-B035-2E156A101EA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{055BC73F-FCAE-4361-B035-2E156A101EA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{055BC73F-FCAE-4361-B035-2E156A101EA9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -180,6 +186,7 @@ Global
 		{A1F54816-3FBA-4A71-9D26-D31C6BE9CF01} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{CD257C0A-9071-42B4-A2FF-180622DBCA96} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{8489A9CE-AB1A-4D8D-8824-D9E18B9945FE} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{055BC73F-FCAE-4361-B035-2E156A101EA9} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}
