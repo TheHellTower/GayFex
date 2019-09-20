@@ -10,6 +10,8 @@ namespace SignatureMismatch {
 			Console.WriteLine("Dictionary created");
 			Console.WriteLine($"Dictionary count: {dict.Count:d}");
 
+			var file = new TextFile("filename", "text");
+
 			foreach (var kvp in dict) 
 				Console.WriteLine($"[{kvp.Key}] = {kvp.Value}");
 			
