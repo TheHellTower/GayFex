@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project>
   <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)\Confuser.MSBuild.Tasks.targets" />
+  
+  <PropertyGroup>
     <ConfuserKeyFile Condition="'$(ConfuserKeyFile)' == ''">$(AssemblyOriginatorKeyFile)</ConfuserKeyFile>
     <ConfuserIntermediateOutputPath Condition="'$(ConfuserIntermediateOutputPath)' == ''">$(IntermediateOutputPath)confused\</ConfuserIntermediateOutputPath>
     <ConfuserReplaceOutput Condition="'$(ConfuserReplaceOutput)' == ''">false</ConfuserReplaceOutput>
@@ -20,7 +26,6 @@
       CopyConfusedFilesToOutputDirectory;      
     </ConfuserExDependsOn>
   </PropertyGroup>
-
 
   <Target Name="ConfuserEx"
           DependsOnTargets="$(ConfuserExDependsOn)"
@@ -60,7 +65,9 @@
           Outputs="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename)%(Extension)');@(IntermediateSatelliteAssembliesWithTargetPath->'$(ConfuserIntermediateOutputPath)%(TargetPath)')">
     <Confuser.MSBuild.Tasks.ConfuseTask
       Project="@(IntermediateAssembly->'$(IntermediateOutputPath)%(Filename).crproj')"
-      OutputAssembly="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename)%(Extension)')" />
+      OutputAssembly="@(IntermediateAssembly->'$(ConfuserIntermediateOutputPath)%(Filename)%(Extension)')">
+      <Output TaskParameter="ConfusedFiles" ItemName="FileWrites"/>
+    </Confuser.MSBuild.Tasks.ConfuseTask>
   </Target>
 
   <Target Name="_ReplaceOutputWithConfusedAssemblies"
