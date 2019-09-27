@@ -33,7 +33,7 @@
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" Visibility="{Binding IsChecked, ElementName=optPass, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
             <Label DockPanel.Dock="Left" VerticalAlignment="Center" HorizontalAlignment="Right">Password:</Label>
-            <TextBox x:Name="PassBox" Grid.Row="1" Grid.Column="1" Margin="5" VerticalContentAlignment="Center"/>
+            <PasswordBox x:Name="PassBox" Margin="5" VerticalContentAlignment="Center"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1">
             <Button DockPanel.Dock="Right" Margin="5" Padding="10,0,10,0" Click="Decode_Click">Decode!</Button>
