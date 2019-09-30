@@ -11,10 +11,10 @@ You can review all changes done here: [Changes in v1.2.0](https://github.com/mka
 <div class="well well-lg">
   <div class="row">
     <div class="col-md-6 text-center">
-      <a class="btn btn-primary btn-lg" role="button" href="https://github.com/mkaring/ConfuserEx/releases/download/v1.1.0/ConfuserEx.zip">Download binaries</a>
+      <a class="btn btn-primary btn-lg" role="button" href="https://github.com/mkaring/ConfuserEx/releases/download/v1.2.0/ConfuserEx.zip">Download binaries</a>
     </div>
     <div class="col-md-6 text-center">
-      <a class="btn btn-primary btn-lg" role="button" href="https://github.com/mkaring/ConfuserEx/archive/v1.1.0.zip">Download source code</a>
+      <a class="btn btn-primary btn-lg" role="button" href="https://github.com/mkaring/ConfuserEx/archive/v1.2.0.zip">Download source code</a>
     </div>
   </div>
 </div>
