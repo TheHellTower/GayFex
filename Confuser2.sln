@@ -33,6 +33,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		global.json = global.json
 		LICENSE.md = LICENSE.md
 		README.md = README.md
+		version.json = version.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.UnitTest", "Tests\Confuser.UnitTest\Confuser.UnitTest.csproj", "{73226E13-1701-424E-A4F2-3E4D575A1DD0}"
@@ -63,7 +64,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "78_SignatureMismatch", "Tes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "78_SignatureMismatch.Test", "Tests\78_SignatureMismatch.Test\78_SignatureMismatch.Test.csproj", "{8489A9CE-AB1A-4D8D-8824-D9E18B9945FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Core.Test", "Tests\Confuser.Core.Test\Confuser.Core.Test.csproj", "{055BC73F-FCAE-4361-B035-2E156A101EA9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core.Test", "Tests\Confuser.Core.Test\Confuser.Core.Test.csproj", "{055BC73F-FCAE-4361-B035-2E156A101EA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

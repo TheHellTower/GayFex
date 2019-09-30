@@ -1,21 +1,21 @@
 {
-  "version": "1.3.0-alpha.{height}",
-  "nugetPackageVersion": {
-    "semVer": 1
-  },
-  "semVer1NumericIdentifierPadding": 4,
-  "publicReleaseRefSpec": [
-    "^refs/heads/release",
-    "^refs/tags/v\\d+\\.\\d+(?:\\.\\d+)?"
-  ],
-  "cloudBuild": {
-    "setVersionVariables": true,
-    "buildNumber": {
-      "enabled": false,
-      "includeCommitId": {
-        "when": "nonPublicReleaseOnly",
-        "where": "buildMetadata"
-      }
-    }
-  }
+	"version": "1.3.0+{height}",
+	"nugetPackageVersion": {
+		"semVer": 1
+	},
+	"semVer1NumericIdentifierPadding": 4,
+	"publicReleaseRefSpec": [
+		"^refs/heads/master$",
+		"^refs/tags/v\\d+\\.\\d+"
+	],
+	"cloudBuild": {
+		"setVersionVariables": true,
+		"buildNumber": {
+			"enabled": false,
+			"includeCommitId": {
+				"when": "nonPublicReleaseOnly",
+				"where": "buildMetadata"
+			}
+		}
+	}
 }
