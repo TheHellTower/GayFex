@@ -86,4 +86,5 @@ You could also contribute to the project by creating pull requests and [reportin
 Donation
 ---------
 If you find ConfuserEx 2 helpful and want to donate to support my work on the project you can support me on
-[liberapay](https://liberapay.com/mkaring/) or you can [buy me a coffee](http://buymeacoff.ee/fFUnXMCdW) :coffee:.
+[open collective](https://opencollective.com/confuserex), [liberapay](https://liberapay.com/mkaring/) or 
+you can [buy me a coffee](http://buymeacoff.ee/fFUnXMCdW).
