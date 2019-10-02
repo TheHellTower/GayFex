@@ -7,63 +7,67 @@ using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.Analyzers {
-	internal class VTableAnalyzer : IRenamer {
-		public void Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters,
-			IDnlibDef def) {
-			VTable vTbl;
+	public class VTableAnalyzer : IRenamer {
+		void IRenamer.Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+			if (service is NameService nameService) {
+				switch (def) {
+					case TypeDef typeDef:
+						Analyze(context, nameService, typeDef);
+						break;
+					case MethodDef methodDef:
+						Analyze(context, nameService, methodDef);
+						break;
+				}
+			}
+		}
 
-			var nameService = (NameService)service;
+		internal static void Analyze(IConfuserContext context, NameService service, TypeDef type) {
+			if (type.IsInterface)
+				return;
 
-			if (def is TypeDef type) {
-				if (type.IsInterface)
-					return;
-
-				vTbl = nameService.GetVTables()[type];
-				foreach (var ifaceVTbl in vTbl.InterfaceSlots.Values) {
-					foreach (var slot in ifaceVTbl) {
-						if (slot.Overrides == null)
-							continue;
-						Debug.Assert(slot.Overrides.MethodDef.DeclaringType.IsInterface);
-						// A method in base type can implements an interface method for a
-						// derived type. If the base type/interface is not in our control, we should
-						// not rename the methods.
-						bool baseUnderCtrl =
-							context.Modules.Contains(slot.MethodDef.DeclaringType.Module as ModuleDefMD);
-						bool ifaceUnderCtrl =
-							context.Modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
-						if ((!baseUnderCtrl && ifaceUnderCtrl) || !service.CanRename(context, slot.MethodDef)) {
-							service.SetCanRename(context, slot.Overrides.MethodDef, false);
-						}
-						else if (baseUnderCtrl && !ifaceUnderCtrl ||
-						         !service.CanRename(context, slot.Overrides.MethodDef)) {
-							service.SetCanRename(context, slot.MethodDef, false);
-						}
+			var vTbl = service.GetVTables()[type];
+			foreach (var ifaceVTbl in vTbl.InterfaceSlots.Values) {
+				foreach (var slot in ifaceVTbl) {
+					if (slot.Overrides == null)
+						continue;
+					Debug.Assert(slot.Overrides.MethodDef.DeclaringType.IsInterface);
+					// A method in base type can implements an interface method for a
+					// derived type. If the base type/interface is not in our control, we should
+					// not rename the methods.
+					bool baseUnderCtrl = context.Modules.Contains(slot.MethodDef.DeclaringType.Module as ModuleDefMD);
+					bool ifaceUnderCtrl = context.Modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
+					if ((!baseUnderCtrl && ifaceUnderCtrl) || !service.CanRename(context, slot.MethodDef)) {
+						service.SetCanRename(context, slot.Overrides.MethodDef, false);
+					}
+					else if (baseUnderCtrl && !ifaceUnderCtrl || !service.CanRename(context, slot.Overrides.MethodDef)) {
+						service.SetCanRename(context, slot.MethodDef, false);
 					}
 				}
 			}
-			else if (def is MethodDef method) {
-				if (!method.IsVirtual)
-					return;
+		}
 
-				vTbl = nameService.GetVTables()[method.DeclaringType];
-				var sig = VTableSignature.FromMethod(method);
-				var slots = vTbl.FindSlots(method);
+		internal static void Analyze(IConfuserContext context, NameService service, MethodDef method) {
+			if (!method.IsVirtual)
+				return;
 
-				if (!method.IsAbstract) {
-					foreach (var slot in slots) {
-						if (slot.Overrides == null)
-							continue;
+			var vTbl = service.GetVTables()[method.DeclaringType];
+			VTableSignature sig = VTableSignature.FromMethod(method);
+			var slots = vTbl.FindSlots(method);
 
-						SetupOverwriteReferences(context, service, slot, method.Module);
-					}
+			if (!method.IsAbstract) {
+				foreach (var slot in slots) {
+					if (slot.Overrides == null)
+						continue;
+
+					SetupOverwriteReferences(context, service, slot, method.Module);
 				}
-				else {
-					foreach (var slot in slots) {
-						if (slot.Overrides == null)
-							continue;
-						service.SetCanRename(context, method, false);
-						service.SetCanRename(context, slot.Overrides.MethodDef, false);
-					}
+			}
+			else {
+				foreach (var slot in slots) {
+					if (slot.Overrides == null)
+						continue;
+					service.SetCanRename(context, method, false);
+					service.SetCanRename(context, slot.Overrides.MethodDef, false);
 				}
 			}
 		}
@@ -134,7 +138,7 @@ namespace Confuser.Renamer.Analyzers {
 				}
 			}
 
-			target.MethodSig = importer.Import(methodDef.MethodSig);
+			target.MethodSig = importer.Import(target.MethodSig);
 			if (target is MemberRef methodRef)
 				AddImportReference(context, service, module, baseMethodDef, methodRef);
 

@@ -66,7 +66,7 @@ namespace ConfuserEx {
 			if (optSym.IsChecked ?? true)
 				stackTrace.Text = mapSymbolMatcher.Replace(trace, DecodeSymbolMap);
 			else {
-				renamer = new ReversibleRenamer(PassBox.Text);
+				renamer = new ReversibleRenamer(PassBox.Password);
 				stackTrace.Text = passSymbolMatcher.Replace(trace, DecodeSymbolPass);
 			}
 		}

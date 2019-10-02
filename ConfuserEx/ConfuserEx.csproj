@@ -242,6 +242,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Import Project="..\.paket\paket.targets" />
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.7.2'">
       <ItemGroup>
@@ -757,5 +758,4 @@
     </When>
   </Choose>
   <Import Project="..\packages\Nerdbank.GitVersioning\build\Nerdbank.GitVersioning.targets" Condition="Exists('..\packages\Nerdbank.GitVersioning\build\Nerdbank.GitVersioning.targets')" Label="Paket" />
-  <Import Project="..\.paket\paket.targets" />
 </Project>

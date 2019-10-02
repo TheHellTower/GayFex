@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 using Confuser.Core;
+using Confuser.Renamer.Properties;
 using Confuser.Renamer.References;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
@@ -39,7 +40,7 @@ namespace Confuser.Renamer.Analyzers {
 					string typeName = match.Groups[1].Value;
 					TypeDef type = mainModule.FindReflection(typeName);
 					if (type == null) {
-						logger.LogWarning("Could not find resource type '{0}'.", typeName);
+						logger.LogWarning(Resources.ResourceAnalyzer_Analyze_CouldNotFindResourceType, typeName);
 						continue;
 					}
 
@@ -71,7 +72,7 @@ namespace Confuser.Renamer.Analyzers {
 					}
 
 					if (type == null) {
-						logger.LogWarning("Could not find resource type '{0}'.", typeName);
+						logger.LogWarning(Resources.ResourceAnalyzer_Analyze_CouldNotFindResourceType, typeName);
 						continue;
 					}
 

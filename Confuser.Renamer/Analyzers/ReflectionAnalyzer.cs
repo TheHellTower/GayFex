@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Services;
+using Confuser.Renamer.Properties;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Renamer.Analyzers {
 	/// <summary>
@@ -18,10 +20,12 @@ namespace Confuser.Renamer.Analyzers {
 		void IRenamer.Analyze(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
 			if (!(def is MethodDef method) || !method.HasBody) return;
 
-			Analyze(context, service, context.Registry.GetRequiredService<ITraceService>(), context.Modules.Cast<ModuleDef>().ToArray(), method);
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
+
+			Analyze(context, service, context.Registry.GetRequiredService<ITraceService>(), logger, method);
 		}
 
-		internal void Analyze(IConfuserContext context, INameService nameService, ITraceService traceService, IReadOnlyList<ModuleDef> moduleDefs, MethodDef method) {
+		internal void Analyze(IConfuserContext context, INameService nameService, ITraceService traceService, ILogger logger, MethodDef method) {
 			IMethodTrace methodTrace = null;
 			IMethodTrace GetMethodTrace() {
 				return methodTrace ?? (methodTrace = traceService.Trace(method));
@@ -45,12 +49,15 @@ namespace Confuser.Renamer.Analyzers {
 						if (getMember != null) {
 							var trace = GetMethodTrace();
 							var arguments = trace.TraceArguments(instr);
-							if (arguments.Length >= 2) {
+							if (arguments == null) {
+								logger.LogWarning(Resources.ReflectionAnalyzer_Analyze_TracingArgumentsFailed, calledMethod.FullName, method.FullName);
+							} 
+							else if (arguments.Length >= 2) {
 								var types = GetReferencedTypes(method.Body.Instructions[arguments[0]], method, trace);
 								var names = GetReferencedNames(method.Body.Instructions[arguments[1]]);
 
 								if (!types.Any())
-									types = moduleDefs.SelectMany(m => m.GetTypes()).ToArray();
+									types = ImmutableList.CreateRange(context.Modules.SelectMany(m => m.GetTypes()));
 
 								foreach (var possibleMethod in types.SelectMany(getMember).Where(m => names.Contains(m.Name))) {
 									nameService.SetCanRename(context, possibleMethod, false);

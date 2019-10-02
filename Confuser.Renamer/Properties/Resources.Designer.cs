@@ -19,7 +19,7 @@ namespace Confuser.Renamer.Properties {
     // -Klasse über ein Tool wie ResGen oder Visual Studio automatisch generiert.
     // Um einen Member hinzuzufügen oder zu entfernen, bearbeiten Sie die .ResX-Datei und führen dann ResGen
     // mit der /str-Option erneut aus, oder Sie erstellen Ihr VS-Projekt neu.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -67,6 +67,24 @@ namespace Confuser.Renamer.Properties {
         internal static string InvalidPathSyntax {
             get {
                 return ResourceManager.GetString("InvalidPathSyntax", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Tracing arguments for {0} call in {1} failed. What ever member is referenced here by reflection won&apos;t be properly handled by the name obfuscation. ähnelt.
+        /// </summary>
+        internal static string ReflectionAnalyzer_Analyze_TracingArgumentsFailed {
+            get {
+                return ResourceManager.GetString("ReflectionAnalyzer_Analyze_TracingArgumentsFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Could not find backing code for resource type &apos;{0}&apos;, protections may not apply to that type. ähnelt.
+        /// </summary>
+        internal static string ResourceAnalyzer_Analyze_CouldNotFindResourceType {
+            get {
+                return ResourceManager.GetString("ResourceAnalyzer_Analyze_CouldNotFindResourceType", resourceCulture);
             }
         }
         

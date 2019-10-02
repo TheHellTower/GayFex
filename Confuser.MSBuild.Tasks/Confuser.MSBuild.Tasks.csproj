@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
@@ -28,13 +28,16 @@
     <Content Include="build\*" PackagePath="build" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="build\Confuser.MSBuild.targets" />
-  </ItemGroup>
+  <PropertyGroup>
+    <IncludeConfuserDependencyFilesDependsOn>
+      IncludeConfuserDependencyFilesFramework;
+      IncludeConfuserDependencyFilesStandard
+    </IncludeConfuserDependencyFilesDependsOn>
+  </PropertyGroup>
 
-  <Target Name="IncludeConfuserDependencyFiles" DependsOnTargets="IncludeConfuserFrameworkDependencyFiles;IncludeConfuserStandardDependencyFiles" />
+  <Target Name="IncludeConfuserDependencyFiles" DependsOnTargets="$(IncludeConfuserDependencyFilesDependsOn)" />
 
-  <Target Name="IncludeConfuserFrameworkDependencyFiles" Condition="'$(TargetFramework)' == 'net461'">
+  <Target Name="IncludeConfuserDependencyFilesFramework" Condition="'$(TargetFramework)' == 'net461'">
     <ItemGroup>
       <ConfuserNetFrameworkDependencies Include="$(BaseOutputPath)\$(Configuration)\net461\*.dll" />
       <ConfuserNetFrameworkDependencies Include="$(BaseOutputPath)\$(Configuration)\net461\*.pdb" />
@@ -43,8 +46,8 @@
       <Output TaskParameter="Include" ItemName="TfmSpecificPackageFile" />
     </CreateItem>
   </Target>
-  
-  <Target Name="IncludeConfuserStandardDependencyFiles" Condition="'$(TargetFramework)' == 'netstandard2.0'">
+
+  <Target Name="IncludeConfuserDependencyFilesStandard" Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <ItemGroup>
       <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.dll" />
       <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.pdb" />

@@ -9,11 +9,12 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.MSBuild.Tasks {
 	internal sealed class MSBuildLogger : ILogger, ILoggerProvider {
-		private readonly TaskLoggingHelper loggingHelper;
+		private readonly TaskLoggingHelper _loggingHelper;
 
-		internal MSBuildLogger(TaskLoggingHelper loggingHelper) {
-			this.loggingHelper = loggingHelper ?? throw new ArgumentNullException(nameof(loggingHelper));
-		}
+		internal bool HasError { get; private set; }
+
+		internal MSBuildLogger(TaskLoggingHelper loggingHelper) => 
+			_loggingHelper = loggingHelper ?? throw new ArgumentNullException(nameof(loggingHelper));
 
 		public ILogger CreateLogger(string categoryName) => this;
 
@@ -30,12 +31,14 @@ namespace Confuser.MSBuild.Tasks {
 			switch (logLevel) {
 				case LogLevel.Critical:
 					textBuilder.Append("[CRITICAL]");
+					HasError = true;
 					break;
 				case LogLevel.Debug:
 					textBuilder.Append("[DEBUG]");
 					break;
 				case LogLevel.Error:
 					textBuilder.Append("[ERROR]");
+					HasError = true;
 					break;
 				case LogLevel.Information:
 					textBuilder.Append("[INFO]");
@@ -64,7 +67,7 @@ namespace Confuser.MSBuild.Tasks {
 					break;
 			}
 
-			loggingHelper.LogMessage(importance, result);
+			_loggingHelper.LogMessage(importance, result);
 		}
 	}
 }

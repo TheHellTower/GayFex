@@ -1,12 +1,12 @@
 {
-  "version": "2.0.0-alpha.{height}",
+  "version": "2.0.0-alpha+{height}",
   "nugetPackageVersion": {
-    "semVer": 2
+    "semVer": 1
   },
   "semVer1NumericIdentifierPadding": 4,
   "publicReleaseRefSpec": [
-    "^refs/heads/release",
-    "^refs/tags/v\\d+\\.\\d+(?:\\.\\d+)?"
+    "^refs/heads/master$",
+    "^refs/tags/v\\d+\\.\\d+?"
   ],
   "cloudBuild": {
     "setVersionVariables": true,

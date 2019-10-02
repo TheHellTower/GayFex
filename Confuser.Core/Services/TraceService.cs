@@ -12,5 +12,13 @@ namespace Confuser.Core.Services {
 				throw new ArgumentNullException(nameof(method));
 			return _cache.GetValueOrDefaultLazy(method, m => _cache[m] = new MethodTrace(m)).Trace();
 		}
+
+		public static Stack<T> CopyStack<T>(Stack<T> original)
+		{
+			var arr = new T[original.Count];
+			original.CopyTo(arr, 0);
+			Array.Reverse(arr);
+			return new Stack<T>(arr);
+		}
 	}
 }
