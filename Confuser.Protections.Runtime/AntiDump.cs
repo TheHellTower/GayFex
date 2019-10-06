@@ -43,8 +43,7 @@ namespace Confuser.Runtime {
 					*((ushort*)@new + 4) = 0x006c;
 					*(@new + 10) = 0;
 
-					for (int i = 0; i < 11; i++)
-						*(modName + i) = *(@new + i);
+					UnsafeMemory.CopyBlock(modName, @new, 11);
 
 					NativeMethods.VirtualProtect(new IntPtr(funcName), 11, MemoryProtection.ExecuteReadWrite, out _);
 
@@ -52,23 +51,20 @@ namespace Confuser.Runtime {
 					*((uint*)@new + 1) = 0x6e69746e;
 					*((ushort*)@new + 4) = 0x6575;
 					*(@new + 10) = 0;
-
-					for (int i = 0; i < 11; i++)
-						*(funcName + i) = *(@new + i);
+					
+					UnsafeMemory.CopyBlock(funcName, @new, 11);
 				}
 
 				for (int i = 0; i < sectNum; i++) {
 					NativeMethods.VirtualProtect(new IntPtr(ptr), 8, MemoryProtection.ExecuteReadWrite, out _);
-					Marshal.Copy(new byte[8], 0, (IntPtr)ptr, 8);
+					UnsafeMemory.InitBlock(ptr, 0, 8);
 					ptr += 0x28;
 				}
 
 				NativeMethods.VirtualProtect(new IntPtr(mdDir), 0x48, MemoryProtection.ExecuteReadWrite, out _);
 				var mdHdr = bas + *(uint*)(mdDir + 8);
-				*(uint*)mdDir = 0;
-				*((uint*)mdDir + 1) = 0;
-				*((uint*)mdDir + 2) = 0;
-				*((uint*)mdDir + 3) = 0;
+
+				UnsafeMemory.InitBlock(mdDir, 0, 16);
 
 				NativeMethods.VirtualProtect(new IntPtr(mdHdr), 4, MemoryProtection.ExecuteReadWrite, out _);
 				*(uint*)mdHdr = 0;
@@ -170,8 +166,7 @@ namespace Confuser.Runtime {
 					*((ushort*)@new + 4) = 0x006c;
 					*(@new + 10) = 0;
 
-					for (int i = 0; i < 11; i++)
-						*(bas + modName + i) = *(@new + i);
+					UnsafeMemory.CopyBlock(bas + modName, @new, 11);
 
 					NativeMethods.VirtualProtect(new IntPtr(bas + funcName), 11, MemoryProtection.ExecuteReadWrite, out _);
 
@@ -179,9 +174,8 @@ namespace Confuser.Runtime {
 					*((uint*)@new + 1) = 0x6e69746e;
 					*((ushort*)@new + 4) = 0x6575;
 					*(@new + 10) = 0;
-
-					for (int i = 0; i < 11; i++)
-						*(bas + funcName + i) = *(@new + i);
+					
+					UnsafeMemory.CopyBlock(bas + funcName, @new, 11);
 				}
 
 
@@ -200,11 +194,7 @@ namespace Confuser.Runtime {
 						break;
 					}
 
-				*(uint*)mdDirPtr = 0;
-				*((uint*)mdDirPtr + 1) = 0;
-				*((uint*)mdDirPtr + 2) = 0;
-				*((uint*)mdDirPtr + 3) = 0;
-
+				UnsafeMemory.InitBlock(mdDirPtr, 0, 16);
 
 				var mdHdrPtr = bas + mdHdr;
 				NativeMethods.VirtualProtect(new IntPtr(mdHdrPtr), 4, MemoryProtection.ExecuteReadWrite, out _);

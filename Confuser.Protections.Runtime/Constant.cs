@@ -23,8 +23,8 @@ namespace Confuser.Runtime {
 			var w = new uint[0x10];
 			var o = new byte[l * 4];
 			while (s < l) {
-				for (int j = 0; j < 0x10; j++)
-					w[j] = q[s + j];
+				Array.Copy(q, s, w, 0, 0x10);
+
 				Mutation.Crypt(w, k);
 				for (int j = 0; j < 0x10; j++) {
 					uint e = w[j];
