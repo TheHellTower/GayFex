@@ -3,11 +3,16 @@
 
   <PropertyGroup Label="Assembly Settings">
     <TargetFrameworks>net20;net40;netstandard1.0;netstandard2.0</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
     <Title>ConfuserEx Helpers Runtime</Title>
     <Description>Runtime definitions for the ConfuserEx Helpers</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RootNamespace>Confuser</RootNamespace>
   </PropertyGroup>
 
   <Import Project="..\.paket\Paket.Restore.targets" />

@@ -14,6 +14,9 @@ namespace Confuser.Helpers {
 		private sealed class Injector : ImportMapper {
 			private readonly Dictionary<IMemberDef, IMemberDef> _injectedMembers;
 
+			private static readonly ImmutableList<IMethodInjectProcessor> _defaultProcessors = 
+				ImmutableList.Create<IMethodInjectProcessor>(new UnsafeMemoryProcessor());
+
 			private InjectContext InjectContext { get; }
 
 			private IInjectBehavior InjectBehavior { get; }
@@ -29,7 +32,7 @@ namespace Confuser.Helpers {
 				InjectContext = injectContext ?? throw new ArgumentNullException(nameof(injectContext));
 				InjectBehavior = injectBehavior ?? throw new ArgumentNullException(nameof(injectBehavior));
 				PendingForInject = new Queue<IMemberDef>();
-				MethodInjectProcessors = injectProcessors.ToImmutableList();
+				MethodInjectProcessors = _defaultProcessors.AddRange(injectProcessors ?? Enumerable.Empty<IMethodInjectProcessor>());
 				_injectedMembers = new Dictionary<IMemberDef, IMemberDef>();
 			}
 
