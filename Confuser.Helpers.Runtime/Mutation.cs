@@ -17,9 +17,7 @@
 		public static readonly int KeyI14 = 14;
 		public static readonly int KeyI15 = 15;
 
-		public static T Placeholder<T>(T val) {
-			return val;
-		}
+		public static T Placeholder<T>(T val) => val;
 
 		public static void Crypt(uint[] data, uint[] key) {
 		}

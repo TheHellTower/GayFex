@@ -1,5 +1,5 @@
 storage: symlink
-framework: net461, net472, netcoreapp2.2, netstandard2.0
+framework: auto-detect
 
 source https://api.nuget.org/v3/index.json
 source https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json
@@ -44,18 +44,21 @@ nuget System.Text.RegularExpressions ~> 4
 nuget System.ValueTuple ~> 4
 nuget System.Xml.XmlDocument ~> 4
 
+github MiloszKrajewski/K4os.Compression.LZ4:1.1.11 src/K4os.Compression.LZ4/Engine/LZ4_xx.cs
+github MiloszKrajewski/K4os.Compression.LZ4:1.1.11 src/K4os.Compression.LZ4/Internal/Mem.cs
+
 group Test
   storage: none
   framework: auto-detect
 
   source https://api.nuget.org/v3/index.json
   
-  nuget ApprovalTests ~> 3.0
-  clitool dotnet-xunit ~> 2.3
-  nuget Microsoft.NET.Test.Sdk ~> 15
-  nuget Moq ~> 4.11
-  nuget xunit ~> 2.4
-  nuget xunit.runner.visualstudio ~> 2.4
+  nuget ApprovalTests ~> 4
+  clitool dotnet-xunit ~> 2
+  nuget Microsoft.NET.Test.Sdk ~> 16
+  nuget Moq ~> 4
+  nuget xunit ~> 2
+  nuget xunit.runner.visualstudio ~> 2
   
 group TestTarget
   storage: none

@@ -10,10 +10,6 @@
     <Description>Renaming analysis of ConfuserEx</Description>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Web" Condition="'$(TargetFramework)' == 'net461'" />
-  </ItemGroup>
-
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />

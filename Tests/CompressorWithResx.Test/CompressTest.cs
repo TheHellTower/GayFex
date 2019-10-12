@@ -75,7 +75,7 @@ namespace CompressorWithResx.Test {
 		}
 
 		public static IEnumerable<object[]> CompressAndExecuteTestData() {
-			foreach (var framework in new string[] { "net40", "net471" })
+			foreach (var framework in new string[] { "net40", "net48" })
 				foreach (var data in CompressorParameterData(framework))
 					yield return data;
 		}

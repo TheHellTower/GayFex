@@ -11,22 +11,23 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace Confuser.Core {
-	public class ObfAttrParserTest {
-		private ITestOutputHelper OutputHelper { get; }
+	public class ObfAttrParserTest : IDisposable {
+		private XunitLogger Logger { get; }
 
-		public ObfAttrParserTest(ITestOutputHelper outputHelper) =>
-			OutputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+		public ObfAttrParserTest(ITestOutputHelper outputHelper) {
+			if (outputHelper is null) throw new ArgumentNullException(nameof(outputHelper));
+			Logger = new XunitLogger(outputHelper);
+		}
 
 		[Fact]
 		[Trait("Category", "Core")]
 		[Trait("Core", "pattern parser")]
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void TestEmptyPattern() {
-			var logger = new XunitLogger(OutputHelper);
-			var protections = GetProtections(DiscoverPlugIns(logger));
+			var protections = GetProtections(DiscoverPlugIns(Logger));
 
 			var settings = new Dictionary<IConfuserComponent, IDictionary<string, string>>();
-			var newSettings = ObfAttrParser.ParseProtection(protections, settings, "", logger);
+			var newSettings = ObfAttrParser.ParseProtection(protections, settings, "", Logger);
 
 			Assert.Same(settings, newSettings);
 			Assert.Empty(settings);
@@ -38,13 +39,12 @@ namespace Confuser.Core {
 		[Trait("Core", "pattern parser")]
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void TestPresetPattern(string preset) {
-			var logger = new XunitLogger(OutputHelper);
-			var protections = GetProtections(DiscoverPlugIns(logger));
+			var protections = GetProtections(DiscoverPlugIns(Logger));
 
 			var settings = new Dictionary<IConfuserComponent, IDictionary<string, string>>();
 
 			var expression = $"preset({preset})";
-			var newSettings = ObfAttrParser.ParseProtection(protections, settings, expression, logger);
+			var newSettings = ObfAttrParser.ParseProtection(protections, settings, expression, Logger);
 
 			Assert.Same(settings, newSettings);
 			Assert.True(Enum.TryParse<ProtectionPreset>(preset, out var presetEnum));
@@ -76,8 +76,7 @@ namespace Confuser.Core {
 			TestDisableEnableProtection(protectionId, false);
 
 		private void TestDisableEnableProtection(string protectionId, bool enable) {
-			var logger = new XunitLogger(OutputHelper);
-			var protections = GetProtections(DiscoverPlugIns(logger));
+			var protections = GetProtections(DiscoverPlugIns(Logger));
 
 			var selectedProtection = protections[protectionId];
 
@@ -91,8 +90,8 @@ namespace Confuser.Core {
 						kvp => (IDictionary<string, string>)new Dictionary<string, string>());
 
 				var expression = (enable ? "+" : "-") + protectionId;
-				var newSettings = ObfAttrParser.ParseProtection(protections, settings, expression, logger);
-				logger.CheckErrors();
+				var newSettings = ObfAttrParser.ParseProtection(protections, settings, expression, Logger);
+				Logger.CheckErrors();
 
 				Assert.Same(settings, newSettings);
 
@@ -128,8 +127,8 @@ namespace Confuser.Core {
 					var paramKvp = selectedParameters.Select(sp => sp.Name + "='" + sp.Value.Replace("'", "\'", StringComparison.Ordinal) + "'");
 					var expression = (enable ? "+" : "-") + protectionId + "(" + string.Join(";", paramKvp) + ")";
 
-					var newSettings = ObfAttrParser.ParseProtection(protections, settings, expression, logger);
-					logger.CheckErrors();
+					var newSettings = ObfAttrParser.ParseProtection(protections, settings, expression, Logger);
+					Logger.CheckErrors();
 
 					Assert.Same(settings, newSettings);
 
@@ -205,5 +204,24 @@ namespace Confuser.Core {
 				yield return new object[] { protectionId };
 			}
 		}
+
+		#region IDisposable Support
+		private bool _disposed = false; // Dient zur Erkennung redundanter Aufrufe.
+
+		protected virtual void Dispose(bool disposing) {
+			if (!_disposed) {
+				if (disposing) {
+					Logger.Dispose();
+				}
+
+				_disposed = true;
+			}
+		}
+
+		public void Dispose() {
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+		#endregion
 	}
 }

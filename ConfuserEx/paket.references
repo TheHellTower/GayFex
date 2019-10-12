@@ -1,7 +1,7 @@
-Antlr4.Runtime restriction: == net472
-Microsoft.Extensions.Logging restriction: == net472
-Microsoft.Extensions.Logging.Abstractions restriction: == net472
-MvvmLightLibs restriction: == net472
-Nerdbank.GitVersioning restriction: == net472
-Microsoft.CodeAnalysis.FxCopAnalyzers restriction: == net472
-System.ComponentModel.Composition restriction: == net472
+Antlr4.Runtime
+Microsoft.Extensions.Logging
+Microsoft.Extensions.Logging.Abstractions
+MvvmLightLibs
+Nerdbank.GitVersioning
+Microsoft.CodeAnalysis.FxCopAnalyzers
+System.ComponentModel.Composition

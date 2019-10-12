@@ -1,10 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="MSBuild.Sdk.Extras">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <TargetFramework>net461</TargetFramework>
-    <ExtrasEnableWinFormsProjectSetup>true</ExtrasEnableWinFormsProjectSetup>
-    <ExtrasDisableExtrasSdkLegacyCompat>true</ExtrasDisableExtrasSdkLegacyCompat>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>True</UseWindowsForms>
     <MyType>Windows</MyType>
   </PropertyGroup>
 

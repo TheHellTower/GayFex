@@ -1,22 +1,41 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net20;net40;netstandard1.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net20;net40;net45;netstandard1.0;netstandard2.0</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-
   <PropertyGroup Label="Assembly Information">
     <Title>ConfuserEx Core Runtime</Title>
     <Description>Runtime library of ConfuserEx Core</Description>
   </PropertyGroup>
-
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net45'">
+    <DefineConstants>$(DefineConstants);NET45</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
     <Compile Include="..\Confuser.Core\SevenZipGlobalSuppressions.cs" Link="SevenZipGlobalSuppressions.cs" />
     <None Include="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
   </ItemGroup>
-
+  <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <InputFilename ParameterType="System.String" Required="true" />
+      <OutputFilename ParameterType="System.String" Required="true" />
+      <MatchExpression ParameterType="System.String" Required="true" />
+      <ReplacementText ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Core" />
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+            File.WriteAllText(
+                OutputFilename,
+                Regex.Replace(File.ReadAllText(InputFilename), MatchExpression, ReplacementText)
+                );
+          ]]></Code>
+    </Task>
+  </UsingTask>
   <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />
   <Import Project="..\.paket\Paket.Restore.targets" />
-
 </Project>

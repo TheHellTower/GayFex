@@ -92,7 +92,7 @@ namespace CompileResx.Test {
 		}
 
 		public static IEnumerable<object[]> OptimizeAndExecuteTestData() {
-			foreach (var framework in new string[] { "net20", "net40", "net471" })
+			foreach (var framework in new string[] { "net20", "net40", "net48" })
 				yield return new object[] { framework };
 		}
 	}
