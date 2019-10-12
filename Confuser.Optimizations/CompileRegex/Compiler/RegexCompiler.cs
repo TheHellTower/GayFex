@@ -57,7 +57,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (IsUnsafe(expression.Options)) return true;
 			RegexTree tree;
 			try {
-				tree = RegexParser.Parse(expression.Pattern, expression.Options);
+				tree = RegexParser.Parse(expression.Pattern, expression.Options, CultureInfo.InvariantCulture);
 			}
 			catch (ArgumentException) {
 				return false;
@@ -88,17 +88,16 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		}
 
 		internal RegexCompilerResult Compile(RegexCompileDef expression) {
+			var ic = CultureInfo.InvariantCulture;
 			RegexTree tree;
 			RegexCode code;
 			try {
-				tree = RegexParser.Parse(expression.Pattern, expression.Options);
+				tree = RegexParser.Parse(expression.Pattern, expression.Options, ic);
 				code = GetRegexCode(expression, tree);
 			}
 			catch (ArgumentException ex) {
 				throw new RegexCompilerException(expression, ex);
 			}
-
-			var ic = CultureInfo.InvariantCulture;
 
 			_compiledExpressions += 1;
 			var baseName = string.Format(

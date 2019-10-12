@@ -57,7 +57,13 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			var resultMethod = declaringType.GetMethod(name,
 				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, parameters, null);
-			Debug.Assert(resultMethod != null, $"Failed to find method {name} in type {declaringType.FullName}");
+			return resultMethod;
+		}
+
+		internal static MethodInfo GetStaticMethodThrow(Type declaringType, string name, params Type[] parameters) {
+			var resultMethod = GetStaticMethod(declaringType, name, parameters);
+			if (resultMethod == null)
+				throw new MissingMethodException(declaringType.FullName, name);
 			return resultMethod;
 		}
 

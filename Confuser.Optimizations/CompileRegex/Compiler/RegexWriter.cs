@@ -9,7 +9,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private static readonly Type _realRegexWriterType = RU.GetRegexType("RegexWriter");
 
 		private static readonly MethodInfo _writeMethod =
-			RU.GetStaticMethod(_realRegexWriterType, "Write", RegexTree.RealRegexTreeType);
+			RU.GetStaticMethodThrow(_realRegexWriterType, "Write", RegexTree.RealRegexTreeType);
 
 		// In .NET Core the RegexWriter Class is a ref structure. We can't invoke it using reflection. For this to
 		// work we'll create a dynamic method that invokes it. A dynamic method is able to invoke the function despite
