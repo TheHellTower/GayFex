@@ -1,7 +1,9 @@
 Antlr4.Runtime
+Microsoft.CodeAnalysis.FxCopAnalyzers
 Microsoft.Extensions.Logging
 Microsoft.Extensions.Logging.Abstractions
 MvvmLightLibs
 Nerdbank.GitVersioning
-Microsoft.CodeAnalysis.FxCopAnalyzers
+Ookii.Dialogs.Wpf.NETCore
 System.ComponentModel.Composition
+System.Runtime.Loader

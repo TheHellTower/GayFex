@@ -16,7 +16,7 @@ namespace Confuser.Core {
 		/// <summary>
 		///     The default plug-in discovery service.
 		/// </summary>
-		internal static readonly PluginDiscovery Instance = new PluginDiscovery();
+		public static readonly PluginDiscovery Instance = new PluginDiscovery();
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="PluginDiscovery" /> class.
@@ -36,20 +36,40 @@ namespace Confuser.Core {
 			return new CompositionContainer(catalog);
 		}
 
-		protected virtual AggregateCatalog GetAdditionalPlugIns(ConfuserProject project, ILogger logger) {
+		/// <summary>
+		///     Retrieves the available protection plug-ins.
+		/// </summary>
+		/// <param name="plugInPaths">The paths where the plugins are stored.</param>
+		public CompositionContainer GetPlugins(IEnumerable<string> plugInPaths, ILogger logger) {
+			var catalog = new AggregateCatalog(
+				DefaultPlugInDiscovery.Instance.GetDefaultPlugIns(logger),
+				GetAdditionalPlugIns(plugInPaths, logger));
+
+			return new CompositionContainer(catalog);
+		}
+
+		/// <summary>
+		///     Retrieves the available protection plug-ins.
+		/// </summary>
+		public CompositionContainer GetPlugins(ILogger logger) {
+			var catalog = DefaultPlugInDiscovery.Instance.GetDefaultPlugIns(logger);
+
+			return new CompositionContainer(catalog);
+		}
+
+		protected virtual AggregateCatalog GetAdditionalPlugIns(ConfuserProject project, ILogger logger) =>
+			GetAdditionalPlugIns(GetAdditionalPlugInPaths(project, logger), logger);
+
+		protected virtual AggregateCatalog GetAdditionalPlugIns(IEnumerable<string> plugInPaths, ILogger logger) {
+			if (plugInPaths is null) throw new ArgumentNullException(nameof(plugInPaths));
 			var result = new List<ComposablePartCatalog>();
 
-			foreach (string pluginPath in project.PluginPaths) {
+			foreach (string pluginPath in plugInPaths) {
 				try {
-					if (File.Exists(pluginPath)) {
+					if (File.Exists(pluginPath))
 						result.Add(new AssemblyCatalog(Assembly.LoadFile(pluginPath)));
-					}
-					else if (Directory.Exists(pluginPath)) {
+					else if (Directory.Exists(pluginPath))
 						result.Add(new DirectoryCatalog(pluginPath));
-					}
-					else {
-						logger.LogWarning("Plug-in path {0} does not seem to be valid.", pluginPath);
-					}
 				}
 				catch (Exception ex) {
 					logger.LogWarning(ex, "Failed to load plug-in '{0}'.", pluginPath);
@@ -57,6 +77,17 @@ namespace Confuser.Core {
 			}
 
 			return new AggregateCatalog(result);
+		}
+
+		protected virtual IEnumerable<string> GetAdditionalPlugInPaths(ConfuserProject project, ILogger logger) {
+			foreach (string pluginPath in project.PluginPaths) {
+				if (File.Exists(pluginPath))
+					yield return pluginPath;
+				else if (Directory.Exists(pluginPath))
+					yield return pluginPath;
+				else
+					logger.LogWarning("Plug-in path {0} does not seem to be valid.", pluginPath);
+			}
 		}
 
 		private sealed class DefaultPlugInDiscovery {

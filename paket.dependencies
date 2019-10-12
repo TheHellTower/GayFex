@@ -1,4 +1,4 @@
-storage: symlink
+storage: none
 framework: auto-detect
 
 source https://api.nuget.org/v3/index.json
@@ -21,9 +21,10 @@ nuget Microsoft.Win32.Registry ~> 4
 nuget MvvmLightLibs ~> 5.4
 nuget Nerdbank.GitVersioning copy_local: true
 nuget NuGet.Frameworks ~> 5
+nuget Ookii.Dialogs.Wpf.NETCore ~> 2
 nuget System.Buffers ~> 4
 nuget System.Collections ~> 4
-nuget System.Collections.Immutable ~> 1.5
+nuget System.Collections.Immutable ~> 1.6
 nuget System.ComponentModel ~> 4
 nuget System.ComponentModel.Composition ~> 4
 nuget System.Console ~> 4
@@ -38,6 +39,7 @@ nuget System.Reflection.Primitives ~> 4
 nuget System.Resources.ResourceManager ~> 4
 nuget System.Runtime ~> 4
 nuget System.Runtime.Extensions ~> 4
+nuget System.Runtime.Loader ~> 4
 nuget System.Security.Cryptography.Algorithms ~> 4
 nuget System.Security.Cryptography.Primitives ~> 4
 nuget System.Text.RegularExpressions ~> 4

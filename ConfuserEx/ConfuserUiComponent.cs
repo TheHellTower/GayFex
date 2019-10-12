@@ -11,18 +11,18 @@ namespace ConfuserEx {
 
 		public string PlugInPath { get; }
 
-		internal ConfuserUiComponent(Lazy<IProtection, IProtectionMetadata> protection, string plugInPath) {
+		internal ConfuserUiComponent(Lazy<IProtection, IProtectionMetadata> protection) {
 			Id = protection.Metadata.MarkerId ?? protection.Metadata.Id;
 			Name = protection.Value.Name;
 			Description = protection.Value.Description;
-			PlugInPath = plugInPath;
+			PlugInPath = protection.Value.GetType().Assembly.Location;
 		}
 
-		internal ConfuserUiComponent(Lazy<IPacker, IPackerMetadata> packer, string plugInPath) {
+		internal ConfuserUiComponent(Lazy<IPacker, IPackerMetadata> packer) {
 			Id = packer.Metadata.MarkerId ?? packer.Metadata.Id;
 			Name = packer.Value.Name;
 			Description = packer.Value.Description;
-			PlugInPath = plugInPath;
+			PlugInPath = packer.Value.GetType().Assembly.Location;
 		}
 
 		public bool Equals(ConfuserUiComponent other) {
@@ -36,11 +36,6 @@ namespace ConfuserEx {
 
 		public override bool Equals(object obj) => Equals(obj as ConfuserUiComponent);
 
-		public override int GetHashCode() {
-			var hashCode = -956816887;
-			hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Id);
-			hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(PlugInPath);
-			return hashCode;
-		}
+		public override int GetHashCode() => (Id, PlugInPath.GetHashCode(StringComparison.OrdinalIgnoreCase)).GetHashCode();
 	}
 }

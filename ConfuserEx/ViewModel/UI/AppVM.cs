@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Xml;
@@ -159,15 +160,7 @@ namespace ConfuserEx.ViewModel {
 				LoadPlugins();
 		}
 
-		void LoadPlugins() {
-			foreach (var plugin in Project.Plugins) {
-				try {
-					ComponentDiscovery.LoadComponents(Project.Protections, Project.Packers, plugin.Item);
-				}
-				catch {
-					MessageBox.Show("Failed to load plugin '" + plugin + "'.");
-				}
-			}
-		}
+		private void LoadPlugins() =>
+			ComponentDiscovery.LoadComponents(Project.Protections, Project.Packers, Project.Plugins.Select(p => p.Item));
 	}
 }
