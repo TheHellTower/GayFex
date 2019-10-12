@@ -29,10 +29,15 @@ build:
   verbosity: minimal 
   parallel: true
 
+after_test:
+- cmd: msbuild ConfuserEx/ConfuserEx.csproj @appveyor_publish.rsp /m
+- cmd: msbuild Confuser.CLI/Confuser.CLI.csproj @appveyor_publish.rsp /m
+- cmd: 7z a -tzip -mx9 ConfuserEx.zip ConfuserEx\bin\Release\netcoreapp3.0\publish\*
+- cmd: 7z u -tzip -mx9 ConfuserEx.zip Confuser.CLI\bin\Release\netcoreapp3.0\publish\*
+
 artifacts:
-- path: Release/bin
+- path: ConfuserEx.zip
   name: ConfuserEx
-  type: zip
 - path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
   name: ConfuserEx.MSBuild
 

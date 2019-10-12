@@ -3,18 +3,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net48;netcoreapp3.0</TargetFrameworks>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <StartupObject>Confuser.CLI.Program</StartupObject>
     <Product>ConfuserEx Command-line</Product>
     <Description>Command-line interface of ConfuserEx</Description>
     <PackageLicenseFile>license/LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/mkaring/ConfuserEx</PackageProjectUrl>
-    <RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <OutputPath>..\$(Configuration)\bin</OutputPath>
+    <ApplicationIcon>ConfuserEx.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

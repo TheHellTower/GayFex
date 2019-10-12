@@ -1,5 +1,4 @@
 @appveyor_logging.rsp
 
-/target:Restore;Publish
-/property:TargetFramework=netcoreapp2.2
-/property:RestoreRecursive=false
+/target:Publish
+/property:Configuration=Release
