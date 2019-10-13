@@ -10,7 +10,6 @@ skip_commits:
   - license.md
 
 cache:
-  - packages -> packet.lock
   - paket-files -> packet.lock
   - '%USERPROFILE%\.nuget\packages -> packet.lock, global.json'
 
