@@ -3,7 +3,6 @@ Microsoft.Extensions.Logging.Abstractions
 System.Collections.Immutable
 System.ComponentModel.Composition
 System.IO.Packaging
-System.Memory
 System.Runtime.Extensions
 System.ValueTuple
 Microsoft.CodeAnalysis.FxCopAnalyzers

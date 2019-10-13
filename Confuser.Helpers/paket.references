@@ -1,7 +1,6 @@
 dnlib
 Microsoft.Extensions.DependencyInjection.Abstractions
 System.Collections.Immutable
-System.Memory
 System.ValueTuple
 Microsoft.CodeAnalysis.FxCopAnalyzers
 Nerdbank.GitVersioning

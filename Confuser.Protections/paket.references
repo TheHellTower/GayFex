@@ -4,7 +4,6 @@ System.Collections.Immutable
 System.ComponentModel
 System.ComponentModel.Composition
 System.Diagnostics.Tools
-System.Memory
 System.Security.Cryptography.Algorithms
 System.ValueTuple
 Microsoft.CodeAnalysis.FxCopAnalyzers

@@ -1,9 +1,7 @@
 Antlr4.Runtime
 Microsoft.CodeAnalysis.FxCopAnalyzers
 Microsoft.Extensions.Logging
-Microsoft.Extensions.Logging.Abstractions
 MvvmLightLibsStd10
 Nerdbank.GitVersioning
 Ookii.Dialogs.Wpf.NETCore
-System.ComponentModel.Composition
 System.Runtime.Loader
