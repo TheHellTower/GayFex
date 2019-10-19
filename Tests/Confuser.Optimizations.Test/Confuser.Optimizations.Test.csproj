@@ -5,7 +5,6 @@
     <TargetFrameworks>net48;netcoreapp3.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <RootNamespace>Confuser.Optimizations</RootNamespace>
-    <DebugType>full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
