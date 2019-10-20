@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseWPF>True</UseWPF>
@@ -10,11 +11,13 @@
     <OutputType>WinExe</OutputType>
     <StartupObject />
   </PropertyGroup>
+
   <ItemGroup>
     <None Include="Resources\CREDITS" />
     <Resource Include="ConfuserEx.ico" />
     <Resource Include="Resources\FontAwesome.otf" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
@@ -25,14 +28,18 @@
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Renamer\Confuser.Renamer.csproj" />
   </ItemGroup>
+
   <ItemGroup>
     <Resource Include="Resources\*.png" />
   </ItemGroup>
+
   <ItemGroup>
     <None Remove="ConfuserEx.ico" />
   </ItemGroup>
+
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
+  
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
