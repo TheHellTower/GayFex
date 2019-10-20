@@ -54,6 +54,10 @@ namespace AntiProtections.Test {
 		protected static string GetInputAssembly(ConfuserProject project, string targetFramework) =>
 			Path.Combine(project.BaseDirectory, GetExecutableName(targetFramework));
 
+#if CORE_RUNTIME
+		protected static IEnumerable<string> GetTargetFrameworks() => new string[] { "net40", "net48" };
+#else
 		protected static IEnumerable<string> GetTargetFrameworks() => new string[] { "net20", "net40", "net48" };
+#endif
 	}
 }

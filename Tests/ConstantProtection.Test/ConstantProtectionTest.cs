@@ -69,7 +69,7 @@ namespace ConstantProtection.Test {
 		}
 
 		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
-			foreach (var framework in new string[] { "net20", "net40", "net48" })
+			foreach (var framework in GetTargetFrameworks())
 				foreach (var mode in new string[] { "Normal", "Dynamic", "x86" })
 					foreach (var cfg in new bool[] { false, true })
 						foreach (var encodeStrings in new string[] { "", "S" })
@@ -78,5 +78,11 @@ namespace ConstantProtection.Test {
 									foreach (var encodeInitializers in new string[] { "", "I" })
 										yield return new object[] { framework, mode, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
 		}
+
+#if CORE_RUNTIME
+		private static IEnumerable<string> GetTargetFrameworks() => new string[] { "net40", "net48" };
+#else
+		private static IEnumerable<string> GetTargetFrameworks() => new string[] { "net20", "net40", "net48" };
+#endif
 	}
 }

@@ -81,9 +81,13 @@ namespace CompressorWithResx.Test {
 		}
 
 		public static IEnumerable<object[]> CompressAndExecuteSkippedTestData() {
+#if CORE_RUNTIME
+			yield break;
+#else
 			foreach (var framework in new string[] { "net20" })
 				foreach (var data in CompressorParameterData(framework))
 					yield return data;
+#endif
 		}
 
 		private static IEnumerable<object[]> CompressorParameterData(string framework) {

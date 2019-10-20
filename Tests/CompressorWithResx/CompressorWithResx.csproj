@@ -8,6 +8,10 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+    <TargetFrameworks>net40;net48</TargetFrameworks>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(TargetFramework)' == 'net20'">
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>

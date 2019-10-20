@@ -92,8 +92,14 @@ namespace CompileResx.Test {
 		}
 
 		public static IEnumerable<object[]> OptimizeAndExecuteTestData() {
-			foreach (var framework in new string[] { "net20", "net40", "net48" })
-				yield return new object[] { framework };
+			foreach (var framework in GetTargetFrameworks())
+				yield return new object[] {framework};
 		}
+
+#if CORE_RUNTIME
+		private static IEnumerable<string> GetTargetFrameworks() => new string[] { "net40", "net48" };
+#else
+		private static IEnumerable<string> GetTargetFrameworks() => new string[] { "net20", "net40", "net48" };
+#endif
 	}
 }

@@ -68,7 +68,7 @@ namespace RefProxyProtection.Test {
 		}
 
 		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
-			foreach (var framework in new string[] { "net20", "net40", "net48" })
+			foreach (var framework in GetTargetFrameworks())
 				foreach (var mode in new string[] { "Mild", "Strong" }) {
 					if (mode == "Mild")
 						yield return new object[] { framework, mode, "Normal", "false", "false" };
@@ -79,5 +79,11 @@ namespace RefProxyProtection.Test {
 									yield return new object[] { framework, mode, encoding, internalAlso, typeErasure };
 				}
 		}
+
+#if CORE_RUNTIME
+		private static IEnumerable<string> GetTargetFrameworks() => new string[] { "net40", "net48" };
+#else
+		private static IEnumerable<string> GetTargetFrameworks() => new string[] { "net20", "net40", "net48" };
+#endif
 	}
 }
