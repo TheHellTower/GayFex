@@ -9,7 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Confuser.Core;
 using Confuser.Core.Project;
-using GalaSoft.MvvmLight.Command;
+using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Extensions.Logging;
 
 namespace ConfuserEx.ViewModel {

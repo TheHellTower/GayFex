@@ -103,6 +103,8 @@ namespace Confuser.Core {
 				}
 			}
 
+			if (owner is IMemberRef && !(owner is ITypeDefOrRef))
+				info.ApplyToMembers = false;
 			return (info, order, strip);
 		}
 
