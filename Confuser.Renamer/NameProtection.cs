@@ -8,6 +8,7 @@ namespace Confuser.Renamer {
 	[Export(typeof(IProtection))]
 	[ExportMetadata(nameof(IProtectionMetadata.Id), _FullId)]
 	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), _Id)]
+	[BeforeProtection("constants")]
 	internal sealed class NameProtection : IProtection {
 		public const string _Id = "rename";
 		public const string _FullId = "Ki.Rename";

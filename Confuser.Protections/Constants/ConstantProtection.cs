@@ -35,6 +35,8 @@ namespace Confuser.Protections {
 			collection.AddSingleton(typeof(IConstantService), this);
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {
+			pipeline.InsertPreStage(PipelineStage.Inspection, new InitPhase(this));
+			pipeline.InsertPreStage(PipelineStage.ProcessModule, new ExtractPhase(this));
 			pipeline.InsertPreStage(PipelineStage.ProcessModule, new InjectPhase(this));
 			pipeline.InsertPostStage(PipelineStage.ProcessModule, new EncodePhase(this));
 		}

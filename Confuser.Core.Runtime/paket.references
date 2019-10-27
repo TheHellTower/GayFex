@@ -1,2 +1,5 @@
 Nerdbank.GitVersioning
 Microsoft.CodeAnalysis.FxCopAnalyzers
+
+group Runtime
+File: LZ4_xx.cs

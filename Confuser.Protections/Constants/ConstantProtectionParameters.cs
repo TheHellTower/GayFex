@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using Confuser.Core;
+using Confuser.Core.Services;
 
 namespace Confuser.Protections.Constants {
 	internal sealed class ConstantProtectionParameters : ProtectionParametersBase {
@@ -10,6 +11,8 @@ namespace Confuser.Protections.Constants {
 		internal IProtectionParameter<Mode> Mode { get; } = ProtectionParameter.Enum("mode", Constants.Mode.Normal);
 		internal IProtectionParameter<uint> DecoderCount { get; } = ProtectionParameter.UInteger("decoderCount", 5);
 		internal IProtectionParameter<EncodeElements> Elements { get; } = new EncodeElementsProtectionParameter();
+		internal IProtectionParameter<CompressionAlgorithm> Compressor { get; } = ProtectionParameter.Enum("compressor", CompressionAlgorithm.Lzma);
+		internal IProtectionParameter<CompressionMode> Compress { get; } = ProtectionParameter.Enum("compress", CompressionMode.Auto);
 
 		private sealed class EncodeElementsProtectionParameter : IProtectionParameter<EncodeElements> {
 			EncodeElements IProtectionParameter<EncodeElements>.DefaultValue =>

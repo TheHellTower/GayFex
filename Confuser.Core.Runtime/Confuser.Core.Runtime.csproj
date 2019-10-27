@@ -2,7 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net20;net40;netstandard1.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net20;net40;net45;netstandard1.0;netstandard1.1;netstandard2.0</TargetFrameworks>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
@@ -11,9 +12,58 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
+    <ProjectReference Include="..\Confuser.Helpers.Runtime\Confuser.Helpers.Runtime.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\paket-files\runtime\MiloszKrajewski\K4os.Compression.LZ4\src\K4os.Compression.LZ4\Engine\LZ4_xx.cs">
+      <Paket>True</Paket>
+      <Link>paket-files/LZ4_xx.cs</Link>
+    </Compile>
     <Compile Include="..\Confuser.Core\SevenZipGlobalSuppressions.cs" Link="SevenZipGlobalSuppressions.cs" />
-    <None Include="Compat.NetStandard1.0.cs" Condition="'$(TargetFramework)' != 'netstandard1.0'" />
+    <Compile Update="LZ4_xx.Net20.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LZ4_xx.Net20.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'net40'">
+    <Compile Remove="LZ4_xx.Net20.cs" />
+    <None Include="LZ4_xx.Net20.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LZ4_xx.Net20.tt</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net20' OR '$(TargetFramework)' == 'net40'">
+    <Compile Remove="..\paket-files\runtime\MiloszKrajewski\K4os.Compression.LZ4\src\K4os.Compression.LZ4\Engine\LZ4_xx.cs" />
+    <None Include="..\paket-files\runtime\MiloszKrajewski\K4os.Compression.LZ4\src\K4os.Compression.LZ4\Engine\LZ4_xx.cs">
+      <Paket>True</Paket>
+      <Link>paket-files/LZ4_xx.cs</Link>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.0'">
+    <Compile Remove="Compression/Deflate.cs" />
+    <None Include="Compression/Deflate.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard1.0' AND '$(TargetFramework)' != 'netstandard1.1'">
+    <Compile Remove="Compat.NetStandard1.0.cs" />
+    <None Include="Compat.NetStandard1.0.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="LZ4_xx.Net20.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>LZ4_xx.Net20.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
   <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />

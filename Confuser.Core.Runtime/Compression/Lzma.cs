@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using SevenZip.Compression.LZMA;
 
-namespace Confuser.Core.Runtime {
+namespace Confuser.Core.Runtime.Compression {
 	// ReSharper disable once UnusedMember.Global
 	/// <remarks>
 	/// This class is injected into the code of the assembly to project. The reference is build during injection.

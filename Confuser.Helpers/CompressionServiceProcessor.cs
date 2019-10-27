@@ -14,11 +14,14 @@ namespace Confuser.Helpers {
 		private IConfuserContext Context { get; }
 		private ICompressionService CompressionService { get; }
 		private ModuleDef TargetModule { get; }
+		private CompressionAlgorithm Algorithm { get; }
 
-
-		public CompressionServiceProcessor(IConfuserContext context, ModuleDef targetModule) {
+		public CompressionServiceProcessor(IConfuserContext context,
+			ModuleDef targetModule, 
+			CompressionAlgorithm algorithm = CompressionAlgorithm.Lzma) {
 			Context = context ?? throw new ArgumentNullException(nameof(context));
 			TargetModule = targetModule ?? throw new ArgumentNullException(nameof(targetModule));
+			Algorithm = algorithm;
 
 			CompressionService = context.Registry.GetRequiredService<ICompressionService>();
 		}
@@ -36,7 +39,7 @@ namespace Confuser.Helpers {
 					    opMethod.DeclaringType.FullName == CompressionServiceTypeName) {
 						if (decompressionMethod == null)
 							decompressionMethod =
-								CompressionService.GetRuntimeDecompressor(Context, TargetModule, def => { });
+								CompressionService.GetRuntimeDecompressor(Context, TargetModule, Algorithm, def => { });
 
 						instr.Operand = decompressionMethod;
 					}

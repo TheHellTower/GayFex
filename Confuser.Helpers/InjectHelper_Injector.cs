@@ -261,6 +261,10 @@ namespace Confuser.Helpers {
 				var newFieldDef = CopyDef(fieldDef);
 				newFieldDef.Signature = importer.Import(fieldDef.Signature);
 				newFieldDef.DeclaringType = (TypeDef)importer.Import(fieldDef.DeclaringType);
+				newFieldDef.InitialValue = fieldDef.InitialValue;
+
+				if (newFieldDef.HasFieldRVA)
+					newFieldDef.RVA = fieldDef.RVA;
 
 				foreach (var ca in fieldDef.CustomAttributes)
 					newFieldDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));

@@ -70,6 +70,18 @@ namespace Confuser {
 			list.Add(value);
 		}
 
+		public static void AddListEntries<TKey, TValue>(this IDictionary<TKey, List<TValue>> self, TKey key,
+			IEnumerable<TValue> values) {
+			if (self is null) throw new ArgumentNullException(nameof(self));
+			if (key == null) throw new ArgumentNullException(nameof(key));
+			if (values is null) throw new ArgumentNullException(nameof(values));
+
+			List<TValue> list;
+			if (!self.TryGetValue(key, out list))
+				list = self[key] = new List<TValue>();
+			list.AddRange(values);
+		}
+
 		/// <summary>
 		///     Obtains the relative path from the specified base path.
 		/// </summary>
