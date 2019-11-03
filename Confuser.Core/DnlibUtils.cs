@@ -352,6 +352,24 @@ namespace Confuser.Core {
 		}
 
 		/// <summary>
+		///     Determines whether the specified property is family or assembly.
+		/// </summary>
+		/// <param name="property">The property.</param>
+		/// <returns><c>true</c> if the specified property is family or assembly; otherwise, <c>false</c>.</returns>
+		public static bool IsFamilyOrAssembly(this PropertyDef property) {
+			return property.AllMethods().Any(method => method.IsFamilyOrAssembly);
+		}
+
+		/// <summary>
+		///     Determines whether the specified property is family.
+		/// </summary>
+		/// <param name="property">The property.</param>
+		/// <returns><c>true</c> if the specified property is family; otherwise, <c>false</c>.</returns>
+		public static bool IsFamily(this PropertyDef property) {
+			return property.AllMethods().Any(method => method.IsFamily);
+		}
+
+		/// <summary>
 		///     Determines whether the specified property is static.
 		/// </summary>
 		/// <param name="property">The property.</param>
@@ -367,6 +385,24 @@ namespace Confuser.Core {
 		/// <returns><c>true</c> if the specified event is public; otherwise, <c>false</c>.</returns>
 		public static bool IsPublic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsPublic);
+		}
+
+		/// <summary>
+		///     Determines whether the specified event is family or assembly.
+		/// </summary>
+		/// <param name="evt">The event.</param>
+		/// <returns><c>true</c> if the specified property is family or assembly; otherwise, <c>false</c>.</returns>
+		public static bool IsFamilyOrAssembly(this EventDef evt) {
+			return evt.AllMethods().Any(method => method.IsFamilyOrAssembly);
+		}
+
+		/// <summary>
+		///     Determines whether the specified event is family.
+		/// </summary>
+		/// <param name="evt">The event.</param>
+		/// <returns><c>true</c> if the specified property is family; otherwise, <c>false</c>.</returns>
+		public static bool IsFamily(this EventDef evt) {
+			return evt.AllMethods().Any(method => method.IsFamily);
 		}
 
 		/// <summary>
