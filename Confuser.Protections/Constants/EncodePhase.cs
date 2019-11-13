@@ -35,14 +35,16 @@ namespace Confuser.Protections.Constants {
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
 			CancellationToken token) {
 			var moduleCtx = context.Annotations.Get<CEContext>(context.CurrentModule, ConstantProtection.ContextKey);
-			if (!parameters.Targets.Any() || moduleCtx == null)
+			if (!parameters.Targets.Any() || moduleCtx?.EncodedReferences is null)
 				return;
 
 			var ldc = new Dictionary<object, ReferenceList>();
 			var ldInit = new Dictionary<byte[], ReferenceList>();
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("constants");
-			
+
+			moduleCtx.ReferenceRepl = new Dictionary<MethodDef, List<(Instruction TargetInstruction, uint Argument, IMethod DecoderMethod)>>();
+
 			var cmp = new SigComparer(0, moduleCtx.Module);
 			foreach (var kvp in moduleCtx.EncodedReferences) {
 				var bufferIndex = kvp.Key;
@@ -50,9 +52,9 @@ namespace Confuser.Protections.Constants {
 					Func<DecoderDesc, byte> typeIdFunc;
 
 					if (cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.Int32) ||
-					    cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.Int64) ||
-					    cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.Single) ||
-					    cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.Double))
+						cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.Int64) ||
+						cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.Single) ||
+						cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.Double))
 						typeIdFunc = desc => desc.NumberID;
 					else if (cmp.Equals(byType.Key, moduleCtx.Module.CorLibTypes.String))
 						typeIdFunc = desc => desc.StringID;
@@ -89,7 +91,7 @@ namespace Confuser.Protections.Constants {
 				key[i] = state;
 			}
 
-			var encryptedBuffer = new byte[compressedBuff.Length * 4];
+			var encryptedBuffer = new byte[compressedBuff.Length * sizeof(int)];
 			var buffIndex = 0;
 			while (buffIndex < compressedBuff.Length) {
 				uint[] enc = moduleCtx.ModeHandler.Encrypt(compressedBuff, buffIndex, key);
@@ -109,35 +111,11 @@ namespace Confuser.Protections.Constants {
 			moduleCtx.KeySeedUpdate.ApplyValue((int)keySeed);
 		}
 
-		void EncodeInitializer(CEContext moduleCtx, byte[] init, ReferenceEnumerable references) {
-			int buffIndex = -1;
-
-			foreach (var instr in references) {
-				IList<Instruction> instrs = instr.Item1.Body.Instructions;
-				int i = instrs.IndexOf(instr.Item2);
-
-				if (buffIndex == -1)
-					buffIndex = EncodeByteArray(moduleCtx, init);
-
-				var (method, decoderDesc) = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
-				uint id = (uint)buffIndex | (uint)(decoderDesc.InitializerID << 30);
-				id = moduleCtx.ModeHandler.Encode(decoderDesc.Data, moduleCtx, id);
-
-				instrs[i - 4].Operand = (int)id;
-				instrs[i - 3].OpCode = OpCodes.Call;
-				var arrType = new SZArraySig(((ITypeDefOrRef)instrs[i - 3].Operand).ToTypeSig());
-				instrs[i - 3].Operand = new MethodSpecUser(method, new GenericInstMethodSig(arrType));
-				instrs.RemoveAt(i - 2);
-				instrs.RemoveAt(i - 2);
-				instrs.RemoveAt(i - 2);
-			}
-		}
-
-		void UpdateReference(CEContext moduleCtx, TypeSig valueType, ReferenceEnumerable references, int buffIndex,
-			Func<DecoderDesc, byte> typeID) {
+		private void UpdateReference(CEContext moduleCtx, TypeSig valueType, ReferenceEnumerable references, int buffIndex,
+			Func<DecoderDesc, byte> typeId) {
 			foreach (var instr in references) {
 				var (method, decoderDesc) = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
-				var id = (uint)(buffIndex | (typeID(decoderDesc) << 30));
+				var id = (uint)(buffIndex | (typeId(decoderDesc) << 30));
 				id = moduleCtx.ModeHandler.Encode(decoderDesc.Data, moduleCtx, id);
 
 				Debug.Assert((method.ReturnType as GenericSig)?.Number == 0);
@@ -148,23 +126,24 @@ namespace Confuser.Protections.Constants {
 				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldc_R4 || valueType == method.Module.CorLibTypes.Single);
 				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldc_R8 || valueType == method.Module.CorLibTypes.Double);
 				Debug.Assert(instr.Item2.OpCode != OpCodes.Ldstr || valueType == method.Module.CorLibTypes.String);
+				Debug.Assert(instr.Item2.OpCode != OpCodes.Call || valueType.IsSZArray);
 
 				moduleCtx.ReferenceRepl.AddListEntry(instr.Item1, (instr.Item2, id, targetDecoder));
 			}
 		}
 
-		void RemoveDataFieldRefs(IConfuserContext context, HashSet<FieldDef> dataFields,
-			HashSet<Instruction> fieldRefs) {
-			foreach (var type in context.CurrentModule.GetTypes())
-				foreach (var method in type.Methods.Where(m => m.HasBody)) {
-					foreach (var instr in method.Body.Instructions)
-						if (instr.Operand is FieldDef && !fieldRefs.Contains(instr))
-							dataFields.Remove((FieldDef)instr.Operand);
-				}
+		private static void RemoveDataFieldRefs(IConfuserContext context, ICollection<FieldDef> dataFields, ICollection<Instruction> fieldRefs) {
+			var instructions = context.CurrentModule.GetTypes()
+				.SelectMany(type => type.Methods)
+				.Where(method => method.HasBody)
+				.SelectMany(method => method.Body.Instructions);
 
-			foreach (var fieldToRemove in dataFields) {
+			foreach (var instr in instructions)
+				if (instr.Operand is FieldDef fieldDef && !fieldRefs.Contains(instr))
+					dataFields.Remove(fieldDef);
+
+			foreach (var fieldToRemove in dataFields)
 				fieldToRemove.DeclaringType.Fields.Remove(fieldToRemove);
-			}
 		}
 	}
 }

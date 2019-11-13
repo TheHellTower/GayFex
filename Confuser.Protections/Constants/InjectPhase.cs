@@ -37,6 +37,7 @@ namespace Confuser.Protections.Constants {
 			if (!parameters.Targets.Any()) return;
 
 			var moduleCtx = context.Annotations.Get<CEContext>(context.CurrentModule, ConstantProtection.ContextKey);
+			if (moduleCtx?.EncodedReferences is null) return;
 
 			if (moduleCtx.Mode == Mode.x86)
 				if ((context.CurrentModule.Cor20HeaderFlags & ComImageFlags.ILOnly) != 0)

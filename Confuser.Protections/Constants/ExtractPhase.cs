@@ -47,6 +47,8 @@ namespace Confuser.Protections.Constants {
 			ExtractConstants(context, parameters, moduleCtx, ldc, ldInit, dataFields, logger, token);
 			logger.LogMsgExtractedFromModule(moduleCtx.Module, ldc.Count + ldInit.Count);
 
+			if (!ldc.Any() && !ldInit.Any()) return;
+
 			// Create data block
 			var dataBlock = CreateDataBlock(moduleCtx, ldc, ldInit, logger);
 
@@ -365,8 +367,9 @@ namespace Confuser.Protections.Constants {
 			(num + multiple - 1) / multiple * multiple;
 
 		private static Memory<int> GetData(Span<byte> src) {
-			var values = new int[RoundUp(src.Length, sizeof(int)) / sizeof(int)];
-			EncodeByteArray(src, values);
+			var values = new int[RoundUp(src.Length, sizeof(int)) / sizeof(int) + 1];
+			values[0] = src.Length;
+			EncodeByteArray(src, values.AsSpan(1, values.Length - 1));
 			return values;
 		}
 
