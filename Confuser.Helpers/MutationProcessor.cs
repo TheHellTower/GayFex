@@ -15,6 +15,8 @@ namespace Confuser.Helpers {
 	public delegate IReadOnlyList<Instruction> CryptProcessor(ModuleDef module, MethodDef method, Local block,
 		Local key);
 
+	public delegate IReadOnlyList<Instruction> ValueProcessor(ModuleDef module, MethodDef method, Instruction callInstruction);
+
 	public class MutationProcessor : IMethodInjectProcessor {
 		private const string MutationClassName = "Confuser.Mutation";
 
@@ -24,6 +26,7 @@ namespace Confuser.Helpers {
 		public IReadOnlyDictionary<MutationField, LateMutationFieldUpdate> LateKeyFieldValues { get; set; }
 		public PlaceholderProcessor PlaceholderProcessor { get; set; }
 		public CryptProcessor CryptProcessor { get; set; }
+		public ValueProcessor ValueProcessor { get; set; }
 
 		public MutationProcessor(IServiceProvider services, ModuleDef targetModule) {
 			if (services == null) throw new ArgumentNullException(nameof(services));
@@ -53,7 +56,8 @@ namespace Confuser.Helpers {
 					if (instr.Operand is IMethod calledMethod &&
 					    calledMethod.DeclaringType.FullName == MutationClassName) {
 						if (!ReplacePlaceholder(method, instr, calledMethod, ref i) &&
-						    !ReplaceCrypt(method, instr, calledMethod, ref i))
+						    !ReplaceCrypt(method, instr, calledMethod, ref i) &&
+						    !ReplaceValue(method, instr, calledMethod, ref i))
 							throw new InvalidOperationException("Unexpected call operation to Mutation class!");
 					}
 				}
@@ -203,6 +207,29 @@ namespace Confuser.Helpers {
 				}
 
 				index += cryptInstr.Count - 3;
+
+				return true;
+			}
+
+			return false;
+		}
+
+		private bool ReplaceValue(MethodDef method, Instruction instr, IMethod calledMethod, ref int index) {
+			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(instr != null, $"{nameof(instr)} != null");
+			Debug.Assert(calledMethod != null, $"{nameof(calledMethod)} != null");
+
+			if (calledMethod.Name == "Value") {
+				if (ValueProcessor == null)
+					throw new InvalidOperationException("Found mutation crypt, but not processor defined.");
+
+				var replaceInstructions = ValueProcessor(TargetModule, method, instr);
+				for (var i = 0; i < replaceInstructions.Count; i++) 
+					method.Body.Instructions.Insert(index + i + 1, replaceInstructions[i]);
+				method.Body.Instructions.RemoveAt(index);
+				method.Body.ReplaceReference(instr, replaceInstructions[0]);
+
+				index += replaceInstructions.Count - 1;
 
 				return true;
 			}

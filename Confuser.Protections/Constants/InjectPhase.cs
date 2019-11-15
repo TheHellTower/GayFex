@@ -97,7 +97,8 @@ namespace Confuser.Protections.Constants {
 						InjectBehaviors.RenameAndInternalizeBehavior(context),
 						new MutationProcessor(context.Registry, context.CurrentModule) {
 							KeyFieldValues = mutationKeys,
-							PlaceholderProcessor = decoderImpl.Processor
+							PlaceholderProcessor = decoderImpl.Processor,
+							ValueProcessor = (v1, v2, v3) => new []{Instruction.Create(OpCodes.Sizeof, new GenericMVar(0).ToTypeDefOrRef())}
 						});
 
 					var decoderInst = decoderInjectResult.Requested.Mapped;
