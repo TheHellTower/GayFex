@@ -3,6 +3,7 @@ using System.Globalization;
 
 namespace ConstantProtection {
 	public partial class Program {
+		[System.CodeDom.Compiler.GeneratedCode("Microsoft.VisualStudio.TextTemplating", "16.0")]
 		private static void WriteGeneratedConstants() {
 			Console.WriteLine("Test-20");
 			Console.WriteLine("Confuser-20");

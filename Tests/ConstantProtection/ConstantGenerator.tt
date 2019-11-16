@@ -9,6 +9,7 @@ using System.Globalization;
 
 namespace ConstantProtection {
 	public partial class Program {
+		[System.CodeDom.Compiler.GeneratedCode("Microsoft.VisualStudio.TextTemplating", "16.0")]
 		private static void WriteGeneratedConstants() {
 <# for (var i = -20; i <= 20; i++) { #>
 			Console.WriteLine("Test<#= i #>");
