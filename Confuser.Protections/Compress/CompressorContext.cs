@@ -48,13 +48,13 @@ namespace Confuser.Protections.Compress {
 					state = (state * state) % 0x8a5cb7;
 			}
 
-			Span<byte> compressedData = compress.Compress(data.ToArray(), progressFunc);
+			var compressedData = compress.Compress(CompressionAlgorithm.Lzma, data, progressFunc);
 			Memory<byte> encryptedData = new byte[(compressedData.Length + 3) & ~3];
 
 			int keyIndex = 0;
 			for (int i = 0; i < encryptedData.Length; i += 4) {
 				EncryptData(
-					compressedData.Slice(start: i, length: Math.Min(4, compressedData.Length - i)),
+					compressedData.AsSpan(start: i, length: Math.Min(4, compressedData.Length - i)),
 					encryptedData.Span.Slice(start: i, length: 4),
 					key, keyIndex);
 				keyIndex++;

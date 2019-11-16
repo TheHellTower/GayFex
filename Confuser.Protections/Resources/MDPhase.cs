@@ -70,8 +70,8 @@ namespace Confuser.Protections.Resources {
 
 				// compress
 				moduleBuff = ctx.Context.Registry.GetRequiredService<ICompressionService>().Compress(
-					moduleBuff,
-					null); // logger.Progress((int)(progress * 10000), 10000));
+					CompressionAlgorithm.Lzma,
+					moduleBuff); // logger.Progress((int)(progress * 10000), 10000));
 				//logger.EndProgress();
 				token.ThrowIfCancellationRequested();
 

@@ -34,49 +34,18 @@ namespace Confuser.Protections.Constants {
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
 			CancellationToken token) {
-			if (parameters.Targets.Any()) {
-				var compression = context.Registry.GetRequiredService<ICompressionService>();
-				var name = context.Registry.GetService<INameService>();
-				var marker = context.Registry.GetRequiredService<IMarkerService>();
-				var moduleCtx = new CEContext {
-					Protection = Parent,
-					Random = context.Registry.GetRequiredService<IRandomService>()
-						.GetRandomGenerator(ConstantProtection._FullId),
-					Context = context,
-					Module = context.CurrentModule,
-					Marker = marker,
-					DynCipher = context.Registry.GetRequiredService<IDynCipherService>(),
-					Name = name,
-					Trace = context.Registry.GetRequiredService<ITraceService>()
-				};
+			if (!parameters.Targets.Any()) return;
 
-				// Extract parameters
-				moduleCtx.Mode = parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.Mode);
-				moduleCtx.DecoderCount =
-					parameters.GetParameter(context, context.CurrentModule, Parent.Parameters.DecoderCount);
+			var moduleCtx = context.Annotations.Get<CEContext>(context.CurrentModule, ConstantProtection.ContextKey);
+			if (moduleCtx?.EncodedReferences is null) return;
 
-				switch (moduleCtx.Mode) {
-					case Mode.Normal:
-						moduleCtx.ModeHandler = new NormalMode();
-						break;
-					case Mode.Dynamic:
-						moduleCtx.ModeHandler = new DynamicMode();
-						break;
-					case Mode.x86:
-						moduleCtx.ModeHandler = new x86Mode();
-						if ((context.CurrentModule.Cor20HeaderFlags & ComImageFlags.ILOnly) != 0)
-							context.CurrentModuleWriterOptions.Cor20HeaderOptions.Flags &= ~ComImageFlags.ILOnly;
-						break;
-					default:
-						throw new UnreachableException();
-				}
+			if (moduleCtx.Mode == Mode.x86)
+				if ((context.CurrentModule.Cor20HeaderFlags & ComImageFlags.ILOnly) != 0)
+					context.CurrentModuleWriterOptions.Cor20HeaderOptions.Flags &= ~ComImageFlags.ILOnly;
 
-				InjectHelpers(context, moduleCtx);
-				var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
-				cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, moduleCtx.InitMethod));
-
-				context.Annotations.Set(context.CurrentModule, ConstantProtection.ContextKey, moduleCtx);
-			}
+			InjectHelpers(context, moduleCtx);
+			var cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
+			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, moduleCtx.InitMethod));
 		}
 
 		private void InjectHelpers(IConfuserContext context, CEContext moduleCtx) {
@@ -94,7 +63,7 @@ namespace Confuser.Protections.Constants {
 
 			var initInjectResult = InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
-				new CompressionServiceProcessor(context, context.CurrentModule),
+				new CompressionServiceProcessor(context, context.CurrentModule, moduleCtx.UsedCompressionAlgorithm),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
 					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
 					PlaceholderProcessor = CreateDataField(context, moduleCtx),
@@ -106,8 +75,8 @@ namespace Confuser.Protections.Constants {
 			var decoder = constantRuntime.FindMethod("Get");
 
 			moduleCtx.Decoders = new List<(MethodDef, DecoderDesc)>();
+			Span<byte> ids = stackalloc byte[3] { 0, 1, 2 };
 			for (int i = 0; i < moduleCtx.DecoderCount; i++) {
-				Span<byte> ids = stackalloc byte[3] {0, 1, 2};
 				moduleCtx.Random.Shuffle(ids);
 
 				var decoderDesc = new DecoderDesc {
@@ -128,7 +97,8 @@ namespace Confuser.Protections.Constants {
 						InjectBehaviors.RenameAndInternalizeBehavior(context),
 						new MutationProcessor(context.Registry, context.CurrentModule) {
 							KeyFieldValues = mutationKeys,
-							PlaceholderProcessor = decoderImpl.Processor
+							PlaceholderProcessor = decoderImpl.Processor,
+							ValueProcessor = (v1, v2, v3) => new []{Instruction.Create(OpCodes.Sizeof, new GenericMVar(0).ToTypeDefOrRef())}
 						});
 
 					var decoderInst = decoderInjectResult.Requested.Mapped;

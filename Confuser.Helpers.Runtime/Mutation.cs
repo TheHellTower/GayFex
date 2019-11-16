@@ -23,5 +23,7 @@
 
 		public static void Crypt(uint[] data, uint[] key) {
 		}
+
+		public static T Value<T>() => default;
 	}
 }

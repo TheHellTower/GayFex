@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
@@ -9,6 +10,7 @@ using Confuser.UnitTest;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace ConstantProtection.Test {
 	public sealed class ConstantProtectionTest {
@@ -21,7 +23,7 @@ namespace ConstantProtection.Test {
 		[MemberData(nameof(ProtectAndExecuteTestData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "constants")]
-		public async Task ProtectAndExecuteTest(string framework, string modeKey, bool cfgKey, string elementsKey) {
+		public async Task ProtectAndExecuteTest(string framework, string modeKey, string compressor, bool cfgKey, string elementsKey) {
 			var key = Path.Combine(Environment.CurrentDirectory, "Confuser.Test.snk");
 			var baseDir = Path.Combine(Environment.CurrentDirectory, framework);
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
@@ -38,6 +40,7 @@ namespace ConstantProtection.Test {
 			proj.Rules.Add(new Rule() {
 				new SettingItem<IProtection>("constants") {
 					{ "mode", modeKey },
+					{ "compressor", compressor },
 					{ "cfg", cfgKey ? "true" : "false" },
 					{ "elements", elementsKey }
 				}
@@ -45,38 +48,61 @@ namespace ConstantProtection.Test {
 
 			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = key });
 
-
 			var parameters = new ConfuserParameters {
 				Project = proj,
 				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper))
 			};
 
-			await ConfuserEngine.Run(parameters);
+			var recordedResult = await ProcessUtilities.ExecuteTestApplication(inputFile, RecordOutput, outputHelper).ConfigureAwait(true);
+
+			await ConfuserEngine.Run(parameters).ConfigureAwait(true);
 
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
 
-			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async (stdout) => {
-				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("123456", await stdout.ReadLineAsync());
-				Assert.Equal("3", await stdout.ReadLineAsync());
-				Assert.Equal("Test3", await stdout.ReadLineAsync());
-				Assert.Equal("END", await stdout.ReadLineAsync());
-			}, outputHelper);
+			var result = await ProcessUtilities.ExecuteTestApplication(outputFile, async stdout => {
+				await VerifyOutput(recordedResult.Result, stdout).ConfigureAwait(true);
+			}, outputHelper).ConfigureAwait(true);
 			Assert.Equal(42, result);
 
 			FileUtilities.ClearOutput(outputFile);
 		}
 
-		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
-			foreach (var framework in new string[] { "net20", "net40", "net471" })
-				foreach (var mode in new string[] { "Normal", "Dynamic", "x86" })
-					foreach (var cfg in new bool[] { false, true })
-						foreach (var encodeStrings in new string[] { "", "S" })
-							foreach (var encodeNumbers in new string[] { "", "N" })
-								foreach (var encodePrimitives in new string[] { "", "P" })
-									foreach (var encodeInitializers in new string[] { "", "I" })
-										yield return new object[] { framework, mode, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
+		private async Task<IReadOnlyList<string>> RecordOutput(StreamReader reader) {
+			var result = new List<string>();
+
+			string line;
+			while ((line = await reader.ReadLineAsync().ConfigureAwait(true)) != null) {
+				result.Add(line);
+			}
+
+			return result;
+		}
+
+		private async Task VerifyOutput(IReadOnlyList<string> expected, StreamReader actual) {
+			foreach (var expectedResult in expected) {
+				Assert.Equal(expectedResult, await actual.ReadLineAsync().ConfigureAwait(true));
+			}
+		}
+
+		public static IEnumerable<object[]> ProtectAndExecuteTestData() =>
+			from framework in new string[] { "net20", "net40", "net471" }
+			from mode in new string[] { "Normal", "Dynamic", "x86" }
+			from compressor in new string[] { "None", "Deflate", "Lzma", "Lz4" }
+			from cfg in new bool[] { false, true }
+			from encodeStrings in new string[] { "", "S" }
+			from encodeNumbers in new string[] { "", "N" }
+			from encodePrimitives in GetPrimitivesOptions(encodeStrings, encodeNumbers)
+			from encodeInitializers in new string[] { "", "I" }
+			select new object[] { framework, mode, compressor, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
+
+		private static string[] GetPrimitivesOptions(string encodeStrings, string encodeNumbers) {
+			string[] primitivesOptions;
+			if (string.IsNullOrEmpty(encodeStrings) && string.IsNullOrEmpty(encodeNumbers))
+				primitivesOptions = new string[] { "" };
+			else
+				primitivesOptions = new string[] { "", "P" };
+			return primitivesOptions;
 		}
 	}
 }

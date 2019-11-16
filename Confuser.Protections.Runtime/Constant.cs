@@ -1,18 +1,23 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 
 namespace Confuser.Runtime {
+	// ReSharper disable once UnusedType.Global
 	internal static class Constant {
 		private static byte[] b;
 
+		[SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "Injected code")]
+		[SuppressMessage("Code Quality", "IDE0051:RemoveUnusdPrivateMembers", Justification = "Injected code")]
+		[SuppressMessage("ReSharper", "UnusedMember.Local")]
 		private static void Initialize() {
 			var l = (uint)Mutation.KeyI0;
-			uint[] q = Mutation.Placeholder(new uint[Mutation.KeyI0]);
+			var q = Mutation.Placeholder(new uint[Mutation.KeyI0]);
 
 			var k = new uint[0x10];
 			var n = (uint)Mutation.KeyI1;
-			for (int i = 0; i < 0x10; i++) {
+			for (var i = 0; i < 0x10; i++) {
 				n ^= n >> 12;
 				n ^= n << 25;
 				n ^= n >> 27;
@@ -26,8 +31,8 @@ namespace Confuser.Runtime {
 				Array.Copy(q, s, w, 0, 0x10);
 
 				Mutation.Crypt(w, k);
-				for (int j = 0; j < 0x10; j++) {
-					uint e = w[j];
+				for (var j = 0; j < 0x10; j++) {
+					var e = w[j];
 					o[d++] = (byte)e;
 					o[d++] = (byte)(e >> 8);
 					o[d++] = (byte)(e >> 16);
@@ -44,26 +49,26 @@ namespace Confuser.Runtime {
 		internal static T Get<T>(uint id) {
 			if (Assembly.GetExecutingAssembly().Equals(Assembly.GetCallingAssembly())) {
 				id = (uint)Mutation.Placeholder((int)id);
-				uint t = id >> 30;
+				var t = id >> 30;
 
-				T ret = default(T);
+				var ret = default(T);
 				id &= 0x3fffffff;
 				id <<= 2;
 
 				if (t == Mutation.KeyI0) {
-					int l = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
+					var l = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
 					ret = (T)(object)string.Intern(Encoding.UTF8.GetString(b, (int)id, l));
 				}
 				// NOTE: Assume little-endian
 				else if (t == Mutation.KeyI1) {
 					var v = new T[1];
-					Buffer.BlockCopy(b, (int)id, v, 0, sizeof(int));
+					Buffer.BlockCopy(b, (int)id, v, 0, Mutation.Value<int>());
 					ret = v[0];
 				}
 				else if (t == Mutation.KeyI2) {
-					int s = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
-					int l = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
-					Array v = Array.CreateInstance(typeof(T).GetElementType(), l);
+					var s = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
+					var l = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
+					var v = Array.CreateInstance(typeof(T).GetElementType(), l);
 					Buffer.BlockCopy(b, (int)id, v, 0, s - 4);
 					ret = (T)(object)v;
 				}

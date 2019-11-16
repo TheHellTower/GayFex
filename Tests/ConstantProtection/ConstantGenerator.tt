@@ -1,0 +1,34 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System;
+using System.Globalization;
+
+namespace ConstantProtection {
+	public partial class Program {
+		[System.CodeDom.Compiler.GeneratedCode("Microsoft.VisualStudio.TextTemplating", "16.0")]
+		private static void WriteGeneratedConstants() {
+<# for (var i = -20; i <= 20; i++) { #>
+			Console.WriteLine("Test<#= i #>");
+			Console.WriteLine("Confuser<#= i #>");
+			Console.WriteLine("This is constant #<#= i #>");
+			Console.WriteLine((<#= i #>).ToString(CultureInfo.InvariantCulture));
+			Console.WriteLine((<#= (long)i + int.MinValue #>L).ToString(CultureInfo.InvariantCulture));
+			Console.WriteLine((<#= (long)i + int.MaxValue #>U).ToString(CultureInfo.InvariantCulture));
+			Console.WriteLine((<#= (long)i + uint.MaxValue #>UL).ToString(CultureInfo.InvariantCulture));
+			Console.WriteLine((<#= i * Math.PI #>).ToString(CultureInfo.InvariantCulture));
+			Console.WriteLine((<#= (float)(i * Math.PI) #>F).ToString(CultureInfo.InvariantCulture));
+			{
+				var dataArrayInt = new int[] {<# for (var k = -3; k < 3; k++) {#><#= i + k #>, <# } #><#= i + 3 #>};
+				Console.WriteLine(dataArrayInt[<#= Math.Abs(i) % 7 #>].ToString(CultureInfo.InvariantCulture));
+
+				var dataArrayDbl = new double[] {<# for (var k = -3; k < 3; k++) {#><#= (i + k) * Math.PI #>, <# } #><#= (i + 3) * Math.PI #>};
+				Console.WriteLine(dataArrayDbl[<#= Math.Abs(i) % 7 #>].ToString(CultureInfo.InvariantCulture));
+			}
+<# } #>
+		}
+	}
+}

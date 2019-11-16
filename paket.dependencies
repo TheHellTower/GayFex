@@ -7,6 +7,8 @@ source https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json
 nuget Antlr4 ~> 4.6
 nuget Antlr4.Runtime ~> 4.6
 nuget dnlib ~> 3.2
+nuget Humanizer.Core ~> 2.7
+nuget K4os.Compression.LZ4 = 1.1.11
 nuget Microsoft.Build.Framework ~> 15
 nuget Microsoft.Build.Tasks.Core ~> 15
 nuget Microsoft.Build.Utilities.Core ~> 15
@@ -43,6 +45,12 @@ nuget System.Security.Cryptography.Primitives ~> 4
 nuget System.Text.RegularExpressions ~> 4
 nuget System.ValueTuple ~> 4
 nuget System.Xml.XmlDocument ~> 4
+
+group Runtime
+  storage: none
+  framework: auto-detect
+
+  github MiloszKrajewski/K4os.Compression.LZ4:1.1.11 src/K4os.Compression.LZ4/Engine/LZ4_xx.cs
 
 group Test
   storage: none
