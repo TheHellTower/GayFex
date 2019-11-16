@@ -13,12 +13,19 @@ namespace Confuser.Core.Runtime.Compression {
 		/// This method is invoked from the module initializer. The reference is build during injection.
 		/// </remarks>
 		public static byte[] Decompress(byte[] data) {
-			using (var outputStream = new MemoryStream()) {
-				using (var inputStream = new MemoryStream(data))
+			using (var inputStream = new MemoryStream(data, false)) {
+				var resultSize = 0;
+				for (var i = 0; i < 4; i++) {
+					var v = (byte)inputStream.ReadByte();
+					resultSize |= v << (8 * i);
+				}
+
+				var result = new byte[resultSize];
+				using (var outputStream = new MemoryStream(result, true))
 				using (var deflateStream = new DeflateStream(inputStream, CompressionMode.Decompress, false))
 					CopyTo(deflateStream, outputStream);
 
-				return outputStream.ToArray();
+				return result;
 			}
 		}
 

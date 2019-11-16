@@ -82,7 +82,7 @@ namespace Confuser.Core.Services {
 		private byte[] CompressDeflate(ReadOnlySpan<byte> data, Action<double> progressFunc) {
 			using (var target = new MemoryStream()) {
 				long fileSize = data.Length;
-				for (int i = 0; i < 8; i++)
+				for (var i = 0; i < 4; i++)
 					target.WriteByte((byte)(fileSize >> (8 * i)));
 
 				using (var deflateStream = new DeflateStream(target, CompressionLevel.Optimal)) 
@@ -138,22 +138,22 @@ namespace Confuser.Core.Services {
 			var size = LZ4Codec.MaximumOutputSize(data.Length) + 8;
 			while (true) {
 				var target = new byte[size];
-				long fileSize = data.Length;
-				for (int i = 0; i < 8; i++)
+				var fileSize = data.Length;
+				for (var i = 0; i < 4; i++)
 					target[i] = (byte)(fileSize >> (8 * i));
                 
-				int realSize = LZ4Codec.Encode(data, target.AsSpan(8), LZ4Level.L12_MAX);
-				if (realSize + 8 == size) {
+				var realSize = LZ4Codec.Encode(data, target.AsSpan(8), LZ4Level.L12_MAX);
+				if (realSize + 4 == size) {
 					progressFunc?.Invoke(1.0);
 					return target;
 				}
 
-				if (realSize + 8 > size) {
+				if (realSize + 4 > size) {
 					size = realSize;
 					continue;
 				}
 
-                var resizedResult = new byte[realSize + 8];
+                var resizedResult = new byte[realSize + 4];
                 Array.Copy(target, resizedResult, resizedResult.Length);
                 progressFunc?.Invoke(1.0);
                 return resizedResult;
