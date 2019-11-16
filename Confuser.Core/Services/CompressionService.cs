@@ -73,16 +73,18 @@ namespace Confuser.Core.Services {
 				case CompressionAlgorithm.Lzma:
 					return CompressLzma(data, progressFunc);
 				case CompressionAlgorithm.Lz4:
-					return CompressLZ4(data, progressFunc);
+					return CompressLz4(data, progressFunc);
 				default:
 					throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, "Unexpected value for compression algorithm.");
 			}
 		}
 
-		private byte[] CompressDeflate(ReadOnlySpan<byte> data, Action<double> progressFunc) {
+		private static byte[] CompressDeflate(ReadOnlySpan<byte> data, Action<double> progressFunc) {
+			const int headerSize = sizeof(int);
+
 			using (var target = new MemoryStream()) {
 				long fileSize = data.Length;
-				for (var i = 0; i < 4; i++)
+				for (var i = 0; i < headerSize; i++)
 					target.WriteByte((byte)(fileSize >> (8 * i)));
 
 				using (var deflateStream = new DeflateStream(target, CompressionLevel.Optimal)) 
@@ -134,26 +136,32 @@ namespace Confuser.Core.Services {
 			}
 		}
 
-		private byte[] CompressLZ4(ReadOnlySpan<byte> data, Action<double> progressFunc) {
-			var size = LZ4Codec.MaximumOutputSize(data.Length) + 8;
+		private static byte[] CompressLz4(ReadOnlySpan<byte> data, Action<double> progressFunc) {
+			const int headerSize = sizeof(int) * 2;
+
+			var size = LZ4Codec.MaximumOutputSize(data.Length) + headerSize;
 			while (true) {
 				var target = new byte[size];
 				var fileSize = data.Length;
 				for (var i = 0; i < 4; i++)
 					target[i] = (byte)(fileSize >> (8 * i));
                 
-				var realSize = LZ4Codec.Encode(data, target.AsSpan(8), LZ4Level.L12_MAX);
-				if (realSize + 4 == size) {
+				var realSize = LZ4Codec.Encode(data, target.AsSpan(headerSize), LZ4Level.L12_MAX);
+				
+				for (var i = 4; i < 8; i++)
+					target[i] = (byte)(realSize >> (8 * i));
+
+				if (realSize + headerSize == size) {
 					progressFunc?.Invoke(1.0);
 					return target;
 				}
 
-				if (realSize + 4 > size) {
+				if (realSize + headerSize > size) {
 					size = realSize;
 					continue;
 				}
 
-                var resizedResult = new byte[realSize + 4];
+                var resizedResult = new byte[realSize + headerSize];
                 Array.Copy(target, resizedResult, resizedResult.Length);
                 progressFunc?.Invoke(1.0);
                 return resizedResult;
@@ -161,17 +169,17 @@ namespace Confuser.Core.Services {
 		}
 
 		private sealed class CompressionLogger : ICodeProgress {
-			readonly Action<double> progressFunc;
-			readonly int size;
+			private readonly Action<double> _progressFunc;
+			private readonly int _size;
 
 			public CompressionLogger(Action<double> progressFunc, int size) {
-				this.progressFunc = progressFunc;
-				this.size = size;
+				_progressFunc = progressFunc;
+				_size = size;
 			}
 
 			public void SetProgress(long inSize, long outSize) {
-				double precentage = (double)inSize / size;
-				progressFunc(precentage);
+				var percentage = (double)inSize / _size;
+				_progressFunc(percentage);
 			}
 		}
 	}

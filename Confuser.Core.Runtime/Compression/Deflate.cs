@@ -3,7 +3,7 @@ using System.IO.Compression;
 using System.Runtime.CompilerServices;
 
 namespace Confuser.Core.Runtime.Compression {
-	// ReSharper disable once UnusedMember.Global
+	// ReSharper disable once UnusedType.Global
 	/// <remarks>
 	/// This class is injected into the code of the assembly to project. The reference is build during injection.
 	/// </remarks>

@@ -2,7 +2,7 @@
 using SevenZip.Compression.LZMA;
 
 namespace Confuser.Core.Runtime.Compression {
-	// ReSharper disable once UnusedMember.Global
+	// ReSharper disable once UnusedType.Global
 	/// <remarks>
 	/// This class is injected into the code of the assembly to project. The reference is build during injection.
 	/// </remarks>

@@ -2,7 +2,7 @@
 using K4os.Compression.LZ4.Engine;
 
 namespace Confuser.Core.Runtime.Compression {
-	// ReSharper disable once UnusedMember.Global
+	// ReSharper disable once UnusedType.Global
 	/// <remarks>
 	/// This class is injected into the code of the assembly to project. The reference is build during injection.
 	/// </remarks>
@@ -12,11 +12,18 @@ namespace Confuser.Core.Runtime.Compression {
 		/// This method is invoked from the module initializer. The reference is build during injection.
 		/// </remarks>
 		public static unsafe byte[] Decompress(byte[] data) {
-			var targetLength = BitConverter.ToInt64(data, 0);
-			var targetArray = new byte[(int)targetLength];
+			var resultSize = 0;
+			for (var i = 0; i < 4; i++) 
+				resultSize |= data[i] << (8 * i);
+
+			var compressedSize = 0;
+			for (var i = 4; i < 8; i++) 
+				compressedSize |= data[i] << (8 * i);
+
+			var targetArray = new byte[resultSize];
 			fixed(byte *source = data)
 				fixed(byte *target = targetArray)
-					LZ4_xx.LZ4_decompress_safe(source + 8, target, data.Length - 8, (int)targetLength);
+					LZ4_xx.LZ4_decompress_safe(source + 8, target, compressedSize, resultSize);
 			return targetArray;
 		}
 	}
