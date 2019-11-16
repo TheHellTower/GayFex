@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -14,7 +16,7 @@ namespace Confuser.Helpers {
 		private sealed class Injector : ImportMapper {
 			private readonly Dictionary<IMemberDef, IMemberDef> _injectedMembers;
 
-			private static readonly ImmutableList<IMethodInjectProcessor> _defaultProcessors = 
+			private static readonly ImmutableList<IMethodInjectProcessor> _defaultProcessors =
 				ImmutableList.Create<IMethodInjectProcessor>(new UnsafeMemoryProcessor());
 
 			private InjectContext InjectContext { get; }
@@ -201,8 +203,7 @@ namespace Confuser.Helpers {
 				foreach (var iface in typeDef.Interfaces)
 					newTypeDef.Interfaces.Add(InjectInterfaceImpl(iface, importer));
 
-				foreach (var ca in typeDef.CustomAttributes)
-					newTypeDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+				InjectCustomAttributes(typeDef, newTypeDef, importer);
 
 				InjectBehavior.Process(typeDef, newTypeDef, importer);
 
@@ -237,6 +238,16 @@ namespace Confuser.Helpers {
 				return resultImpl;
 			}
 
+			private static void InjectCustomAttributes(IHasCustomAttribute source, IHasCustomAttribute target, Importer importer) {
+				foreach (var ca in source.CustomAttributes) {
+					// Nobody needs to know about suppressed messages in the runtime code!
+					if (ca.TypeFullName.Equals(typeof(SuppressMessageAttribute).FullName, StringComparison.Ordinal))
+						continue;
+
+					target.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+				}
+			}
+
 			private static CustomAttribute InjectCustomAttribute(CustomAttribute attribute, Importer importer) {
 				Debug.Assert(attribute != null, $"{nameof(attribute)} != null");
 
@@ -265,9 +276,8 @@ namespace Confuser.Helpers {
 
 				if (newFieldDef.HasFieldRVA)
 					newFieldDef.RVA = fieldDef.RVA;
-
-				foreach (var ca in fieldDef.CustomAttributes)
-					newFieldDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+				
+				InjectCustomAttributes(fieldDef, newFieldDef, importer);
 
 				InjectBehavior.Process(fieldDef, newFieldDef, importer);
 				InjectContext.TargetModule.UpdateRowId(newFieldDef);
@@ -293,9 +303,8 @@ namespace Confuser.Helpers {
 					newMethodDef.ImplMap =
 						new ImplMapUser(new ModuleRefUser(InjectContext.TargetModule, methodDef.ImplMap.Module.Name),
 							methodDef.ImplMap.Name, methodDef.ImplMap.Attributes);
-
-				foreach (var ca in methodDef.CustomAttributes)
-					newMethodDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+				
+				InjectCustomAttributes(methodDef, newMethodDef, importer);
 
 				if (methodDef.HasBody) {
 					methodDef.Body.SimplifyBranches();
@@ -370,9 +379,8 @@ namespace Confuser.Helpers {
 				}
 
 				newEventDef.DeclaringType = (TypeDef)importer.Import(eventDef.DeclaringType);
-
-				foreach (var ca in eventDef.CustomAttributes)
-					newEventDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+				
+				InjectCustomAttributes(eventDef, newEventDef, importer);
 
 				InjectBehavior.Process(eventDef, newEventDef, importer);
 				InjectContext.TargetModule.UpdateRowId(newEventDef);
@@ -399,9 +407,8 @@ namespace Confuser.Helpers {
 				}
 
 				newPropertyDef.DeclaringType = (TypeDef)importer.Import(propertyDef.DeclaringType);
-
-				foreach (var ca in propertyDef.CustomAttributes)
-					newPropertyDef.CustomAttributes.Add(InjectCustomAttribute(ca, importer));
+				
+				InjectCustomAttributes(propertyDef, newPropertyDef, importer);
 
 				InjectBehavior.Process(propertyDef, newPropertyDef, importer);
 				InjectContext.TargetModule.UpdateRowId(newPropertyDef);
