@@ -10,6 +10,7 @@ using Confuser.UnitTest;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace ConstantProtection.Test {
 	public sealed class ConstantProtectionTest {
@@ -84,16 +85,24 @@ namespace ConstantProtection.Test {
 			}
 		}
 
-		public static IEnumerable<object[]> ProtectAndExecuteTestData() {
-			foreach (var framework in new string[] { "net20", "net40", "net471" })
-				foreach (var mode in new string[] { "Normal", "Dynamic", "x86" })
-					foreach (var compressor in new string[] { "None", "Deflate", "Lzma", "Lz4" })
-						foreach (var cfg in new bool[] { false, true })
-							foreach (var encodeStrings in new string[] { "", "S" })
-								foreach (var encodeNumbers in new string[] { "", "N" })
-									foreach (var encodePrimitives in new string[] { "", "P" })
-										foreach (var encodeInitializers in new string[] { "", "I" })
-											yield return new object[] { framework, mode, compressor, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
+		public static IEnumerable<object[]> ProtectAndExecuteTestData() =>
+			from framework in new string[] { "net20", "net40", "net471" }
+			from mode in new string[] { "Normal", "Dynamic", "x86" }
+			from compressor in new string[] { "None", "Deflate", "Lzma", "Lz4" }
+			from cfg in new bool[] { false, true }
+			from encodeStrings in new string[] { "", "S" }
+			from encodeNumbers in new string[] { "", "N" }
+			from encodePrimitives in GetPrimitivesOptions(encodeStrings, encodeNumbers)
+			from encodeInitializers in new string[] { "", "I" }
+			select new object[] { framework, mode, compressor, cfg, encodeStrings + encodeNumbers + encodePrimitives + encodeInitializers };
+
+		private static string[] GetPrimitivesOptions(string encodeStrings, string encodeNumbers) {
+			string[] primitivesOptions;
+			if (string.IsNullOrEmpty(encodeStrings) && string.IsNullOrEmpty(encodeNumbers))
+				primitivesOptions = new string[] { "" };
+			else
+				primitivesOptions = new string[] { "", "P" };
+			return primitivesOptions;
 		}
 	}
 }
