@@ -4,6 +4,9 @@ using ApprovalTests;
 using ApprovalTests.Core;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using ApprovalTests.Reporters.ContinuousIntegration;
+using ApprovalTests.Reporters.TestFrameworks;
+using ApprovalTests.Reporters.Windows;
 using ApprovalTests.Writers;
 using Confuser.Core.Services;
 using Confuser.UnitTest;
@@ -56,7 +59,8 @@ namespace Confuser.Optimizations.TailCall {
 			testMethodDef.Body.SimplifyMacros(testMethodDef.Parameters);
 			testMethodDef.Body.SimplifyBranches();
 
-			Assert.True(processMethod(testMethodDef, new XunitLogger(OutputHelper), new TestTraceService()));
+			using (var logger = new XunitLogger(OutputHelper))
+				Assert.True(processMethod(testMethodDef, logger, new TestTraceService()));
 
 			testMethodDef.Body.OptimizeBranches();
 			testMethodDef.Body.OptimizeMacros();

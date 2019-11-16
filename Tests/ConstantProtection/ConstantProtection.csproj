@@ -1,21 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>net20;net40;net471</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(TargetFramework)' == 'net20'">
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
-
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
-
   <ItemGroup>
     <None Include="ConstantGenerator.cs">
       <DesignTime>True</DesignTime>
@@ -23,18 +18,15 @@
       <DependentUpon>ConstantGenerator.tt</DependentUpon>
     </None>
   </ItemGroup>
-
   <ItemGroup>
     <None Update="ConstantGenerator.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>ConstantGenerator.cs</LastGenOutput>
     </None>
   </ItemGroup>
-
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Update="ConstantGenerator.cs">
       <DesignTime>True</DesignTime>
@@ -42,5 +34,5 @@
       <DependentUpon>ConstantGenerator.tt</DependentUpon>
     </Compile>
   </ItemGroup>
-
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

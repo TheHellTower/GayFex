@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions.Internal;
 
 namespace ConfuserEx {
 	internal sealed class UiLogger : ILogger {
@@ -139,6 +136,17 @@ namespace ConfuserEx {
 					stringBuilder.Insert(initialLength, _messagePadding);
 					stringBuilder.AppendLine();
 				}
+			}
+		}
+
+		private sealed class NullScope : IDisposable {
+			internal static NullScope Instance { get; } = new NullScope();
+
+			private NullScope() {
+			}
+
+			/// <inheritdoc />
+			public void Dispose() {
 			}
 		}
 	}

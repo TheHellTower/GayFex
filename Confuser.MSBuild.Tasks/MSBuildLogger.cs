@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions.Internal;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.MSBuild.Tasks {
@@ -13,7 +11,7 @@ namespace Confuser.MSBuild.Tasks {
 
 		internal bool HasError { get; private set; }
 
-		internal MSBuildLogger(TaskLoggingHelper loggingHelper) => 
+		internal MSBuildLogger(TaskLoggingHelper loggingHelper) =>
 			_loggingHelper = loggingHelper ?? throw new ArgumentNullException(nameof(loggingHelper));
 
 		public ILogger CreateLogger(string categoryName) => this;
@@ -68,6 +66,17 @@ namespace Confuser.MSBuild.Tasks {
 			}
 
 			_loggingHelper.LogMessage(importance, result);
+		}
+
+		private sealed class NullScope : IDisposable {
+			internal static NullScope Instance { get; } = new NullScope();
+
+			private NullScope() {
+			}
+
+			/// <inheritdoc />
+			public void Dispose() {
+			}
 		}
 	}
 }

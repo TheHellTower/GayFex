@@ -2,7 +2,6 @@ Antlr4
 dnlib
 K4os.Compression.LZ4
 Microsoft.CodeAnalysis.FxCopAnalyzers
-Microsoft.Extensions.DependencyInjection
 Microsoft.Extensions.Logging
 Microsoft.Win32.Registry
 Nerdbank.GitVersioning

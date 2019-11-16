@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions.Internal;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -60,6 +59,17 @@ namespace Confuser.UnitTest {
 
 			_outputAction?.Invoke(result);
 			_outputHelper.WriteLine(result);
+		}
+
+		private sealed class NullScope : IDisposable {
+			internal static NullScope Instance { get; } = new NullScope();
+
+			private NullScope() {
+			}
+
+			/// <inheritdoc />
+			public void Dispose() {
+			}
 		}
 	}
 }
