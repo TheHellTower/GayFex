@@ -7,6 +7,7 @@ using K4os.Compression.LZ4.Internal;
 
 namespace K4os.Compression.LZ4.Engine
 {
+	[System.CodeDom.Compiler.GeneratedCode("Microsoft.VisualStudio.TextTemplating", "16.0")]
 	internal unsafe class LZ4_xx
 	{
 		// [StructLayout(LayoutKind.Sequential)]

@@ -9,8 +9,10 @@
   var srcFile = Host.ResolvePath(@"..\paket-files\runtime\MiloszKrajewski\K4os.Compression.LZ4\src\K4os.Compression.LZ4\Engine\LZ4_xx.cs");
 
   foreach (string line in File.ReadAllLines(srcFile)) {
-    if (!line.Contains("[MethodImpl(MethodImplOptions.AggressiveInlining)]")) {
+    if (line.Contains("[MethodImpl(MethodImplOptions.AggressiveInlining)]")) continue;
+	if (line.Contains("internal unsafe class LZ4_xx")) {
+#>	[System.CodeDom.Compiler.GeneratedCode("Microsoft.VisualStudio.TextTemplating", "16.0")]<#= Environment.NewLine #><#
+	}
 #><#= line #><#= Environment.NewLine #><#
-    }
   }
 #>
