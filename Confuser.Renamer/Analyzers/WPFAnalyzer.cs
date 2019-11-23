@@ -68,12 +68,12 @@ namespace Confuser.Renamer.Analyzers {
 
 						context.Logger.Debug(String.Format("Preserving virtual paths. Replaced {0} with {1}", decodedName, decodedNewName));
 
-						bool renameOk = references.All(r => r.CanRename(decodedName, decodedNewName) || r.CanRename(encodedName, encodedNewName));
+						bool renameOk = references.All(r => r.CanRename(module, decodedName, decodedNewName) || r.CanRename(module, encodedName, encodedNewName));
 
 						if (renameOk) {
 							foreach (var bamlRef in references) {
-								bamlRef.Rename(decodedName, decodedNewName);
-								bamlRef.Rename(encodedName, encodedNewName);
+								bamlRef.Rename(module, decodedName, decodedNewName);
+								bamlRef.Rename(module, encodedName, encodedNewName);
 							}
 							doc.DocumentName = encodedNewName;
 						}
@@ -162,22 +162,30 @@ namespace Confuser.Renamer.Analyzers {
 					var operand = ((string)instr.Operand).ToUpperInvariant();
 					if (operand.EndsWith(".BAML") || operand.EndsWith(".XAML")) {
 						var match = UriPattern.Match(operand);
+						var refModule = method.Module;
 						if (match.Success) {
 							var resourceAssemblyName = match.Groups[1].Success ? match.Groups[1].Value : string.Empty;
 							// Check if the expression contains a resource name (group 1)
 							// If it does, check if it is this assembly.
 							if (!string.IsNullOrWhiteSpace(resourceAssemblyName) &&
 								!resourceAssemblyName.Equals(method.Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
-								// This resource points to another assembly.
-								// Leave it alone!
-								return;
+								// Let's see if we can find this assembly.
+								refModule = context.Modules.FirstOrDefault(m =>
+									resourceAssemblyName.Equals(m.Assembly.Name.String,
+										StringComparison.OrdinalIgnoreCase));
+
+								if (refModule == null) {
+									// This resource points to an assembly that is not part of the obfuscation.
+									// Leave it alone!
+									return;
+								}
 							}
 							operand = match.Groups[2].Value;
 						}
 						else if (operand.Contains("/"))
 							context.Logger.WarnFormat("Fail to extract XAML name from '{0}'.", instr.Operand);
 
-						var reference = new BAMLStringReference(instr);
+						var reference = new BAMLStringReference(refModule, instr);
 						operand = WebUtility.UrlDecode(operand.TrimStart('/'));
 						var baml = operand.Substring(0, operand.Length - 5) + ".BAML";
 						var xaml = operand.Substring(0, operand.Length - 5) + ".XAML";
