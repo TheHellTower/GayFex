@@ -1,22 +1,33 @@
 ﻿using System;
 using System.Diagnostics;
 using Confuser.Core;
+using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Renamer.BAML {
-	public class BAMLStringReference : IBAMLReference {
-		private readonly Instruction instr;
+	sealed class BAMLStringReference : IBAMLReference {
+		readonly ModuleDef _refModule;
+		readonly Instruction _instr;
 
-		public BAMLStringReference(Instruction instr) => this.instr = instr;
+		public BAMLStringReference(ModuleDef refModule, Instruction instr) {
+			_refModule = refModule;
+			_instr = instr;
+		}
 
-		public bool CanRename(string oldName, string newName) => instr.OpCode.Code == Code.Ldstr;
+		public bool CanRename(ModuleDef moduleDef, string oldName, string newName) {
+			if (moduleDef != _refModule) return true; // Not relevant for renaming.
 
-		public void Rename(string oldName, string newName) {
-			var value = (string)instr.Operand;
+			return _instr.OpCode.Code == Code.Ldstr;
+		}
+
+		public void Rename(ModuleDef moduleDef, string oldName, string newName) {
+			if (moduleDef != _refModule) return;
+
+			var value = (string)_instr.Operand;
 			while (true) {
 				if (value.EndsWith(oldName, StringComparison.OrdinalIgnoreCase)) {
 					value = value.Substring(0, value.Length - oldName.Length) + newName;
-					instr.Operand = value;
+					_instr.Operand = value;
 				}
 				else if (oldName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase)) {
 					oldName = ToXaml(oldName);
