@@ -534,17 +534,24 @@ namespace Confuser.Renamer.BAML {
 				if (declType == "System.Windows.ResourceDictionary") {
 					var src = rec.Value.ToUpperInvariant();
 					if (src.EndsWith(".BAML") || src.EndsWith(".XAML")) {
+						var refModule = Module;
 						var match = WPFAnalyzer.UriPattern.Match(src);
 						if (match.Success) {
 							var resourceAssemblyName = match.Groups[1].Success ? match.Groups[1].Value : string.Empty;
 							// Check if the expression contains a resource name (group 1)
 							// If it does, check if it is this assembly.
 							if (!string.IsNullOrWhiteSpace(resourceAssemblyName) &&
-							    !resourceAssemblyName.Equals(Module.Assembly.Name.String,
-								    StringComparison.OrdinalIgnoreCase)) {
-								// This resource points to another assembly.
-								// Leave it alone!
-								return;
+								!resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+								// Let's see if we can find this assembly.
+								refModule = Context.Modules.FirstOrDefault(m =>
+									resourceAssemblyName.Equals(m.Assembly.Name.String,
+										StringComparison.OrdinalIgnoreCase));
+
+								if (refModule == null) {
+									// This resource points to an assembly that is not part of the obfuscation.
+									// Leave it alone!
+									return;
+								}
 							}
 
 							src = match.Groups[2].Value;
@@ -558,7 +565,7 @@ namespace Confuser.Renamer.BAML {
 							src = rel.LocalPath;
 						}
 
-						var reference = new BAMLPropertyReference(rec);
+						var reference = new BAMLPropertyReference(refModule, rec);
 						src = WebUtility.UrlDecode(src.TrimStart('/'));
 						var baml = src.Substring(0, src.Length - 5) + ".BAML";
 						var xaml = src.Substring(0, src.Length - 5) + ".XAML";
