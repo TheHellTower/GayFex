@@ -3,10 +3,13 @@
 	<s:Boolean x:Key="/Default/CodeEditing/Intellisense/CodeCompletion/IntelliSenseCompletingCharacters/CSharpCompletingCharacters/UpgradedFromVSSettings/@EntryValue">True</s:Boolean>
 	<s:Int64 x:Key="/Default/CodeEditing/NullCheckPatterns/PatternTypeNamesToPriority/=JetBrains_002EReSharper_002EFeature_002EServices_002ECSharp_002ENullChecking_002EIfThenThrowPattern/@EntryIndexedValue">1000</s:Int64>
 	<s:Int64 x:Key="/Default/CodeEditing/NullCheckPatterns/PatternTypeNamesToPriority/=JetBrains_002EReSharper_002EFeature_002EServices_002ECSharp_002ENullChecking_002EPatternMatchingIfThenThrowPattern/@EntryIndexedValue">3000</s:Int64>
+	<s:String x:Key="/Default/CodeInspection/CSharpLanguageProject/LanguageLevel/@EntryValue">CSharp73</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7477AE82_002DD0BE_002D4C24_002D91C1_002D6ABCB6C18B8F/@EntryIndexedValue">ExplicitlyExcluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=8AF54053_002D37AA_002D4D06_002D90A8_002DCCEFDFDF902F/@EntryIndexedValue">ExplicitlyExcluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=BEB67A6E_002D4C54_002D4DE5_002D8C6B_002D2C12F44A7B92_002Fdl_003ASevenZip_003A_002E_002E_003FSevenZip/@EntryIndexedValue">ExplicitlyExcluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=E2ADCFC4_002D8505_002D4EFC_002D9A7D_002D54BA491B8AD3_002Fdl_003ASevenZip_003A_002E_002E_003FSevenZip/@EntryIndexedValue">ExplicitlyExcluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/GeneratedCode/GeneratedFileMasks/=_002A_002Eg_002Ecs/@EntryIndexedValue">*.g.cs</s:String>
+	<s:String x:Key="/Default/CodeInspection/GeneratedCode/GeneratedFileMasks/=_002A_002Eg_002Evb/@EntryIndexedValue">*.g.vb</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/AnalysisEnabled/@EntryValue">SOLUTION</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/CodeIssueFilter/IssueTypesToHide/=_003CConfigurableSeverity_0020Id_003D_0022AbstractClassConstructorCanBeMadeProtected_0022_0020_002F_003E/@EntryIndexedValue">DoShow</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/CodeIssueFilter/IssueTypesToHide/=_003CConfigurableSeverity_0020Id_003D_0022AmdDependencyPathProblem_0022_0020_002F_003E/@EntryIndexedValue">DoShow</s:String>

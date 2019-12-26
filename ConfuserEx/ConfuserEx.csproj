@@ -265,6 +265,20 @@
       </ItemGroup>
     </When>
   </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.7.2'">
+      <ItemGroup>
+        <Reference Include="mscorlib">
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+          <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.VersionCheckAnalyzer\analyzers\dotnet\Microsoft.CodeAnalysis.VersionCheckAnalyzer.dll">
       <Paket>True</Paket>
@@ -712,9 +726,6 @@
         <Reference Include="System.ComponentModel.DataAnnotations">
           <Paket>True</Paket>
         </Reference>
-        <Reference Include="mscorlib">
-          <Paket>True</Paket>
-        </Reference>
         <Reference Include="System.ComponentModel.Annotations">
           <HintPath>..\packages\System.ComponentModel.Annotations\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
           <Private>True</Private>
@@ -762,6 +773,17 @@
       <ItemGroup>
         <Reference Include="System.Runtime.CompilerServices.Unsafe">
           <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.7.2'">
+      <ItemGroup>
+        <Reference Include="System.Threading.Tasks.Extensions">
+          <HintPath>..\packages\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
