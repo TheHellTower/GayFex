@@ -1,2 +1,5 @@
 Microsoft.CodeAnalysis.FxCopAnalyzers
 Nerdbank.GitVersioning
+
+group Runtime
+  Microsoft.NETFramework.ReferenceAssemblies

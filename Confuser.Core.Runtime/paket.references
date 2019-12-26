@@ -2,4 +2,5 @@ Nerdbank.GitVersioning
 Microsoft.CodeAnalysis.FxCopAnalyzers
 
 group Runtime
-File: LZ4_xx.cs
+  Microsoft.NETFramework.ReferenceAssemblies
+  File: LZ4_xx.cs
