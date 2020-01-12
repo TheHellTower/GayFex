@@ -43,7 +43,7 @@ namespace Confuser.Optimizations.CompileRegex {
 					var onlyExplicit = parameters.GetParameter(context, method, Parent.Parameters.OnlyCompiled);
 
 					foreach (var result in MethodAnalyzer.GetRegexCalls(method, moduleRegexMethods, traceService)) {
-						logger.LogMsgFoundRegexReferenceInMethod(method, result.RegexMethod);
+						logger.LogMsgFoundRegexReferenceInMethod(method, result);
 
 						if (!onlyExplicit || result.ExplicitCompiled)
 							regexService.RecordExpression(modulesAndMethods.Key, result.CompileDef, result.RegexMethod);

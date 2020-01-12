@@ -56,7 +56,7 @@ namespace Confuser.Optimizations.CompileRegex {
 						compileResult.StaticHelperMethods.TryGetValue(result.RegexMethod, out newMethod);
 
 					if (newMethod == null) {
-						logger.LogMsgNoMatchingTargetMethod(result.RegexMethod, compileResult);
+						logger.LogMsgNoMatchingTargetMethod(result, compileResult);
 						continue;
 					}
 

@@ -1,0 +1,25 @@
+﻿<#@ include file="ILoggingMember.t4" once="true" #>
+<#@ include file="LoggingParameter.t4" once="true" #>
+<#+
+    private struct LoggingScope : ILoggingMember {
+        internal string Format;
+        internal string ShortName;
+		internal LoggingParameter[] Parameters;
+
+		internal string InternalName => "_" + Char.ToLowerInvariant(ShortName[0]) + ShortName.Substring(1);
+
+		internal bool HasLoggingParameters => Parameters.Length > 0;
+
+		internal string BuildParameterTypeList() => BuildParameterList(true, false);
+		internal string BuildParameterNameList() => BuildParameterList(false, true);
+		internal string BuildParameterList() => BuildParameterList(true, true);
+
+		private string BuildParameterList(bool includeTypes, bool includeNames) {
+			return string.Join(", ", Parameters.Select(p => BuildParameterEntry(p, includeTypes, includeNames)));
+		}
+
+		private static string BuildParameterEntry(LoggingParameter parameter, bool includeType, bool includeName) {
+			return ((includeType ? parameter.ParameterType : "") + " " + (includeName ? parameter.ParameterName : "")).Trim();
+		}
+    }
+#>

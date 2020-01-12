@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Confuser.Core;
@@ -42,14 +43,16 @@ namespace Confuser.Optimizations.TailCall {
 		}
 
 		/// <remarks>Internal for unit testing.</remarks>
+		[SuppressMessage("ReSharper", "MemberCanBePrivate.Global", Justification = "Internal for unit testing.")]
 		internal static bool ProcessMethod(MethodDef method, ILogger logger, ITraceService traceService) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
+			Debug.Assert(logger != null, $"{nameof(logger)} != null");
 			Debug.Assert(traceService != null, $"{nameof(traceService)} != null");
 
 			if (!method.HasBody || !method.Body.HasInstructions) return false;
 
-			using (logger?.LogBeginTailCallsScope(method)) {
-				logger?.LogMsgScanningForTailCall(method);
+			using (logger.LogBeginTailCallsScope(method)) {
+				logger.LogMsgScanningForTailCall(method);
 
 				IMethodTrace trace = null;
 
@@ -60,7 +63,7 @@ namespace Confuser.Optimizations.TailCall {
 					if (trace == null) trace = traceService.Trace(method);
 					if (!IsUnoptimizedTailCall(method, i, trace)) continue;
 
-					logger?.LogMsgFoundTailCallInMethod(method, instructions[i]);
+					logger.LogMsgFoundTailCallInMethod(method, instructions[i]);
 
 					method.Body.InsertPrefixInstructions(instructions[i], Instruction.Create(OpCodes.Tailcall));
 					i++;
@@ -76,9 +79,8 @@ namespace Confuser.Optimizations.TailCall {
 					modified = true;
 				}
 
-				if (modified) {
+				if (modified) 
 					TailCallUtils.RemoveUnreachableInstructions(method);
-				}
 
 				return modified;
 			}

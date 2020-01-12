@@ -1,0 +1,13 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ include file="$(SolutionDir)\Confuser.T4\Logging.t4" once="true" #>
+<#@ output extension=".g.cs" #>
+<#
+	WriteLoggingMessages(
+		@"Confuser.Protections.AntiTamper",
+		Protection(100),
+		LogDebug("NormalModeStart", "Normal anti tamper protection processing {module}."),
+		LogTrace("NormalModeInjectStart", "Normal anti tamper protection injecting runtime into {module}"),
+		LogWarn("NormalModeRuntimeMissing", "Runtime implementation for \"Normal\" anti tamper protection not found."),
+		LogTrace("NormalModeInjectDone", "Normal anti tamper protection runtime injection into {module} done."),
+		LogWarn("JitModeRuntimeMissing", "Runtime implementation for \"JIT\" anti tamper protection not found."));
+	#>

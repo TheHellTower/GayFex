@@ -1,0 +1,25 @@
+﻿<#@ import namespace="System.IO" #>
+<#@ include file="ILoggingMember.t4" once="true" #>
+<#@ include file="LoggingGroup.t4" once="true" #>
+<#@ include file="LoggingMemberBuilder.t4" once="true" #>
+<#@ include file="LoggingMessage.t4" once="true" #>
+<#@ include file="LoggingScope.t4" once="true" #>
+<#@ include file="LoggingWriter.t4" once="true" #>
+<#+
+	private static LoggingMessage LogCrit(string shortName, string format) => LoggingMemberBuilder.Log("Critical", shortName, format);
+	private static LoggingMessage LogErr(string shortName, string format) => LoggingMemberBuilder.Log("Error", shortName, format);
+	private static LoggingMessage LogWarn(string shortName, string format) => LoggingMemberBuilder.Log("Warning", shortName, format);
+	private static LoggingMessage LogInfo(string shortName, string format) => LoggingMemberBuilder.Log("Information", shortName, format);
+	private static LoggingMessage LogDebug(string shortName, string format) => LoggingMemberBuilder.Log("Debug", shortName, format);
+	private static LoggingMessage LogTrace(string shortName, string format) => LoggingMemberBuilder.Log("Trace", shortName, format);
+
+	private static LoggingScope LogScope(string shortName, string format) => LoggingMemberBuilder.Scope(shortName, format);
+
+	private static LoggingGroup Protection(int baseId) => new LoggingGroup() { GroupName = "prot", GroupId = 10000, BaseId = baseId };
+	private static LoggingGroup Optimization(int baseId) => new LoggingGroup() { GroupName = "opti", GroupId = 20000, BaseId = baseId };
+
+	private void WriteLoggingMessages(string namespaceName, LoggingGroup logGroup, params ILoggingMember[] members) {
+		GenerationEnvironment.Clear();
+		LoggingWriter.WriteLoggingClass(GenerationEnvironment, namespaceName, Path.GetFileNameWithoutExtension(Host.TemplateFile), logGroup, members);
+	}
+#>

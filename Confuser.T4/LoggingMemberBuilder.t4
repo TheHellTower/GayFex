@@ -1,0 +1,76 @@
+﻿<#@ assembly name="System" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ include file="LoggingMessage.t4" once="true" #>
+<#@ include file="LoggingParameter.t4" once="true" #>
+<#@ include file="LoggingScope.t4" once="true" #>
+<#+
+    private static class LoggingMemberBuilder {
+		private static readonly Regex Pattern = new Regex(@"{(?:([0-9+])#)?(?:([a-zA-Z0-9_\.]+)\s)?([a-zA-Z0-9_]+)(?:(:[A-Za-z0-9]+))?(?:=>([^}]+))?}");
+
+		internal static LoggingMessage Log(string level, string shortName, string format) {
+			return new LoggingMessage() {
+				Level = level,
+				ShortName = shortName,
+				Format = CleanFormat(format),
+				Parameters = AnalyzeFormat(format).ToArray()
+			};
+		}
+
+		internal static LoggingScope Scope(string shortName, string format) {
+			return new LoggingScope() {
+				ShortName = shortName,
+				Format = CleanFormat(format),
+				Parameters = AnalyzeFormat(format).ToArray()
+			};
+		}
+
+		private static string CleanFormat(string format) => Pattern.Replace(format, @"{$3$4}");
+		
+		private static IEnumerable<LoggingParameter> AnalyzeFormat(string format) =>
+			AnalyzeFormatInternal(format).OrderBy(p => p.ParameterOrder);
+
+		private static IEnumerable<LoggingParameter> AnalyzeFormatInternal(string format) {
+			var matches = Pattern.Matches(format);
+			for (var i = 0; i < matches.Count; i++) {
+				var match = matches[i];
+				var orderIndex = match.Groups[1];
+				var typeHint = match.Groups[2];
+				var name = match.Groups[3];
+				var matchFormat = match.Groups[4];
+				var transformInstruction = match.Groups[5];
+
+				int? paramOrder = null;
+				if (!string.IsNullOrEmpty(orderIndex.Value) && int.TryParse(orderIndex.Value, out var paramOrderInt))
+					paramOrder = paramOrderInt;
+
+				yield return new LoggingParameter() {
+					ParameterOrder = paramOrder,
+					ParameterType = (string.IsNullOrEmpty(typeHint.Value) ? GuessTypeName(name.Value) : typeHint.Value),
+					ParameterName = name.Value,
+					ParameterFormat = matchFormat.Value,
+					TransformInstrunction = transformInstruction.Value
+				};
+			}
+		}
+
+		private static string GuessTypeName(string paramName) {
+			switch (paramName) {
+				case "module": return "dnlib.DotNet.IModule";
+				case "method": return "dnlib.DotNet.IMethod";
+				case "type": return "dnlib.DotNet.IType";
+				case "typeDef": return "dnlib.DotNet.TypeDef";
+				case "instruction": return "dnlib.DotNet.Emit.Instruction";
+				case "count": return "System.Int32";
+				case "offset": return "System.UInt32";
+				case "pattern": return "System.String";
+				default:
+					if (paramName.EndsWith("method", StringComparison.OrdinalIgnoreCase))
+						return "dnlib.DotNet.IMethod";
+					throw new ArgumentException("Can't guess type for: " + paramName, nameof(paramName));
+			}
+		}
+    }
+#>

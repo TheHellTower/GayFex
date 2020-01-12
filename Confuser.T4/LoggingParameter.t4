@@ -1,0 +1,11 @@
+﻿<#+
+    private struct LoggingParameter {
+		internal int? ParameterOrder;
+        internal string ParameterType;
+        internal string ParameterName;
+		internal string ParameterFormat;
+		internal string TransformInstrunction;
+
+		internal bool HasTransform => !string.IsNullOrWhiteSpace(TransformInstrunction);
+    }
+#>

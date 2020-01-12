@@ -1,0 +1,410 @@
+﻿<#@ assembly name="System" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.CodeDom" #>
+<#@ import namespace="System.CodeDom.Compiler" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Reflection" #>
+<#@ import namespace="System.Text" #>
+<#@ include file="ILoggingMember.t4" once="true" #>
+<#@ include file="LoggingGroup.t4" once="true" #>
+<#@ include file="LoggingMessage.t4" once="true" #>
+<#@ include file="LoggingScope.t4" once="true" #>
+<#+
+    private sealed class LoggingWriter {
+		private static readonly CodeDomProvider CodeProvider = CodeDomProvider.CreateProvider("CSharp");
+
+		private readonly IDictionary<Tuple<string, string>, CodeTypeDeclaration> _transformStructs =
+			new Dictionary<Tuple<string, string>, CodeTypeDeclaration>();
+		private readonly LoggingGroup _logGroup;
+		private int _lastId;
+
+		internal static void WriteLoggingClass(StringBuilder output, string namespaceName, string typeName, LoggingGroup logGroup, IEnumerable<ILoggingMember> members) {
+			var compileUnit = CreateCompileUnit(namespaceName, typeName, logGroup, members);
+
+			using (var writer = new StringWriter(output)) {			
+				var options = new CodeGeneratorOptions();
+				options.BracingStyle = "Block";
+				options.IndentString = "\t";
+				CodeProvider.GenerateCodeFromCompileUnit(compileUnit, writer, options);
+			}
+			output.Replace("sealed abstract", "static");
+			output.Replace("[@this()]", "this");
+			var fixedText = Regex.Replace(output.ToString(), @"==\s+typeof\(([^\)]+)\)", @"is $1");
+			output.Clear();
+			output.Append(fixedText);
+		}
+
+		private static CodeCompileUnit CreateCompileUnit(string namespaceName, string typeName, LoggingGroup logGroup, IEnumerable<ILoggingMember> members) {
+			var compileUnit = new CodeCompileUnit();
+			var mainNamespace = new CodeNamespace(namespaceName);
+			compileUnit.Namespaces.Add(mainNamespace);
+
+			var mainClass = new CodeTypeDeclaration(typeName);
+			mainClass.TypeAttributes = TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.Abstract;
+			var customAttrs = new CodeAttributeDeclarationCollection();
+			customAttrs.Add(new CodeAttributeDeclaration(
+				new CodeTypeReference("System.CodeDom.Compiler.GeneratedCodeAttribute"),
+				new CodeAttributeArgument(new CodePrimitiveExpression("Microsoft.VisualStudio.TextTemplating")),
+				new CodeAttributeArgument(new CodePrimitiveExpression("11.0.0.0"))));
+			mainClass.CustomAttributes = customAttrs;
+			mainNamespace.Types.Add(mainClass);
+			mainClass.Members.AddRange(CreateMembers(logGroup, members).ToArray());
+
+			return compileUnit;
+		}
+
+		private static IEnumerable<CodeTypeMember> CreateMembers(LoggingGroup logGroup, IEnumerable<ILoggingMember> members) {
+			var writer = new LoggingWriter(logGroup);
+			foreach (var message in members.OfType<LoggingMessage>()) {
+				writer.IncrementId();
+				yield return writer.BuildBackingField(message);
+				yield return writer.BuildLogMethod(message, message.HandleException);
+			}
+			foreach (var scope in members.OfType<LoggingScope>()) {
+				yield return writer.BuildBackingField(scope);
+				yield return writer.BuildLogMethod(scope);
+			}
+			foreach (var formatters in writer._transformStructs.Values) {
+				yield return formatters;
+			}
+		}
+
+		private LoggingWriter(LoggingGroup logGroup) {
+			_logGroup = logGroup;
+			_lastId = logGroup.BaseId;
+		}
+
+		private void IncrementId() => _lastId += 1;
+
+		private CodeMemberField BuildBackingField(LoggingMessage message) {
+			var fieldType = new CodeTypeReference("System.Action", BuildBackingFieldGenericTypeReferences(message).ToArray());
+			var backingField = new CodeMemberField(fieldType, message.InternalName);
+			backingField.InitExpression = new CodeMethodInvokeExpression(
+				new CodeMethodReferenceExpression(
+					new CodeTypeReferenceExpression("Microsoft.Extensions.Logging.LoggerMessage"),
+					"Define",
+					BuildMessageParameterTypeReferences(message).ToArray()),
+				BuildMessageDefineParameters(message).ToArray()
+			);
+
+			backingField.Attributes = (backingField.Attributes & ~MemberAttributes.VTableMask) | MemberAttributes.Static;
+			return backingField;
+		}
+
+		private CodeMemberField BuildBackingField(LoggingScope scope) {
+			var fieldType = new CodeTypeReference("System.Func", BuildBackingFieldGenericTypeReferences(scope).ToArray());
+			var backingField = new CodeMemberField(fieldType, scope.InternalName);
+			backingField.InitExpression = new CodeMethodInvokeExpression(
+				new CodeMethodReferenceExpression(
+					new CodeTypeReferenceExpression("Microsoft.Extensions.Logging.LoggerMessage"),
+					"DefineScope",
+					BuildScopeParameterTypeReferences(scope).ToArray()),
+				BuildScopeDefineParameters(scope).ToArray()
+			);
+
+			backingField.Attributes = (backingField.Attributes & ~MemberAttributes.VTableMask) | MemberAttributes.Static;
+			return backingField;
+		}
+
+		private CodeMemberMethod BuildLogMethod(LoggingMessage message, bool handleException) {
+			var method = new CodeMemberMethod();
+			method.Name = "LogMsg" + message.ShortName;
+			method.Attributes = MemberAttributes.Assembly | MemberAttributes.Static;
+			method.ReturnType = new CodeTypeReference();
+			method.Parameters.Add(CreateThisLoggerParameter());
+			foreach (var param in message.Parameters) {
+				method.Parameters.Add(new CodeParameterDeclarationExpression(new CodeTypeReference(param.ParameterType), param.ParameterName));
+			}
+			if (handleException) {
+				method.Parameters.Add(new CodeParameterDeclarationExpression(new CodeTypeReference("System.Exception"), "exception"));
+			}
+
+			method.Statements.Add(
+				new CodeConditionStatement(
+					new CodeBinaryOperatorExpression(
+						new CodeVariableReferenceExpression("logger"),
+						CodeBinaryOperatorType.IdentityEquality,
+						new CodePrimitiveExpression(null)),
+					new CodeThrowExceptionStatement(
+						new CodeObjectCreateExpression(
+							new CodeTypeReference("System.ArgumentNullException"),
+							new CodeExpression[] { new CodePrimitiveExpression("logger") }))));
+
+			method.Statements.AddRange(InitFormatHelpers(message).ToArray());
+
+			method.Statements.Add(
+				new CodeMethodInvokeExpression(
+					new CodeMethodReferenceExpression(
+						new CodeFieldReferenceExpression(null, message.InternalName),
+						"Invoke"),
+					BuildParameterExpressions(message, handleException).ToArray()));
+
+			method.Comments.Add(new CodeCommentStatement("<summary>", true));
+			method.Comments.Add(new CodeCommentStatement("Show the following " + message.Level + " log entry:", true));
+			method.Comments.Add(new CodeCommentStatement("<br/>", true));
+			method.Comments.Add(new CodeCommentStatement(message.Format, true));
+			method.Comments.Add(new CodeCommentStatement("</summary>", true));
+			method.Comments.Add(new CodeCommentStatement("<exception cref=\"System.ArgumentNullException\"><paramref name=\"logger\"/> is <see langword=\"null\"/></exception>", true));
+			method.Comments.Add(new CodeCommentStatement("<remarks>", true));
+			method.Comments.Add(new CodeCommentStatement("Log Event ID: <c>" + _logGroup.GroupName + "-" + _lastId.ToString() + "</c>", true));
+			method.Comments.Add(new CodeCommentStatement("</remarks>", true));
+
+			return method;
+		}
+
+		private CodeMemberMethod BuildLogMethod(LoggingScope scope) {
+			var method = new CodeMemberMethod();
+			method.Name = "LogBegin" + scope.ShortName + "Scope";
+			method.Attributes = MemberAttributes.Assembly | MemberAttributes.Static;
+			method.ReturnType = CreateIDisposableReference();
+			method.Parameters.Add(CreateThisLoggerParameter());
+			foreach (var param in scope.Parameters) {
+				method.Parameters.Add(new CodeParameterDeclarationExpression(new CodeTypeReference(param.ParameterType), param.ParameterName));
+			}
+
+			method.Statements.Add(
+				new CodeConditionStatement(
+					new CodeBinaryOperatorExpression(
+						new CodeVariableReferenceExpression("logger"),
+						CodeBinaryOperatorType.IdentityEquality,
+						new CodePrimitiveExpression(null)),
+					new CodeThrowExceptionStatement(
+						new CodeObjectCreateExpression(
+							new CodeTypeReference("System.ArgumentNullException"),
+							new CodeExpression[] { new CodePrimitiveExpression("logger") }))));
+
+			method.Statements.AddRange(InitFormatHelpers(scope).ToArray());
+
+			method.Statements.Add(
+				new CodeMethodReturnStatement(
+					new CodeMethodInvokeExpression(
+						new CodeMethodReferenceExpression(
+							new CodeFieldReferenceExpression(null, scope.InternalName),
+							"Invoke"),
+						BuildParameterExpressions(scope).ToArray())));
+
+			method.Comments.Add(new CodeCommentStatement("<summary>", true));
+			method.Comments.Add(new CodeCommentStatement("Begin the scope with the following description:", true));
+			method.Comments.Add(new CodeCommentStatement("<br/>", true));
+			method.Comments.Add(new CodeCommentStatement(scope.Format, true));
+			method.Comments.Add(new CodeCommentStatement("</summary>", true));
+			method.Comments.Add(new CodeCommentStatement("<returns>", true));
+			method.Comments.Add(new CodeCommentStatement("A <see cref=\"System.IDisposable\" /> that causes the scope to be closed, once <see cref=\"System.IDisposable.Dispose()\" /> is called.", true));
+			method.Comments.Add(new CodeCommentStatement("</returns>", true));
+			method.Comments.Add(new CodeCommentStatement("<exception cref=\"System.ArgumentNullException\"><paramref name=\"logger\"/> is <see langword=\"null\"/></exception>", true));
+
+			return method;
+		}
+
+		private IEnumerable<CodeTypeReference> BuildBackingFieldGenericTypeReferences(LoggingMessage message) {
+			yield return CreateILoggerReference();
+			foreach (var param in BuildMessageParameterTypeReferences(message)) {
+				yield return param;
+			}
+			yield return new CodeTypeReference("System.Exception");
+		}
+
+		private IEnumerable<CodeTypeReference> BuildBackingFieldGenericTypeReferences(LoggingScope scope) {
+			yield return CreateILoggerReference();
+			foreach (var param in BuildScopeParameterTypeReferences(scope)) {
+				yield return param;
+			}
+			yield return CreateIDisposableReference();
+		}
+
+		private IEnumerable<CodeTypeReference> BuildMessageParameterTypeReferences(LoggingMessage message) {
+			foreach (var param in message.Parameters) {
+				CodeTypeParameter typeParam;
+				if (param.HasTransform) {
+					var formatterTypeDecl = GetTransformStructure(param);
+					typeParam = new CodeTypeParameter(formatterTypeDecl.Name);
+				} else {
+					typeParam = new CodeTypeParameter(param.ParameterType);
+				}
+				yield return new CodeTypeReference(typeParam);
+			}
+		}
+
+		private IEnumerable<CodeTypeReference> BuildScopeParameterTypeReferences(LoggingScope scope) {
+			foreach (var param in scope.Parameters) {
+				CodeTypeParameter typeParam;
+				if (param.HasTransform) {
+					var formatterTypeDecl = GetTransformStructure(param);
+					typeParam = new CodeTypeParameter(formatterTypeDecl.Name);
+				} else {
+					typeParam = new CodeTypeParameter(param.ParameterType);
+				}
+				yield return new CodeTypeReference(typeParam);
+			}
+		}
+
+		private IEnumerable<CodeExpression> BuildMessageDefineParameters(LoggingMessage message) {
+			yield return new CodeFieldReferenceExpression(new CodeTypeReferenceExpression("Microsoft.Extensions.Logging.LogLevel"), message.Level);
+			yield return new CodeObjectCreateExpression(
+				new CodeTypeReference("Microsoft.Extensions.Logging.EventId"),
+				new CodeExpression[] {
+					new CodePrimitiveExpression(_logGroup.GroupId + _lastId),
+					new CodePrimitiveExpression(_logGroup.GroupName + "-" + _lastId.ToString())
+				});
+			yield return new CodePrimitiveExpression(message.Format);
+		}
+
+		private IEnumerable<CodeExpression> BuildScopeDefineParameters(LoggingScope scope) {
+			yield return new CodePrimitiveExpression(scope.Format);
+		}
+
+		private static CodeTypeReference CreateILoggerReference() =>
+			new CodeTypeReference("Microsoft.Extensions.Logging.ILogger");
+
+		private static CodeTypeReference CreateIDisposableReference() =>
+			new CodeTypeReference("System.IDisposable");
+
+		private static CodeParameterDeclarationExpression CreateThisLoggerParameter() {
+			var param = new CodeParameterDeclarationExpression(CreateILoggerReference(), "logger");
+			param.CustomAttributes.Add(new CodeAttributeDeclaration("this"));
+			return param;
+		}
+
+		private static IEnumerable<CodeExpression> BuildParameterExpressions(LoggingMessage message, bool handleException) {
+			foreach (var paramExpression in BuildParameterExpressions(message.Parameters))
+				yield return paramExpression;
+
+			if (handleException) {
+				yield return new CodeVariableReferenceExpression("exception");
+			}
+			else {
+				yield return new CodePrimitiveExpression(null);
+			}
+		}
+
+		private static IEnumerable<CodeExpression> BuildParameterExpressions(LoggingScope scope) =>
+			BuildParameterExpressions(scope.Parameters);
+
+		private static IEnumerable<CodeExpression> BuildParameterExpressions(IEnumerable<LoggingParameter> parameters) {
+			yield return new CodeVariableReferenceExpression("logger");
+			foreach (var param in parameters) {
+				if (string.IsNullOrWhiteSpace(param.TransformInstrunction)) {
+					yield return new CodeVariableReferenceExpression(param.ParameterName);
+				}
+				else {
+					yield return new CodeVariableReferenceExpression(param.ParameterName + "Formatter");
+				}
+			}
+		}
+
+		private IEnumerable<CodeStatement> InitFormatHelpers(LoggingMessage message) =>
+			InitFormatHelpers(message.Parameters);
+
+		private IEnumerable<CodeStatement> InitFormatHelpers(LoggingScope scope) =>
+			InitFormatHelpers(scope.Parameters);
+
+		private IEnumerable<CodeStatement> InitFormatHelpers(IEnumerable<LoggingParameter> parameters) {
+			foreach (var param in parameters) {
+				if (!string.IsNullOrWhiteSpace(param.TransformInstrunction)) {
+					var formatterTypeDecl = GetTransformStructure(param);
+					var formatterTypeRef = new CodeTypeReference(new CodeTypeParameter(formatterTypeDecl.Name));
+					var varName = param.ParameterName + "Formatter";
+					yield return new CodeVariableDeclarationStatement(
+						formatterTypeRef, 
+						varName, 
+						new CodeObjectCreateExpression(formatterTypeRef));
+					yield return new CodeAssignStatement(
+						new CodeFieldReferenceExpression(new CodeVariableReferenceExpression(varName), "_sourceValue"),
+						new CodeVariableReferenceExpression(param.ParameterName));
+				}
+			}
+		}
+
+		private CodeTypeDeclaration GetTransformStructure(LoggingParameter parameter) {
+			var normalizedTransformInstruction = parameter.TransformInstrunction.Replace(parameter.ParameterName, "ParamName");
+			var keyTuple = Tuple.Create(parameter.ParameterType, normalizedTransformInstruction);
+			if (!_transformStructs.TryGetValue(keyTuple, out var declaration)) {
+				declaration = BuildTransformStructure(parameter, "FormatHelper" + _transformStructs.Count.ToString());
+				_transformStructs.Add(keyTuple, declaration);
+			}
+			return declaration;
+		}
+
+		private static CodeTypeDeclaration BuildTransformStructure(LoggingParameter parameter, string typeName) {
+			var decl = new CodeTypeDeclaration(typeName) {
+				IsStruct = true,
+				TypeAttributes = TypeAttributes.NestedPrivate
+			};
+			var iFormattableRef = new CodeTypeReference(new CodeTypeParameter("System.IFormattable"));
+			decl.BaseTypes.Add(iFormattableRef);
+
+			var sourceField = new CodeMemberField(parameter.ParameterType, "_sourceValue");
+			sourceField.Attributes = (sourceField.Attributes & ~MemberAttributes.AccessMask) | MemberAttributes.Assembly;
+			decl.Members.Add(sourceField);
+
+			var toStringMethod1 = new CodeMemberMethod() {
+				Name = "ToString",
+				ReturnType = new CodeTypeReference("System.String")
+			};
+			toStringMethod1.Attributes = (toStringMethod1.Attributes & ~MemberAttributes.AccessMask) | MemberAttributes.Public;
+			toStringMethod1.Attributes = (toStringMethod1.Attributes & (MemberAttributes)(~3840)) | MemberAttributes.Overloaded;
+			toStringMethod1.ImplementationTypes.Add(iFormattableRef);
+			toStringMethod1.Parameters.Add(new CodeParameterDeclarationExpression("System.String", "format"));
+			toStringMethod1.Parameters.Add(new CodeParameterDeclarationExpression("System.IFormatProvider", "formatProvider"));
+
+			var transformExpression = parameter.TransformInstrunction;
+			transformExpression = transformExpression.Replace(parameter.ParameterName, "this._sourceValue");
+
+			toStringMethod1.Statements.Add(new CodeVariableDeclarationStatement(
+				new CodeTypeReference(new CodeTypeParameter("System.Object")), 
+				"resultObj", 
+				new CodeSnippetExpression(transformExpression)
+			));
+			var resultObjRef = new CodeVariableReferenceExpression("resultObj");
+			toStringMethod1.Statements.Add(new CodeConditionStatement(
+				new CodeBinaryOperatorExpression(
+					resultObjRef,
+					CodeBinaryOperatorType.IdentityEquality,
+					new CodeTypeOfExpression(iFormattableRef)),
+				new CodeStatement[] {
+					new CodeMethodReturnStatement(
+						new CodeMethodInvokeExpression(
+							new CodeMethodReferenceExpression(
+								new CodeCastExpression(iFormattableRef, resultObjRef),
+								"ToString"),
+							new CodeExpression[] {
+								new CodeVariableReferenceExpression("format"), 
+								new CodeVariableReferenceExpression("formatProvider")
+							}))
+				},
+				new CodeStatement[] {
+					new CodeMethodReturnStatement(
+						new CodeMethodInvokeExpression(
+							new CodeMethodReferenceExpression(
+								resultObjRef,
+								"ToString"),
+							new CodeExpression[] {}))
+				}
+			));
+			decl.Members.Add(toStringMethod1);
+
+			var toStringMethod2 = new CodeMemberMethod() {
+				Name = "ToString",
+				ReturnType = new CodeTypeReference("System.String")
+			};
+			toStringMethod2.Attributes = (toStringMethod2.Attributes & ~MemberAttributes.AccessMask) | MemberAttributes.Public;
+			toStringMethod2.Attributes = (toStringMethod2.Attributes & ~MemberAttributes.ScopeMask) | MemberAttributes.Override;
+			toStringMethod2.Attributes = (toStringMethod2.Attributes & (MemberAttributes)(~3840)) | MemberAttributes.Overloaded;
+			toStringMethod2.Statements.Add(
+				new CodeMethodReturnStatement(
+					new CodeMethodInvokeExpression(
+						new CodeMethodReferenceExpression(
+							new CodeThisReferenceExpression(),
+							"ToString"),
+						new CodeExpression[] {
+							new CodePrimitiveExpression(null),
+							new CodePrimitiveExpression(null)
+						})));
+			decl.Members.Add(toStringMethod2);
+
+			return decl;
+		}
+    }
+#>

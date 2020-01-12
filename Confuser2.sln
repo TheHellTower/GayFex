@@ -120,9 +120,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsRenaming", "Tests\W
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsRenaming.Test", "Tests\WinFormsRenaming.Test\WinFormsRenaming.Test.csproj", "{FE560D1C-744F-45FE-9FA2-D55953A334F9}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Confuser.T4", "Confuser.T4\Confuser.T4.shproj", "{D09BF8B7-BD48-4DB7-8711-AD4238B1233B}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		SevenZip\SevenZip.projitems*{7477ae82-d0be-4c24-91c1-6abcb6c18b8f}*SharedItemsImports = 13
+		Confuser.T4\Confuser.T4.projitems*{d09bf8b7-bd48-4db7-8711-ad4238b1233b}*SharedItemsImports = 13
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

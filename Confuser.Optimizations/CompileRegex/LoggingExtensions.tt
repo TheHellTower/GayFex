@@ -1,0 +1,22 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ include file="$(SolutionDir)\Confuser.T4\Logging.t4" once="true" #>
+<#@ output extension=".g.cs" #>
+<#
+	WriteLoggingMessages(
+		@"Confuser.Optimizations.CompileRegex",
+		Optimization(0),
+		LogDebug("InspectingModule", "Inspecting {module} for regular expressions reference."),
+		LogTrace("RegexReferencesFound", "Found regular expression references in {module}."),
+		LogTrace("NoRegexReferencesFound", "No regular expression references found in {module}."),
+		LogTrace("ExtractFromMethod", "Trying to extract regular expressions from the method {method}."),
+		LogDebug("FoundRegexReferenceInMethod", "Found reference to regular expression in method {scannedMethod}: {MethodAnalyzerResult analyzerResult=>analyzerResult.RegexMethod}"),
+		LogTrace("SkippedRegexNotCompiled", "Skipped the RegEx call in {method}, because it is not marked with RegexOptions.Compiled."),
+		LogDebug("RegexCompilingForModule", "Compiling {2#count} expressions in module {1#module}"),
+		LogTrace("RegexFinishedCompiling", "Compiled regular expression to: {Compiler.RegexCompilerResult compilerResult=>compilerResult.RegexTypeDef}"),
+		LogWarn("RegexSkippedBrokenExpression", "Skipping broken expression: {RegexCompileDef compileDef=>compileDef.Pattern}"),
+		LogCrit("InvalidRegexPatternFound", "Invalid regular expression pattern found."),
+		LogDebug("SkippedUnsafe", "Skipped compilation of culture unsafe expression: {RegexCompileDef compileDef=>compileDef.Pattern}"),
+		LogWarn("NoMatchingTargetMethod", "The regular expression \"{2#Compiler.RegexCompilerResult compilerResult=>compilerResult.CompileDef.Pattern}\" was compiled, but the required target method for \"{1#MethodAnalyzerResult analyzerResult=>analyzerResult.RegexMethod}\" was not found."),
+		LogTrace("InjectSuccessful", "The compiled regular expression \"{Compiler.RegexCompilerResult compilerResult=>compilerResult.CompileDef.Pattern}\", was injected into \"{injectionTargetMethod}\"."),
+		LogInfo("CompileSummary", "Compiled {count} regular expressions in module \"{module}\"."));
+	#>

@@ -1,0 +1,7 @@
+﻿<#+
+    private struct LoggingGroup {
+        internal string GroupName;
+        internal int GroupId;
+		internal int BaseId;
+    }
+#>
