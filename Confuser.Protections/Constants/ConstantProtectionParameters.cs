@@ -8,7 +8,8 @@ namespace Confuser.Protections.Constants {
 		internal IProtectionParameter<bool> ControlFlowGraphReplacement { get; } =
 			ProtectionParameter.Boolean("cfg", false);
 
-		internal IProtectionParameter<Mode> Mode { get; } = ProtectionParameter.Enum("mode", Constants.Mode.Normal);
+		internal IProtectionParameter<Mode> EncryptMode { get; } = ProtectionParameter.Enum("encryptMode", Constants.Mode.Expression);
+		internal IProtectionParameter<Mode> EncodeMode { get; } = ProtectionParameter.Enum("encodeMode", Constants.Mode.Expression);
 		internal IProtectionParameter<uint> DecoderCount { get; } = ProtectionParameter.UInteger("decoderCount", 5);
 		internal IProtectionParameter<EncodeElements> Elements { get; } = new EncodeElementsProtectionParameter();
 		internal IProtectionParameter<CompressionAlgorithm> Compressor { get; } = ProtectionParameter.Enum("compressor", CompressionAlgorithm.Lzma);

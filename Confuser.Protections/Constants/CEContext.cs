@@ -25,8 +25,8 @@ namespace Confuser.Protections.Constants {
 
 		internal EncodeElements Elements;
 
-		internal Mode Mode;
-		internal IEncodeMode ModeHandler;
+		internal IEncryptMode EncryptMode { get; set; }
+		internal IEncodeMode EncodeMode { get; set; }
 
 		internal IDynCipherService DynCipher;
 		internal IMarkerService Marker;

@@ -8,8 +8,8 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.Constants {
-	internal class NormalMode : IEncodeMode {
-		CryptProcessor IEncodeMode.EmitDecrypt(CEContext ctx) => (module, method, block, key) => {
+	internal sealed class PassThroughMode : IEncodeMode, IEncryptMode {
+		public CryptProcessor EmitDecrypt(CEContext ctx) => (module, method, block, key) => {
 			var ret = new List<Instruction>(10 * 0x10);
 			for (int i = 0; i < 0x10; i++) {
 				ret.Add(Instruction.Create(OpCodes.Ldloc, block));
@@ -29,8 +29,7 @@ namespace Confuser.Protections.Constants {
 
 		public uint[] Encrypt(uint[] data, int offset, uint[] key) {
 			var ret = new uint[key.Length];
-			for (int i = 0; i < key.Length; i++)
-				ret[i] = data[i + offset] ^ key[i];
+			Array.Copy(data, offset, ret, 0, ret.Length);
 			return ret;
 		}
 

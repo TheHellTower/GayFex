@@ -65,7 +65,7 @@ namespace Confuser.Protections.Constants {
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new CompressionServiceProcessor(context, context.CurrentModule, moduleCtx.UsedCompressionAlgorithm),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
-					CryptProcessor = moduleCtx.ModeHandler.EmitDecrypt(moduleCtx),
+					CryptProcessor = moduleCtx.EncodeMode.EmitDecrypt(moduleCtx),
 					PlaceholderProcessor = CreateDataField(context, moduleCtx),
 					LateKeyFieldValues = lateMutationFields
 				});
@@ -91,7 +91,7 @@ namespace Confuser.Protections.Constants {
 					.Add(MutationField.KeyI2, decoderDesc.InitializerID);
 
 				using (InjectHelper.CreateChildContext()) {
-					var decoderImpl = moduleCtx.ModeHandler.CreateDecoder(moduleCtx);
+					var decoderImpl = moduleCtx.EncodeMode.CreateDecoder(moduleCtx);
 
 					var decoderInjectResult = InjectHelper.Inject(decoder, moduleCtx.Module,
 						InjectBehaviors.RenameAndInternalizeBehavior(context),

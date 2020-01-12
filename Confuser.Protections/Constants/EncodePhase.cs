@@ -94,7 +94,7 @@ namespace Confuser.Protections.Constants {
 			var encryptedBuffer = new byte[compressedBuff.Length * sizeof(int)];
 			var buffIndex = 0;
 			while (buffIndex < compressedBuff.Length) {
-				uint[] enc = moduleCtx.ModeHandler.Encrypt(compressedBuff, buffIndex, key);
+				uint[] enc = moduleCtx.EncryptMode.Encrypt(compressedBuff, buffIndex, key);
 				for (int j = 0; j < 0x10; j++)
 					key[j] ^= compressedBuff[buffIndex + j];
 				Buffer.BlockCopy(enc, 0, encryptedBuffer, buffIndex * 4, 0x40);
@@ -116,7 +116,7 @@ namespace Confuser.Protections.Constants {
 			foreach (var instr in references) {
 				var (method, decoderDesc) = moduleCtx.Decoders[moduleCtx.Random.NextInt32(moduleCtx.Decoders.Count)];
 				var id = (uint)(buffIndex | (typeId(decoderDesc) << 30));
-				id = moduleCtx.ModeHandler.Encode(decoderDesc.Data, moduleCtx, id);
+				id = moduleCtx.EncodeMode.Encode(decoderDesc.Data, moduleCtx, id);
 
 				Debug.Assert((method.ReturnType as GenericSig)?.Number == 0);
 				var targetDecoder = new MethodSpecUser(method, new GenericInstMethodSig(valueType));

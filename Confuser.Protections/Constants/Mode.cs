@@ -2,8 +2,8 @@
 
 namespace Confuser.Protections.Constants {
 	internal enum Mode {
-		Normal,
-		Dynamic,
+		PassThrough,
+		Expression,
 		x86
 	}
 }

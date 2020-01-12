@@ -49,18 +49,33 @@ namespace Confuser.Protections.Constants {
 				};
 
 				// Extract parameters
-				moduleCtx.Mode = parameters.GetParameter(context, targetModule, Parent.Parameters.Mode);
+				var encryptMode = parameters.GetParameter(context, targetModule, Parent.Parameters.EncryptMode);
+				var encodeMode = parameters.GetParameter(context, targetModule, Parent.Parameters.EncodeMode);
 				moduleCtx.DecoderCount = parameters.GetParameter(context, targetModule, Parent.Parameters.DecoderCount);
 
-				switch (moduleCtx.Mode) {
-					case Mode.Normal:
-						moduleCtx.ModeHandler = new NormalMode();
+				switch (encryptMode) {
+					case Mode.PassThrough:
+						moduleCtx.EncryptMode = new PassThroughMode();
 						break;
-					case Mode.Dynamic:
-						moduleCtx.ModeHandler = new DynamicMode();
+					case Mode.Expression:
+						moduleCtx.EncryptMode = new DynamicMode();
 						break;
 					case Mode.x86:
-						moduleCtx.ModeHandler = new x86Mode();
+						moduleCtx.EncryptMode = new x86Mode();
+						break;
+					default:
+						throw new UnreachableException();
+				}
+
+				switch (encodeMode) {
+					case Mode.PassThrough:
+						moduleCtx.EncodeMode = new PassThroughMode();
+						break;
+					case Mode.Expression:
+						moduleCtx.EncodeMode = new DynamicMode();
+						break;
+					case Mode.x86:
+						moduleCtx.EncodeMode = new x86Mode();
 						break;
 					default:
 						throw new UnreachableException();
