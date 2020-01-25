@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Confuser.Core.Project;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -85,6 +86,9 @@ namespace Confuser.Core {
 
 			bool ok = false;
 			try {
+				// Enable watermarking by default
+				context.Project.Rules.Insert(0, new Rule {new SettingItem<Protection>(WatermarkingProtection._Id)});
+
 				var asmResolver = new AssemblyResolver();
 				asmResolver.EnableTypeDefCache = true;
 				asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
@@ -293,32 +297,6 @@ namespace Confuser.Core {
 				MethodDef cctor = modType.FindOrCreateStaticConstructor();
 				if (!marker.IsMarked(cctor))
 					marker.Mark(cctor, null);
-			}
-
-			context.Logger.Debug("Watermarking...");
-			foreach (ModuleDefMD module in context.Modules) {
-				TypeRef attrRef = module.CorLibTypes.GetTypeRef("System", "Attribute");
-				var attrType = new TypeDefUser("", "ConfusedByAttribute", attrRef);
-				module.Types.Add(attrType);
-				marker.Mark(attrType, null);
-
-				var ctor = new MethodDefUser(
-					".ctor",
-					MethodSig.CreateInstance(module.CorLibTypes.Void, module.CorLibTypes.String),
-					MethodImplAttributes.Managed,
-					MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
-				ctor.Body = new CilBody();
-				ctor.Body.MaxStack = 1;
-				ctor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-				ctor.Body.Instructions.Add(OpCodes.Call.ToInstruction(new MemberRefUser(module, ".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void), attrRef)));
-				ctor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
-				attrType.Methods.Add(ctor);
-				marker.Mark(ctor, null);
-
-				var attr = new CustomAttribute(ctor);
-				attr.ConstructorArguments.Add(new CAArgument(module.CorLibTypes.String, Version));
-
-				module.CustomAttributes.Add(attr);
 			}
 		}
 
