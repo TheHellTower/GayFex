@@ -20,6 +20,14 @@ namespace Confuser.MSBuild.Tasks {
 
 		public ITaskItem KeyFilePath { get; set; }
 
+		public ITaskItem DelaySig { get; set; }
+
+		public ITaskItem PubKeyFilePath { get; set; }
+
+		public ITaskItem SigKeyFilePath { get; set; }
+
+		public ITaskItem PubSigKeyFilePath { get; set; }
+
 		[Required, Output]
 		public ITaskItem ResultProject { get; set; }
 
@@ -36,16 +44,46 @@ namespace Confuser.MSBuild.Tasks {
 
 			project.BaseDirectory = Path.GetDirectoryName(AssemblyPath.ItemSpec);
 			var mainModule = GetOrCreateProjectModule(project, AssemblyPath.ItemSpec);
+
 			if (!string.IsNullOrWhiteSpace(KeyFilePath?.ItemSpec)) {
 				mainModule.SNKeyPath = KeyFilePath.ItemSpec;
+			}
+			if (!string.IsNullOrWhiteSpace(PubKeyFilePath?.ItemSpec)) {
+				mainModule.SNPubKeyPath = PubKeyFilePath.ItemSpec;
+			}
+			if (!string.IsNullOrWhiteSpace(SigKeyFilePath?.ItemSpec)) {
+				mainModule.SNSigKeyPath = SigKeyFilePath.ItemSpec;
+			}
+			if (!string.IsNullOrWhiteSpace(PubSigKeyFilePath?.ItemSpec)) {
+				mainModule.SNPubSigKeyPath = PubSigKeyFilePath.ItemSpec;
+			}
+			if (!string.IsNullOrWhiteSpace(DelaySig?.ItemSpec)) {
+				bool delaySig;
+				bool.TryParse(DelaySig.ItemSpec, out delaySig);
+				mainModule.SNDelaySig = delaySig;
 			}
 
 			if (SatelliteAssemblyPaths != null) {
 				foreach (var satelliteAssembly in SatelliteAssemblyPaths) {
 					if (!string.IsNullOrWhiteSpace(satelliteAssembly?.ItemSpec)) {
 						var satelliteModule = GetOrCreateProjectModule(project, satelliteAssembly.ItemSpec);
+
 						if (!string.IsNullOrWhiteSpace(KeyFilePath?.ItemSpec)) {
 							satelliteModule.SNKeyPath = KeyFilePath.ItemSpec;
+						}
+						if (!string.IsNullOrWhiteSpace(PubKeyFilePath?.ItemSpec)) {
+							satelliteModule.SNPubKeyPath = PubKeyFilePath.ItemSpec;
+						}
+						if (!string.IsNullOrWhiteSpace(SigKeyFilePath?.ItemSpec)) {
+							satelliteModule.SNSigKeyPath = SigKeyFilePath.ItemSpec;
+						}
+						if (!string.IsNullOrWhiteSpace(PubSigKeyFilePath?.ItemSpec)) {
+							satelliteModule.SNPubSigKeyPath = PubSigKeyFilePath.ItemSpec;
+						}
+						if (!string.IsNullOrWhiteSpace(DelaySig?.ItemSpec)) {
+							bool delaySig;
+							bool.TryParse(DelaySig.ItemSpec, out delaySig);
+							satelliteModule.SNDelaySig = delaySig;
 						}
 					}
 				}

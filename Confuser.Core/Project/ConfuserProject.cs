@@ -41,6 +41,29 @@ namespace Confuser.Core.Project {
 		public string SNKeyPassword { get; set; }
 
 		/// <summary>
+		///     Gets or sets if the generated assembly should be delayed signed.
+		/// </summary>
+		public bool SNDelaySig { get; set; }
+
+		/// <summary>
+		///     Gets or sets the path to the strong name public key for signing.
+		/// </summary>
+		/// <value>The path to the strong name public key, or null if not necessary.</value>
+		public string SNPubKeyPath { get; set; }
+
+		/// <summary>
+		///     Gets or sets the path to the strong name private key used for enhanced signing.
+		/// </summary>
+		/// <value>The path to the strong name private key used for enhanced signing, or null if not necessary.</value>
+		public string SNSigKeyPath { get; set; }
+
+		/// <summary>
+		///     Gets or sets the path to the strong name public key used for enhanced signing.
+		/// </summary>
+		/// <value>The path to the strong name public key used for enhanced signing, or null if not necessary.</value>
+		public string SNPubSigKeyPath { get; set; }
+
+		/// <summary>
 		///     Gets a list of protection rules applies to the module.
 		/// </summary>
 		/// <value>A list of protection rules.</value>
@@ -102,7 +125,26 @@ namespace Confuser.Core.Project {
 				snKeyPassAttr.Value = SNKeyPassword;
 				elem.Attributes.Append(snKeyPassAttr);
 			}
-
+			if (SNDelaySig) {
+				XmlAttribute snKeyAttr = xmlDoc.CreateAttribute("snDelaySig");
+				snKeyAttr.Value = SNDelaySig ? "true" : "false";
+				elem.Attributes.Append(snKeyAttr);
+			}
+			if (SNPubKeyPath != null) {
+				XmlAttribute snKeyAttr = xmlDoc.CreateAttribute("snPubKey");
+				snKeyAttr.Value = SNPubKeyPath;
+				elem.Attributes.Append(snKeyAttr);
+			}
+			if (SNSigKeyPath != null) {
+				XmlAttribute snKeyAttr = xmlDoc.CreateAttribute("snSigKey");
+				snKeyAttr.Value = SNSigKeyPath;
+				elem.Attributes.Append(snKeyAttr);
+			}
+			if (SNPubSigKeyPath != null) {
+				XmlAttribute snKeyAttr = xmlDoc.CreateAttribute("snPubSigKey");
+				snKeyAttr.Value = SNPubSigKeyPath;
+				elem.Attributes.Append(snKeyAttr);
+			}
 
 			foreach (Rule i in Rules)
 				elem.AppendChild(i.Save(xmlDoc));
@@ -132,6 +174,29 @@ namespace Confuser.Core.Project {
 			else
 				SNKeyPassword = null;
 
+			bool delaySig = false;
+
+			if (elem.Attributes["snDelaySig"] != null)
+				bool.TryParse(elem.Attributes["snDelaySig"].Value, out delaySig);
+
+			SNDelaySig = delaySig;
+
+			if (elem.Attributes["snPubKey"] != null)
+				SNPubKeyPath = elem.Attributes["snPubKey"].Value.NullIfEmpty();
+			else
+				SNPubKeyPath = null;
+
+			if (elem.Attributes["snSigKey"] != null)
+				SNSigKeyPath = elem.Attributes["snSigKey"].Value.NullIfEmpty();
+			else
+				SNSigKeyPath = null;
+
+			if (elem.Attributes["snPubSigKey"] != null)
+				SNPubSigKeyPath = elem.Attributes["snPubSigKey"].Value.NullIfEmpty();
+			else
+				SNPubSigKeyPath = null;
+
+
 			Rules.Clear();
 			foreach (XmlElement i in elem.ChildNodes.OfType<XmlElement>()) {
 				var rule = new Rule();
@@ -157,6 +222,10 @@ namespace Confuser.Core.Project {
 			ret.Path = Path;
 			ret.IsExternal = IsExternal;
 			ret.SNKeyPath = SNKeyPath;
+			ret.SNPubKeyPath = SNPubKeyPath;
+			ret.SNDelaySig = SNDelaySig;
+			ret.SNPubSigKeyPath = SNPubSigKeyPath;
+			ret.SNSigKeyPath = SNSigKeyPath;
 			ret.SNKeyPassword = SNKeyPassword;
 			foreach (var r in Rules)
 				ret.Rules.Add(r.Clone());
