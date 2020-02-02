@@ -195,8 +195,7 @@ namespace Confuser.Core.Project {
 				SNPubSigKeyPath = elem.Attributes["snPubSigKey"].Value.NullIfEmpty();
 			else
 				SNPubSigKeyPath = null;
-
-
+			
 			Rules.Clear();
 			foreach (XmlElement i in elem.ChildNodes.OfType<XmlElement>()) {
 				var rule = new Rule();

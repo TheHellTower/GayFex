@@ -88,18 +88,17 @@ namespace Confuser.Core {
 			}
 		}
 
-
-			/// <summary>
-			///     Loads the Strong Name Key at the specified path with a optional password.
-			/// </summary>
-			/// <param name="context">The working context.</param>
-			/// <param name="path">The path to the key.</param>
-			/// <param name="pass">
-			///     The password of the certificate at <paramref name="path" /> if
-			///     it is a pfx file; otherwise, <c>null</c>.
-			/// </param>
-			/// <returns>The loaded Strong Name Key.</returns>
-			public static StrongNameKey LoadSNKey(ConfuserContext context, string path, string pass) {
+		/// <summary>
+		///     Loads the Strong Name Key at the specified path with a optional password.
+		/// </summary>
+		/// <param name="context">The working context.</param>
+		/// <param name="path">The path to the key.</param>
+		/// <param name="pass">
+		///     The password of the certificate at <paramref name="path" /> if
+		///     it is a pfx file; otherwise, <c>null</c>.
+		/// </param>
+		/// <returns>The loaded Strong Name Key.</returns>
+		public static StrongNameKey LoadSNKey(ConfuserContext context, string path, string pass) {
 			if (path == null) return null;
 
 			try {

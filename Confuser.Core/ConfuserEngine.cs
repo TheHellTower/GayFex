@@ -272,25 +272,8 @@ namespace Confuser.Core {
 			}
 
 			context.Logger.Debug("Checking Strong Name...");
-			foreach (ModuleDefMD module in context.Modules) {
-				var snKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
-				var snPubKeyBytes = context.Annotations.Get<StrongNamePublicKey>(module, Marker.SNPubKey)?.CreatePublicKey();
-				var snDelaySign = context.Annotations.Get<bool>(module, Marker.SNDelaySig, false);
-
-				if (snPubKeyBytes == null && snKey != null)
-					snPubKeyBytes = snKey.PublicKey;
-
-				bool moduleIsSignedOrDelayedSigned = module.IsStrongNameSigned || !module.Assembly.PublicKey.IsNullOrEmpty;
-
-				bool isKeyProvided = snKey != null || snDelaySign && snPubKeyBytes != null;
-
-				if (!isKeyProvided && moduleIsSignedOrDelayedSigned)
-					context.Logger.WarnFormat("[{0}] SN Key or SN public Key is not provided for a signed module, the output may not be working.", module.Name);
-				else if (isKeyProvided && !moduleIsSignedOrDelayedSigned)
-					context.Logger.WarnFormat("[{0}] SN Key or SN public Key is provided for an unsigned module, the output may not be working.", module.Name);
-				else if (snPubKeyBytes != null && moduleIsSignedOrDelayedSigned &&
-						 !module.Assembly.PublicKey.Data.SequenceEqual(snPubKeyBytes))
-					context.Logger.WarnFormat("[{0}] Provided SN public Key and signed module's public key do not match, the output may not be working.", module.Name);
+			foreach (var module in context.Modules) {
+				CheckStrongName(context, module);
 			}
 
 			var marker = context.Registry.GetService<IMarkerService>();
@@ -308,6 +291,28 @@ namespace Confuser.Core {
 				if (!marker.IsMarked(cctor))
 					marker.Mark(cctor, null);
 			}
+		}
+
+		static void CheckStrongName(ConfuserContext context, ModuleDef module) {
+			var snKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
+			var snPubKeyBytes = context.Annotations.Get<StrongNamePublicKey>(module, Marker.SNPubKey)?.CreatePublicKey();
+			var snDelaySign = context.Annotations.Get<bool>(module, Marker.SNDelaySig);
+
+			if (snPubKeyBytes == null && snKey != null)
+				snPubKeyBytes = snKey.PublicKey;
+
+			bool moduleIsSignedOrDelayedSigned = module.IsStrongNameSigned || !module.Assembly.PublicKey.IsNullOrEmpty;
+
+			bool isKeyProvided = snKey != null || (snDelaySign && snPubKeyBytes != null);
+
+			if (!isKeyProvided && moduleIsSignedOrDelayedSigned)
+				context.Logger.WarnFormat("[{0}] SN Key or SN public Key is not provided for a signed module, the output may not be working.", module.Name);
+			else if (isKeyProvided && !moduleIsSignedOrDelayedSigned)
+				context.Logger.WarnFormat("[{0}] SN Key or SN public Key is provided for an unsigned module, the output may not be working.", module.Name);
+			else if (snPubKeyBytes != null && moduleIsSignedOrDelayedSigned &&
+			         !module.Assembly.PublicKey.Data.SequenceEqual(snPubKeyBytes))
+				context.Logger.WarnFormat("[{0}] Provided SN public Key and signed module's public key do not match, the output may not be working.",
+					module.Name);
 		}
 
 		static void CopyPEHeaders(PEHeadersOptions writerOptions, ModuleDefMD module) {

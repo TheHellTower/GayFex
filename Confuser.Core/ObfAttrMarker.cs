@@ -448,7 +448,6 @@ namespace Confuser.Core {
 			var snSigPubKey = LoadSNPubKey(context, snPubSigKeyPath);
 			context.Annotations.Set(module, SNSigPubKey, snSigPubKey);
 
-
 			using (stack.Apply(module, layer))
 				ProcessModule(module, stack);
 		}

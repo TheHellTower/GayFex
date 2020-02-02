@@ -58,34 +58,21 @@ namespace Confuser.MSBuild.Tasks {
 				mainModule.SNPubSigKeyPath = PubSigKeyFilePath.ItemSpec;
 			}
 			if (!string.IsNullOrWhiteSpace(DelaySig?.ItemSpec)) {
-				bool delaySig;
-				bool.TryParse(DelaySig.ItemSpec, out delaySig);
+				bool.TryParse(DelaySig.ItemSpec, out bool delaySig);
 				mainModule.SNDelaySig = delaySig;
 			}
 
 			if (SatelliteAssemblyPaths != null) {
 				foreach (var satelliteAssembly in SatelliteAssemblyPaths) {
-					if (!string.IsNullOrWhiteSpace(satelliteAssembly?.ItemSpec)) {
-						var satelliteModule = GetOrCreateProjectModule(project, satelliteAssembly.ItemSpec);
+					if (string.IsNullOrWhiteSpace(satelliteAssembly?.ItemSpec)) continue;
 
-						if (!string.IsNullOrWhiteSpace(KeyFilePath?.ItemSpec)) {
-							satelliteModule.SNKeyPath = KeyFilePath.ItemSpec;
-						}
-						if (!string.IsNullOrWhiteSpace(PubKeyFilePath?.ItemSpec)) {
-							satelliteModule.SNPubKeyPath = PubKeyFilePath.ItemSpec;
-						}
-						if (!string.IsNullOrWhiteSpace(SigKeyFilePath?.ItemSpec)) {
-							satelliteModule.SNSigKeyPath = SigKeyFilePath.ItemSpec;
-						}
-						if (!string.IsNullOrWhiteSpace(PubSigKeyFilePath?.ItemSpec)) {
-							satelliteModule.SNPubSigKeyPath = PubSigKeyFilePath.ItemSpec;
-						}
-						if (!string.IsNullOrWhiteSpace(DelaySig?.ItemSpec)) {
-							bool delaySig;
-							bool.TryParse(DelaySig.ItemSpec, out delaySig);
-							satelliteModule.SNDelaySig = delaySig;
-						}
-					}
+					var satelliteModule = GetOrCreateProjectModule(project, satelliteAssembly.ItemSpec);
+
+					satelliteModule.SNKeyPath = mainModule.SNKeyPath;
+					satelliteModule.SNPubKeyPath = mainModule.SNPubKeyPath;
+					satelliteModule.SNSigKeyPath = mainModule.SNSigKeyPath;
+					satelliteModule.SNPubSigKeyPath = mainModule.SNPubSigKeyPath;
+					satelliteModule.SNDelaySig = mainModule.SNDelaySig;
 				}
 			}
 
