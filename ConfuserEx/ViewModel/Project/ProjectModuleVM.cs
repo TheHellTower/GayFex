@@ -73,6 +73,46 @@ namespace ConfuserEx.ViewModel {
 			}
 		}
 
+		public string SNSigKeyPath {
+			get { return module.SNSigKeyPath; }
+			set {
+				if (SetProperty(module.SNSigKeyPath != value, val => module.SNSigKeyPath = val, value, "SNSigKeyPath"))
+					parent.IsModified = true;
+			}
+		}
+
+		public string SNSigKeyPassword {
+			get { return module.SNSigKeyPassword; }
+			set {
+				if (SetProperty(module.SNSigKeyPassword != value, val => module.SNSigKeyPassword = val, value, "SNSigKeyPassword"))
+					parent.IsModified = true;
+			}
+		}
+
+		public string SNPubKeyPath {
+			get { return module.SNPubKeyPath; }
+			set {
+				if (SetProperty(module.SNPubKeyPath != value, val => module.SNPubKeyPath = val, value, "SNPubKeyPath"))
+					parent.IsModified = true;
+			}
+		}
+
+		public string SNPubSigKeyPath {
+			get { return module.SNPubSigKeyPath; }
+			set {
+				if (SetProperty(module.SNPubSigKeyPath != value, val => module.SNPubSigKeyPath = val, value, "SNPubSigKeyPath"))
+					parent.IsModified = true;
+			}
+		}
+
+		public bool SNDelaySig {
+			get { return module.SNDelaySig; }
+			set {
+				if (SetProperty(module.SNDelaySig != value, val => module.SNDelaySig = val, value, "SNDelaySig"))
+					parent.IsModified = true;
+			}
+		}
+
 		public IList<ProjectRuleVM> Rules { get; private set; }
 
 		ProjectModule IViewModel<ProjectModule>.Model {
