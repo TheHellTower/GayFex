@@ -373,10 +373,12 @@ namespace Confuser.Core {
 		}
 
 		void MarkModule(ProjectModule projModule, ModuleDefMD module, Rules rules, bool isMain) {
-			string snKeyPath = projModule.SNKeyPath, snKeyPass = projModule.SNKeyPassword;
+			string snKeyPath = projModule.SNKeyPath;
+			string snKeyPass = projModule.SNKeyPassword;
 			string snPubKeyPath = projModule.SNPubKeyPath;
 			bool snDelaySig = projModule.SNDelaySig;
 			string snSigKeyPath = projModule.SNSigKeyPath;
+			string snSigKeyPass = projModule.SNSigKeyPassword;
 			string snPubSigKeyPath = projModule.SNPubSigKeyPath;
 
 			var stack = new ProtectionSettingsStack(context, protections);
@@ -442,7 +444,7 @@ namespace Confuser.Core {
 
 			context.Annotations.Set(module, SNDelaySig, snDelaySig);
 
-			var snSigKey = LoadSNKey(context, snSigKeyPath, snKeyPass);
+			var snSigKey = LoadSNKey(context, snSigKeyPath, snSigKeyPass);
 			context.Annotations.Set(module, SNSigKey, snSigKey);
 
 			var snSigPubKey = LoadSNPubKey(context, snPubSigKeyPath);

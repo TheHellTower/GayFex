@@ -57,6 +57,7 @@
 	<xs:attribute name="snSigKey" type="xs:string" use="optional" />
 	<xs:attribute name="snPubSigKey" type="xs:string" use="optional" />
     <xs:attribute name="snKeyPass" type="xs:string" use="optional" />
+    <xs:attribute name="snSigKeyPass" type="xs:string" use="optional" />
 	<xs:attribute name="snDelaySig" type="xs:boolean" default="false" />
   </xs:complexType>
 
