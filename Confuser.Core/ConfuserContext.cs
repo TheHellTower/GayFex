@@ -173,6 +173,7 @@ namespace Confuser.Core {
 			newOptions.ModuleKind = CurrentModuleWriterOptions.ModuleKind;
 			newOptions.PEHeadersOptions = CurrentModuleWriterOptions.PEHeadersOptions;
 			newOptions.ShareMethodBodies = CurrentModuleWriterOptions.ShareMethodBodies;
+			newOptions.DelaySign = CurrentModuleWriterOptions.DelaySign;
 			newOptions.StrongNameKey = CurrentModuleWriterOptions.StrongNameKey;
 			newOptions.StrongNamePublicKey = CurrentModuleWriterOptions.StrongNamePublicKey;
 			newOptions.Win32Resources = CurrentModuleWriterOptions.Win32Resources;
