@@ -547,8 +547,8 @@ namespace Confuser.Renamer.BAML {
 		}
 
 		protected override void WriteData(BamlBinaryWriter writer) {
-			writer.Write(Value);
 			writer.Write(AttributeId);
+			writer.Write(Value);
 		}
 	}
 
