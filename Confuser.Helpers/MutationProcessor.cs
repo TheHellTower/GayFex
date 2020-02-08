@@ -28,14 +28,15 @@ namespace Confuser.Helpers {
 		public CryptProcessor CryptProcessor { get; set; }
 		public ValueProcessor ValueProcessor { get; set; }
 
-		public MutationProcessor(IServiceProvider services, ModuleDef targetModule) {
-			if (services == null) throw new ArgumentNullException(nameof(services));
-			TargetModule = targetModule ?? throw new ArgumentNullException(nameof(targetModule));
+		public MutationProcessor(IServiceProvider services, ModuleDef targetModule) :
+			this(services.GetRequiredService<ITraceService>(), targetModule) { }
 
-			TraceService = services.GetRequiredService<ITraceService>();
+		public MutationProcessor(ITraceService traceService, ModuleDef targetModule) {
+			TraceService = traceService ?? throw new ArgumentNullException(nameof(traceService));
+			TargetModule = targetModule ?? throw new ArgumentNullException(nameof(targetModule));
 		}
 
-		void IMethodInjectProcessor.Process(MethodDef method) {
+		public void Process(MethodDef method) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 			Debug.Assert(method.HasBody, $"{nameof(method)}.HasBody");
 
