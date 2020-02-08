@@ -32,6 +32,7 @@ namespace Confuser.Helpers.Test {
 				.FindNormalThrow(ThisType.FullName)
 				.FindMethod(testMethod);
 			Assert.NotNull(testMethodDef);
+
 			testMethodDef.Body.SimplifyMacros(testMethodDef.Parameters);
 			testMethodDef.Body.SimplifyBranches();
 
@@ -52,7 +53,7 @@ namespace Confuser.Helpers.Test {
 			Assert.True(MaxStackCalculator.GetMaxStack(testMethodDef.Body.Instructions, testMethodDef.Body.ExceptionHandlers, out var newMaxStack));
 			testMethodDef.Body.MaxStack = (ushort)newMaxStack;
 
-			Approvals.Verify(WriteApprovalFile(testMethodDef), new ApprovalNamer(), Approvals.GetReporter());
+			Approvals.Verify(WriteApprovalFile(testMethodDef));
 		}
 
 		private static IApprovalWriter WriteApprovalFile(MethodDef testMethodDef) =>
@@ -66,12 +67,6 @@ namespace Confuser.Helpers.Test {
 				str.Position = 0;
 			}
 			return Mutation.Placeholder(id);
-		}
-
-		private sealed class ApprovalNamer : UnitTestFrameworkNamer {
-#if DEBUG
-			public override string Name => base.Name + ".Debug";
-#endif
 		}
 	}
 }
