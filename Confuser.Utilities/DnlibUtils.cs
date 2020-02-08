@@ -148,7 +148,7 @@ namespace Confuser {
 		public static bool IsVisibleOutside(this TypeDef typeDef, bool exeNonPublic = true) {
 			// Assume executable modules' type is not visible
 			if (exeNonPublic &&
-			    (typeDef.Module.Kind == ModuleKind.Windows || typeDef.Module.Kind == ModuleKind.Console))
+				(typeDef.Module.Kind == ModuleKind.Windows || typeDef.Module.Kind == ModuleKind.Console))
 				return false;
 
 			do {
@@ -179,8 +179,8 @@ namespace Confuser {
 		/// <returns><c>true</c> if specified type is COM import; otherwise, <c>false</c>.</returns>
 		public static bool IsComImport(this TypeDef type) {
 			return type.IsImport ||
-			       type.HasAttribute("System.Runtime.InteropServices.ComImportAttribute") ||
-			       type.HasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute");
+				   type.HasAttribute("System.Runtime.InteropServices.ComImportAttribute") ||
+				   type.HasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute");
 		}
 
 		/// <summary>
@@ -461,13 +461,13 @@ namespace Confuser {
 		}
 
 		private static IEnumerable<MethodDef> AllMethods(this EventDef evt) {
-			return new[] {evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod}
+			return new[] { evt.AddMethod, evt.RemoveMethod, evt.InvokeMethod }
 				.Concat(evt.OtherMethods)
 				.Where(m => m != null);
 		}
 
 		private static IEnumerable<MethodDef> AllMethods(this PropertyDef property) {
-			return new[] {property.GetMethod, property.SetMethod}
+			return new[] { property.GetMethod, property.SetMethod }
 				.Concat(property.OtherMethods)
 				.Where(m => m != null);
 		}
@@ -518,10 +518,18 @@ namespace Confuser {
 			params Instruction[] newInstrs) =>
 			InsertPrefixInstructions(body, instr, newInstrs.AsEnumerable());
 
+		/// <summary>
+		/// Insert instructions before the <paramref name="instr"/> into the <paramref name="body"/>.
+		/// </summary>
+		/// <param name="body">the method body the instructions will be inserted into</param>
+		/// <param name="instr">
+		///     The instruction to insert the instructions before;
+		///     may be <see langword="null" /> to indicate the end of the method.
+		/// </param>
+		/// <param name="newInstrs">the instructions to insert</param>
 		public static void InsertPrefixInstructions(this CilBody body, Instruction instr,
 			IEnumerable<Instruction> newInstrs) {
 			if (body == null) throw new ArgumentNullException(nameof(body));
-			if (instr == null) throw new ArgumentNullException(nameof(instr));
 			if (newInstrs == null) throw new ArgumentNullException(nameof(newInstrs));
 
 			if (!body.HasInstructions) {
@@ -529,7 +537,7 @@ namespace Confuser {
 				return;
 			}
 
-			var indexOfInstr = body.Instructions.IndexOf(instr);
+			var indexOfInstr = instr is null ? body.Instructions.Count : body.Instructions.IndexOf(instr);
 			Debug.Assert(indexOfInstr >= 0, "Instruction not present in method.");
 			if (indexOfInstr < 0) return;
 
@@ -537,8 +545,11 @@ namespace Confuser {
 			foreach (var newInstr in newInstrs)
 				body.Instructions.Insert(indexOfInstr + (index++), newInstr);
 
-			body.UpdateReference(instr, body.Instructions[indexOfInstr]);
-			body.FixScopeStarts(instr, body.Instructions[indexOfInstr]);
+			if (!(instr is null)) {
+				body.UpdateReference(instr, body.Instructions[indexOfInstr]);
+				body.FixScopeStarts(instr, body.Instructions[indexOfInstr]);
+			}
+			body.FixScopeEnds(instr, body.Instructions[indexOfInstr]);
 		}
 
 		private static void FixScopeStarts(this CilBody body, Instruction oldInstr, Instruction newInstr) {
@@ -565,19 +576,26 @@ namespace Confuser {
 
 		private static void FixScopeEnds(this CilBody body, Instruction oldInstr, Instruction newInstr) {
 			Debug.Assert(body != null, $"{nameof(body)} != null");
-			Debug.Assert(oldInstr != null, $"{nameof(oldInstr)} != null");
-			Debug.Assert(newInstr != null, $"{nameof(newInstr)} != null");
 
 			foreach (var exHandler in body.ExceptionHandlers) {
-				if (oldInstr.Equals(exHandler.TryEnd))
-					exHandler.TryEnd = newInstr;
+				if (oldInstr is null) {
+					if (exHandler.TryEnd is null)
+						exHandler.TryEnd = newInstr;
+					if (exHandler.HandlerEnd is null && !(exHandler.HandlerStart is null))
+						exHandler.HandlerEnd = newInstr;
 
-				if (oldInstr.Equals(exHandler.HandlerEnd))
-					exHandler.HandlerEnd = newInstr;
+				}
+				else {
+					if (oldInstr.Equals(exHandler.TryEnd))
+						exHandler.TryEnd = newInstr;
+
+					if (oldInstr.Equals(exHandler.HandlerEnd))
+						exHandler.HandlerEnd = newInstr;
+				}
 			}
 
 			foreach (var currentScope in body.GetPdbScopes()) {
-				if (oldInstr.Equals(currentScope.End))
+				if (oldInstr == currentScope.End)
 					currentScope.End = newInstr;
 			}
 		}
@@ -641,10 +659,11 @@ namespace Confuser {
 				body.FixScopeStarts(instr, body.Instructions[indexOfInstr - 1]);
 			}
 
-			if (indexOfInstr > 0)
-				body.FixScopeEnds(instr, body.Instructions[indexOfInstr - 1]);
-			else if (indexOfInstr < body.Instructions.Count - 1)
+			// ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+			if (indexOfInstr < body.Instructions.Count - 1)
 				body.FixScopeEnds(instr, body.Instructions[indexOfInstr + 1]);
+			else 
+				body.FixScopeEnds(instr, null); // Scope End to end of method
 
 			if (indexOfInstr + 1 < body.Instructions.Count) {
 				if (instr.SequencePoint != null && body.Instructions[indexOfInstr + 1].SequencePoint == null) {

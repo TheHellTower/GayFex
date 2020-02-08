@@ -16,7 +16,7 @@ try {
 	IL_000B: callvirt  System.Void System.IO.Stream::set_Position(System.Int64)
 	IL_0010: nop
 	IL_0011: nop
-	IL_0012: leave.s   IL_0020
+	IL_0012: leave.s   IL_001F
 } finally {
 	IL_0014: ldloc.0
 	IL_0015: brfalse.s IL_001E

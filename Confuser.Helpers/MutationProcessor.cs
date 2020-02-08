@@ -166,17 +166,20 @@ namespace Confuser.Helpers {
 				IReadOnlyList<Instruction> arg = method.Body.Instructions.Skip(argIndex).Take(index - argIndex)
 					.ToImmutableArray();
 
+				// Remove all the loading instructions for the arguments.
 				for (int j = 0; j < arg.Count; j++)
-					method.Body.Instructions.RemoveAt(argIndex);
-				method.Body.Instructions.RemoveAt(argIndex);
+					method.Body.RemoveInstruction(argIndex);
 
 				index -= arg.Count;
 
+				// Insert the new instructions for the placeholder
 				arg = PlaceholderProcessor(TargetModule, method, arg);
-				for (int j = arg.Count - 1; j >= 0; j--)
-					method.Body.Instructions.Insert(argIndex, arg[j]);
-
+				method.Body.InsertPrefixInstructions(instr, arg);
 				index += arg.Count;
+				
+				// Remove the call to the placeholder function
+				method.Body.RemoveInstruction(instr);
+				index -= 1;
 
 				return true;
 			}
