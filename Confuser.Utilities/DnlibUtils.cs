@@ -583,7 +583,6 @@ namespace Confuser {
 						exHandler.TryEnd = newInstr;
 					if (exHandler.HandlerEnd is null && !(exHandler.HandlerStart is null))
 						exHandler.HandlerEnd = newInstr;
-
 				}
 				else {
 					if (oldInstr.Equals(exHandler.TryEnd))
