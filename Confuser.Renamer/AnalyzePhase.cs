@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Confuser.Core;
 using Confuser.Renamer.Analyzers;
 using dnlib.DotNet;
@@ -239,6 +240,9 @@ namespace Confuser.Renamer {
 
 			else if (property.DeclaringType.Name.String.Contains("AnonymousType"))
 				service.SetCanRename(property, false);
+
+			else if (property.IsAbstract())
+				service.SetCanRename(property, false);
 		}
 
 		void Analyze(NameService service, ConfuserContext context, ProtectionParameters parameters, EventDef evt) {
@@ -251,6 +255,9 @@ namespace Confuser.Renamer {
 				service.SetCanRename(evt, false);
 
 			else if (evt.IsExplicitlyImplementedInterfaceMember())
+				service.SetCanRename(evt, false);
+
+			else if (evt.IsAbstract())
 				service.SetCanRename(evt, false);
 		}
 	}
