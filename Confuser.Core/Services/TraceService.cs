@@ -223,8 +223,20 @@ namespace Confuser.Core.Services {
 			while (working.Count > 0) {
 				int index = working.Dequeue();
 				while (index >= 0) {
-					if (BeforeStackDepths[index] == targetStack)
-						break;
+					if (BeforeStackDepths[index] == targetStack) {
+						if (method.Body.Instructions[index].OpCode.Code != Code.Dup) {
+							// It's not a duplicate instruction, this is an acceptable start point.
+							break;
+						} else {
+							var prevInstr = method.Body.Instructions[index - 1];
+							prevInstr.CalculateStackUsage(out push, out _);
+							if (push > 0) {
+								// A duplicate instruction is an acceptable start point in case the preceeding instruction
+								// pushes a value.
+								break;
+							}
+						}
+					}
 
 					if (fromInstrs.ContainsKey(index))
 						foreach (Instruction fromInstr in fromInstrs[index]) {
@@ -270,8 +282,11 @@ namespace Confuser.Core.Services {
 						evalStack.Push(lastIdx);
 					}
 					else {
+						// Removing values from the stack. If the stack is already empty, the poped values are of no relevance.
+						Debug.Assert(evalStack.Count >= pop);
 						for (var i = 0; i < pop; i++) {
-							evalStack.Pop();
+							if (evalStack.Count > 0)
+								evalStack.Pop();
 						}
 						Debug.Assert(push <= 1); // Instructions shouldn't put more than one value on the stack.
 						for (var i = 0; i < push; i++) {
