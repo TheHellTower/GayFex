@@ -22,7 +22,7 @@ namespace Confuser.Core.Services {
 		public PackerService(IServiceProvider provider) =>
 			loggerFactory = provider.GetRequiredService<ILoggerFactory>();
 
-		public void ProtectStub(IConfuserContext context1, string fileName, byte[] module, StrongNameKey snKey,
+		public void ProtectStub(IConfuserContext context1, string fileName, byte[] module, StrongNameData snKeyData,
 			IProtection prot, CancellationToken token) {
 			var logger = loggerFactory.CreateLogger("packer");
 			var context = (ConfuserContext)context1;
@@ -72,7 +72,7 @@ namespace Confuser.Core.Services {
 								ConfigureLogging =
 									builder => builder.AddProvider(new PackerLoggerProvider(loggerFactory)),
 								PluginDiscovery = discovery,
-								Marker = new PackerMarker(snKey),
+								Marker = new PackerMarker(snKeyData),
 								Project = proj,
 								PackerInitiated = true
 							}, token).Wait();
@@ -112,15 +112,17 @@ namespace Confuser.Core.Services {
 		}
 
 		private sealed class PackerMarker : Marker {
-			readonly StrongNameKey snKey;
+			private readonly StrongNameData _snData;
 
-			public PackerMarker(StrongNameKey snKey) => this.snKey = snKey;
+			public PackerMarker(StrongNameData snData) => _snData = snData;
 
 			protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context,
 				CancellationToken token) {
 				var result = base.MarkProject(proj, context, token);
+
+				var markerService = context.Registry.GetRequiredService<IMarkerService>();
 				foreach (var module in result.Modules)
-					context.Annotations.Set(module, SNKey, snKey);
+					markerService.SetStrongName(context, module, _snData);
 				return result;
 			}
 		}

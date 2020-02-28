@@ -87,10 +87,13 @@ namespace Confuser.Protections {
 
 			var markerService = context.Registry.GetRequiredService<IMarkerService>();
 
-			var snKey = markerService.GetStrongNameKey(context, originModule);
+			var snKeyData = markerService.GetStrongNameKey(context, originModule);
+
 			using (var ms = new MemoryStream()) {
 				var options = new ModuleWriterOptions(stubModule) {
-					StrongNameKey = snKey
+					StrongNameKey = snKeyData.SnKey,
+					StrongNamePublicKey = snKeyData.SnPubKey,
+					DelaySign = snKeyData.SnDelaySign
 				};
 				var injector = new KeyInjector(ctx);
 				options.WriterEvent += injector.WriterEvent;
@@ -99,7 +102,7 @@ namespace Confuser.Protections {
 				token.ThrowIfCancellationRequested();
 
 				var packerService = context.Registry.GetRequiredService<IPackerService>();
-				packerService.ProtectStub(context, context.OutputPaths[ctx.ModuleIndex], ms.ToArray(), snKey,
+				packerService.ProtectStub(context, context.OutputPaths[ctx.ModuleIndex], ms.ToArray(), snKeyData,
 					new StubProtection(ctx, originModule), token);
 			}
 		}

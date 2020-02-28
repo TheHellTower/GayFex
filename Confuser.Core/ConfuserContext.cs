@@ -126,6 +126,7 @@ namespace Confuser.Core {
 				ModuleKind = CurrentModuleWriterOptions.ModuleKind,
 				PEHeadersOptions = CurrentModuleWriterOptions.PEHeadersOptions,
 				ShareMethodBodies = CurrentModuleWriterOptions.ShareMethodBodies,
+				DelaySign = CurrentModuleWriterOptions.DelaySign,
 				StrongNameKey = CurrentModuleWriterOptions.StrongNameKey,
 				StrongNamePublicKey = CurrentModuleWriterOptions.StrongNamePublicKey,
 				Win32Resources = CurrentModuleWriterOptions.Win32Resources

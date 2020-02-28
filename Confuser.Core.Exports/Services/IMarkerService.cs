@@ -35,6 +35,8 @@ namespace Confuser.Core.Services {
 		/// <returns>The parent component of the helper, or <c>null</c> if the specified definition is not a helper.</returns>
 		IConfuserComponent GetHelperParent(IDnlibDef def);
 
-		StrongNameKey GetStrongNameKey(IConfuserContext context, ModuleDefMD module);
+		StrongNameData GetStrongNameKey(IConfuserContext context, ModuleDefMD module);
+
+		void SetStrongName(IConfuserContext context, ModuleDefMD module, StrongNameData snData);
 	}
 }

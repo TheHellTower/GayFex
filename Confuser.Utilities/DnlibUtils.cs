@@ -349,6 +349,14 @@ namespace Confuser {
 		}
 
 		/// <summary>
+		///     Determines whether the specified property is abstract.
+		/// </summary>
+		/// <param name="property">The property.</param>
+		/// <returns><see langword="true" /> if the specified property is abstract; otherwise, <see langword="false" /></returns>
+		public static bool IsAbstract(this PropertyDef property) =>
+			property.AllMethods().Any(method => method.IsAbstract);
+
+		/// <summary>
 		///     Determines whether the specified property is public.
 		/// </summary>
 		/// <param name="property">The property.</param>
@@ -383,6 +391,14 @@ namespace Confuser {
 		public static bool IsStatic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsStatic);
 		}
+
+		/// <summary>
+		///     Determines whether the specified event is abstract.
+		/// </summary>
+		/// <param name="evt">The event.</param>
+		/// <returns><see langword="true" /> if the specified event is abstract; otherwise, <see langword="false" /></returns>
+		public static bool IsAbstract(this EventDef evt) =>
+			evt.AllMethods().Any(method => method.IsAbstract);
 
 		/// <summary>
 		///     Determines whether the specified event is public.

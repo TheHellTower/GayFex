@@ -305,19 +305,7 @@ namespace Confuser.Core {
 
 			logger.LogDebug("Checking Strong Name...");
 			foreach (var module in context.Modules) {
-				var snKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
-				if (snKey == null && module.IsStrongNameSigned)
-					logger.LogWarning(
-						"[{0}] SN Key is not provided for a signed module, the output may not be working.",
-						module.Name);
-				else if (snKey != null && !module.IsStrongNameSigned)
-					logger.LogWarning("[{0}] SN Key is provided for an unsigned module, the output may not be working.",
-						module.Name);
-				else if (snKey != null && module.IsStrongNameSigned &&
-						 !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
-					logger.LogWarning(
-						"[{0}] Provided SN Key and signed module's public key do not match, the output may not be working.",
-						module.Name);
+				CheckStrongName(context, module, logger);
 			}
 
 			var marker = context.Registry.GetService<IMarkerService>();
@@ -367,6 +355,28 @@ namespace Confuser.Core {
 			}
 		}
 
+		private static void CheckStrongName(IConfuserContext context, ModuleDef module, ILogger logger) {
+			var snKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
+			var snPubKeyBytes = context.Annotations.Get<StrongNamePublicKey>(module, Marker.SNPubKey)?.CreatePublicKey();
+			var snDelaySign = context.Annotations.Get<bool>(module, Marker.SNDelaySig);
+
+			if (snPubKeyBytes == null && snKey != null)
+				snPubKeyBytes = snKey.PublicKey;
+
+			bool moduleIsSignedOrDelayedSigned = module.IsStrongNameSigned || !module.Assembly.PublicKey.IsNullOrEmpty;
+
+			bool isKeyProvided = snKey != null || (snDelaySign && snPubKeyBytes != null);
+
+			if (!isKeyProvided && moduleIsSignedOrDelayedSigned)
+				logger.LogWarning("[{0}] SN Key or SN public Key is not provided for a signed module, the output may not be working.", module.Name);
+			else if (isKeyProvided && !moduleIsSignedOrDelayedSigned)
+				logger.LogWarning("[{0}] SN Key or SN public Key is provided for an unsigned module, the output may not be working.", module.Name);
+			else if (snPubKeyBytes != null && moduleIsSignedOrDelayedSigned &&
+			         !module.Assembly.PublicKey.Data.SequenceEqual(snPubKeyBytes))
+				logger.LogWarning("[{0}] Provided SN public Key and signed module's public key do not match, the output may not be working.",
+					module.Name);
+		}
+
 		private static void CopyPEHeaders(PEHeadersOptions writerOptions, ModuleDefMD module) {
 			var image = module.Metadata.PEImage;
 			writerOptions.MajorImageVersion = image.ImageNTHeaders.OptionalHeader.MajorImageVersion;
@@ -393,7 +403,25 @@ namespace Confuser.Core {
 				context.RequestNative();
 
 			var snKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNKey);
-			context.CurrentModuleWriterOptions.InitializeStrongNameSigning(context.CurrentModule, snKey);
+			var snPubKey = context.Annotations.Get<StrongNamePublicKey>(context.CurrentModule, Marker.SNPubKey);
+			var snSigKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNSigKey);
+			var snSigPubKey = context.Annotations.Get<StrongNamePublicKey>(context.CurrentModule, Marker.SNSigPubKey);
+
+			var snDelaySig = context.Annotations.Get<bool>(context.CurrentModule, Marker.SNDelaySig, false);
+
+			context.CurrentModuleWriterOptions.DelaySign = snDelaySig;
+
+			if (snKey != null && snPubKey != null && snSigKey != null && snSigPubKey != null)
+				context.CurrentModuleWriterOptions.InitializeEnhancedStrongNameSigning(context.CurrentModule, snSigKey, snSigPubKey, snKey, snPubKey);
+			else if (snSigPubKey != null && snSigKey != null)
+				context.CurrentModuleWriterOptions.InitializeEnhancedStrongNameSigning(context.CurrentModule, snSigKey, snSigPubKey);
+			else
+				context.CurrentModuleWriterOptions.InitializeStrongNameSigning(context.CurrentModule, snKey);
+
+			if (snDelaySig) {
+				context.CurrentModuleWriterOptions.StrongNamePublicKey = snPubKey;
+				context.CurrentModuleWriterOptions.StrongNameKey = null;
+			}
 
 			foreach (var type in context.CurrentModule.GetTypes())
 				foreach (var method in type.Methods) {

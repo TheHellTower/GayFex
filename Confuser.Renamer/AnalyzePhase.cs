@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using Confuser.Core;
 using Confuser.Renamer.Analyzers;
@@ -225,6 +225,9 @@ namespace Confuser.Renamer {
 
 			else if (property.DeclaringType.Name.String.Contains("AnonymousType"))
 				service.SetCanRename(context, property, false);
+
+			else if (property.IsAbstract())
+				service.SetCanRename(context, property, false);
 		}
 
 		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters, EventDef evt) {
@@ -232,6 +235,9 @@ namespace Confuser.Renamer {
 				service.SetCanRename(context, evt, false);
 
 			else if (evt.IsExplicitlyImplementedInterfaceMember())
+				service.SetCanRename(context, evt, false);
+
+			else if (evt.IsAbstract())
 				service.SetCanRename(context, evt, false);
 		}
 	}

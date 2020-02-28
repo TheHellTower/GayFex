@@ -39,8 +39,22 @@ namespace Confuser.Core.Services {
 			return null;
 		}
 
-		public StrongNameKey GetStrongNameKey(IConfuserContext context, ModuleDefMD module) {
-			return context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
+		public StrongNameData GetStrongNameKey(IConfuserContext context, ModuleDefMD module) =>
+			new StrongNameData {
+				SnKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey),
+				SnPubKey = context.Annotations.Get<StrongNamePublicKey>(module, Marker.SNPubKey),
+				SnSigKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNSigKey),
+				SnSigPubKey = context.Annotations.Get<StrongNamePublicKey>(module, Marker.SNSigPubKey),
+				SnDelaySign = context.Annotations.Get<bool>(module, Marker.SNDelaySig)
+			};
+
+		/// <inheritdoc />
+		public void SetStrongName(IConfuserContext context, ModuleDefMD module, StrongNameData snData) {
+			context.Annotations.Set(module, Marker.SNKey, snData.SnKey);
+			context.Annotations.Set(module, Marker.SNPubKey, snData.SnPubKey);
+			context.Annotations.Set(module, Marker.SNSigKey, snData.SnSigKey);
+			context.Annotations.Set(module, Marker.SNSigPubKey, snData.SnSigPubKey);
+			context.Annotations.Set(module, Marker.SNDelaySig, snData.SnDelaySign);
 		}
 	}
 }

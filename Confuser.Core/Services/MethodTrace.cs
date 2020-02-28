@@ -167,8 +167,20 @@ namespace Confuser.Core.Services {
 			while (working.Count > 0) {
 				int index = working.Dequeue();
 				while (index >= 0) {
-					if (BeforeStackDepths[index] == targetStack)
-						break;
+					if (BeforeStackDepths[index] == targetStack) {
+						if (Method.Body.Instructions[index].OpCode.Code != Code.Dup) {
+							// It's not a duplicate instruction, this is an acceptable start point.
+							break;
+						} else {
+							var prevInstr = Method.Body.Instructions[index - 1];
+							prevInstr.CalculateStackUsage(out push, out _);
+							if (push > 0) {
+								// A duplicate instruction is an acceptable start point in case the preceeding instruction
+								// pushes a value.
+								break;
+							}
+						}
+					}
 
 					if (_fromInstructions.ContainsKey(index))
 						foreach (var fromInstr in _fromInstructions[index])

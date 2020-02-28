@@ -46,7 +46,9 @@ namespace Confuser.Protections.Resources {
 				string asmName = ctx.Name?.RandomName(RenameMode.Letters) ??
 				                 writer.Module.Name.String + ".ConfuserResources";
 				PublicKey pubKey = null;
-				if (writer.TheOptions.StrongNameKey != null)
+				if (writer.TheOptions.StrongNamePublicKey != null)
+					pubKey = PublicKeyBase.CreatePublicKey(writer.TheOptions.StrongNamePublicKey.CreatePublicKey());
+				else if (writer.TheOptions.StrongNameKey != null)
 					pubKey = PublicKeyBase.CreatePublicKey(writer.TheOptions.StrongNameKey.PublicKey);
 				var assembly = new AssemblyDefUser(asmName, new Version(0, 0), pubKey);
 				assembly.Modules.Add(new ModuleDefUser(asmName + ".dll"));

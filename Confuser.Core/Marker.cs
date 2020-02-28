@@ -24,6 +24,26 @@ namespace Confuser.Core {
 		public static readonly object SNKey = new object();
 
 		/// <summary>
+		///     Annotation key of Strong Name Public Key.
+		/// </summary>
+		public static readonly object SNPubKey = new object();
+
+		/// <summary>
+		///     Annotation key of Strong Name delay signing.
+		/// </summary>
+		public static readonly object SNDelaySig = new object();
+
+		/// <summary>
+		///     Annotation key of Strong Name Signature Key.
+		/// </summary>
+		public static readonly object SNSigKey = new object();
+
+		/// <summary>
+		///     Annotation key of Strong Name Public Signature Key.
+		/// </summary>
+		public static readonly object SNSigPubKey = new object();
+
+		/// <summary>
 		///     Annotation key of rules.
 		/// </summary>
 		public static readonly object RulesKey = new object();
@@ -60,6 +80,19 @@ namespace Confuser.Core {
 			foreach (var prot in protections.Values)
 				if (prot.Preset != ProtectionPreset.None && prot.Preset <= preset && !settings.ContainsKey(prot))
 					settings.Add(prot, new Dictionary<string, string>());
+		}
+
+		public static StrongNamePublicKey LoadSNPubKey(IConfuserContext context, string path) {
+			if (path == null) return null;
+
+			try {
+				return new StrongNamePublicKey(path);
+			}
+			catch (Exception ex) {
+				var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+				logger.LogError(ex, "Cannot load the Strong Name Public Key located at: {path}", path);
+				throw new ConfuserException(ex);
+			}
 		}
 
 		/// <summary>
@@ -150,6 +183,11 @@ namespace Confuser.Core {
 						module.Item1.SNKeyPath == null
 							? null
 							: Path.Combine(proj.BaseDirectory, module.Item1.SNKeyPath), module.Item1.SNKeyPassword));
+				context.Annotations.Set(module.Item2, SNSigKey, LoadSNKey(context, module.Item1.SNSigKeyPath == null ? null : Path.Combine(proj.BaseDirectory, module.Item1.SNSigKeyPath), module.Item1.SNKeyPassword));
+				context.Annotations.Set(module.Item2, SNPubKey, LoadSNPubKey(context, module.Item1.SNPubKeyPath == null ? null : Path.Combine(proj.BaseDirectory, module.Item1.SNPubKeyPath)));
+				context.Annotations.Set(module.Item2, SNSigPubKey, LoadSNPubKey(context, module.Item1.SNPubSigKeyPath == null ? null : Path.Combine(proj.BaseDirectory, module.Item1.SNPubSigKeyPath)));
+				context.Annotations.Set(module.Item2, SNDelaySig, module.Item1.SNDelaySig);
+
 				context.Annotations.Set(module.Item2, RulesKey, rules);
 
 				foreach (var def in module.Item2.FindDefinitions()) {

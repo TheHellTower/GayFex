@@ -29,7 +29,7 @@
 
   <Target Name="ConfuserEx"
           DependsOnTargets="$(ConfuserExDependsOn)"
-          BeforeTargets="PrepareForRun" />
+          BeforeTargets="CopyFilesToOutputDirectory" />
 
   <PropertyGroup>
     <CreateConfuserProjectDependsOn>
