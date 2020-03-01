@@ -49,6 +49,10 @@ namespace Confuser.Core.Project {
 		///     Gets or sets the path to the strong name public key for signing.
 		/// </summary>
 		/// <value>The path to the strong name public key, or null if not necessary.</value>
+		/// <remarks>
+		/// This is only used in enhanced strong name signing and is the public part of the identity key.
+		/// The private part of the key 
+		/// </remarks>
 		public string SNPubKeyPath { get; set; }
 
 		/// <summary>
@@ -56,6 +60,12 @@ namespace Confuser.Core.Project {
 		/// </summary>
 		/// <value>The path to the strong name private key used for enhanced signing, or null if not necessary.</value>
 		public string SNSigKeyPath { get; set; }
+
+		/// <summary>
+		///     Gets or sets the password of the strong name private key.
+		/// </summary>
+		/// <value>The password of the strong name private key, or null if not necessary.</value>
+		public string SNSigKeyPassword { get; set; }
 
 		/// <summary>
 		///     Gets or sets the path to the strong name public key used for enhanced signing.
@@ -142,6 +152,11 @@ namespace Confuser.Core.Project {
 				snKeyAttr.Value = SNSigKeyPath;
 				elem.Attributes.Append(snKeyAttr);
 			}
+			if (SNSigKeyPassword != null) {
+				XmlAttribute snKeyPassAttr = xmlDoc.CreateAttribute("snSigKeyPass");
+				snKeyPassAttr.Value = SNSigKeyPassword;
+				elem.Attributes.Append(snKeyPassAttr);
+			}
 			if (SNPubSigKeyPath != null) {
 				XmlAttribute snKeyAttr = xmlDoc.CreateAttribute("snPubSigKey");
 				snKeyAttr.Value = SNPubSigKeyPath;
@@ -193,6 +208,11 @@ namespace Confuser.Core.Project {
 			else
 				SNSigKeyPath = null;
 
+			if (elem.Attributes["snSigKeyPass"] != null)
+				SNSigKeyPassword = elem.Attributes["snSigKeyPass"].Value.NullIfEmpty();
+			else
+				SNSigKeyPassword = null;
+
 			if (elem.Attributes["snPubSigKey"] != null)
 				SNPubSigKeyPath = elem.Attributes["snPubSigKey"].Value.NullIfEmpty();
 			else
@@ -228,6 +248,7 @@ namespace Confuser.Core.Project {
 			ret.SNPubSigKeyPath = SNPubSigKeyPath;
 			ret.SNSigKeyPath = SNSigKeyPath;
 			ret.SNKeyPassword = SNKeyPassword;
+			ret.SNSigKeyPassword = SNSigKeyPassword;
 			foreach (var r in Rules)
 				ret.Rules.Add(r.Clone());
 			return ret;
@@ -450,7 +471,6 @@ namespace Confuser.Core.Project {
 					item.Add(j, i[j]);
 				ret.Add(item);
 			}
-
 			return ret;
 		}
 	}

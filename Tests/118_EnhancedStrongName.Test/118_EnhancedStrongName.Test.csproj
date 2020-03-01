@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
+    <RootNamespace>EnhancedStrongName.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ConfuserTestTargetProject Include="..\118_EnhancedStrongName\118_EnhancedStrongName.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\118_EnhancedStrongName\*.snk" Link="%(FileName).snk">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
+  
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+
+</Project>
