@@ -515,5 +515,96 @@ namespace Confuser.Core {
 			}
 			return false;
 		}
+
+		/// <summary>
+		///		Merges a specified call instruction into the body.
+		/// </summary>
+		/// <param name="targetBody">The target body</param>
+		/// <param name="callInstruction">The instruction to merge in</param>
+		public static void MergeCall(this CilBody targetBody, Instruction callInstruction) {
+			if (!(callInstruction.Operand is MethodDef methodToMerge))
+				throw new ArgumentException("Call instruction has invalid operand");
+			if (!methodToMerge.HasBody)
+				throw new Exception("Method to merge has no body!");
+
+			var localParams = methodToMerge.Parameters.ToDictionary(param => param.Index, param => new Local(param.Type));
+			var localMap = methodToMerge.Body.Variables.ToDictionary(local => local, local => new Local(local.Type));
+			foreach (var local in localParams)
+				targetBody.Variables.Add(local.Value);
+			foreach (var local in localMap)
+				targetBody.Variables.Add(local.Value);
+
+			// Nop the call
+			int index = targetBody.Instructions.IndexOf(callInstruction);
+			targetBody.Instructions[index++].OpCode = OpCodes.Nop;
+			var afterIndex = targetBody.Instructions[index];
+
+			// Find Exception handler index
+			int exIndex = 0;
+			foreach (var ex in targetBody.ExceptionHandlers) {
+				if (targetBody.Instructions.IndexOf(ex.TryStart) < index)
+					exIndex = targetBody.ExceptionHandlers.IndexOf(ex);
+			}
+
+			// setup parameter locals
+			foreach (var paramLocal in localParams.Reverse()) {
+				targetBody.Instructions.Insert(index++, new Instruction(OpCodes.Stloc, paramLocal.Value));
+			}
+
+			var instrMap = new Dictionary<Instruction, Instruction>();
+			var newInstrs = new List<Instruction>();
+
+			// Transfer instructions to list
+			foreach (var instr in methodToMerge.Body.Instructions) {
+				Instruction newInstr;
+				if (instr.OpCode == OpCodes.Ret) {
+					newInstr = new Instruction(OpCodes.Br, afterIndex);
+				}
+				else if (instr.IsLdarg()) {
+					localParams.TryGetValue(instr.GetParameterIndex(), out var lc);
+					newInstr = new Instruction(OpCodes.Ldloc, lc);
+				}
+				else if (instr.IsStarg()) {
+					localParams.TryGetValue(instr.GetParameterIndex(), out var lc);
+					newInstr = new Instruction(OpCodes.Stloc, lc);
+				}
+				else if (instr.IsLdloc()) {
+					localMap.TryGetValue(instr.GetLocal(methodToMerge.Body.Variables), out var lc);
+					newInstr = new Instruction(OpCodes.Ldloc, lc);
+				}
+				else if (instr.IsStloc()) {
+					localMap.TryGetValue(instr.GetLocal(methodToMerge.Body.Variables), out var lc);
+					newInstr = new Instruction(OpCodes.Stloc, lc);
+				}
+				else {
+					newInstr = new Instruction(instr.OpCode, instr.Operand);
+				}
+
+				newInstrs.Add(newInstr);
+				instrMap[instr] = newInstr;
+			}
+
+			// Fix branch targets & add instructions
+			foreach (var instr in newInstrs) {
+				if (instr.Operand != null && instr.Operand is Instruction instrOp && instrMap.ContainsKey(instrOp))
+					instr.Operand = instrMap[instrOp];
+				else if (instr.Operand is Instruction[] instructionArrayOp)
+					instr.Operand = instructionArrayOp.Select(target => instrMap[target]).ToArray();
+
+				targetBody.Instructions.Insert(index++, instr);
+			}
+
+			// Add Exception Handlers
+			foreach (var eh in methodToMerge.Body.ExceptionHandlers) {
+				targetBody.ExceptionHandlers.Insert(++exIndex, new ExceptionHandler(eh.HandlerType) {
+					CatchType = eh.CatchType,
+					TryStart = instrMap[eh.TryStart],
+					TryEnd = instrMap[eh.TryEnd],
+					HandlerStart = instrMap[eh.HandlerStart],
+					HandlerEnd = instrMap[eh.HandlerEnd],
+					FilterStart = eh.FilterStart == null ? null : instrMap[eh.FilterStart]
+				});
+			}
+		}
 	}
 }
