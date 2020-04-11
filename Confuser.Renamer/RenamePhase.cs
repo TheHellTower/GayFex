@@ -94,13 +94,12 @@ namespace Confuser.Renamer {
 				else
 					def.Name = service.ObfuscateName(def.Name, mode);
 
-				foreach (INameReference refer in references.ToList()) {
-					if (!refer.UpdateNameReference(context, service)) {
-						context.Logger.ErrorFormat("Failed to update name reference on '{0}'.", def);
-						throw new ConfuserException(null);
-					}
-				}
-				context.CheckCancellation();
+				int updatedReferences;
+				do {
+					// This resolves the changed name references and counts how many were changed.
+					updatedReferences = references.Count(refer => refer.UpdateNameReference(context, service));
+					context.CheckCancellation();
+				} while (updatedReferences > 0);
 			}
 		}
 	}

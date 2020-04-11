@@ -13,7 +13,7 @@ namespace Confuser.Renamer.References {
 			this.baseSlot = baseSlot;
 		}
 
-		public bool UpdateNameReference(ConfuserContext context, INameService service) => true;
+		public bool UpdateNameReference(ConfuserContext context, INameService service) => false;
 
 		public bool ShouldCancelRename() => baseSlot.MethodDefDeclType is GenericInstSig && thisSlot.MethodDef.Module.IsClr20;
 	}

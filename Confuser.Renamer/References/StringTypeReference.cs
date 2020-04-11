@@ -14,12 +14,16 @@ namespace Confuser.Renamer.References {
 		}
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
-			reference.Operand = typeDef.ReflectionFullName;
-			return true;
+			switch (reference.Operand) {
+				case string strOp when string.Equals(strOp, typeDef.ReflectionFullName, StringComparison.Ordinal):
+				case UTF8String utf8StrOp when UTF8String.Equals(utf8StrOp, typeDef.ReflectionFullName):
+					return false;
+				default:
+					reference.Operand = typeDef.ReflectionFullName;
+					return true;
+			}
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

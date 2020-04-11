@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using Confuser.Core;
 using Confuser.Renamer.BAML;
 using dnlib.DotNet;
@@ -31,20 +32,21 @@ namespace Confuser.Renamer.References {
 				name = prefix + ":" + name;
 			if (indexerInfo != null) {
 				var info = indexerInfo.Value;
+				if (string.Equals(info.parenString, name, StringComparison.Ordinal)) return false;
 				info.parenString = name;
 				indexerInfo = info;
 			}
 			else {
 				var info = propertyInfo.Value;
 				var propertyName = info.GetPropertyName();
-				info.name = string.Format("({0}.{1})", name, propertyName);
+				var newName = string.Format(CultureInfo.InvariantCulture, "({0}.{1})", name, propertyName);
+				if (string.Equals(info.name, newName, StringComparison.Ordinal)) return false;
+				info.name = newName;
 				propertyInfo = info;
 			}
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

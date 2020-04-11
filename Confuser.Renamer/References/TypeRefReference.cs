@@ -13,13 +13,13 @@ namespace Confuser.Renamer.References {
 		}
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
+			if (UTF8String.Equals(typeRef.Name, typeDef.Name) && UTF8String.Equals(typeRef.Name, typeDef.Name)) return false;
+
 			typeRef.Namespace = typeDef.Namespace;
 			typeRef.Name = typeDef.Name;
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

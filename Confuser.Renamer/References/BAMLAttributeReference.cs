@@ -20,15 +20,17 @@ namespace Confuser.Renamer.References {
 		}
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
-			if (attrRec != null)
+			if (attrRec != null) {
+				if (UTF8String.Equals(attrRec.Name, member.Name)) return false;
 				attrRec.Name = member.Name;
-			else
+			}
+			else {
+				if (UTF8String.Equals(propRec.Value, member.Name)) return false;
 				propRec.Value = member.Name;
+			}
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

@@ -22,12 +22,12 @@ namespace Confuser.Renamer.References {
 			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
 			if (!string.IsNullOrEmpty(prefix))
 				typeName = prefix + ":" + typeName;
-			rec.Value = typeName + "." + member.Name;
+			var newValue = typeName + "." + member.Name;
+			if (string.Equals(rec.Value, newValue, StringComparison.Ordinal)) return false;
+			rec.Value = newValue;
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

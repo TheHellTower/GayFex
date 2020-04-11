@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using Confuser.Core;
 using dnlib.DotNet;
 
@@ -15,12 +16,12 @@ namespace Confuser.Renamer.References {
 		}
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
-			resource.Name = string.Format(format, typeDef.ReflectionFullName);
+			var newName = string.Format(CultureInfo.InvariantCulture, format, typeDef.ReflectionFullName);
+			if (UTF8String.Equals(resource.Name, newName)) return false;
+			resource.Name = newName;
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
-		}
+		public bool ShouldCancelRename() => false;
 	}
 }

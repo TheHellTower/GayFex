@@ -661,6 +661,9 @@ namespace Confuser.Renamer.BAML {
 				Debug.Assert(rootIndex != -1);
 			}
 
+			public void AddNsMap(string clrNs, AssemblyDef assembly, string prefix) => 
+				AddNsMap(Tuple.Create(assembly, clrNs), prefix);
+
 			public void AddNsMap(Tuple<AssemblyDef, string> scope, string prefix) {
 				xmlNsMap[scope] = prefix;
 			}
