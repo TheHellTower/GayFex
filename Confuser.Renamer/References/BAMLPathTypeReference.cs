@@ -30,6 +30,7 @@ namespace Confuser.Renamer.References {
 			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
 			if (!string.IsNullOrEmpty(prefix))
 				name = prefix + ":" + name;
+
 			if (indexerInfo != null) {
 				var info = indexerInfo.Value;
 				if (string.Equals(info.parenString, name, StringComparison.Ordinal)) return false;

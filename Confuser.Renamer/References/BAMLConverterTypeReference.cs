@@ -24,12 +24,10 @@ namespace Confuser.Renamer.References {
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			string name = sig.ReflectionName;
-			var assembly = sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly;
 			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
-			if (!string.IsNullOrEmpty(prefix)) {
+			if (!string.IsNullOrEmpty(prefix))
 				name = prefix + ":" + name;
-				xmlnsCtx.AddNsMap(sig.ReflectionNamespace, assembly, prefix);
-			}
+
 			if (propRec != null) {
 				if (string.Equals(propRec.Value, name, StringComparison.Ordinal)) return false;
 				propRec.Value = name;

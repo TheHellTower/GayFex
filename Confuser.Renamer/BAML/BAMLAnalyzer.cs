@@ -684,6 +684,8 @@ namespace Confuser.Renamer.BAML {
 						XmlNamespace = "clr-namespace:" + clrNs
 					});
 					rootIndex++;
+
+					AddNsMap(clrNs, assembly, prefix);
 				}
 				return prefix;
 			}
