@@ -68,6 +68,7 @@ namespace Confuser.Renamer {
 				new TypeBlobAnalyzer(),
 				new ResourceAnalyzer(),
 				new LdtokenEnumAnalyzer(),
+				new ManifestResourceAnalyzer(),
 				new ReflectionAnalyzer()
 			};
 		}
