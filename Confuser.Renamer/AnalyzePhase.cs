@@ -64,6 +64,7 @@ namespace Confuser.Renamer {
 			bool winforms = false;
 			bool json = false;
 			bool visualBasic = false;
+			bool vsComposition = false;
 
 			foreach (var module in context.Modules) {
 				foreach (var asmRef in module.GetAssemblyRefs()) {
@@ -79,6 +80,9 @@ namespace Confuser.Renamer {
 					}
 					else if (asmRef.Name == "Newtonsoft.Json") {
 						json = true;
+					}
+					else if (asmRef.Name == "Microsoft.VisualStudio.Composition") {
+						vsComposition = true;
 					}
 				}
 
@@ -114,6 +118,12 @@ namespace Confuser.Renamer {
 				var vbAnalyzer = new VisualBasicRuntimeAnalyzer();
 				context.Logger.Debug("Visual Basic Embedded Runtime found, enabling compatibility.");
 				service.Renamers.Add(vbAnalyzer);
+			}
+
+			if (vsComposition) {
+				var analyzer = new VsCompositionAnalyzer();
+				context.Logger.Debug("Visual Studio Composition found, enabling compatibility.");
+				service.Renamers.Add(analyzer);
 			}
 		}
 
