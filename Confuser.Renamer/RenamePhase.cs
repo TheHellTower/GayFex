@@ -94,10 +94,15 @@ namespace Confuser.Renamer {
 				else
 					def.Name = service.ObfuscateName(def.Name, mode);
 
-				int updatedReferences;
+				int updatedReferences = -1;
 				do {
+					var oldUpdatedCount = updatedReferences;
 					// This resolves the changed name references and counts how many were changed.
 					updatedReferences = references.Count(refer => refer.UpdateNameReference(context, service));
+					if (updatedReferences == oldUpdatedCount) {
+						context.Logger.Error("Infinite loop detected while resolving name references.");
+						throw new ConfuserException();
+					}
 					context.CheckCancellation();
 				} while (updatedReferences > 0);
 			}
