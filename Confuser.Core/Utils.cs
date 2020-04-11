@@ -155,7 +155,7 @@ namespace Confuser.Core {
 
 		/// <summary>
 		///     Returns a new string in which all occurrences of a specified string in
-		///     <paramref name="str" /><paramref name="str" /> are replaced with another specified string.
+		///     <paramref name="str" /> are replaced with another specified string.
 		/// </summary>
 		/// <returns>
 		///     A <see cref="string" /> equivalent to <paramref name="str" /> but with all instances of

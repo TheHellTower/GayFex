@@ -535,8 +535,9 @@ namespace Confuser.Core {
 				targetBody.Variables.Add(local.Value);
 
 			// Nop the call
-			int index = targetBody.Instructions.IndexOf(callInstruction);
-			targetBody.Instructions[index++].OpCode = OpCodes.Nop;
+			int index = targetBody.Instructions.IndexOf(callInstruction) + 1;
+			callInstruction.OpCode = OpCodes.Nop;
+			callInstruction.Operand = null;
 			var afterIndex = targetBody.Instructions[index];
 
 			// Find Exception handler index
