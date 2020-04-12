@@ -3,7 +3,7 @@ using Confuser.Core;
 
 namespace Confuser.Protections {
 	[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global", Justification = "Instantiated by reflection.")]
-	internal sealed class HardeningComponent : ConfuserComponent {
+	internal sealed class HardeningProtection : Protection {
 		/// <inheritdoc />
 		public override string Name => "Protection Hardening";
 
@@ -22,5 +22,8 @@ namespace Confuser.Protections {
 		/// <inheritdoc />
 		protected override void PopulatePipeline(ProtectionPipeline pipeline) => 
 			pipeline.InsertPreStage(PipelineStage.OptimizeMethods, new HardeningPhase(this));
+
+		/// <inheritdoc />
+		public override ProtectionPreset Preset => ProtectionPreset.None;
 	}
 }

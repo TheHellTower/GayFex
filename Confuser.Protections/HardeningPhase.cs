@@ -11,7 +11,7 @@ namespace Confuser.Protections {
 
 		/// <inheritdoc />
 		[SuppressMessage("ReSharper", "SuggestBaseTypeForParameter")]
-		public HardeningPhase(HardeningComponent parent) : base(parent) { }
+		public HardeningPhase(HardeningProtection parent) : base(parent) { }
 
 		/// <inheritdoc />
 		public override ProtectionTargets Targets => ProtectionTargets.Modules;

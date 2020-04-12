@@ -87,7 +87,10 @@ namespace Confuser.Core {
 			bool ok = false;
 			try {
 				// Enable watermarking by default
-				context.Project.Rules.Insert(0, new Rule {new SettingItem<Protection>(WatermarkingProtection._Id)});
+				context.Project.Rules.Insert(0, new Rule {
+					new SettingItem<Protection>(WatermarkingProtection._Id),
+					new SettingItem<Protection>("harden")
+				});
 
 				var asmResolver = new AssemblyResolver();
 				asmResolver.EnableTypeDefCache = true;
