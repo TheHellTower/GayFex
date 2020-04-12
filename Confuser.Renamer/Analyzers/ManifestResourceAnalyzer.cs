@@ -1,27 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Renamer.Analyzers {
-	internal sealed class ManifestResourceAnalyzer : IRenamer {
+	public sealed class ManifestResourceAnalyzer : IRenamer {
 		/// <inheritdoc />
 		public void Analyze(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) { }
 
 		/// <inheritdoc />
 		void IRenamer.PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
-			if (def is MethodDef methodDef && methodDef.HasBody && methodDef.Body.HasInstructions)
-				PreRename(context, service, parameters, methodDef);
+			if (!(def is MethodDef methodDef) || !methodDef.HasBody || !methodDef.Body.HasInstructions) return;
+
+			var trace = context.Registry.GetService<ITraceService>();
+			PreRename(context.CurrentModule, trace, methodDef);
 		}
 
-		public static void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, MethodDef methodDef) {
+		public static void PreRename(ModuleDef currentModule, ITraceService trace, MethodDef methodDef) {
 			var instructions = methodDef.Body.Instructions;
-			var trace = context.Registry.GetService<ITraceService>();
 			var methodTrace = new Lazy<MethodTrace>(() => trace.Trace(methodDef));
 			for (var i = 0; i < instructions.Count; i++) {
 				var instruction = instructions[i];
@@ -59,7 +57,7 @@ namespace Confuser.Renamer.Analyzers {
 				var assemblyTypeDef = getManifestMethodDef.DeclaringType;
 				var expectedSig = MethodSig.CreateInstance(getManifestMethodDef.MethodSig.RetType, getManifestMethodDef.MethodSig.Params.Last());
 				var newMethodDef = assemblyTypeDef.FindMethod("GetManifestResourceStream", expectedSig);
-				var newMethodRef = context.CurrentModule.Import(newMethodDef);
+				var newMethodRef = currentModule.Import(newMethodDef);
 				
 				resNameInstruction.Operand = resourceName;
 				instruction.Operand = newMethodRef;
