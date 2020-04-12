@@ -41,9 +41,15 @@ namespace Confuser.Renamer.Analyzers {
 		}
 
 		public void PreRename(ConfuserContext context, INameService service, ProtectionParameters parameters, IDnlibDef def) {
-			var module = def as ModuleDefMD;
-			if (module == null || !parameters.GetParameter<bool>(context, def, "renXaml", true))
+			if (!(def is ModuleDefMD module) || !parameters.GetParameter(context, def, "renXaml", true))
 				return;
+
+			var renameMode = parameters.GetParameter(context, def, "renXamlMode", RenameMode.Letters);
+			if (renameMode < RenameMode.Letters) {
+				var illegalValues = Enum.GetValues(typeof(RenameMode)).Cast<RenameMode>().Where(m => m < RenameMode.Letters);
+				context.Logger.Warn("The renaming modes " + String.Join(", ", illegalValues) + " are not allowed for XAML resources. Letters mode will be used.");
+				renameMode = RenameMode.Letters;
+			}
 
 			var wpfResInfo = context.Annotations.Get<Dictionary<string, Dictionary<string, BamlDocument>>>(module, BAMLKey);
 			if (wpfResInfo == null)
@@ -57,7 +63,7 @@ namespace Confuser.Renamer.Analyzers {
 						var decodedDirectory = decodedName.Substring(0, decodedName.LastIndexOf('/') + 1);
 						var encodedDirectory = encodedName.Substring(0, encodedName.LastIndexOf('/') + 1);
 
-						var fileName = service.RandomName(RenameMode.Letters).ToLowerInvariant();
+						var fileName = service.RandomName(renameMode).ToLowerInvariant();
 						if (decodedName.EndsWith(".BAML", StringComparison.OrdinalIgnoreCase))
 							fileName += ".baml";
 						else if (decodedName.EndsWith(".XAML", StringComparison.OrdinalIgnoreCase))
