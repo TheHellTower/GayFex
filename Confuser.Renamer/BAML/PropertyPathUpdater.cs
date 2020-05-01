@@ -58,6 +58,5 @@ namespace Confuser.Renamer.BAML {
 
 		/// <inheritdoc />
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
 	}
 }

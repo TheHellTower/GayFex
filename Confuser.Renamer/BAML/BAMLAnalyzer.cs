@@ -586,43 +586,50 @@ namespace Confuser.Renamer.BAML {
 			foreach (var part in pathUpdater) {
 				switch (part.Type) {
 					case SourceValueType.Property:
-						// This is a property reference. This may be directly the name of a property or a reference by
-						// with the type to the property
-						// Simple Property:    "TestProperty"
-						// Property with Type: "(local:DataClass.TestProperty)"
-
-						var typeName = part.GetTypeName();
-						var propertyName = part.GetPropertyName();
-						if (!string.IsNullOrWhiteSpace(typeName)) {
-							var sig = ResolveType(typeName, out var prefix);
-							if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-								var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
-								AddTypeSigReference(sig, reference);
-								break;
-							}
-						}
-
-						// Reaching this point means that the type reference was either not present or failed to
-						// resolve. In this case every property with the matching name will be flagged so it does not
-						// get renamed.
-						if (properties.TryGetValue(propertyName, out var candidates))
-							foreach (var property in candidates)
-								service.SetCanRename(property, false);
-
+						AnalyzePropertyPathProperty(part);
 						break;
 					case SourceValueType.Indexer:
 						// This is the indexer part of a property reference.
-						foreach (var indexerArg in part.ParamList) {
-							if (!string.IsNullOrWhiteSpace(indexerArg.ParenString)) {
-								var sig = ResolveType(indexerArg.ParenString, out var prefix);
-								if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-									var reference = new BAMLPathTypeReference(xmlnsCtx, sig, indexerArg);
-									AddTypeSigReference(sig, reference);
-									break;
-								}
-							}
-						}
+						AnalyzePropertyPathIndexer(part);
 						break;
+				}
+			}
+		}
+
+		void AnalyzePropertyPathProperty(PropertyPathPartUpdater part) {
+			// This is a property reference. This may be directly the name of a property or a reference by
+			// with the type to the property
+			// Simple Property:    "TestProperty"
+			// Property with Type: "(local:DataClass.TestProperty)"
+
+			var typeName = part.GetTypeName();
+			var propertyName = part.GetPropertyName();
+			if (!string.IsNullOrWhiteSpace(typeName)) {
+				var sig = ResolveType(typeName, out var prefix);
+				if (sig != null && context.Modules.Contains((ModuleDefMD) sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
+					var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
+					AddTypeSigReference(sig, reference);
+					return;
+				}
+			}
+
+			// Reaching this point means that the type reference was either not present or failed to
+			// resolve. In this case every property with the matching name will be flagged so it does not
+			// get renamed.
+			if (properties.TryGetValue(propertyName, out var candidates))
+				foreach (var property in candidates)
+					service.SetCanRename(property, false);
+		}
+
+		void AnalyzePropertyPathIndexer(PropertyPathPartUpdater part) {
+			foreach (var indexerArg in part.ParamList) {
+				if (!string.IsNullOrWhiteSpace(indexerArg.ParenString)) {
+					var sig = ResolveType(indexerArg.ParenString, out var prefix);
+					if (sig != null && context.Modules.Contains((ModuleDefMD) sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
+						var reference = new BAMLPathTypeReference(xmlnsCtx, sig, indexerArg);
+						AddTypeSigReference(sig, reference);
+						break;
+					}
 				}
 			}
 		}
