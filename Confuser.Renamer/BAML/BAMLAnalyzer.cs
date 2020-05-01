@@ -428,7 +428,7 @@ namespace Confuser.Renamer.BAML {
 						AddTypeSigReference(sig, reference);
 					}
 					else
-						AnalyzePropertyPath(value);
+						AnalyzePropertyPath(value, s => txt.Value = s);
 				}
 			}
 		}
@@ -479,7 +479,7 @@ namespace Confuser.Renamer.BAML {
 				// Umm... Again nothing to do, DP already won't be renamed.
 			}
 			else if (converter.FullName == "System.Windows.PropertyPathConverter") {
-				AnalyzePropertyPath(rec.Value);
+				AnalyzePropertyPath(rec.Value, s => rec.Value = s);
 			}
 			else if (converter.FullName == "System.Windows.Markup.RoutedEventConverter") {
 				;
@@ -501,7 +501,7 @@ namespace Confuser.Renamer.BAML {
 				attrName = attrInfo.Item2.Name;
 
 			if (attrName == "DisplayMemberPath") {
-				AnalyzePropertyPath(rec.Value);
+				AnalyzePropertyPath(rec.Value, s => rec.Value = s);
 			}
 			else if (attrName == "Source") {
 				string declType = null;
@@ -581,10 +581,10 @@ namespace Confuser.Renamer.BAML {
 			return Tuple.Create(retDef, rec, retType == null ? null : retType.ResolveTypeDefThrow());
 		}
 
-		void AnalyzePropertyPath(string path) {
-			var parsedPath = PathParser.Parse(path);
-			foreach (var part in parsedPath) {
-				switch (part.type) {
+		void AnalyzePropertyPath(string path, Action<string> updateAction) {
+			var pathUpdater = new PropertyPathUpdater(path, updateAction);
+			foreach (var part in pathUpdater) {
+				switch (part.Type) {
 					case SourceValueType.Property:
 						// This is a property reference. This may be directly the name of a property or a reference by
 						// with the type to the property
@@ -612,11 +612,11 @@ namespace Confuser.Renamer.BAML {
 						break;
 					case SourceValueType.Indexer:
 						// This is the indexer part of a property reference.
-						foreach (var indexerArg in part.paramList) {
-							if (!string.IsNullOrWhiteSpace(indexerArg.parenString)) {
-								var sig = ResolveType(indexerArg.parenString, out var prefix);
+						foreach (var indexerArg in part.ParamList) {
+							if (!string.IsNullOrWhiteSpace(indexerArg.ParenString)) {
+								var sig = ResolveType(indexerArg.ParenString, out var prefix);
 								if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-									var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
+									var reference = new BAMLPathTypeReference(xmlnsCtx, sig, indexerArg);
 									AddTypeSigReference(sig, reference);
 									break;
 								}

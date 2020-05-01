@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace WpfRenaming {
-	public class UserControl1Context {
+	internal class UserControl1Context {
 		public string TestProperty => "This is from a property!";
 
 		public string[] TestListProperty => new string[] { "Index 1", "Index 2" };
