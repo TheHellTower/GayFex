@@ -485,8 +485,7 @@ namespace Confuser.Renamer.BAML {
 				;
 			}
 			else if (converter.FullName == "System.Windows.Markup.TypeTypeConverter") {
-				string prefix;
-				TypeSig sig = ResolveType(rec.Value.Trim(), out prefix);
+				TypeSig sig = ResolveType(rec.Value.Trim(), out _);
 				if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
 					var reference = new BAMLConverterTypeReference(xmlnsCtx, sig, rec);
 					AddTypeSigReference(sig, reference);
@@ -502,6 +501,11 @@ namespace Confuser.Renamer.BAML {
 
 			if (attrName == "DisplayMemberPath") {
 				AnalyzePropertyPath(rec.Value, s => rec.Value = s);
+			}
+			else if (attrName == "TypeName") {
+				var sig = ResolveType(rec.Value.Trim(), out _);
+				if (!(sig is null))
+					AddTypeSigReference(sig, new BAMLConverterTypeReference(xmlnsCtx, sig, rec));
 			}
 			else if (attrName == "Source") {
 				string declType = null;
