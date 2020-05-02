@@ -205,9 +205,7 @@ namespace Confuser.Core.Services {
 		public int[] TraceArguments(Instruction instr) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 				throw new ArgumentException("Invalid call instruction.", "instr");
-
-			int push, pop;
-			instr.CalculateStackUsage(out push, out pop); // pop is number of arguments
+			instr.CalculateStackUsage(out _, out int pop); // pop is number of arguments
 			if (pop == 0)
 				return new int[0];
 
@@ -224,7 +222,12 @@ namespace Confuser.Core.Services {
 				int index = working.Dequeue();
 				while (index >= 0) {
 					if (BeforeStackDepths[index] == targetStack) {
-						if (method.Body.Instructions[index].OpCode.Code != Code.Dup) {
+						var currentInstr = method.Body.Instructions[index];
+						currentInstr.CalculateStackUsage(out int push, out pop);
+						if (push == 0 && pop == 0) {
+							// This instruction isn't doing anything to the stack. Could be a nop or some prefix.
+							// Ignore it and move on to the next.
+						} else if (method.Body.Instructions[index].OpCode.Code != Code.Dup) {
 							// It's not a duplicate instruction, this is an acceptable start point.
 							break;
 						} else {
@@ -272,7 +275,7 @@ namespace Confuser.Core.Services {
 
 				while (index != instrIndex && index < method.Body.Instructions.Count) {
 					Instruction currentInstr = Instructions[index];
-					currentInstr.CalculateStackUsage(out push, out pop);
+					currentInstr.CalculateStackUsage(out int push, out pop);
 					if (currentInstr.OpCode.Code == Code.Dup) {
 						// Special case duplicate. This causes the current value on the stack to be duplicated.
 						// To show this behaviour, we'll fetch the last object on the eval stack and add it back twice.
