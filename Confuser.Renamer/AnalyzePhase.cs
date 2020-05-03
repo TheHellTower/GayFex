@@ -239,9 +239,6 @@ namespace Confuser.Renamer {
 			else if (property.IsRuntimeSpecialName)
 				service.SetCanRename(property, false);
 
-			else if (property.IsExplicitlyImplementedInterfaceMember())
-				service.SetCanRename(property, false);
-
 			else if (parameters.GetParameter(context, property, "forceRen", false))
 				return;
 
@@ -249,9 +246,6 @@ namespace Confuser.Renamer {
 				service.SetCanRename(property, false);
 
 			else if (property.DeclaringType.Name.String.Contains("AnonymousType"))
-				service.SetCanRename(property, false);
-
-			else if (property.IsAbstract())
 				service.SetCanRename(property, false);
 		}
 
@@ -262,12 +256,6 @@ namespace Confuser.Renamer {
 				service.SetCanRename(evt, false);
 
 			else if (evt.IsRuntimeSpecialName)
-				service.SetCanRename(evt, false);
-
-			else if (evt.IsExplicitlyImplementedInterfaceMember())
-				service.SetCanRename(evt, false);
-
-			else if (evt.IsAbstract())
 				service.SetCanRename(evt, false);
 		}
 	}

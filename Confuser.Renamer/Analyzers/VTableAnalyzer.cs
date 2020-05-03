@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -49,8 +50,44 @@ namespace Confuser.Renamer.Analyzers {
 				return;
 
 			var vTbl = service.GetVTables()[method.DeclaringType];
-			VTableSignature sig = VTableSignature.FromMethod(method);
-			var slots = vTbl.FindSlots(method);
+			var slots = vTbl.FindSlots(method).ToArray();
+
+			bool doesOverridePropertyOrEvent = false;
+			var methodProp = method.DeclaringType.Properties.Where(p => BelongsToProperty(p, method));
+			foreach (var prop in methodProp) {
+				foreach (var baseMethodDef in FindBaseDeclarations(service, method)) {
+					var basePropDef = baseMethodDef.DeclaringType.Properties.
+						FirstOrDefault(p => BelongsToProperty(p, baseMethodDef) && String.Equals(p.Name, prop.Name, StringComparison.Ordinal));
+
+					// Name of property has to line up.
+					service.AddReference(basePropDef, new MemberOverrideReference(prop, basePropDef));
+					service.SetCanRename(prop, false);
+					
+					// Method names have to line up as well (otherwise inheriting attributes does not work).
+					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
+					service.SetCanRename(method, false);
+
+					doesOverridePropertyOrEvent = true;
+				}
+			}
+
+			var methodEvent = method.DeclaringType.Events.Where(e => BelongsToEvent(e, method));
+			foreach (var evt in methodEvent) {
+				foreach (var baseMethodDef in FindBaseDeclarations(service, method)) {
+					var baseEventDef = baseMethodDef.DeclaringType.Events.
+						FirstOrDefault(e => BelongsToEvent(e, baseMethodDef) && String.Equals(e.Name, evt.Name, StringComparison.Ordinal));
+
+					// Name of event has to line up.
+					service.AddReference(baseEventDef, new MemberOverrideReference(evt, baseEventDef));
+					service.SetCanRename(evt, false);
+					
+					// Method names have to line up as well (otherwise inheriting attributes does not work).
+					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
+					service.SetCanRename(method, false);
+
+					doesOverridePropertyOrEvent = true;
+				}
+			}
 
 			if (!method.IsAbstract) {
 				foreach (var slot in slots) {
@@ -60,17 +97,45 @@ namespace Confuser.Renamer.Analyzers {
 					SetupOverwriteReferences(service, modules, slot, method.Module);
 				}
 			}
-			else {
-				foreach (var slot in slots) {
-					if (slot.Overrides == null)
-						continue;
+			else if (!doesOverridePropertyOrEvent) {
+				foreach (var baseMethodDef in FindBaseDeclarations(service, method)) {
+					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
 					service.SetCanRename(method, false);
-					service.SetCanRename(slot.Overrides.MethodDef, false);
 				}
 			}
 		}
 
-		private static void AddImportReference(INameService service, ICollection<ModuleDefMD> modules,  ModuleDef module, MethodDef method, MemberRef methodRef) {
+		private static IEnumerable<MethodDef> FindBaseDeclarations(INameService service, MethodDef method) {
+			var unprocessed = new Queue<MethodDef>();
+			unprocessed.Enqueue(method);
+
+			var vTables = service.GetVTables();
+
+			while (unprocessed.Any()) {
+				var currentMethod = unprocessed.Dequeue();
+
+				var vTbl = vTables[currentMethod.DeclaringType];
+				var slots = vTbl.FindSlots(currentMethod).Where(s => s.Overrides != null).ToArray();
+				if (slots.Any()) {
+					foreach (var slot in slots) {
+						unprocessed.Enqueue(slot.Overrides.MethodDef);
+					}
+				}
+				else {
+					yield return currentMethod;
+				}
+			}
+		}
+
+		private static bool BelongsToProperty(PropertyDef propertyDef, MethodDef methodDef) =>
+			propertyDef.GetMethods.Contains(methodDef) || propertyDef.SetMethods.Contains(methodDef) ||
+			(propertyDef.HasOtherMethods && propertyDef.OtherMethods.Contains(methodDef));
+
+		private static bool BelongsToEvent(EventDef eventDef, MethodDef methodDef) =>
+			eventDef.AddMethod.Equals(methodDef) || eventDef.RemoveMethod.Equals(methodDef) || eventDef.InvokeMethod.Equals(methodDef) ||
+			(eventDef.HasOtherMethods && eventDef.OtherMethods.Contains(methodDef));
+
+		private static void AddImportReference(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, MethodDef method, MemberRef methodRef) {
 			if (method.Module != module && modules.Contains((ModuleDefMD)module)) {
 				var declType = (TypeRef)methodRef.DeclaringType.ScopeType;
 				service.AddReference(method.DeclaringType, new TypeRefReference(declType, method.DeclaringType));
@@ -99,7 +164,7 @@ namespace Confuser.Renamer.Analyzers {
 			return new GenericInstSig(genericType, genericArguments);
 		}
 
-		private static T SetupSignatureReferences<T>(INameService service, ICollection<ModuleDefMD> modules,  ModuleDef module, T typeSig) where T : TypeSig {
+		private static T SetupSignatureReferences<T>(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, T typeSig) where T : TypeSig {
 			var asTypeRef = typeSig.TryGetTypeRef();
 			if (asTypeRef != null) {
 				SetupTypeReference(service, modules, module, asTypeRef);
