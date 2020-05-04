@@ -59,10 +59,12 @@ namespace Confuser.Renamer.Analyzers {
 					var basePropDef = baseMethodDef.DeclaringType.Properties.
 						FirstOrDefault(p => BelongsToProperty(p, baseMethodDef) && String.Equals(p.Name, prop.Name, StringComparison.Ordinal));
 
+					if (basePropDef is null) continue;
+
 					// Name of property has to line up.
 					service.AddReference(basePropDef, new MemberOverrideReference(prop, basePropDef));
 					service.SetCanRename(prop, false);
-					
+
 					// Method names have to line up as well (otherwise inheriting attributes does not work).
 					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
 					service.SetCanRename(method, false);
@@ -77,10 +79,12 @@ namespace Confuser.Renamer.Analyzers {
 					var baseEventDef = baseMethodDef.DeclaringType.Events.
 						FirstOrDefault(e => BelongsToEvent(e, baseMethodDef) && String.Equals(e.Name, evt.Name, StringComparison.Ordinal));
 
+					if (baseEventDef is null) continue;
+
 					// Name of event has to line up.
 					service.AddReference(baseEventDef, new MemberOverrideReference(evt, baseEventDef));
 					service.SetCanRename(evt, false);
-					
+
 					// Method names have to line up as well (otherwise inheriting attributes does not work).
 					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
 					service.SetCanRename(method, false);
@@ -121,7 +125,7 @@ namespace Confuser.Renamer.Analyzers {
 						unprocessed.Enqueue(slot.Overrides.MethodDef);
 					}
 				}
-				else {
+				else if (method != currentMethod) {
 					yield return currentMethod;
 				}
 			}
@@ -132,7 +136,7 @@ namespace Confuser.Renamer.Analyzers {
 			(propertyDef.HasOtherMethods && propertyDef.OtherMethods.Contains(methodDef));
 
 		private static bool BelongsToEvent(EventDef eventDef, MethodDef methodDef) =>
-			eventDef.AddMethod.Equals(methodDef) || eventDef.RemoveMethod.Equals(methodDef) || eventDef.InvokeMethod.Equals(methodDef) ||
+			Equals(eventDef.AddMethod, methodDef) || Equals(eventDef.RemoveMethod, methodDef) || Equals(eventDef.InvokeMethod, methodDef) ||
 			(eventDef.HasOtherMethods && eventDef.OtherMethods.Contains(methodDef));
 
 		private static void AddImportReference(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, MethodDef method, MemberRef methodRef) {
