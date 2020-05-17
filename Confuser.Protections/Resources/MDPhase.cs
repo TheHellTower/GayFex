@@ -96,8 +96,8 @@ namespace Confuser.Protections.Resources {
 
 				var encryptedBuffer = new byte[compressedBuff.Length * 4];
 				int buffIndex = 0;
+				Span<uint> enc = stackalloc uint[0x10];
 				while (buffIndex < compressedBuff.Length) {
-					Span<uint> enc = stackalloc uint[0x10];
 					ctx.ModeHandler.Encrypt(compressedBuff.AsSpan().Slice(buffIndex), key, enc);
 					for (int j = 0; j < 0x10; j++)
 						key[j] ^= compressedBuff[buffIndex + j];
