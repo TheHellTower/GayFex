@@ -62,12 +62,10 @@ namespace Confuser.Renamer.Analyzers {
 					if (basePropDef is null) continue;
 
 					// Name of property has to line up.
-					service.AddReference(basePropDef, new MemberOverrideReference(prop, basePropDef));
-					service.SetCanRename(prop, false);
+					CreateOverrideReference(service, prop, basePropDef);
 
 					// Method names have to line up as well (otherwise inheriting attributes does not work).
-					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
-					service.SetCanRename(method, false);
+					CreateOverrideReference(service, method, baseMethodDef);
 
 					doesOverridePropertyOrEvent = true;
 				}
@@ -82,12 +80,10 @@ namespace Confuser.Renamer.Analyzers {
 					if (baseEventDef is null) continue;
 
 					// Name of event has to line up.
-					service.AddReference(baseEventDef, new MemberOverrideReference(evt, baseEventDef));
-					service.SetCanRename(evt, false);
+					CreateOverrideReference(service, evt, baseEventDef);
 
 					// Method names have to line up as well (otherwise inheriting attributes does not work).
-					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
-					service.SetCanRename(method, false);
+					CreateOverrideReference(service, method, baseMethodDef);
 
 					doesOverridePropertyOrEvent = true;
 				}
@@ -103,10 +99,18 @@ namespace Confuser.Renamer.Analyzers {
 			}
 			else if (!doesOverridePropertyOrEvent) {
 				foreach (var baseMethodDef in FindBaseDeclarations(service, method)) {
-					service.AddReference(baseMethodDef, new MemberOverrideReference(method, baseMethodDef));
-					service.SetCanRename(method, false);
+					CreateOverrideReference(service, method, baseMethodDef);
 				}
 			}
+		}
+
+		static void CreateOverrideReference(INameService service, IMemberDef thisMemberDef, IMemberDef baseMemberDef) {
+			var overrideRef = new MemberOverrideReference(thisMemberDef, baseMemberDef);
+			service.AddReference(baseMemberDef, overrideRef);
+			service.AddReference(thisMemberDef, overrideRef);
+
+			if (!service.CanRename(thisMemberDef))
+				service.SetCanRename(baseMemberDef, false);
 		}
 
 		private static IEnumerable<MethodDef> FindBaseDeclarations(INameService service, MethodDef method) {

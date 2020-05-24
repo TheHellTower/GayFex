@@ -52,6 +52,7 @@ namespace _123_InheritCustomAttr.Test {
 				var stdout = process.StandardOutput;
 				Assert.Equal("START", await stdout.ReadLineAsync());
 				Assert.Equal("Monday", await stdout.ReadLineAsync());
+				Assert.Equal("43", await stdout.ReadLineAsync());
 				Assert.Equal("1", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());

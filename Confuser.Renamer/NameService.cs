@@ -30,6 +30,7 @@ namespace Confuser.Renamer {
 		void RegisterRenamer(IRenamer renamer);
 		T FindRenamer<T>();
 		void AddReference<T>(T obj, INameReference<T> reference);
+		IList<INameReference> GetReferences(object obj);
 
 		void SetOriginalName(object obj, string name);
 		void SetOriginalNamespace(object obj, string ns);
