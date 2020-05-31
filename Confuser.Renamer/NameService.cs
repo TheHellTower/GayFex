@@ -34,6 +34,8 @@ namespace Confuser.Renamer {
 
 		void SetOriginalName(object obj, string name);
 		void SetOriginalNamespace(object obj, string ns);
+		string GetOriginalName(object obj);
+		string GetOriginalNamespace(object obj);
 
 		void MarkHelper(IDnlibDef def, IMarkerService marker, ConfuserComponent parentComp);
 	}

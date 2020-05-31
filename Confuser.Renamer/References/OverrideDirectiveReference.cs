@@ -1,13 +1,14 @@
-﻿using System;
-using System.Linq;
+﻿using System.Text;
 using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal class OverrideDirectiveReference : INameReference<MethodDef> {
+	internal sealed class OverrideDirectiveReference : INameReference<MethodDef> {
 		readonly VTableSlot baseSlot;
 		readonly VTableSlot thisSlot;
 
+		public bool ShouldCancelRename => baseSlot.MethodDefDeclType is GenericInstSig && thisSlot.MethodDef.Module.IsClr20;
+		
 		public OverrideDirectiveReference(VTableSlot thisSlot, VTableSlot baseSlot) {
 			this.thisSlot = thisSlot;
 			this.baseSlot = baseSlot;
@@ -15,6 +16,14 @@ namespace Confuser.Renamer.References {
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) => false;
 
-		public bool ShouldCancelRename() => baseSlot.MethodDefDeclType is GenericInstSig && thisSlot.MethodDef.Module.IsClr20;
+		public override string ToString() => ToString(null);
+
+		public string ToString(INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("Override directive").Append("(");
+			builder.AppendReferencedMethod(thisSlot.MethodDef, nameService);
+			builder.Append(")");
+			return builder.ToString();
+		}
 	}
 }

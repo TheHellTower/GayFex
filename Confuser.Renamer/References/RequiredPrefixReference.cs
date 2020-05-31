@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal sealed class RequiredPrefixReference<T> : INameReference<T> where T : class, IDnlibDef {
+	public sealed class RequiredPrefixReference<T> : INameReference<T> where T : class, IDnlibDef {
 		T Def { get; }
 		string Prefix  { get; }
+
+		/// <inheritdoc />
+		public bool ShouldCancelRename => false;
 
 		internal RequiredPrefixReference(T def, string prefix) {
 			Def = def ?? throw new ArgumentNullException(nameof(def));
@@ -25,7 +25,16 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
-		/// <inheritdoc />
-		public bool ShouldCancelRename() => false;
+		public override string ToString() => ToString(null);
+
+		public string ToString(INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("Required Prefix").Append("(");
+			builder.Append("Prefix").Append("(").Append(Prefix).Append(")");
+			builder.Append("; ");
+			builder.AppendReferencedDef(Def, nameService);
+			builder.Append(")");
+			return builder.ToString();
+		}
 	}
 }

@@ -1,11 +1,13 @@
-﻿using System;
+﻿using System.Text;
 using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal class CAMemberReference : INameReference<IDnlibDef> {
+	public sealed class CAMemberReference : INameReference<IDnlibDef> {
 		readonly IDnlibDef definition;
 		readonly CANamedArgument namedArg;
+
+		public bool ShouldCancelRename => false;
 
 		public CAMemberReference(CANamedArgument namedArg, IDnlibDef definition) {
 			this.namedArg = namedArg;
@@ -18,6 +20,16 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
-		public bool ShouldCancelRename() => false;
+		public override string ToString() => ToString(null);
+
+		public string ToString(INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("Custom Argument Reference").Append("(");
+			builder.Append("CA Argument").Append("(").AppendHashedIdentifier("Name", namedArg.Name).Append(")");
+			builder.Append("; ");
+			builder.AppendReferencedDef(definition, nameService);
+			builder.Append(")");
+			return builder.ToString();
+		}
 	}
 }

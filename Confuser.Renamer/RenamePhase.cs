@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Confuser.Core;
 using dnlib.DotNet;
 using dnlib.DotNet.Pdb;
@@ -64,11 +65,7 @@ namespace Confuser.Renamer {
 					continue;
 
 				IList<INameReference> references = service.GetReferences(def);
-				bool cancel = false;
-				foreach (INameReference refer in references) {
-					cancel |= refer.ShouldCancelRename();
-					if (cancel) break;
-				}
+				bool cancel = references.Any(r => r.ShouldCancelRename);
 				if (cancel)
 					continue;
 
@@ -100,7 +97,15 @@ namespace Confuser.Renamer {
 					// This resolves the changed name references and counts how many were changed.
 					updatedReferences = references.Count(refer => refer.UpdateNameReference(context, service));
 					if (updatedReferences == oldUpdatedCount) {
-						context.Logger.Error("Infinite loop detected while resolving name references.");
+						var errorBuilder = new StringBuilder();
+						errorBuilder.AppendLine("Infinite loop detected while resolving name references.");
+						errorBuilder.Append("Processed definition: ").AppendDescription(def, service).AppendLine();
+						errorBuilder.Append("Assembly: ").AppendLine(context.CurrentModule.FullName);
+						errorBuilder.AppendLine("Faulty References:");
+						foreach (var reference in references.Where(r => r.UpdateNameReference(context, service))) {
+							errorBuilder.Append(" - ").AppendLine(reference.ToString(service));
+						}
+						context.Logger.Error(errorBuilder.ToString().Trim());
 						throw new ConfuserException();
 					}
 					context.CheckCancellation();

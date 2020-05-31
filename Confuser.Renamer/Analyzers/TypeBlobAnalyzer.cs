@@ -164,7 +164,7 @@ namespace Confuser.Renamer.Analyzers {
 					memberRef.IsArrayAccessors())
 					return;
 
-				IDnlibDef member;
+				IMemberDef member;
 				if (memberRef.IsFieldRef) member = memberRef.ResolveFieldThrow();
 				else if (memberRef.IsMethodRef) member = memberRef.ResolveMethodThrow();
 				else throw new UnreachableException();

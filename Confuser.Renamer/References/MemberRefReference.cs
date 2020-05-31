@@ -1,13 +1,15 @@
-﻿using System;
+﻿using System.Text;
 using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	public class MemberRefReference : INameReference<IDnlibDef> {
-		readonly IDnlibDef memberDef;
+	public sealed class MemberRefReference : INameReference<IMemberDef> {
+		readonly IMemberDef memberDef;
 		readonly MemberRef memberRef;
 
-		public MemberRefReference(MemberRef memberRef, IDnlibDef memberDef) {
+		public bool ShouldCancelRename => true;
+
+		public MemberRefReference(MemberRef memberRef, IMemberDef memberDef) {
 			this.memberRef = memberRef;
 			this.memberDef = memberDef;
 		}
@@ -18,6 +20,16 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
-		public bool ShouldCancelRename() => false;
+		public override string ToString() => ToString(null); 
+
+		public string ToString(INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("MemberRef Reference").Append("(");
+			builder.Append("MemberRef").Append("(").AppendHashedIdentifier("Name", memberRef.Name).Append(")");
+			builder.Append("; ");
+			builder.AppendReferencedDef(memberDef, nameService);
+			builder.Append(")");
+			return builder.ToString();
+		}
 	}
 }
