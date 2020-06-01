@@ -95,14 +95,15 @@ namespace Confuser.Renamer {
 				do {
 					var oldUpdatedCount = updatedReferences;
 					// This resolves the changed name references and counts how many were changed.
-					updatedReferences = references.Count(refer => refer.UpdateNameReference(context, service));
+					var updatedReferenceList = references.Where(refer => refer.UpdateNameReference(context, service)).ToArray();
+					updatedReferences = updatedReferenceList.Length;
 					if (updatedReferences == oldUpdatedCount) {
 						var errorBuilder = new StringBuilder();
 						errorBuilder.AppendLine("Infinite loop detected while resolving name references.");
 						errorBuilder.Append("Processed definition: ").AppendDescription(def, service).AppendLine();
 						errorBuilder.Append("Assembly: ").AppendLine(context.CurrentModule.FullName);
 						errorBuilder.AppendLine("Faulty References:");
-						foreach (var reference in references.Where(r => r.UpdateNameReference(context, service))) {
+						foreach (var reference in updatedReferenceList) {
 							errorBuilder.Append(" - ").AppendLine(reference.ToString(service));
 						}
 						context.Logger.Error(errorBuilder.ToString().Trim());
