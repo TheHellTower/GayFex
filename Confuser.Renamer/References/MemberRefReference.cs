@@ -7,7 +7,7 @@ namespace Confuser.Renamer.References {
 		readonly IMemberDef memberDef;
 		readonly MemberRef memberRef;
 
-		public bool ShouldCancelRename => true;
+		public bool ShouldCancelRename => false;
 
 		public MemberRefReference(MemberRef memberRef, IMemberDef memberDef) {
 			this.memberRef = memberRef;
