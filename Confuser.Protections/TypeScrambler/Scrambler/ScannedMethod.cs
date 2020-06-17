@@ -86,6 +86,9 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			// Skip public visible methods is scrambling of public members is disabled.
 			if (!scramblePublic && method.IsVisibleOutside()) return false;
 
+			// PInvoke implementations won't work with this.
+			if (method.IsPinvokeImpl) return false;
+
 			return true;
 		}
 
