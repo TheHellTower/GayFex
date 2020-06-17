@@ -13,10 +13,26 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 			Debug.Assert(index >= 0, $"{nameof(index)} >= 0");
 			Debug.Assert(index < body.Count, $"{nameof(index)} < {nameof(body)}.Count");
 
+			var declType = service.GetItem(operand.DeclaringType);
 			var targetMethod = service.GetItem(operand);
-			if (targetMethod?.IsScambled == true) {
-				var currentItem = service.GetItem(method);
-				var newSpec = new MethodSpecUser(targetMethod.TargetMethod, targetMethod.CreateGenericMethodSig(currentItem));
+
+			if (declType?.IsScambled == true) {
+				var methodD = new MemberRefUser(operand.Module, operand.Name, operand.MethodSig,
+					declType.CreateGenericTypeSig(service.GetItem(method.DeclaringType)).ToTypeDefOrRef());
+
+				if (targetMethod?.IsScambled == true) {
+					var newSpec = new MethodSpecUser(methodD, targetMethod.CreateGenericMethodSig(service.GetItem(method)));
+
+					Debug.Assert(newSpec.GenericInstMethodSig.GenericArguments.Count == targetMethod.TargetMethod.GenericParameters.Count,
+						$"{nameof(newSpec)}.GenericInstMethodSig.GenericArguments.Count == {nameof(targetMethod)}.TargetMethod.GenericParameters.Count");
+
+					body[index].Operand = newSpec;
+				}
+				else
+					body[index].Operand = methodD;
+			}
+			else if (targetMethod?.IsScambled == true) {
+				var newSpec = new MethodSpecUser(targetMethod.TargetMethod, targetMethod.CreateGenericMethodSig(service.GetItem(method)));
 
 				Debug.Assert(newSpec.GenericInstMethodSig.GenericArguments.Count == targetMethod.TargetMethod.GenericParameters.Count,
 					$"{nameof(newSpec)}.GenericInstMethodSig.GenericArguments.Count == {nameof(targetMethod)}.TargetMethod.GenericParameters.Count");
