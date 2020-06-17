@@ -40,12 +40,12 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				if (t.IsGenericMethodParameter) {
 					var mVar = t.ToGenericMVar();
 					Debug.Assert(mVar != null, $"{nameof(mVar)} != null");
-					newGenericParam = new GenericParamUser(GenericCount, mVar.GenericParam.Flags, "T") {
+					newGenericParam = new GenericParamUser(GenericCount, mVar.GenericParam.Flags, $"T{GenericCount}") {
 						Rid = mVar.Rid
 					};
 				}
 				else {
-					newGenericParam = new GenericParamUser(GenericCount, GenericParamAttributes.NoSpecialConstraint, "T");
+					newGenericParam = new GenericParamUser(GenericCount, GenericParamAttributes.NoSpecialConstraint, $"T{GenericCount}");
 				}
 				Generics.Add(t, newGenericParam);
 				GenericCount++;
