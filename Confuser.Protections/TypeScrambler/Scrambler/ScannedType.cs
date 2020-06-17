@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
@@ -27,10 +28,10 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				field.FieldType = ConvertToGenericIfAvalible(field.FieldType);
 		}
 
-		internal GenericInstSig CreateGenericTypeSig(ScannedType from) => new GenericInstSig(GetTarget(), TrueTypes.Count);
+		internal GenericInstSig CreateGenericTypeSig(ScannedType from) => new GenericInstSig(GetTarget(), TrueTypes.ToList());
 
 		internal override IMemberDef GetMemberDef() => TargetType;
 
-		internal override ClassOrValueTypeSig GetTarget() => TargetType.TryGetClassOrValueTypeSig();
+		internal override ClassOrValueTypeSig GetTarget() => TargetType.ToTypeSig().ToClassOrValueTypeSig();
 	}
 }
