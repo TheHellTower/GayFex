@@ -56,14 +56,14 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			}
 		}
 
-		internal GenericMVar GetGeneric(TypeSig t) {
+		internal GenericSig GetGeneric(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
 
 			t = GetLeaf(t);
 
-			GenericMVar result = null;
+			GenericSig result = null;
 			if (Generics.TryGetValue(t, out var gp))
-				result = new GenericMVar(gp.Number);
+				result = this is ScannedType ? (GenericSig)new GenericVar(gp.Number) : new GenericMVar(gp.Number);
 
 			return result;
 		}
