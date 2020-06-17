@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
@@ -24,6 +25,11 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		internal bool RegisterGeneric(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
+
+			// This is a temporary fix.
+			// Type visibility should be handled in a much better way which would involved some analysis.
+			if (!t.ToTypeDefOrRef().ResolveTypeDef().IsVisibleOutside())
+				return false;
 
 			// Get proper type.
 			t = GetLeaf(t);
