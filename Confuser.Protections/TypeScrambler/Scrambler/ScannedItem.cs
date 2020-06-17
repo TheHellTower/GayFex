@@ -18,7 +18,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			Debug.Assert(genericsProvider != null, $"{nameof(genericsProvider)} != null");
 
 			GenericCount = 0;
-			Generics = new Dictionary<TypeSig, GenericParam>();
+			Generics = new Dictionary<TypeSig, GenericParam>(new TypeSigComparer());
 			_trueTypes = new List<TypeSig>();
 		}
 
