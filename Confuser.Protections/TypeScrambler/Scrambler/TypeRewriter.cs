@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions;
 using dnlib.DotNet;
@@ -15,6 +15,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			Debug.Assert(Service != null, $"{nameof(Service)} != null");
 
 			RewriteFactory = new InstructionRewriterFactory() {
+				new FieldDefInstructionRewriter(),
 				new MethodSpecInstructionRewriter(),
 				new MethodDefInstructionRewriter(),
 				new MemberRefInstructionRewriter(),
