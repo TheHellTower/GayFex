@@ -18,7 +18,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 			if (operand.Method is MethodDef operandDef) {
 				var operandScanned = service.GetItem(operandDef);
 				if (operandScanned?.IsScambled == true) {
-					operand.GenericInstMethodSig = operandScanned.CreateGenericMethodSig(current, operand.GenericInstMethodSig);
+					operand.GenericInstMethodSig = operandScanned.CreateGenericMethodSig(current, service, operand.GenericInstMethodSig);
 				}
 			} else if (current?.IsScambled == true) {
 				var generics = operand.GenericInstMethodSig.GenericArguments.Select(x => current.ConvertToGenericIfAvalible(x));

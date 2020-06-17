@@ -141,7 +141,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			Debug.Assert(TargetMethod.Signature.Generic, $"({nameof(TargetMethod)}.Signature.Generic");
 		}
 
-		internal GenericInstMethodSig CreateGenericMethodSig(ScannedMethod from, GenericInstMethodSig original = null) {
+		internal GenericInstMethodSig CreateGenericMethodSig(ScannedMethod from, TypeService srv, GenericInstMethodSig original = null) {
 			var types = new List<TypeSig>(TrueTypes.Count);
 			foreach (var trueType in TrueTypes) {
 				if (trueType.IsGenericMethodParameter) {
@@ -154,6 +154,11 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 					types.Add(originalArgument);
 				} else if (from?.IsScambled == true) {
 					types.Add(from.ConvertToGenericIfAvalible(trueType));
+
+				} else if (trueType.ToTypeDefOrRef() is TypeDef def) {
+					// I am sure there are cleaner and better ways to do this.
+					var item = srv.GetItem(def);
+					types.Add(item?.IsScambled == true ? item.CreateGenericTypeSig(null) : trueType);
 				} else {
 					types.Add(trueType);
 				}
