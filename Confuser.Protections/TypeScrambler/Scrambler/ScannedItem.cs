@@ -28,7 +28,8 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 			// This is a temporary fix.
 			// Type visibility should be handled in a much better way which would involved some analysis.
-			if (!t.ToTypeDefOrRef().ResolveTypeDef().IsVisibleOutside())
+			var typeDef = t.ToTypeDefOrRef().ResolveTypeDef();
+			if (typeDef != null && !typeDef.IsVisibleOutside())
 				return false;
 
 			// Get proper type.
