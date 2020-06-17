@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions;
 using dnlib.DotNet;
@@ -29,6 +29,14 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 		internal void Process(MethodDef method) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 
+			// There is probably a better way to handle this
+			var retDef = method.ReturnType.TryGetTypeDef();
+			if (retDef != null) {
+				var retType = Service.GetItem(retDef);
+				if (retType?.IsScambled == true)
+					method.MethodSig.RetType = retType.CreateGenericTypeSig(null);
+			}
+			
 			var il = method.Body.Instructions;
 			for (int i = 0; i < il.Count; i++)
 				RewriteFactory.Process(Service, method, il, ref i);
