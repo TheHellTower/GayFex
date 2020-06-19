@@ -36,6 +36,9 @@ namespace Confuser.Protections.TypeScramble {
 							rewriter.ProcessBody(md);
 						}
 						break;
+					case TypeDef td:
+						rewriter.ProcessFields(td);
+						break;
 				}
 
 				context.CheckCancellation();

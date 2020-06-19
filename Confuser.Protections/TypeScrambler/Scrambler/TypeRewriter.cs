@@ -60,5 +60,18 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				}
 			}
 		}
+
+		internal void ProcessFields(TypeDef type) {
+			foreach (var field in type.Fields) {
+				var leaf = SignatureUtils.GetLeaf(field.FieldType);
+				if (leaf is TypeDefOrRefSig typeDefSig && typeDefSig.TypeDef != null) {
+					var scannedDef = Service.GetItem(typeDefSig.TypeDef);
+					if (scannedDef?.IsScambled == true) {
+						TypeSig newSig = scannedDef.CreateGenericTypeSig(null);
+						field.FieldType = SignatureUtils.CopyModifiers(field.FieldType, newSig);
+					}
+				}
+			}
+		}
 	}
 }
