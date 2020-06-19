@@ -44,6 +44,13 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 						Rid = mVar.Rid
 					};
 				}
+				else if (t.IsGenericTypeParameter) {
+					var tVar = t.ToGenericVar();
+					Debug.Assert(tVar != null, $"{nameof(tVar)} != null");
+					newGenericParam = new GenericParamUser(GenericCount, tVar.GenericParam.Flags, $"T{GenericCount}") {
+						Rid = tVar.Rid
+					};
+				}
 				else {
 					newGenericParam = new GenericParamUser(GenericCount, GenericParamAttributes.NoSpecialConstraint, $"T{GenericCount}");
 				}

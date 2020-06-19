@@ -20,7 +20,9 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		protected override void PrepareGenerics(IEnumerable<GenericParam> scrambleParams) {
 			Debug.Assert(scrambleParams != null, $"{nameof(scrambleParams)} != null");
+			if (!IsScambled) return;
 
+			TargetType.GenericParameters.Clear();
 			foreach (var generic in scrambleParams)
 				TargetType.GenericParameters.Add(generic);
 
