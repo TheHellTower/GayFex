@@ -31,8 +31,9 @@ namespace Confuser.Protections.TypeScramble {
 			foreach (var def in context.CurrentModule.FindDefinitions().WithProgress(context.Logger)) {
 				switch (def) {
 					case MethodDef md:
+						rewriter.ProcessReturnType(md);
 						if (md.HasBody) {
-							rewriter.Process(md);
+							rewriter.ProcessBody(md);
 						}
 						break;
 				}

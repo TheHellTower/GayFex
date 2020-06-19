@@ -2,6 +2,7 @@
 using Confuser.Core;
 using Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions;
 using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace Confuser.Protections.TypeScramble.Scrambler {
 	internal sealed class TypeRewriter {
@@ -26,21 +27,38 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 
 		internal void ApplyGenerics() => Service.PrepareItems();
 
-		internal void Process(MethodDef method) {
+		internal void ProcessBody(MethodDef method) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 
-			// There is probably a better way to handle this
-			var retDef = method.ReturnType.TryGetTypeDef();
-			if (retDef != null) {
-				var retType = Service.GetItem(retDef);
-				if (retType?.IsScambled == true)
-					method.MethodSig.RetType = retType.CreateGenericTypeSig(null);
-			}
-			
+			ProcessLocals(method.Body);
+
 			var il = method.Body.Instructions;
 			for (int i = 0; i < il.Count; i++)
 				RewriteFactory.Process(Service, method, il, ref i);
 		}
 
+		internal void ProcessReturnType(MethodDef method) {
+			var leaf = SignatureUtils.GetLeaf(method.ReturnType);
+			if (leaf is TypeDefOrRefSig typeDefSig && typeDefSig.TypeDef != null) {
+				var scannedDef = Service.GetItem(typeDefSig.TypeDef);
+				if (scannedDef?.IsScambled == true) {
+					TypeSig newSig = scannedDef.CreateGenericTypeSig(null);
+					method.ReturnType = SignatureUtils.CopyModifiers(method.ReturnType, newSig);
+				}
+			}
+		}
+
+		private void ProcessLocals(CilBody body) {
+			foreach (var local in body.Variables) {
+				var leaf = SignatureUtils.GetLeaf(local.Type);
+				if (leaf is TypeDefOrRefSig typeDefSig && typeDefSig.TypeDef != null) {
+					var scannedDef = Service.GetItem(typeDefSig.TypeDef);
+					if (scannedDef?.IsScambled == true) {
+						TypeSig newSig = scannedDef.CreateGenericTypeSig(null);
+						local.Type = SignatureUtils.CopyModifiers(local.Type, newSig);
+					}
+				}
+			}
+		}
 	}
 }

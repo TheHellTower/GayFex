@@ -33,7 +33,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 				return false;
 
 			// Get proper type.
-			t = GetLeaf(t);
+			t = SignatureUtils.GetLeaf(t);
 
 			if (!Generics.ContainsKey(t)) {
 				GenericParam newGenericParam;
@@ -67,7 +67,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 		internal GenericSig GetGeneric(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");
 
-			t = GetLeaf(t);
+			t = SignatureUtils.GetLeaf(t);
 
 			GenericSig result = null;
 			if (Generics.TryGetValue(t, out var gp))
@@ -83,46 +83,10 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			if (newSig != null) {
 				// Now it may be that the signature contains lots of modifiers and signatures.
 				// We need to process those... inside out.
-				if (t is NonLeafSig) {
-					// There are additional signatures. Store all of the in a stack and process them one by one.
-					var sigStack = new Stack<NonLeafSig>();
-					var current = t as NonLeafSig;
-					while (current != null) {
-						sigStack.Push(current);
-						current = current.Next as NonLeafSig;
-					}
-
-					// Now process the entries on the stack one by one.
-					while (sigStack.Any()) {
-						current = sigStack.Pop();
-						if (current is SZArraySig arraySig)
-							newSig = new ArraySig(newSig, arraySig.Rank, arraySig.GetSizes(), arraySig.GetLowerBounds());
-						else if (current is ByRefSig byRefSig)
-							newSig = new ByRefSig(newSig);
-						else if (current is CModReqdSig cModReqdSig)
-							newSig = new CModReqdSig(cModReqdSig.Modifier, newSig);
-						else if (current is CModOptSig cModOptSig)
-							newSig = new CModOptSig(cModOptSig.Modifier, newSig);
-						else if (current is PtrSig ptrSig)
-							newSig = new PtrSig(newSig);
-						else if (current is PinnedSig pinnedSig)
-							newSig = new PinnedSig(newSig);
-						else
-							Debug.Fail("Unexpected leaf signature: " + current.GetType().FullName);
-					}
-				}
+				newSig = SignatureUtils.CopyModifiers(t, newSig);
 			}
 
 			return newSig ?? t;
-		}
-
-		private static TypeSig GetLeaf(TypeSig t) {
-			Debug.Assert(t != null, $"{nameof(t)} != null");
-
-			while (t is NonLeafSig nonLeafSig)
-				t = nonLeafSig.Next;
-
-			return t;
 		}
 
 		internal void PrepareGenerics() => PrepareGenerics(Generics.Values.OrderBy(gp => gp.Number));
