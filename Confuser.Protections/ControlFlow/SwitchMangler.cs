@@ -262,7 +262,7 @@ namespace Confuser.Protections.ControlFlow {
 							return true;
 
 						// Not targeted by the last of statements
-						if (srcs.Any(src => statementLast.Contains(src)))
+						if (srcs.Any(src => !statementLast.Contains(src)))
 							return true;
 					}
 					return false;
