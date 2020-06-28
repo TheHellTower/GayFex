@@ -30,7 +30,7 @@ namespace Confuser.Renamer.References {
 			builder.Append("Member Override Reference").Append("(");
 			builder.Append("This ").AppendReferencedDef(thisMemberDef, nameService);
 			builder.Append("; ");
-			builder.Append("Base ").AppendReferencedDef(thisMemberDef, nameService);
+			builder.Append("Base ").AppendReferencedDef(BaseMemberDef, nameService);
 			builder.Append(")");
 			return builder.ToString();
 		}
