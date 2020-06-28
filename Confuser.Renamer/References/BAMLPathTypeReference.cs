@@ -20,6 +20,9 @@ namespace Confuser.Renamer.References {
 			this.sig = sig ?? throw new ArgumentNullException(nameof(sig));
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, PropertyPathIndexUpdater indexerInfo) : this(xmlnsCtx, sig) => 
 			IndexerInfo = indexerInfo;
 

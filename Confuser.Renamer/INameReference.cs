@@ -9,6 +9,15 @@ namespace Confuser.Renamer {
 		bool ShouldCancelRename { get; }
 
 		/// <summary>
+		/// Check if the renaming has to be delayed, because the referenced objects are not handled yet.
+		/// </summary>
+		/// <param name="service">The naming service</param>
+		/// <returns>
+		///		<see langword="true" /> in case the reference can't be resolved yet;
+		///		otherwise <see langword="false" />.</returns>
+		bool DelayRenaming(INameService service);
+
+		/// <summary>
 		///		Update the name reference.
 		/// </summary>
 		/// <param name="context">The confuser context</param>

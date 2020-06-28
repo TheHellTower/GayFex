@@ -18,6 +18,9 @@ namespace Confuser.Renamer.References {
 		}
 
 		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
+		/// <inheritdoc />
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			if (Def.Name.StartsWith(Prefix, StringComparison.Ordinal)) return false;
 

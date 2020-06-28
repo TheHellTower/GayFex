@@ -19,6 +19,34 @@ namespace Confuser.Renamer {
 			get { return "Renaming"; }
 		}
 
+		private static IEnumerable<IDnlibDef> GetTargetsWithDelay(IList<IDnlibDef> definitions, ConfuserContext context, INameService service) {
+			var delayedItems = new List<IDnlibDef>();
+			var currentList = definitions;
+			var lastCount = -1;
+			while (currentList.Any()) {
+				foreach (var def in currentList) {
+					if (service.GetReferences(def).Any(r => r.DelayRenaming(service)))
+						delayedItems.Add(def);
+					else
+						yield return def;
+				}
+
+				if (delayedItems.Count == lastCount) {
+					var errorBuilder = new StringBuilder();
+					errorBuilder.AppendLine("Failed to rename all targeted members, because the references are blocking each other.");
+					errorBuilder.AppendLine("Remaining definitions: ");
+					foreach (var def in delayedItems) {
+						errorBuilder.Append("• ").AppendDescription(def, service).AppendLine();
+					}
+					context.Logger.Warn(errorBuilder.ToString().Trim());
+					yield break;
+				}
+				lastCount = delayedItems.Count;
+				currentList = delayedItems;
+				delayedItems = new List<IDnlibDef>();
+			}
+		}
+
 		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
 			var service = (NameService)context.Registry.GetService<INameService>();
 
@@ -32,7 +60,7 @@ namespace Confuser.Renamer {
 			var targets = parameters.Targets.ToList();
 			service.GetRandom().Shuffle(targets);
 			var pdbDocs = new HashSet<string>();
-			foreach (IDnlibDef def in targets.WithProgress(context.Logger)) {
+			foreach (IDnlibDef def in GetTargetsWithDelay(targets, context, service).WithProgress(targets.Count, context.Logger)) {
 				if (def is ModuleDef && parameters.GetParameter(context, def, "rickroll", false))
 					RickRoller.CommenceRickroll(context, (ModuleDef)def);
 
@@ -63,6 +91,8 @@ namespace Confuser.Renamer {
 
 				if (!canRename)
 					continue;
+
+				service.SetIsRenamed(def);
 
 				IList<INameReference> references = service.GetReferences(def);
 				bool cancel = references.Any(r => r.ShouldCancelRename);

@@ -64,13 +64,11 @@ namespace Confuser.Renamer.Analyzers {
 					if (basePropDef is null) continue;
 
 					// Name of property has to line up.
-					if (discoveredBaseMemberDef is null)
-						CreateOverrideReference(service, prop, basePropDef);
+					CreateOverrideReference(service, prop, basePropDef);
 					CreateSiblingReference(basePropDef, ref discoveredBaseMemberDef, service);
 
 					// Method names have to line up as well (otherwise inheriting attributes does not work).
-					if (discoveredBaseMethodDef is null)
-						CreateOverrideReference(service, method, baseMethodDef);
+					CreateOverrideReference(service, method, baseMethodDef);
 					CreateSiblingReference(baseMethodDef, ref discoveredBaseMethodDef, service);
 
 					doesOverridePropertyOrEvent = true;
@@ -89,13 +87,11 @@ namespace Confuser.Renamer.Analyzers {
 					if (baseEventDef is null) continue;
 
 					// Name of event has to line up.
-					if (discoveredBaseMemberDef is null)
-						CreateOverrideReference(service, evt, baseEventDef);
+					CreateOverrideReference(service, evt, baseEventDef);
 					CreateSiblingReference(baseEventDef, ref discoveredBaseMemberDef, service);
 
 					// Method names have to line up as well (otherwise inheriting attributes does not work).
-					if (discoveredBaseMethodDef is null)
-						CreateOverrideReference(service, method, baseMethodDef);
+					CreateOverrideReference(service, method, baseMethodDef);
 					CreateSiblingReference(baseMethodDef, ref discoveredBaseMethodDef, service);
 
 					doesOverridePropertyOrEvent = true;
@@ -140,7 +136,7 @@ namespace Confuser.Renamer.Analyzers {
 				.SingleOrDefault();
 			if (reverseReference is null)
 				service.AddReference(oldestSiblingMemberDef, new MemberOldestSiblingReference(oldestSiblingMemberDef, basePropDef));
-			else {
+			else if (!reverseReference.OtherSiblings.Contains(basePropDef)) {
 				reverseReference.OtherSiblings.Add(basePropDef);
 			}
 		}
@@ -164,7 +160,6 @@ namespace Confuser.Renamer.Analyzers {
 
 		static void CreateOverrideReference(INameService service, IMemberDef thisMemberDef, IMemberDef baseMemberDef) {
 			var overrideRef = new MemberOverrideReference(thisMemberDef, baseMemberDef);
-			service.AddReference(baseMemberDef, overrideRef);
 			service.AddReference(thisMemberDef, overrideRef);
 
 			if (!service.CanRename(thisMemberDef))

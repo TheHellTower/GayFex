@@ -25,6 +25,9 @@ namespace Confuser.Renamer.References {
 			textRec = rec;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			string name = sig.ReflectionName;
 			string prefix = xmlnsCtx.GetPrefix(sig.ReflectionNamespace, sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);

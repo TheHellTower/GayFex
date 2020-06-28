@@ -14,6 +14,9 @@ namespace Confuser.Renamer.References {
 			this.baseSlot = baseSlot;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) => false;
 
 		public override string ToString() => ToString(null);

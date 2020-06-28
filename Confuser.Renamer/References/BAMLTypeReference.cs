@@ -22,6 +22,9 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public override string ToString() => ToString(null);
 
 		public string ToString(INameService nameService) {

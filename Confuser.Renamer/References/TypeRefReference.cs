@@ -14,6 +14,9 @@ namespace Confuser.Renamer.References {
 			this.typeDef = typeDef;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			if (UTF8String.Equals(typeRef.Namespace, typeDef.Namespace) && 
 				UTF8String.Equals(typeRef.Name, typeDef.Name)) return false;

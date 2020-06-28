@@ -17,6 +17,9 @@ namespace Confuser.Renamer.References {
 			Debug.Assert(thisMemberDef != baseMemberDef);
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => !service.IsRenamed(BaseMemberDef);
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			if (UTF8String.Equals(thisMemberDef.Name, BaseMemberDef.Name)) return false;
 			thisMemberDef.Name = BaseMemberDef.Name;

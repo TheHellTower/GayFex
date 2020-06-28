@@ -14,6 +14,9 @@ namespace Confuser.Renamer.References {
 			this.definition = definition;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			if (UTF8String.Equals(namedArg.Name, definition.Name)) return false;
 			namedArg.Name = definition.Name;

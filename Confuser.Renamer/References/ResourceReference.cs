@@ -17,6 +17,9 @@ namespace Confuser.Renamer.References {
 			this.format = format;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			var newName = string.Format(CultureInfo.InvariantCulture, format, typeDef.ReflectionFullName);
 			if (UTF8String.Equals(resource.Name, newName)) return false;

@@ -21,6 +21,9 @@ namespace Confuser.Renamer.References {
 			propRec = rec;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			if (attrRec != null) {
 				if (UTF8String.Equals(attrRec.Name, member.Name)) return false;
