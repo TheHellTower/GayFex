@@ -175,7 +175,7 @@ namespace Confuser.Renamer {
 			if (parameters.GetParameter(context, type, "forceRen", false))
 				return;
 
-			if (type.InheritsFromCorlib("System.Attribute")) {
+			if (type.InheritsFromCorLib("System.Attribute")) {
 				service.ReduceRenameMode(type, RenameMode.Reflection);
 			}
 

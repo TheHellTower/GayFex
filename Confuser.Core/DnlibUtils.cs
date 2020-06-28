@@ -208,16 +208,14 @@ namespace Confuser.Core {
 		/// <param name="type">The type.</param>
 		/// <param name="baseType">The full name of base type.</param>
 		/// <returns><c>true</c> if the specified type is inherited from a base type; otherwise, <c>false</c>.</returns>
-		public static bool InheritsFromCorlib(this TypeDef type, string baseType) {
-			if (type.BaseType == null)
-				return false;
-
-			TypeDef bas = type;
-			do {
-				bas = bas.BaseType.ResolveTypeDefThrow();
+		public static bool InheritsFromCorLib(this TypeDef type, string baseType) {
+			var bas = type.GetBaseType();
+			while (!(bas is null) && bas.DefinitionAssembly.IsCorLib()) {
 				if (bas.ReflectionFullName == baseType)
 					return true;
-			} while (bas.BaseType != null && bas.BaseType.DefinitionAssembly.IsCorLib());
+
+				bas = bas.GetBaseType();
+			}
 			return false;
 		}
 
@@ -228,15 +226,13 @@ namespace Confuser.Core {
 		/// <param name="baseType">The full name of base type.</param>
 		/// <returns><c>true</c> if the specified type is inherited from a base type; otherwise, <c>false</c>.</returns>
 		public static bool InheritsFrom(this TypeDef type, string baseType) {
-			if (type.BaseType == null)
-				return false;
-
-			TypeDef bas = type;
-			do {
-				bas = bas.BaseType.ResolveTypeDefThrow();
+			var bas = type.GetBaseType();
+			while (!(bas is null)) {
 				if (bas.ReflectionFullName == baseType)
 					return true;
-			} while (bas.BaseType != null);
+
+				bas = bas.GetBaseType();
+			}
 			return false;
 		}
 
@@ -248,17 +244,14 @@ namespace Confuser.Core {
 		/// <returns><c>true</c> if the specified type implements the interface; otherwise, <c>false</c>.</returns>
 		public static bool Implements(this TypeDef type, string fullName) {
 			do {
-				foreach (InterfaceImpl iface in type.Interfaces) {
-					if (iface.Interface.ReflectionFullName == fullName)
-						return true;
+				if (type.Interfaces.Any(iFace => iFace.Interface.ReflectionFullName == fullName)) {
+					return true;
 				}
 
-				if (type.BaseType == null)
-					return false;
-
-				type = type.BaseType.ResolveTypeDefThrow();
+				type = type.GetBaseType() as TypeDef;
 			} while (type != null);
-			throw new UnreachableException();
+
+			return false;
 		}
 
 		/// <summary>

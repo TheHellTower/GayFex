@@ -214,7 +214,9 @@ namespace Confuser.Renamer {
 				foreach (var impl in method.Value.Overrides) {
 					Debug.Assert(impl.MethodBody == method.Value);
 
-					MethodDef targetMethod = impl.MethodDeclaration.ResolveThrow();
+					var targetMethod = impl.MethodDeclaration.ResolveMethodDef();
+					if (targetMethod is null) continue;
+
 					if (targetMethod.DeclaringType.IsInterface) {
 						var iface = impl.MethodDeclaration.DeclaringType.ToTypeSig();
 						CheckKeyExist(storage, vTbl.InterfaceSlots, iface, "MethodImpl Iface");
@@ -239,7 +241,7 @@ namespace Confuser.Renamer {
 							});
 					}
 					else {
-						var targetSlot = vTbl.AllSlots.Single(slot => slot.MethodDef == targetMethod);
+						var targetSlot = vTbl.AllSlots.Single(slot => MethodEqualityComparer.CompareDeclaringTypes.Equals(slot.MethodDef, targetMethod));
 						CheckKeyExist(storage, vTbl.SlotsMap, targetSlot.Signature, "MethodImpl Normal Sig");
 						targetSlot = vTbl.SlotsMap[targetSlot.Signature]; // Use the most derived slot
 																		  // Maybe implemented by above processes --- this process should take priority
@@ -357,35 +359,40 @@ namespace Confuser.Renamer {
 		}
 
 		VTable GetOrConstruct(TypeDef type) {
-			VTable ret;
-			if (!storage.TryGetValue(type, out ret))
+			if (type is null) return null;
+			if (!storage.TryGetValue(type, out var ret))
 				ret = storage[type] = VTable.ConstructVTable(type, this);
 			return ret;
 		}
 
 		public VTable GetVTable(ITypeDefOrRef type) {
-			if (type == null)
-				return null;
-			if (type is TypeDef)
-				return GetOrConstruct((TypeDef)type);
-			if (type is TypeRef)
-				return GetOrConstruct(((TypeRef)type).ResolveThrow());
-			if (type is TypeSpec) {
-				TypeSig sig = ((TypeSpec)type).TypeSig;
-				if (sig is TypeDefOrRefSig) {
-					TypeDef typeDef = ((TypeDefOrRefSig)sig).TypeDefOrRef.ResolveTypeDefThrow();
+			switch (type) {
+				case null:
+					return null;
+				case TypeDef typeDef:
 					return GetOrConstruct(typeDef);
+				case TypeRef typeRef:
+					return GetOrConstruct(typeRef.Resolve());
+				case TypeSpec typeSpec: {
+					var sig = typeSpec.TypeSig;
+					switch (sig) {
+						case TypeDefOrRefSig defOrRefSig: {
+							var sigTypeDef = defOrRefSig.TypeDefOrRef.ResolveTypeDef();
+							return GetOrConstruct(sigTypeDef);
+						}
+						case GenericInstSig genInst: {
+							var openType = genInst.GenericType.TypeDefOrRef.ResolveTypeDef();
+							var vTable = GetOrConstruct(openType);
+						
+							return vTable is null ? null : ResolveGenericArgument(openType, genInst, vTable);
+						}
+						default:
+							throw new NotSupportedException("Unexpected type: " + type);
+					}
 				}
-				if (sig is GenericInstSig) {
-					var genInst = (GenericInstSig)sig;
-					TypeDef openType = genInst.GenericType.TypeDefOrRef.ResolveTypeDefThrow();
-					VTable vTable = GetOrConstruct(openType);
-
-					return ResolveGenericArgument(openType, genInst, vTable);
-				}
-				throw new NotSupportedException("Unexpected type: " + type);
+				default:
+					throw new UnreachableException();
 			}
-			throw new UnreachableException();
 		}
 
 		static VTableSlot ResolveSlot(TypeDef openType, VTableSlot slot, IList<TypeSig> genArgs) {

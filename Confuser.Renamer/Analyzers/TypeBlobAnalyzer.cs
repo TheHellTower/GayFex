@@ -68,8 +68,8 @@ namespace Confuser.Renamer.Analyzers {
 				foreach (CANamedArgument arg in attr.Properties)
 					AnalyzeCAArgument(modules, service, arg.Argument);
 
-				TypeDef attrType = attr.AttributeType.ResolveTypeDefThrow();
-				if (!modules.Contains((ModuleDefMD)attrType.Module))
+				TypeDef attrType = attr.AttributeType.ResolveTypeDef();
+				if (attrType is null || !modules.Contains((ModuleDefMD)attrType.Module))
 					continue;
 
 				foreach (var arg in attr.NamedArguments) {
@@ -159,8 +159,8 @@ namespace Confuser.Renamer.Analyzers {
 			if (sig is GenericInstSig) {
 				var inst = (GenericInstSig)sig;
 				Debug.Assert(!(inst.GenericType.TypeDefOrRef is TypeSpec));
-				TypeDef openType = inst.GenericType.TypeDefOrRef.ResolveTypeDefThrow();
-				if (!modules.Contains((ModuleDefMD)openType.Module) ||
+				TypeDef openType = inst.GenericType.TypeDefOrRef.ResolveTypeDef();
+				if (openType is null || !modules.Contains((ModuleDefMD)openType.Module) ||
 					memberRef.IsArrayAccessors())
 					return;
 
