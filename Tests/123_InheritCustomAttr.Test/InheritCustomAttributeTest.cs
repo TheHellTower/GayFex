@@ -36,7 +36,7 @@ namespace _123_InheritCustomAttr.Test {
 
 			var parameters = new ConfuserParameters {
 				Project = proj,
-				Logger = new XunitLogger(outputHelper)
+				Logger = new XunitLogger(outputHelper, l => Assert.False(l.StartsWith("[WARN]"), "Logged line may not start with [WARN]\r\n" + l))
 			};
 
 			await ConfuserEngine.Run(parameters);
