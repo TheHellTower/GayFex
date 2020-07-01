@@ -134,10 +134,13 @@ namespace Confuser.Renamer.Analyzers {
 		static void UpdateOldestSiblingReference(IMemberDef oldestSiblingMemberDef, IMemberDef basePropDef, INameService service) {
 			var reverseReference = service.GetReferences(oldestSiblingMemberDef).OfType<MemberOldestSiblingReference>()
 				.SingleOrDefault();
-			if (reverseReference is null)
+			if (reverseReference is null) {
 				service.AddReference(oldestSiblingMemberDef, new MemberOldestSiblingReference(oldestSiblingMemberDef, basePropDef));
+				PropagateRenamingRestrictions(service, oldestSiblingMemberDef, basePropDef);
+			}
 			else if (!reverseReference.OtherSiblings.Contains(basePropDef)) {
 				reverseReference.OtherSiblings.Add(basePropDef);
+				PropagateRenamingRestrictions(service, reverseReference.OtherSiblings);
 			}
 		}
 
@@ -162,10 +165,25 @@ namespace Confuser.Renamer.Analyzers {
 			var overrideRef = new MemberOverrideReference(thisMemberDef, baseMemberDef);
 			service.AddReference(thisMemberDef, overrideRef);
 
-			if (!service.CanRename(thisMemberDef))
-				service.SetCanRename(baseMemberDef, false);
+			PropagateRenamingRestrictions(service, thisMemberDef, baseMemberDef);
 		}
 
+		static void PropagateRenamingRestrictions(INameService service, params object[] objects) =>
+			PropagateRenamingRestrictions(service, (IList<object>)objects);
+
+		static void PropagateRenamingRestrictions(INameService service, IList<object> objects) {
+			if (!objects.All(service.CanRename)) {
+				foreach (var o in objects) {
+					service.SetCanRename(o, false);
+				}
+			}
+			else {
+				var minimalRenamingLevel = objects.Max(service.GetRenameMode);
+				foreach (var o in objects) {
+					service.ReduceRenameMode(o, minimalRenamingLevel);
+				}
+			}
+		}
 
 		private static IEnumerable<MethodDef> FindBaseDeclarations(INameService service, MethodDef method) {
 			var unprocessed = new Queue<MethodDef>();
@@ -299,22 +317,8 @@ namespace Confuser.Renamer.Analyzers {
 			if (method == null || !method.IsVirtual || method.Overrides.Count == 0)
 				return;
 
-			var methods = new HashSet<IMethodDefOrRef>(MethodDefOrRefComparer.Instance);
 			method.Overrides
-				  .RemoveWhere(impl => MethodDefOrRefComparer.Instance.Equals(impl.MethodDeclaration, method));
-		}
-
-		class MethodDefOrRefComparer : IEqualityComparer<IMethodDefOrRef> {
-			public static readonly MethodDefOrRefComparer Instance = new MethodDefOrRefComparer();
-			MethodDefOrRefComparer() { }
-
-			public bool Equals(IMethodDefOrRef x, IMethodDefOrRef y) {
-				return new SigComparer().Equals(x, y) && new SigComparer().Equals(x.DeclaringType, y.DeclaringType);
-			}
-
-			public int GetHashCode(IMethodDefOrRef obj) {
-				return new SigComparer().GetHashCode(obj) * 5 + new SigComparer().GetHashCode(obj.DeclaringType);
-			}
+				  .RemoveWhere(impl => MethodEqualityComparer.CompareDeclaringTypes.Equals(impl.MethodDeclaration, method));
 		}
 	}
 }
