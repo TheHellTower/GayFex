@@ -195,15 +195,16 @@ namespace Confuser.Renamer.Analyzers {
 				var currentMethod = unprocessed.Dequeue();
 
 				var vTbl = vTables[currentMethod.DeclaringType];
-				var slots = vTbl.FindSlots(currentMethod).Where(s => s.Overrides != null).ToArray();
-				if (slots.Any()) {
-					foreach (var slot in slots) {
-						unprocessed.Enqueue(slot.Overrides.MethodDef);
-					}
+				var slots = vTbl.FindSlots(currentMethod).Where(s => s.Overrides != null);
+
+				bool slotsExists = false;
+				foreach (var slot in slots) {
+					unprocessed.Enqueue(slot.Overrides.MethodDef);
+					slotsExists = true;
 				}
-				else if (method != currentMethod) {
+				
+				if (!slotsExists && method != currentMethod)
 					yield return currentMethod;
-				}
 			}
 		}
 

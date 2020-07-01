@@ -225,8 +225,8 @@ namespace Confuser.Core {
 		/// <returns>A wrapper of the list.</returns>
 		public static IEnumerable<T> WithProgress<T>(this IEnumerable<T> enumerable, ILogger logger) {
 			switch (enumerable) {
-				case IList<T> list:
-					return WithProgress(enumerable, list.Count, logger);
+				case IReadOnlyCollection<T> readOnlyCollection:
+					return WithProgress(enumerable, readOnlyCollection.Count, logger);
 				case ICollection<T> collection:
 					return WithProgress(enumerable, collection.Count, logger);
 				default:
