@@ -4,25 +4,25 @@ using dnlib.DotNet;
 namespace Confuser.Renamer {
 	internal static class ReferenceUtilities {
 		internal static StringBuilder AppendDescription(this StringBuilder builder, IDnlibDef def, INameService nameService) {
-			if (!(nameService is null)) {
-				builder.Append("Original Name").Append(": ");
+			if (nameService is null)
+				return builder.AppendHashedIdentifier("Name", def.FullName);
+			
+			builder.Append("Original Name").Append(": ");
 
-				switch (def) {
-					case TypeDef typeDef:
-						builder.AppendTypeName(typeDef, nameService);
-						break;
-					case IMemberDef memberDef:
-						builder.AppendTypeName(memberDef.DeclaringType, nameService);
-						builder.Append("::");
-						builder.AppendOriginalName(memberDef, nameService);
-						break;
-					default:
-						builder.AppendOriginalName(def, nameService);
-						break;
-
-				}
-				builder.Append("; ");
+			switch (def) {
+				case TypeDef typeDef:
+					builder.AppendTypeName(typeDef, nameService);
+					break;
+				case IMemberDef memberDef:
+					builder.AppendTypeName(memberDef.DeclaringType, nameService)
+						.Append("::")
+						.AppendOriginalName(memberDef, nameService);
+					break;
+				default:
+					builder.AppendOriginalName(def, nameService);
+					break;
 			}
+			builder.Append("; ");
 			return builder.AppendHashedIdentifier("Name", def.FullName);
 		}
 
@@ -62,7 +62,6 @@ namespace Confuser.Renamer {
 					return builder.AppendReferencedType(typeDef, nameService);
 				default:
 					return builder.Append("Referenced Definition").Append("(").AppendDescription(def, nameService).Append(")");
-
 			}
 		}
 
