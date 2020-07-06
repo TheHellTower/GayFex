@@ -171,10 +171,6 @@ namespace Confuser.Renamer {
 			else if (type.IsRuntimeSpecialName || type.IsGlobalModuleType) {
 				service.SetCanRename(type, false);
 			}
-			else if (type.FullName == "ConfusedByAttribute") {
-				// Courtesy
-				service.SetCanRename(type, false);
-			}
 
 			if (parameters.GetParameter(context, type, "forceRen", false))
 				return;

@@ -38,15 +38,15 @@ namespace Confuser.Core {
 		public const string _APIStoreId = "Confuser.APIStore";
 
 		readonly Marker marker;
-		readonly ConfuserParameters parameters;
+		readonly ConfuserContext _context;
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="CoreComponent" /> class.
 		/// </summary>
 		/// <param name="parameters">The parameters.</param>
 		/// <param name="marker">The marker.</param>
-		internal CoreComponent(ConfuserParameters parameters, Marker marker) {
-			this.parameters = parameters;
+		internal CoreComponent(ConfuserContext context, Marker marker) {
+			_context = context;
 			this.marker = marker;
 		}
 
@@ -72,7 +72,7 @@ namespace Confuser.Core {
 
 		/// <inheritdoc />
 		protected internal override void Initialize(ConfuserContext context) {
-			context.Registry.RegisterService(_RandomServiceId, typeof(IRandomService), new RandomService(parameters.Project.Seed));
+			context.Registry.RegisterService(_RandomServiceId, typeof(IRandomService), new RandomService(_context.Project.Seed));
 			context.Registry.RegisterService(_MarkerServiceId, typeof(IMarkerService), new MarkerService(context, marker));
 			context.Registry.RegisterService(_TraceServiceId, typeof(ITraceService), new TraceService());
 			context.Registry.RegisterService(_RuntimeServiceId, typeof(IRuntimeService), new RuntimeService());

@@ -26,7 +26,7 @@ namespace Confuser.Core {
 
 		/// <inheritdoc />
 		protected internal override void PopulatePipeline(ProtectionPipeline pipeline) =>
-			pipeline.InsertPreStage(PipelineStage.BeginModule, new WatermarkingPhase(this));
+			pipeline.InsertPostStage(PipelineStage.EndModule, new WatermarkingPhase(this));
 
 		/// <inheritdoc />
 		public override ProtectionPreset Preset => ProtectionPreset.None;
@@ -52,7 +52,7 @@ namespace Confuser.Core {
 					if (attrType == null) {
 						attrType = new TypeDefUser("", "ConfusedByAttribute", attrRef);
 						module.Types.Add(attrType);
-						marker.Mark(attrType, null);
+						marker.Mark(attrType, Parent);
 					}
 
 					var ctor = attrType.FindInstanceConstructors()
@@ -70,7 +70,7 @@ namespace Confuser.Core {
 							MethodSig.CreateInstance(module.CorLibTypes.Void), attrRef)));
 						ctor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
 						attrType.Methods.Add(ctor);
-						marker.Mark(ctor, null);
+						marker.Mark(ctor, Parent);
 					}
 
 					var attr = new CustomAttribute(ctor);

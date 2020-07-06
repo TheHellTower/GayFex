@@ -88,17 +88,16 @@ namespace Confuser.Core {
 			try {
 				// Enable watermarking by default
 				context.Project.Rules.Insert(0, new Rule {
-					new SettingItem<Protection>(WatermarkingProtection._Id),
-					new SettingItem<Protection>("harden")
+					new SettingItem<Protection>(WatermarkingProtection._Id)
 				});
 
 				var asmResolver = new AssemblyResolver();
 				asmResolver.EnableTypeDefCache = true;
 				asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
 				context.Resolver = asmResolver;
-				context.BaseDirectory = Path.Combine(Environment.CurrentDirectory, parameters.Project.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
-				context.OutputDirectory = Path.Combine(parameters.Project.BaseDirectory, parameters.Project.OutputDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
-				foreach (string probePath in parameters.Project.ProbePaths)
+				context.BaseDirectory = Path.Combine(Environment.CurrentDirectory, context.Project.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+				context.OutputDirectory = Path.Combine(context.Project.BaseDirectory, context.Project.OutputDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+				foreach (string probePath in context.Project.ProbePaths)
 					asmResolver.PostSearchPaths.Insert(0, Path.Combine(context.BaseDirectory, probePath));
 
 				context.CheckCancellation();
@@ -128,7 +127,7 @@ namespace Confuser.Core {
 					throw new ConfuserException(ex);
 				}
 
-				components.Insert(0, new CoreComponent(parameters, marker));
+				components.Insert(0, new CoreComponent(context, marker));
 				foreach (Protection prot in prots)
 					components.Add(prot);
 				foreach (Packer packer in packers)
@@ -139,7 +138,7 @@ namespace Confuser.Core {
 				// 4. Load modules
 				context.Logger.Info("Loading input modules...");
 				marker.Initalize(prots, packers);
-				MarkerResult markings = marker.MarkProject(parameters.Project, context);
+				MarkerResult markings = marker.MarkProject(context.Project, context);
 				context.Modules = new ModuleSorter(markings.Modules).Sort().ToList().AsReadOnly();
 				foreach (var module in context.Modules)
 					module.EnableTypeDefFindCache = false;
