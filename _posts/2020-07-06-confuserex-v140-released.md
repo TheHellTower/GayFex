@@ -21,8 +21,7 @@ You can review all changes done here: [Changes in v1.4.0][changes]
   </div>
 </div>
 
-The MSBuild integration of ConfuserEx is available on Nuget.org: [NuGet Gallery | ConfuserEx.MSBuild 1.4.0][nuget]
-
+The MSBuild integration of ConfuserEx is available on Nuget.org: [NuGet Gallery - ConfuserEx.MSBuild 1.4.0][nuget]
 
 You can also get the bleeding edge builds from [the CI Server][appveyor]!
 
