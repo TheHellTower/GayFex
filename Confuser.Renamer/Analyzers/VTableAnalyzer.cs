@@ -49,8 +49,54 @@ namespace Confuser.Renamer.Analyzers {
 				return;
 
 			var vTbl = service.GetVTables()[method.DeclaringType];
-			VTableSignature sig = VTableSignature.FromMethod(method);
-			var slots = vTbl.FindSlots(method);
+			var slots = vTbl.FindSlots(method).ToArray();
+
+			IMemberDef discoveredBaseMemberDef = null;
+			MethodDef discoveredBaseMethodDef = null;
+
+			bool doesOverridePropertyOrEvent = false;
+			var methodProp = method.DeclaringType.Properties.Where(p => BelongsToProperty(p, method));
+			foreach (var prop in methodProp) {
+				foreach (var baseMethodDef in FindBaseDeclarations(service, method)) {
+					var basePropDef = baseMethodDef.DeclaringType.Properties.
+						FirstOrDefault(p => BelongsToProperty(p, baseMethodDef) && String.Equals(p.Name, prop.Name, StringComparison.Ordinal));
+
+					if (basePropDef is null) continue;
+
+					// Name of property has to line up.
+					CreateOverrideReference(service, prop, basePropDef);
+					CreateSiblingReference(basePropDef, ref discoveredBaseMemberDef, service);
+
+					// Method names have to line up as well (otherwise inheriting attributes does not work).
+					CreateOverrideReference(service, method, baseMethodDef);
+					CreateSiblingReference(baseMethodDef, ref discoveredBaseMethodDef, service);
+
+					doesOverridePropertyOrEvent = true;
+				}
+			}
+
+			discoveredBaseMemberDef = null;
+			discoveredBaseMethodDef = null;
+
+			var methodEvent = method.DeclaringType.Events.Where(e => BelongsToEvent(e, method));
+			foreach (var evt in methodEvent) {
+				foreach (var baseMethodDef in FindBaseDeclarations(service, method)) {
+					var baseEventDef = baseMethodDef.DeclaringType.Events.
+						FirstOrDefault(e => BelongsToEvent(e, baseMethodDef) && String.Equals(e.Name, evt.Name, StringComparison.Ordinal));
+
+					if (baseEventDef is null) continue;
+
+					// Name of event has to line up.
+					CreateOverrideReference(service, evt, baseEventDef);
+					CreateSiblingReference(baseEventDef, ref discoveredBaseMemberDef, service);
+
+					// Method names have to line up as well (otherwise inheriting attributes does not work).
+					CreateOverrideReference(service, method, baseMethodDef);
+					CreateSiblingReference(baseMethodDef, ref discoveredBaseMethodDef, service);
+
+					doesOverridePropertyOrEvent = true;
+				}
+			}
 
 			if (!method.IsAbstract) {
 				foreach (var slot in slots) {
@@ -60,17 +106,117 @@ namespace Confuser.Renamer.Analyzers {
 					SetupOverwriteReferences(service, modules, slot, method.Module);
 				}
 			}
-			else {
-				foreach (var slot in slots) {
-					if (slot.Overrides == null)
-						continue;
-					service.SetCanRename(method, false);
-					service.SetCanRename(slot.Overrides.MethodDef, false);
+			else if (!doesOverridePropertyOrEvent) {
+				foreach (var baseMethodDef in FindBaseDeclarations(service, method)) {
+					CreateOverrideReference(service, method, baseMethodDef);
 				}
 			}
 		}
 
-		private static void AddImportReference(INameService service, ICollection<ModuleDefMD> modules,  ModuleDef module, MethodDef method, MemberRef methodRef) {
+		static void CreateSiblingReference<T>(T basePropDef, ref T discoveredBaseMemberDef, INameService service) where T : class, IMemberDef {
+			if (discoveredBaseMemberDef is null)
+				discoveredBaseMemberDef = basePropDef;
+			else {
+				var references = service.GetReferences(discoveredBaseMemberDef).OfType<MemberSiblingReference>().ToArray();
+				if (references.Length > 0) {
+					discoveredBaseMemberDef = (T)references[0].OldestSiblingDef;
+					foreach (var siblingRef in references.Skip(1)) {
+						// Redirect all the siblings to the new oldest reference
+						RedirectSiblingReferences(siblingRef.OldestSiblingDef, discoveredBaseMemberDef, service);
+					}
+				}
+
+				service.AddReference(basePropDef, new MemberSiblingReference(basePropDef, discoveredBaseMemberDef));
+				UpdateOldestSiblingReference(discoveredBaseMemberDef, basePropDef, service);
+			}
+		}
+
+		static void UpdateOldestSiblingReference(IMemberDef oldestSiblingMemberDef, IMemberDef basePropDef, INameService service) {
+			var reverseReference = service.GetReferences(oldestSiblingMemberDef).OfType<MemberOldestSiblingReference>()
+				.SingleOrDefault();
+			if (reverseReference is null) {
+				service.AddReference(oldestSiblingMemberDef, new MemberOldestSiblingReference(oldestSiblingMemberDef, basePropDef));
+				PropagateRenamingRestrictions(service, oldestSiblingMemberDef, basePropDef);
+			}
+			else if (!reverseReference.OtherSiblings.Contains(basePropDef)) {
+				reverseReference.OtherSiblings.Add(basePropDef);
+				PropagateRenamingRestrictions(service, reverseReference.OtherSiblings);
+			}
+		}
+
+		static void RedirectSiblingReferences(IMemberDef oldMemberDef, IMemberDef newMemberDef, INameService service) {
+			if (ReferenceEquals(oldMemberDef, newMemberDef)) return;
+
+			var referencesToUpdate = service.GetReferences(oldMemberDef)
+				.OfType<MemberOldestSiblingReference>()
+				.SelectMany(r => r.OtherSiblings)
+				.SelectMany(service.GetReferences)
+				.OfType<MemberSiblingReference>()
+				.Where(r => ReferenceEquals(r.OldestSiblingDef, oldMemberDef));
+
+			foreach (var reference in referencesToUpdate) {
+				reference.OldestSiblingDef = newMemberDef;
+				UpdateOldestSiblingReference(newMemberDef, reference.ThisMemberDef, service);
+			}
+			UpdateOldestSiblingReference(newMemberDef, oldMemberDef, service);
+		}
+
+		static void CreateOverrideReference(INameService service, IMemberDef thisMemberDef, IMemberDef baseMemberDef) {
+			var overrideRef = new MemberOverrideReference(thisMemberDef, baseMemberDef);
+			service.AddReference(thisMemberDef, overrideRef);
+
+			PropagateRenamingRestrictions(service, thisMemberDef, baseMemberDef);
+		}
+
+		static void PropagateRenamingRestrictions(INameService service, params object[] objects) =>
+			PropagateRenamingRestrictions(service, (IList<object>)objects);
+
+		static void PropagateRenamingRestrictions(INameService service, IList<object> objects) {
+			if (!objects.All(service.CanRename)) {
+				foreach (var o in objects) {
+					service.SetCanRename(o, false);
+				}
+			}
+			else {
+				var minimalRenamingLevel = objects.Max(service.GetRenameMode);
+				foreach (var o in objects) {
+					service.ReduceRenameMode(o, minimalRenamingLevel);
+				}
+			}
+		}
+
+		private static IEnumerable<MethodDef> FindBaseDeclarations(INameService service, MethodDef method) {
+			var unprocessed = new Queue<MethodDef>();
+			unprocessed.Enqueue(method);
+
+			var vTables = service.GetVTables();
+
+			while (unprocessed.Any()) {
+				var currentMethod = unprocessed.Dequeue();
+
+				var vTbl = vTables[currentMethod.DeclaringType];
+				var slots = vTbl.FindSlots(currentMethod).Where(s => s.Overrides != null);
+
+				bool slotsExists = false;
+				foreach (var slot in slots) {
+					unprocessed.Enqueue(slot.Overrides.MethodDef);
+					slotsExists = true;
+				}
+				
+				if (!slotsExists && method != currentMethod)
+					yield return currentMethod;
+			}
+		}
+
+		private static bool BelongsToProperty(PropertyDef propertyDef, MethodDef methodDef) =>
+			propertyDef.GetMethods.Contains(methodDef) || propertyDef.SetMethods.Contains(methodDef) ||
+			(propertyDef.HasOtherMethods && propertyDef.OtherMethods.Contains(methodDef));
+
+		private static bool BelongsToEvent(EventDef eventDef, MethodDef methodDef) =>
+			Equals(eventDef.AddMethod, methodDef) || Equals(eventDef.RemoveMethod, methodDef) || Equals(eventDef.InvokeMethod, methodDef) ||
+			(eventDef.HasOtherMethods && eventDef.OtherMethods.Contains(methodDef));
+
+		private static void AddImportReference(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, MethodDef method, MemberRef methodRef) {
 			if (method.Module != module && modules.Contains((ModuleDefMD)module)) {
 				var declType = (TypeRef)methodRef.DeclaringType.ScopeType;
 				service.AddReference(method.DeclaringType, new TypeRefReference(declType, method.DeclaringType));
@@ -88,8 +234,8 @@ namespace Confuser.Renamer.Analyzers {
 		private static void SetupTypeReference(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, ITypeDefOrRef typeDefOrRef) {
 			if (!(typeDefOrRef is TypeRef typeRef)) return;
 
-			var def = typeRef.ResolveTypeDefThrow();
-			if (def.Module != module && modules.Contains((ModuleDefMD)def.Module))
+			var def = typeRef.ResolveTypeDef();
+			if (!(def is null) && def.Module != module && modules.Contains((ModuleDefMD)def.Module))
 				service.AddReference(def, new TypeRefReference(typeRef, def));
 		}
 
@@ -99,7 +245,7 @@ namespace Confuser.Renamer.Analyzers {
 			return new GenericInstSig(genericType, genericArguments);
 		}
 
-		private static T SetupSignatureReferences<T>(INameService service, ICollection<ModuleDefMD> modules,  ModuleDef module, T typeSig) where T : TypeSig {
+		private static T SetupSignatureReferences<T>(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, T typeSig) where T : TypeSig {
 			var asTypeRef = typeSig.TryGetTypeRef();
 			if (asTypeRef != null) {
 				SetupTypeReference(service, modules, module, asTypeRef);
@@ -172,22 +318,8 @@ namespace Confuser.Renamer.Analyzers {
 			if (method == null || !method.IsVirtual || method.Overrides.Count == 0)
 				return;
 
-			var methods = new HashSet<IMethodDefOrRef>(MethodDefOrRefComparer.Instance);
 			method.Overrides
-				  .RemoveWhere(impl => MethodDefOrRefComparer.Instance.Equals(impl.MethodDeclaration, method));
-		}
-
-		class MethodDefOrRefComparer : IEqualityComparer<IMethodDefOrRef> {
-			public static readonly MethodDefOrRefComparer Instance = new MethodDefOrRefComparer();
-			MethodDefOrRefComparer() { }
-
-			public bool Equals(IMethodDefOrRef x, IMethodDefOrRef y) {
-				return new SigComparer().Equals(x, y) && new SigComparer().Equals(x.DeclaringType, y.DeclaringType);
-			}
-
-			public int GetHashCode(IMethodDefOrRef obj) {
-				return new SigComparer().GetHashCode(obj) * 5 + new SigComparer().GetHashCode(obj.DeclaringType);
-			}
+				  .RemoveWhere(impl => MethodEqualityComparer.CompareDeclaringTypes.Equals(impl.MethodDeclaration, method));
 		}
 	}
 }

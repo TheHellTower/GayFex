@@ -59,6 +59,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 			var nameService = Mock.Of<INameService>();
 			Mock.Get(nameService).Setup(s => s.SetCanRename(refMethod, false));
 			Mock.Get(nameService).Setup(s => s.SetCanRename(refMethod, false));
+			Mock.Get(nameService).Setup(s => s.GetReferences(refMethod)).Returns(new List<INameReference>());
 
 			var traceService = new TraceService();
 			var analyzer = new ReflectionAnalyzer();
@@ -100,6 +101,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 			var nameService = Mock.Of<INameService>();
 			Mock.Get(nameService).Setup(s => s.SetCanRename(refProp, false));
 			Mock.Get(nameService).Setup(s => s.SetCanRename(refProp, false));
+			Mock.Get(nameService).Setup(s => s.GetReferences(refProp)).Returns(new List<INameReference>());
 
 			var traceService = new TraceService();
 			var analyzer = new ReflectionAnalyzer();

@@ -1,21 +1,27 @@
 ﻿using System;
+using System.Text;
 using Confuser.Core;
 using Confuser.Renamer.BAML;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal class BAMLConverterMemberReference : INameReference<IDnlibDef> {
-		readonly IDnlibDef member;
+	internal sealed class BAMLConverterMemberReference : INameReference<IDnlibDef> {
+		readonly IMemberDef member;
 		readonly PropertyRecord rec;
 		readonly TypeSig sig;
 		readonly BAMLAnalyzer.XmlNsContext xmlnsCtx;
 
-		public BAMLConverterMemberReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IDnlibDef member, PropertyRecord rec) {
+		public bool ShouldCancelRename => false;
+
+		public BAMLConverterMemberReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IMemberDef member, PropertyRecord rec) {
 			this.xmlnsCtx = xmlnsCtx;
 			this.sig = sig;
 			this.member = member;
 			this.rec = rec;
 		}
+
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			string typeName = sig.ReflectionName;
@@ -28,6 +34,18 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
-		public bool ShouldCancelRename() => false;
+		public override string ToString() => ToString(null);
+
+		public string ToString(INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("BAML Converter Member Reference").Append("(");
+			builder.Append("Property Record").Append("(").AppendHashedIdentifier("Value", rec.Value).Append(")");
+			builder.Append("; ");
+			builder.Append("Type Signature").Append("(").AppendHashedIdentifier("Name", sig.ReflectionFullName).Append(")");
+			builder.Append("; ");
+			builder.AppendReferencedDef(member, nameService);
+			builder.Append(")");
+			return builder.ToString();
+		}
 	}
 }

@@ -1,21 +1,27 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using Confuser.Core;
 using Confuser.Renamer.BAML;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal class BAMLPathTypeReference : INameReference<TypeDef> {
+	internal sealed class BAMLPathTypeReference : INameReference<TypeDef> {
 		PropertyPathPartUpdater? PropertyInfo { get; }
 		PropertyPathIndexUpdater? IndexerInfo { get; }
 		private readonly TypeSig sig;
 		private readonly BAMLAnalyzer.XmlNsContext xmlnsCtx;
 
+		public bool ShouldCancelRename => false;
+
 		private BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig) {
 			this.xmlnsCtx = xmlnsCtx ?? throw new ArgumentNullException(nameof(xmlnsCtx));
 			this.sig = sig ?? throw new ArgumentNullException(nameof(sig));
 		}
+
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
 
 		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, PropertyPathIndexUpdater indexerInfo) : this(xmlnsCtx, sig) => 
 			IndexerInfo = indexerInfo;
@@ -45,6 +51,19 @@ namespace Confuser.Renamer.References {
 			return true;
 		}
 
-		public bool ShouldCancelRename() => false;
+		public override string ToString() => ToString(null);
+
+		public string ToString(INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("BAML Path Type Reference").Append("(");
+			if (PropertyInfo.HasValue)
+				builder.Append("Property Info").Append("(").AppendHashedIdentifier("Name", PropertyInfo.Value.Name).Append(")");
+			else
+				builder.Append("Indexer Info").Append("(").AppendHashedIdentifier("Indexer", IndexerInfo.Value.ParenString).Append(")");
+			builder.Append("; ");
+			builder.Append("Type Signature").Append("(").AppendHashedIdentifier("Name", sig.ReflectionFullName).Append(")");
+			builder.Append(")");
+			return builder.ToString();
+		}
 	}
 }

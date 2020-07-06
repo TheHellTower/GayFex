@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Confuser.Core;
 using dnlib.DotNet;
 using dnlib.DotNet.Pdb;
@@ -31,7 +32,7 @@ namespace Confuser.Renamer {
 			var targets = parameters.Targets.ToList();
 			service.GetRandom().Shuffle(targets);
 			var pdbDocs = new HashSet<string>();
-			foreach (IDnlibDef def in targets.WithProgress(context.Logger)) {
+			foreach (IDnlibDef def in GetTargetsWithDelay(targets, context, service).WithProgress(targets.Count, context.Logger)) {
 				if (def is ModuleDef && parameters.GetParameter(context, def, "rickroll", false))
 					RickRoller.CommenceRickroll(context, (ModuleDef)def);
 
@@ -63,12 +64,10 @@ namespace Confuser.Renamer {
 				if (!canRename)
 					continue;
 
+				service.SetIsRenamed(def);
+
 				IList<INameReference> references = service.GetReferences(def);
-				bool cancel = false;
-				foreach (INameReference refer in references) {
-					cancel |= refer.ShouldCancelRename();
-					if (cancel) break;
-				}
+				bool cancel = references.Any(r => r.ShouldCancelRename);
 				if (cancel)
 					continue;
 
@@ -98,13 +97,50 @@ namespace Confuser.Renamer {
 				do {
 					var oldUpdatedCount = updatedReferences;
 					// This resolves the changed name references and counts how many were changed.
-					updatedReferences = references.Count(refer => refer.UpdateNameReference(context, service));
+					var updatedReferenceList = references.Where(refer => refer.UpdateNameReference(context, service)).ToArray();
+					updatedReferences = updatedReferenceList.Length;
 					if (updatedReferences == oldUpdatedCount) {
-						context.Logger.Error("Infinite loop detected while resolving name references.");
+						var errorBuilder = new StringBuilder();
+						errorBuilder.AppendLine("Infinite loop detected while resolving name references.");
+						errorBuilder.Append("Processed definition: ").AppendDescription(def, service).AppendLine();
+						errorBuilder.Append("Assembly: ").AppendLine(context.CurrentModule.FullName);
+						errorBuilder.AppendLine("Faulty References:");
+						foreach (var reference in updatedReferenceList) {
+							errorBuilder.Append(" - ").AppendLine(reference.ToString(service));
+						}
+						context.Logger.Error(errorBuilder.ToString().Trim());
 						throw new ConfuserException();
 					}
 					context.CheckCancellation();
 				} while (updatedReferences > 0);
+			}
+		}
+
+		private static IEnumerable<IDnlibDef> GetTargetsWithDelay(IList<IDnlibDef> definitions, ConfuserContext context, INameService service) {
+			var delayedItems = new List<IDnlibDef>();
+			var currentList = definitions;
+			var lastCount = -1;
+			while (currentList.Any()) {
+				foreach (var def in currentList) {
+					if (service.GetReferences(def).Any(r => r.DelayRenaming(service)))
+						delayedItems.Add(def);
+					else
+						yield return def;
+				}
+
+				if (delayedItems.Count == lastCount) {
+					var errorBuilder = new StringBuilder();
+					errorBuilder.AppendLine("Failed to rename all targeted members, because the references are blocking each other.");
+					errorBuilder.AppendLine("Remaining definitions: ");
+					foreach (var def in delayedItems) {
+						errorBuilder.Append("• ").AppendDescription(def, service).AppendLine();
+					}
+					context.Logger.Warn(errorBuilder.ToString().Trim());
+					yield break;
+				}
+				lastCount = delayedItems.Count;
+				currentList = delayedItems;
+				delayedItems = new List<IDnlibDef>();
 			}
 		}
 	}

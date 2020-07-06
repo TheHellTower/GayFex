@@ -30,9 +30,15 @@ namespace Confuser.Renamer {
 		void RegisterRenamer(IRenamer renamer);
 		T FindRenamer<T>();
 		void AddReference<T>(T obj, INameReference<T> reference);
+		IList<INameReference> GetReferences(object obj);
 
 		void SetOriginalName(object obj, string name);
 		void SetOriginalNamespace(object obj, string ns);
+		string GetOriginalName(object obj);
+		string GetOriginalNamespace(object obj);
+
+		bool IsRenamed(IDnlibDef def);
+		void SetIsRenamed(IDnlibDef def);
 
 		void MarkHelper(IDnlibDef def, IMarkerService marker, ConfuserComponent parentComp);
 	}
@@ -43,6 +49,7 @@ namespace Confuser.Renamer {
 		static readonly object ReferencesKey = new object();
 		static readonly object OriginalNameKey = new object();
 		static readonly object OriginalNamespaceKey = new object();
+		static readonly object IsRenamedKey = new object();
 
 		readonly ConfuserContext context;
 		readonly byte[] nameSeed;
@@ -341,5 +348,9 @@ namespace Confuser.Renamer {
 		public ICollection<KeyValuePair<string, string>> GetNameMap() {
 			return nameMap2;
 		}
+
+		public bool IsRenamed(IDnlibDef def) => context.Annotations.Get(def, IsRenamedKey, !CanRename(def));
+
+		public void SetIsRenamed(IDnlibDef def) => context.Annotations.Set(def, IsRenamedKey, true);
 	}
 }
