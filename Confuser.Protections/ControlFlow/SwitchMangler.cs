@@ -250,8 +250,7 @@ namespace Confuser.Protections.ControlFlow {
 				hasUnknownSource = instrs => instrs.Any(instr => {
 					if (trace.HasMultipleSources(instr.Offset))
 						return true;
-					List<Instruction> srcs;
-					if (trace.BrRefs.TryGetValue(instr.Offset, out srcs)) {
+					if (trace.BrRefs.TryGetValue(instr.Offset, out var srcs)) {
 						// Target of switch => assume unknown
 						if (srcs.Any(src => src.Operand is Instruction[]))
 							return true;
@@ -259,6 +258,14 @@ namespace Confuser.Protections.ControlFlow {
 						// Not within current instruction block / targeted in first statement
 						if (srcs.Any(src => src.Offset <= statements.First.Value.Last().Offset ||
 						                    src.Offset >= block.Instructions.Last().Offset))
+							return true;
+
+						// Disable flow obfuscation for blocks reached by jump instructions.
+						// Bug in #153 caused exactly this behaviour, expect for allowing wrong jump instructions
+						// There is another issue present here tracked here:
+						// https://github.com/mkaring/ConfuserEx/issues/162
+						// Until this issue is resolved, the ctrl flow obfuscation will be severely reduced.
+						if (srcs.Any())
 							return true;
 
 						// Not targeted by the last of statements
