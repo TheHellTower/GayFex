@@ -213,8 +213,7 @@ namespace Confuser.Renamer {
 
 		public string ObfuscateName(string name, RenameMode mode) {
 			string newName = null;
-			int? count;
-			name = ParseGenericName(name, out count);
+			name = ParseGenericName(name, out var count);
 
 			if (string.IsNullOrEmpty(name))
 				return string.Empty;
@@ -222,7 +221,7 @@ namespace Confuser.Renamer {
 			if (mode == RenameMode.Empty)
 				return "";
 			if (mode == RenameMode.Debug)
-				return "_" + name;
+				return MakeGenericName("_" + name, count);
 			if (mode == RenameMode.Reversible) {
 				if (reversibleRenamer == null)
 					throw new ArgumentException("Password not provided for reversible renaming.");

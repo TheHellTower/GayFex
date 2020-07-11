@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
+using Confuser.Renamer;
 using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,13 +17,15 @@ namespace _123_InheritCustomAttr.Test {
 		public InheritCustomAttributeTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		[Fact]
+		[Theory]
+		[MemberData(nameof(InheritCustomAttributeData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/123")]
-		public async Task InheritCustomAttribute() {
+		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/161")]
+		public async Task InheritCustomAttribute(string renameMode, bool flatten) {
 			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp");
+			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
 			var inputFile = Path.Combine(baseDir, "123_InheritCustomAttr.exe");
 			var outputFile = Path.Combine(outputDir, "123_InheritCustomAttr.exe");
 			FileUtilities.ClearOutput(outputFile);
@@ -31,7 +35,10 @@ namespace _123_InheritCustomAttr.Test {
 			};
 			proj.Add(new ProjectModule() { Path = inputFile });
 			proj.Rules.Add(new Rule() {
-				new SettingItem<Protection>("rename")
+				new SettingItem<Protection>("rename") {
+					{ "mode", renameMode },
+					{ "flatten", flatten ? "True" : "False" }
+				}
 			});
 
 			var parameters = new ConfuserParameters {
@@ -61,6 +68,12 @@ namespace _123_InheritCustomAttr.Test {
 			}
 
 			FileUtilities.ClearOutput(outputFile);
+		}
+
+		public static IEnumerable<object[]> InheritCustomAttributeData() {
+			foreach (var renameMode in new string[] { nameof(RenameMode.Unicode), nameof(RenameMode.ASCII), nameof(RenameMode.Letters), nameof(RenameMode.Debug) })
+				foreach (var flatten in new bool[] { true, false })
+					yield return new object[] { renameMode, flatten };
 		}
 	}
 }
