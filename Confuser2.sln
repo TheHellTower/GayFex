@@ -70,9 +70,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "118_EnhancedStrongName", "T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "118_EnhancedStrongName.Test", "Tests\118_EnhancedStrongName.Test\118_EnhancedStrongName.Test.csproj", "{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "123_InheritCustomAttr", "Tests\123_InheritCustomAttr\123_InheritCustomAttr.csproj", "{3B85D7A9-6BD0-4CD8-9009-36554EF24D32}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "123_InheritCustomAttr", "Tests\123_InheritCustomAttr\123_InheritCustomAttr.csproj", "{3B85D7A9-6BD0-4CD8-9009-36554EF24D32}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "123_InheritCustomAttr.Test", "Tests\123_InheritCustomAttr.Test\123_InheritCustomAttr.Test.csproj", "{DA7DF89C-447D-4C2D-9C75-933037BF245E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "161_DynamicTypeRename", "Tests\161_DynamicTypeRename\161_DynamicTypeRename.csproj", "{034B1C28-96B9-486A-B238-9C651EAA32CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "161_DynamicTypeRename.Test", "Tests\161_DynamicTypeRename.Test\161_DynamicTypeRename.Test.csproj", "{2B914EE7-F206-4A83-B435-460D054315BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -192,6 +196,14 @@ Global
 		{DA7DF89C-447D-4C2D-9C75-933037BF245E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA7DF89C-447D-4C2D-9C75-933037BF245E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA7DF89C-447D-4C2D-9C75-933037BF245E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{034B1C28-96B9-486A-B238-9C651EAA32CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{034B1C28-96B9-486A-B238-9C651EAA32CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{034B1C28-96B9-486A-B238-9C651EAA32CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{034B1C28-96B9-486A-B238-9C651EAA32CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B914EE7-F206-4A83-B435-460D054315BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B914EE7-F206-4A83-B435-460D054315BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B914EE7-F206-4A83-B435-460D054315BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B914EE7-F206-4A83-B435-460D054315BB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -216,6 +228,8 @@ Global
 		{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{3B85D7A9-6BD0-4CD8-9009-36554EF24D32} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{DA7DF89C-447D-4C2D-9C75-933037BF245E} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{034B1C28-96B9-486A-B238-9C651EAA32CA} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{2B914EE7-F206-4A83-B435-460D054315BB} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}

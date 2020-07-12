@@ -221,7 +221,8 @@ namespace Confuser.Renamer {
 			if (mode == RenameMode.Empty)
 				return "";
 			if (mode == RenameMode.Debug)
-				return MakeGenericName("_" + name, count);
+				// When flattening there are issues, in case there is a . in the name of the assembly.
+				return MakeGenericName("_" + name.Replace('.', '_'), count);
 			if (mode == RenameMode.Reversible) {
 				if (reversibleRenamer == null)
 					throw new ArgumentException("Password not provided for reversible renaming.");
