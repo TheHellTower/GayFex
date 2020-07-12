@@ -71,7 +71,7 @@ namespace _123_InheritCustomAttr.Test {
 		}
 
 		public static IEnumerable<object[]> InheritCustomAttributeData() {
-			foreach (var renameMode in new string[] { nameof(RenameMode.Unicode), nameof(RenameMode.ASCII), nameof(RenameMode.Letters), nameof(RenameMode.Debug) })
+			foreach (var renameMode in new string[] { nameof(RenameMode.Unicode), nameof(RenameMode.ASCII), nameof(RenameMode.Letters), nameof(RenameMode.Debug), nameof(RenameMode.Retain) })
 				foreach (var flatten in new bool[] { true, false })
 					yield return new object[] { renameMode, flatten };
 		}

@@ -220,9 +220,11 @@ namespace Confuser.Renamer {
 
 			if (mode == RenameMode.Empty)
 				return "";
-			if (mode == RenameMode.Debug)
+			if (mode == RenameMode.Debug || mode == RenameMode.Retain) {
 				// When flattening there are issues, in case there is a . in the name of the assembly.
-				return MakeGenericName("_" + name.Replace('.', '_'), count);
+				newName = MakeGenericName(name.Replace('.', '_'), count);
+				return mode == RenameMode.Debug ? "_" + newName : newName;
+			}
 			if (mode == RenameMode.Reversible) {
 				if (reversibleRenamer == null)
 					throw new ArgumentException("Password not provided for reversible renaming.");
