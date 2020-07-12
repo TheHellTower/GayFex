@@ -1,5 +1,5 @@
 {
-	"version": "1.4.1-alpha+{height}",
+	"version": "1.4.1+{height}",
 	"nugetPackageVersion": {
 		"semVer": 1
 	},
