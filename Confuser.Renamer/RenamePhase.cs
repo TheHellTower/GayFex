@@ -57,7 +57,9 @@ namespace Confuser.Renamer {
 							if (!string.IsNullOrEmpty(local.Name))
 								local.Name = service.ObfuscateName(local.Name, mode);
 						}
-						method.Body.PdbMethod.Scope = new PdbScope();
+
+						if (method.Body.HasPdbMethod)
+							method.Body.PdbMethod.Scope = new PdbScope();
 					}
 				}
 
