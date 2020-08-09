@@ -8,6 +8,10 @@ skip_commits:
   - readme.md
   - license.md
 
+environment:
+  CHOCO_API_KEY:
+    secure: oSM1kJpS3CZN3XVnDWMEGfivr5hW3NR6KRsCjqAimtrv9zvbPObZLgsJ3ZthmkQs
+
 nuget:
   disable_publish_on_pr: true
 
@@ -73,3 +77,14 @@ deploy:
     secure: NGDRiYcrJaLN2PkRszWIVg==
   on:
     APPVEYOR_REPO_TAG: true
+after_deploy:
+- pwsh: >-
+    if ($env:APPVEYOR_REPO_TAG -eq $true) {
+        Copy-Item -Path ConfuserEx.zip -Destination .\chocolatey-packages\confuserex\tools
+        Copy-Item -Path ConfuserEx-CLI.zip -Destination .\chocolatey-packages\confuserex.commandline\tools
+        .\chocolatey-packages\New-ChocolateyPackage.ps1 -PackageVersion $env:APPVEYOR_REPO_TAG_NAME
+        choco apikey --key $env:CHOCO_API_KEY --source https://push.chocolatey.org/
+        Get-ChildItem -Path .\chocolatey-packages -Filter *.nupkg | ForEach-Object {
+            choco push $_.FullName --source https://push.chocolatey.org/
+        }
+    }
