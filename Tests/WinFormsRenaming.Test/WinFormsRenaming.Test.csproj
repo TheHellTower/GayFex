@@ -11,10 +11,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
-    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
+    <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
     <ProjectReference Include="..\WinFormsRenaming\WinFormsRenaming.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>

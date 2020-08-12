@@ -12,9 +12,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
+    <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
     <ProjectReference Include="..\118_EnhancedStrongName\118_EnhancedStrongName.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
