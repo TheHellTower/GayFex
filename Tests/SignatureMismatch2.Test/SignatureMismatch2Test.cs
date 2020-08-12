@@ -55,7 +55,7 @@ namespace SignatureMismatch2.Test {
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
 				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("Derived", await stdout.ReadLineAsync());
+				Assert.Equal("External", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);

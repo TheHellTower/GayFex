@@ -4,23 +4,18 @@ using SignatureMismatch2Helper;
 namespace SignatureMismatch {
 	public interface IInterface
 	{
-		void TestMethod(Base b);
+		void Method(External obj);
 	}
 
 	public class Class : IInterface
 	{
-		public void TestMethod(Base b) => Console.WriteLine(b.Name);
-	}
-
-	public class Derived : Base
-	{
-		public override string Name => "Derived";
+		public void Method(External obj) => Console.WriteLine(obj.Name);
 	}
 
 	public class Program {
 		static int Main(string[] args) {
 			Console.WriteLine("START");
-			new Class().TestMethod(new Derived());
+			new Class().Method(new External());
 			Console.WriteLine("END");
 
 			return 42;
