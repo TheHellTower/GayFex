@@ -15,8 +15,8 @@ namespace SignatureMismatch.Test {
 		public SignatureMismatchTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		[Fact]		
-        [Trait("Category", "Protection")]
+		[Fact]
+		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/78")]
 		public async Task SignatureMismatch() {
@@ -30,6 +30,9 @@ namespace SignatureMismatch.Test {
 				OutputDirectory = outputDir
 			};
 			proj.Add(new ProjectModule() { Path = inputFile });
+			proj.Rules.Add(new Rule {
+				new SettingItem<Protection>("rename")
+			});
 
 			var parameters = new ConfuserParameters {
 				Project = proj,
