@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
 using Confuser.UnitTest;
@@ -7,11 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace WpfRenaming.Test {
-	public class ProcessWpfTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public ProcessWpfTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public class ProcessWpfTest : TestBase {
+		public ProcessWpfTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		/// <see cref="https://github.com/mkaring/ConfuserEx/issues/1"/>
 		[Fact]

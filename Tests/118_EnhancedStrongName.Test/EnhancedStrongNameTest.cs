@@ -1,15 +1,11 @@
-using System;
 using System.Threading.Tasks;
 using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace EnhancedStrongName.Test {
-	public class EnhancedStrongNameTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public EnhancedStrongNameTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public class EnhancedStrongNameTest : TestBase {
+		public EnhancedStrongNameTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Fact]
 		[Trait("Category", "core")]

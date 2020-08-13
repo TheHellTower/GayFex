@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -9,11 +8,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace CompressorWithResx.Test {
-	public sealed class CompressTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public CompressTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public sealed class CompressTest : TestBase {
+		public CompressTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Theory]
 		[MemberData(nameof(CompressAndExecuteTestData))]

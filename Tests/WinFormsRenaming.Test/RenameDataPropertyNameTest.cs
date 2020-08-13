@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
 using Confuser.UnitTest;
@@ -7,11 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace WinFormsRenaming.Test {
-	public class RenameDataPropertyNameTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public RenameDataPropertyNameTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public class RenameDataPropertyNameTest : TestBase {
+		public RenameDataPropertyNameTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Fact]
 		[Trait("Category", "Protection")]

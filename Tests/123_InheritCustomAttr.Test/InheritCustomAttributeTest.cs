@@ -9,11 +9,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace _123_InheritCustomAttr.Test {
-	public class InheritCustomAttributeTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public InheritCustomAttributeTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public class InheritCustomAttributeTest : TestBase {
+		public InheritCustomAttributeTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Theory]
 		[MemberData(nameof(InheritCustomAttributeData))]

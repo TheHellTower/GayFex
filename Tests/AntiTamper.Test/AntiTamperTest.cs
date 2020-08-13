@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
 using Confuser.UnitTest;
@@ -7,11 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace AntiTamper.Test {
-	public sealed class AntiTamperTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public AntiTamperTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public sealed class AntiTamperTest : TestBase {
+		public AntiTamperTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Theory]
 		[InlineData("normal")]

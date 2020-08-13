@@ -9,11 +9,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace DynamicTypeRename.Test {
-	public class RenameDynamicTypeTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public RenameDynamicTypeTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public class RenameDynamicTypeTest : TestBase {
+		public RenameDynamicTypeTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Theory]
 		[MemberData(nameof(RenameDynamicTypeData))]

@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -6,12 +5,9 @@ using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace VisualBasicRenamingResx.Test {
-	public sealed class RenamingTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public RenamingTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+namespace VisualBasicRenamingResx.Test{
+	public sealed class RenamingTest : TestBase {
+		public RenamingTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Fact]
 		[Trait("Category", "Protection")]

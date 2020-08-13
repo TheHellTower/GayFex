@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
 using Confuser.UnitTest;
@@ -7,11 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace SignatureMismatch2.Test {
-	public class SignatureMismatch2Test {
-		private readonly ITestOutputHelper outputHelper;
-
-		public SignatureMismatch2Test(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public class SignatureMismatch2Test : TestBase {
+		public SignatureMismatch2Test(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Fact]
 		[Trait("Category", "Protection")]
