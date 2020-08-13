@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Confuser.Core.Services;
 using dnlib.DotNet.Emit;
@@ -24,14 +23,14 @@ namespace Confuser.Core.Test.Services {
 			var thisTypeDef = moduleDef.Find("Confuser.Core.Test.Services.TraceServiceTest", false);
 			var refMethod = thisTypeDef.FindMethod(nameof(TestReferenceMethod));
 
-            var traceService = new TraceService();
-            var methodTrace = traceService.Trace(refMethod);
+			var traceService = new TraceService();
+			var methodTrace = traceService.Trace(refMethod);
 
-            var getMethodCall = refMethod.Body.Instructions.Single(i => i.OpCode == OpCodes.Call && i.Operand.ToString().Contains("GetMethod"));
-            var arguments = methodTrace.TraceArguments(getMethodCall);
+			var getMethodCall = refMethod.Body.Instructions.Single(i =>
+				i.OpCode == OpCodes.Call && i.Operand.ToString().Contains("GetMethod"));
+			var arguments = methodTrace.TraceArguments(getMethodCall);
 
-            Assert.NotNull(arguments);
+			Assert.NotNull(arguments);
 		}
-
 	}
 }
