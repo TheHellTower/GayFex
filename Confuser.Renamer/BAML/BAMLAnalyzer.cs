@@ -261,6 +261,11 @@ namespace Confuser.Renamer.BAML {
 			}
 		}
 
+		void AddPropertyDefReference(PropertyDef propertyDef, INameReference<PropertyDef> reference) {
+			service.ReduceRenameMode(propertyDef, RenameMode.Letters);
+			service.AddReference(propertyDef, reference);
+		}
+
 		void ProcessBAMLElement(BamlElement root, BamlElement elem) {
 			ProcessElementHeader(elem);
 			ProcessElementBody(root, elem);
@@ -609,11 +614,17 @@ namespace Confuser.Renamer.BAML {
 			var typeName = part.GetTypeName();
 			var propertyName = part.GetPropertyName();
 			if (!string.IsNullOrWhiteSpace(typeName)) {
-				var sig = ResolveType(typeName, out var prefix);
-				if (sig != null && context.Modules.Contains((ModuleDefMD) sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-					var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
+				var sig = ResolveType(typeName, out _);
+				var basicTypeDef = sig?.ToBasicTypeDefOrRef().ResolveTypeDef();
+				if (!(basicTypeDef is null) && context.Modules.Contains(basicTypeDef.Module as ModuleDefMD)) {
+					var propDef = basicTypeDef.FindPropertyCheckBaseType(propertyName);
+					var reference = new BAMLPathTypeReference(xmlnsCtx, sig, propDef, part);
 					AddTypeSigReference(sig, reference);
-					return;
+
+					if (!(propDef is null)) {
+						AddPropertyDefReference(propDef, reference);
+						return; // Return to avoid blocking renaming of the property.
+					}
 				}
 			}
 

@@ -7,10 +7,11 @@ using Confuser.Renamer.BAML;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal sealed class BAMLPathTypeReference : INameReference<TypeDef> {
+	internal sealed class BAMLPathTypeReference : INameReference<TypeDef>, INameReference<PropertyDef> {
 		PropertyPathPartUpdater? PropertyInfo { get; }
 		PropertyPathIndexUpdater? IndexerInfo { get; }
 		private readonly TypeSig sig;
+		readonly PropertyDef prop;
 		private readonly BAMLAnalyzer.XmlNsContext xmlnsCtx;
 
 		public bool ShouldCancelRename => false;
@@ -26,8 +27,10 @@ namespace Confuser.Renamer.References {
 		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, PropertyPathIndexUpdater indexerInfo) : this(xmlnsCtx, sig) => 
 			IndexerInfo = indexerInfo;
 
-		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, PropertyPathPartUpdater propertyInfo) : this(xmlnsCtx, sig) => 
+		public BAMLPathTypeReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, PropertyDef property, PropertyPathPartUpdater propertyInfo) : this(xmlnsCtx, sig) {
 			PropertyInfo = propertyInfo;
+			prop = property;
+		}
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			string name = sig.ReflectionName;
@@ -43,7 +46,7 @@ namespace Confuser.Renamer.References {
 			else {
 				Debug.Assert(PropertyInfo != null, nameof(PropertyInfo) + " != null");
 				var info = PropertyInfo.Value;
-				var propertyName = info.GetPropertyName();
+				var propertyName = prop?.Name ?? info.GetPropertyName();
 				var newName = string.Format(CultureInfo.InvariantCulture, "({0}.{1})", name, propertyName);
 				if (string.Equals(info.Name, newName, StringComparison.Ordinal)) return false;
 				info.Name = newName;
