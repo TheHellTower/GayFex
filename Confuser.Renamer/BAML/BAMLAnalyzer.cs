@@ -253,17 +253,16 @@ namespace Confuser.Renamer.BAML {
 			foreach (ITypeDefOrRef type in typeSig.FindTypeRefs()) {
 				TypeDef typeDef = type.ResolveTypeDefThrow();
 				if (context.Modules.Contains((ModuleDefMD)typeDef.Module)) {
-					service.ReduceRenameMode(typeDef, RenameMode.Letters);
-					if (type is TypeRef)
-						service.AddReference(typeDef, new TypeRefReference((TypeRef)type, typeDef));
-					service.AddReference(typeDef, reference);
+					AddDefReference(typeDef, reference);
+					if (type is TypeRef typeRef)
+						service.AddReference(typeDef, new TypeRefReference(typeRef, typeDef));
 				}
 			}
 		}
 
-		void AddPropertyDefReference(PropertyDef propertyDef, INameReference<PropertyDef> reference) {
-			service.ReduceRenameMode(propertyDef, RenameMode.Letters);
-			service.AddReference(propertyDef, reference);
+		void AddDefReference<T>(T def, INameReference<T> reference) where T : IDnlibDef {
+			service.ReduceRenameMode(def, RenameMode.Letters);
+			service.AddReference(def, reference);
 		}
 
 		void ProcessBAMLElement(BamlElement root, BamlElement elem) {
@@ -464,15 +463,13 @@ namespace Confuser.Renamer.BAML {
 							if (property != null) {
 								var reference = new BAMLConverterMemberReference(xmlnsCtx, sig, property, rec);
 								AddTypeSigReference(sig, reference);
-								service.ReduceRenameMode(property, RenameMode.Letters);
-								service.AddReference(property, reference);
+								AddDefReference(property, reference);
 							}
 							FieldDef field = typeDef.FindField(cmdName);
 							if (field != null) {
 								var reference = new BAMLConverterMemberReference(xmlnsCtx, sig, field, rec);
 								AddTypeSigReference(sig, reference);
-								service.ReduceRenameMode(field, RenameMode.Letters);
-								service.AddReference(field, reference);
+								AddDefReference(field, reference);
 							}
 							if (property == null && field == null)
 								context.Logger.WarnFormat("Could not resolve command '{0}' in '{1}'.", cmd, CurrentBAMLName);
@@ -622,7 +619,7 @@ namespace Confuser.Renamer.BAML {
 					AddTypeSigReference(sig, reference);
 
 					if (!(propDef is null)) {
-						AddPropertyDefReference(propDef, reference);
+						AddDefReference(propDef, reference);
 						return; // Return to avoid blocking renaming of the property.
 					}
 				}
