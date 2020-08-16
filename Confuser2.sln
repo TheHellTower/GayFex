@@ -74,9 +74,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "123_InheritCustomAttr", "Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "123_InheritCustomAttr.Test", "Tests\123_InheritCustomAttr.Test\123_InheritCustomAttr.Test.csproj", "{DA7DF89C-447D-4C2D-9C75-933037BF245E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "161_DynamicTypeRename", "Tests\161_DynamicTypeRename\161_DynamicTypeRename.csproj", "{034B1C28-96B9-486A-B238-9C651EAA32CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "161_DynamicTypeRename", "Tests\161_DynamicTypeRename\161_DynamicTypeRename.csproj", "{034B1C28-96B9-486A-B238-9C651EAA32CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "161_DynamicTypeRename.Test", "Tests\161_DynamicTypeRename.Test\161_DynamicTypeRename.Test.csproj", "{2B914EE7-F206-4A83-B435-460D054315BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "161_DynamicTypeRename.Test", "Tests\161_DynamicTypeRename.Test\161_DynamicTypeRename.Test.csproj", "{2B914EE7-F206-4A83-B435-460D054315BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "193_ConstantsInlining", "Tests\193_ConstantsInlining\193_ConstantsInlining.csproj", "{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "193_ConstantsInlining.Lib", "Tests\193_ConstantsInlining.Lib\193_ConstantsInlining.Lib.csproj", "{630BF262-768C-4085-89B1-9FEF7375F442}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "193_ConstantsInlining.Test", "Tests\193_ConstantsInlining.Test\193_ConstantsInlining.Test.csproj", "{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -204,6 +210,18 @@ Global
 		{2B914EE7-F206-4A83-B435-460D054315BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B914EE7-F206-4A83-B435-460D054315BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B914EE7-F206-4A83-B435-460D054315BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{630BF262-768C-4085-89B1-9FEF7375F442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{630BF262-768C-4085-89B1-9FEF7375F442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{630BF262-768C-4085-89B1-9FEF7375F442}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{630BF262-768C-4085-89B1-9FEF7375F442}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -230,6 +248,9 @@ Global
 		{DA7DF89C-447D-4C2D-9C75-933037BF245E} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{034B1C28-96B9-486A-B238-9C651EAA32CA} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{2B914EE7-F206-4A83-B435-460D054315BB} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{630BF262-768C-4085-89B1-9FEF7375F442} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}
