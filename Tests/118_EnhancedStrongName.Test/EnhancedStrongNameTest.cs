@@ -18,7 +18,7 @@ namespace EnhancedStrongName.Test {
 		[Fact]		
         [Trait("Category", "core")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/118")]
-		public async Task SignatureMismatch() {
+		public async Task EnhancedStrongName() {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp");
 			var inputFile = Path.Combine(baseDir, "118_EnhancedStrongName.exe");

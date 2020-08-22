@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
+    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
     <ProjectReference Include="..\118_EnhancedStrongName\118_EnhancedStrongName.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
