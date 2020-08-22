@@ -10,21 +10,23 @@ using Xunit.Abstractions;
 namespace Confuser.UnitTest {
 	public static class TestRunner {
 		public static async Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
-			ITestOutputHelper outputHelper, Action<string> outputAction = null, SettingItem<Packer> packer = null,
+			ITestOutputHelper outputHelper, string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
 			Action<ProjectModule> projectModuleAction = null) =>
 
-			await Run(new[] {inputFileName}, expectedOutput, protection, outputHelper, outputAction, packer,
+			await Run(new[] {inputFileName}, expectedOutput, protection, outputHelper, outputDirSuffix, outputAction, packer,
 				projectModuleAction);
 
 		public static async Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection, ITestOutputHelper outputHelper,
-			Action<string> outputAction = null, SettingItem<Packer> packer = null,
+			string outputDirSuffix = "", Action<string> outputAction = null,  SettingItem<Packer> packer = null,
 			Action<ProjectModule> projectModuleAction = null) {
 
 			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "obfuscated_" + Guid.NewGuid().ToString());
+			var outputDir = Path.Combine(baseDir, "obfuscated" + outputDirSuffix);
+			if (Directory.Exists(outputDir)) {
+				Directory.Delete(outputDir, true);
+			}
 			string entryInputFileName = Path.Combine(baseDir, inputFileNames[0]);
 			var entryOutputFileName = Path.Combine(outputDir, inputFileNames[0]);
-			FileUtilities.ClearOutput(entryOutputFileName);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir,
@@ -84,8 +86,6 @@ namespace Confuser.UnitTest {
 					Assert.Equal(42, process.ExitCode);
 				}
 			}
-
-			FileUtilities.ClearOutput(entryOutputFileName);
 		}
 	}
 }

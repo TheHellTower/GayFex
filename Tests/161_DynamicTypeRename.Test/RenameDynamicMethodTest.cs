@@ -30,7 +30,8 @@ namespace DynamicTypeRename.Test {
 					{ "mode", renameMode },
 					{ "flatten", flatten.ToString() }
 				},
-				outputHelper
+				outputHelper,
+				$"_{renameMode}_{flatten}"
 			);
 
 		public static IEnumerable<object[]> RenameDynamicTypeData() {

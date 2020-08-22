@@ -24,6 +24,7 @@ namespace _123_InheritCustomAttr.Test {
 				new[] {"Monday", "43", "1"},
 				new SettingItem<Protection>("rename") {{"mode", renameMode}, {"flatten", flatten ? "True" : "False"}},
 				outputHelper,
+				$"_{renameMode}_{flatten}",
 				l => Assert.False(l.StartsWith("[WARN]"), "Logged line may not start with [WARN]\r\n" + l));
 
 		public static IEnumerable<object[]> InheritCustomAttributeData() {
