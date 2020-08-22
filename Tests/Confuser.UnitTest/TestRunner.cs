@@ -10,19 +10,18 @@ using Xunit.Abstractions;
 namespace Confuser.UnitTest {
 	public static class TestRunner {
 		public static async Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
-			ITestOutputHelper outputHelper,
-			string tempDirectory = "testtmp", Action<string> outputAction = null, SettingItem<Packer> packer = null,
+			ITestOutputHelper outputHelper, Action<string> outputAction = null, SettingItem<Packer> packer = null,
 			Action<ProjectModule> projectModuleAction = null) =>
 
-			await Run(new[] {inputFileName}, expectedOutput, protection, outputHelper, tempDirectory, outputAction, packer,
+			await Run(new[] {inputFileName}, expectedOutput, protection, outputHelper, outputAction, packer,
 				projectModuleAction);
 
 		public static async Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection, ITestOutputHelper outputHelper,
-			string tempDirectory = "testtmp", Action<string> outputAction = null, SettingItem<Packer> packer = null,
+			Action<string> outputAction = null, SettingItem<Packer> packer = null,
 			Action<ProjectModule> projectModuleAction = null) {
 
 			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, tempDirectory);
+			var outputDir = Path.Combine(baseDir, "obfuscated_" + Guid.NewGuid().ToString());
 			string entryInputFileName = Path.Combine(baseDir, inputFileNames[0]);
 			var entryOutputFileName = Path.Combine(outputDir, inputFileNames[0]);
 			FileUtilities.ClearOutput(entryOutputFileName);
