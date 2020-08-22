@@ -12,14 +12,14 @@ namespace Confuser.UnitTest {
 		public static async Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
 			ITestOutputHelper outputHelper,
 			string tempDirectory = "testtmp", Action<string> outputAction = null, SettingItem<Packer> packer = null,
-			bool signWithKey = false) =>
+			Action<ProjectModule> projectModuleAction = null) =>
 
 			await Run(new[] {inputFileName}, expectedOutput, protection, outputHelper, tempDirectory, outputAction, packer,
-				signWithKey);
+				projectModuleAction);
 
 		public static async Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection, ITestOutputHelper outputHelper,
 			string tempDirectory = "testtmp", Action<string> outputAction = null, SettingItem<Packer> packer = null,
-			bool signWithKey = false) {
+			Action<ProjectModule> projectModuleAction = null) {
 
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, tempDirectory);
@@ -34,12 +34,7 @@ namespace Confuser.UnitTest {
 
 			foreach (string name in inputFileNames) {
 				var projectModule = new ProjectModule {Path = Path.Combine(baseDir, name)};
-				if (signWithKey) {
-					projectModule.SNSigKeyPath = Path.Combine(baseDir, "SignatureKey.snk");
-					projectModule.SNPubSigKeyPath = Path.Combine(baseDir, "SignaturePubKey.snk");
-					projectModule.SNKeyPath = Path.Combine(baseDir, "IdentityKey.snk");
-					projectModule.SNPubKeyPath = Path.Combine(baseDir, "IdentityPubKey.snk");
-				}
+				projectModuleAction?.Invoke(projectModule);
 				proj.Add(projectModule);
 			}
 

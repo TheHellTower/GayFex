@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using Confuser.UnitTest;
 using Xunit;
@@ -15,6 +17,11 @@ namespace EnhancedStrongName.Test {
 				new[] {"My strong key token: 79A18AF4CEA8A9BD", "My signature is valid!"},
 				null,
 				outputHelper,
-				signWithKey: true);
+				projectModuleAction: projectModule => {
+					projectModule.SNSigKeyPath = Path.Combine(Environment.CurrentDirectory, "SignatureKey.snk");
+					projectModule.SNPubSigKeyPath = Path.Combine(Environment.CurrentDirectory, "SignaturePubKey.snk");
+					projectModule.SNKeyPath = Path.Combine(Environment.CurrentDirectory, "IdentityKey.snk");
+					projectModule.SNPubKeyPath = Path.Combine(Environment.CurrentDirectory, "IdentityPubKey.snk");
+				});
 	}
 }
