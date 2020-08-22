@@ -14,7 +14,7 @@ namespace ConstantsInlining.Test {
 		[Trait("Protection", "constants")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/193")]
 		public async Task ConstantInlining() =>
-			await TestRunner.Run(new[] {"193_ConstantsInlining.exe", "193_ConstantsInlining.Lib.dll"},
+			await Run(new[] {"193_ConstantsInlining.exe", "193_ConstantsInlining.Lib.dll"},
 				new[] {"From External"},
 				new SettingItem<Protection>("constants") {{"elements", "S"}}, outputHelper);
 	}

@@ -15,7 +15,7 @@ namespace WpfRenaming.Test {
 		[Trait("Protection", "rename")]
 		[Trait("Technology", "WPF")]
 		public async Task ProcessWithoutObfuscationTest() =>
-			await TestRunner.Run(
+			await Run(
 				"WpfRenaming.dll",
 				null,
 				null,
@@ -26,7 +26,7 @@ namespace WpfRenaming.Test {
 		[Trait("Protection", "rename")]
 		[Trait("Technology", "WPF")]
 		public async Task ProcessWithObfuscationTest() =>
-			await TestRunner.Run(
+			await Run(
 				"WpfRenaming.dll",
 				null,
 				new SettingItem<Protection>("rename"),

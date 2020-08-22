@@ -16,7 +16,7 @@ namespace AntiTamper.Test {
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "anti tamper")]
 		public async Task ProtectAntiTamperAndExecute(string antiTamperMode) =>
-			await TestRunner.Run("AntiTamper.exe",
+			await Run("AntiTamper.exe",
 				new[] {"This is a test."},
 				new SettingItem<Protection>("anti tamper") {{"mode", antiTamperMode}},
 				outputHelper);

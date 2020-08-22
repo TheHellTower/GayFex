@@ -18,7 +18,7 @@ namespace DynamicTypeRename.Test {
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/161")]
 		public async Task RenameDynamicType(string renameMode, bool flatten) =>
-			await TestRunner.Run(
+			await Run(
 				"161_DynamicTypeRename.exe",
 				new [] {
 					"Type declaration done",

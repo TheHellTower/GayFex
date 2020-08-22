@@ -15,7 +15,7 @@ namespace WinFormsRenaming.Test {
 		[Trait("Technology", "Windows Forms")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/54")]
 		public async Task RenameWindowsFormsTest() =>
-			await TestRunner.Run(
+			await Run(
 				"WinFormsRenaming.dll",
 				null,
 				new SettingItem<Protection>("rename"),

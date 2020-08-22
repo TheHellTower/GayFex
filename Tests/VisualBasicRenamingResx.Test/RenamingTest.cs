@@ -14,7 +14,7 @@ namespace VisualBasicRenamingResx.Test{
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/25")]
 		public async Task ProtectAndExecuteTest() =>
-			await TestRunner.Run("VisualBasicRenamingResx.exe",
+			await Run("VisualBasicRenamingResx.exe",
 				new[] {"Test (neutral)"},
 				new SettingItem<Protection>("rename"),
 				outputHelper);
