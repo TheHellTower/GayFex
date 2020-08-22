@@ -3,7 +3,7 @@
   <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFramework>net461</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
