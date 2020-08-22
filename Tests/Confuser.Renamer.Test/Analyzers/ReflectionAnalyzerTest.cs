@@ -13,7 +13,9 @@ using ILogger = Confuser.Core.ILogger;
 
 namespace Confuser.Renamer.Test.Analyzers {
 	public sealed class ReflectionAnalyzerTest {
+#pragma warning disable IDE0044 // Add readonly modifier
 		private string _referenceField;
+#pragma warning restore IDE0044 // Add readonly modifier
 		private readonly ITestOutputHelper _outputHelper;
 
 		public ReflectionAnalyzerTest(ITestOutputHelper outputHelper) =>
