@@ -282,7 +282,6 @@ namespace Confuser.Renamer.Analyzers {
 				}
 			}
 
-			target.MethodSig = importer.Import(target.MethodSig);
 			if (target is MemberRef methodRef)
 				AddImportReference(service, modules, module, baseMethodDef, methodRef);
 
