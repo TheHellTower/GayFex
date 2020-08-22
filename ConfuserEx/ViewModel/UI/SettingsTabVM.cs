@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -35,7 +36,7 @@ namespace ConfuserEx.ViewModel {
 			get { return selectedList; }
 			set {
 				if (SetProperty(ref selectedList, value, "SelectedList"))
-					SelectedRuleIndex = -1;
+					SelectedRuleIndex = value.Rules.Any() ? 0 : -1;
 			}
 		}
 
@@ -55,8 +56,6 @@ namespace ConfuserEx.ViewModel {
 					SelectedRuleIndex = SelectedList.Rules.Count - 1;
 				}, () => SelectedList != null);
 
-				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList") { cmd.RaiseCanExecuteChanged(); } };
-
 				return cmd;
 			}
 		}
@@ -73,23 +72,22 @@ namespace ConfuserEx.ViewModel {
 					SelectedRuleIndex = selIndex >= SelectedList.Rules.Count ? SelectedList.Rules.Count - 1 : selIndex;
 				}, () => SelectedRuleIndex != -1 && SelectedList != null);
 
-				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") { cmd.RaiseCanExecuteChanged(); } };
-
 				return cmd;
 			}
 		}
 
 		public ICommand Edit {
 			get {
-				var cmd = new RelayCommand(() => {
-					Debug.Assert(SelectedRuleIndex != -1);
-					var dialog = new ProjectRuleView(App.Project, SelectedList.Rules[SelectedRuleIndex]);
+				var cmd = new RelayCommand<ProjectRuleVM>(rule => {
+					if (rule is null) {
+						Debug.Assert(SelectedRuleIndex != -1);
+						rule = SelectedList.Rules[SelectedRuleIndex];
+					}
+					var dialog = new ProjectRuleView(App.Project, rule);
 					dialog.Owner = Application.Current.MainWindow;
 					dialog.ShowDialog();
 					dialog.Cleanup();
-				}, () => SelectedRuleIndex != -1 && SelectedList != null);
-
-				PropertyChanged += (sender, args) => { if (args.PropertyName == "SelectedList" || args.PropertyName == "SelectedRuleIndex") { cmd.RaiseCanExecuteChanged(); } };
+				}, rule => !(rule is null) || (SelectedRuleIndex != -1 && SelectedList != null));
 
 				return cmd;
 			}
@@ -102,6 +100,9 @@ namespace ConfuserEx.ViewModel {
 			};
 			OnPropertyChanged("ModulesView");
 			HasPacker = App.Project.Packer != null;
+
+			if (SelectedList is null)
+				SelectedList = ModulesView[0] as IRuleContainer;
 		}
 
 		protected override void OnPropertyChanged(string property) {

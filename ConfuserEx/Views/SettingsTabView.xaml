@@ -3,7 +3,7 @@
                     xmlns:local="clr-namespace:ConfuserEx"
                     xmlns:vm="clr-namespace:ConfuserEx.ViewModel">
     <DataTemplate DataType="{x:Type vm:SettingsTabVM}">
-        <Grid Background="Transparent">
+        <Grid Background="Transparent" x:Name="PART_SettingsTabGrid">
             <Grid.Resources>
                 <local:ComponentConverter x:Key="PackerConverter" x:Shared="False"
                                           Components="{Binding App.Project.Packers}" />
@@ -35,7 +35,7 @@
                    HorizontalAlignment="Left" Margin="5,0,0,0" />
 
             <ListBox Grid.Row="2" Grid.Column="0" Margin="5" ItemsSource="{Binding ModulesView}"
-                     SelectedItem="{Binding SelectedList, Mode=OneWayToSource}">
+                     SelectedItem="{Binding SelectedList}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock>
@@ -51,10 +51,17 @@
             </ListBox>
             <ListBox Grid.Row="2" Grid.Column="1" Margin="5" FontFamily="Consolas"
                      ItemsSource="{Binding SelectedList.Rules}"
-                     SelectedIndex="{Binding SelectedRuleIndex, Mode=TwoWay}">
+                     SelectedIndex="{Binding SelectedRuleIndex}"
+                     HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock x:Name="txt" Text="{Binding Pattern}" />
+                        <TextBlock x:Name="txt" Text="{Binding Pattern}">
+                            <TextBlock.InputBindings>
+                                <MouseBinding Gesture="LeftDoubleClick" 
+                                              Command="{Binding DataContext.Edit, ElementName=PART_SettingsTabGrid}" 
+                                              CommandParameter="{Binding}" />
+                            </TextBlock.InputBindings>
+                        </TextBlock>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding Expression}" Value="{x:Null}">
                                 <Setter TargetName="txt" Property="Foreground" Value="Red" />
