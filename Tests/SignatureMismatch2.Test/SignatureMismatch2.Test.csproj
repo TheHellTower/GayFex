@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
-    <RootNamespace>EnhancedStrongName.Test</RootNamespace>
+    <RootNamespace>SignatureMismatch2.Test</RootNamespace>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -17,14 +17,8 @@
     <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
     <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
-    <ProjectReference Include="..\118_EnhancedStrongName\118_EnhancedStrongName.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\118_EnhancedStrongName\*.snk" Link="%(FileName).snk">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\SignatureMismatch2\SignatureMismatch2.csproj" />
   </ItemGroup>
 
 </Project>
