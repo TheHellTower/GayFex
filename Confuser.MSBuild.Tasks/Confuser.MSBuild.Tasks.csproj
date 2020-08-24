@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.7.*" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.9.*" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
