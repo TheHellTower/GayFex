@@ -21,8 +21,7 @@ namespace SignatureMismatch.Test {
 					"Dictionary count: 1",
 					"[Test1] = Test2"
 				},
-				new SettingItem<Protection>("rename"),
-				outputHelper
+				new SettingItem<Protection>("rename")
 			);
 	}
 }

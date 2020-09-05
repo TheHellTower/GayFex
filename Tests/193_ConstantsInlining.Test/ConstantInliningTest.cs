@@ -16,6 +16,6 @@ namespace ConstantsInlining.Test {
 		public async Task ConstantInlining() =>
 			await Run(new[] {"193_ConstantsInlining.exe", "193_ConstantsInlining.Lib.dll"},
 				new[] {"From External"},
-				new SettingItem<Protection>("constants") {{"elements", "S"}}, outputHelper);
+				new SettingItem<Protection>("constants") {{"elements", "S"}});
 	}
 }

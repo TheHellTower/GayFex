@@ -19,7 +19,6 @@ namespace WinFormsRenaming.Test {
 				"WinFormsRenaming.dll",
 				null,
 				new SettingItem<Protection>("rename"),
-				outputHelper,
 				outputAction: message => Assert.DoesNotContain("Failed to extract binding property name in", message));
 	}
 }

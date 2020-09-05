@@ -16,7 +16,6 @@ namespace EnhancedStrongName.Test {
 			await Run("118_EnhancedStrongName.exe",
 				new[] {"My strong key token: 79A18AF4CEA8A9BD", "My signature is valid!"},
 				null,
-				outputHelper,
 				projectModuleAction: projectModule => {
 					projectModule.SNSigKeyPath = Path.Combine(Environment.CurrentDirectory, "SignatureKey.snk");
 					projectModule.SNPubSigKeyPath = Path.Combine(Environment.CurrentDirectory, "SignaturePubKey.snk");

@@ -22,7 +22,6 @@ namespace CompressorWithResx.Test {
 				resourceProtectionMode != "none"
 					? new SettingItem<Protection>("resources") {{"mode", resourceProtectionMode}}
 					: null,
-				outputHelper,
 				$"_{compatKey}_{deriverKey}_{resourceProtectionMode}",
 				packer: new SettingItem<Packer>("compressor") {{"compat", compatKey}, {"key", deriverKey}});
 

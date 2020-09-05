@@ -30,7 +30,6 @@ namespace DynamicTypeRename.Test {
 					{ "mode", renameMode },
 					{ "flatten", flatten.ToString() }
 				},
-				outputHelper,
 				$"_{renameMode}_{flatten}"
 			);
 

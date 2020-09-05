@@ -18,8 +18,7 @@ namespace WpfRenaming.Test {
 			await Run(
 				"WpfRenaming.dll",
 				null,
-				null,
-				outputHelper);
+				null);
 
 		[Fact]
 		[Trait("Category", "Protection")]
@@ -29,7 +28,6 @@ namespace WpfRenaming.Test {
 			await Run(
 				"WpfRenaming.dll",
 				null,
-				new SettingItem<Protection>("rename"),
-				outputHelper);
+				new SettingItem<Protection>("rename"));
 	}
 }

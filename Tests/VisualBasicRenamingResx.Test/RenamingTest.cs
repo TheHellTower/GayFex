@@ -16,7 +16,6 @@ namespace VisualBasicRenamingResx.Test{
 		public async Task ProtectAndExecuteTest() =>
 			await Run("VisualBasicRenamingResx.exe",
 				new[] {"Test (neutral)"},
-				new SettingItem<Protection>("rename"),
-				outputHelper);
+				new SettingItem<Protection>("rename"));
 	}
 }

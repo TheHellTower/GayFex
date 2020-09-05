@@ -19,7 +19,6 @@ namespace AntiTamper.Test {
 			await Run("AntiTamper.exe",
 				new[] {"This is a test."},
 				new SettingItem<Protection>("anti tamper") {{"mode", antiTamperMode}},
-				outputHelper,
 				"_" + antiTamperMode);
 	}
 }

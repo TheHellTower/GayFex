@@ -17,8 +17,7 @@ namespace SignatureMismatch2.Test {
 			await Run(
 				new [] { "SignatureMismatch2.exe", "SignatureMismatch2Helper.dll" },
 				new [] { "External", "External" },
-				new SettingItem<Protection>("rename") { ["renPublic"] = "true" },
-				outputHelper
+				new SettingItem<Protection>("rename") { ["renPublic"] = "true" }
 			);
 	}
 }
