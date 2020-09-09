@@ -215,7 +215,7 @@ namespace Confuser.Core {
 					ret.Add(rule, parser.Parse(rule.Pattern));
 				}
 				catch (InvalidPatternException ex) {
-					context.Logger.ErrorFormat("Invalid rule pattern: " + rule.Pattern + ".", ex);
+					context.Logger.ErrorFormat("Invalid rule pattern: " + rule.Pattern + ": {0}", ex.Message);
 					throw new ConfuserException(ex);
 				}
 				foreach (var setting in rule) {
