@@ -52,8 +52,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsRenaming", "Tests\W
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsRenaming.Test", "Tests\WinFormsRenaming.Test\WinFormsRenaming.Test.csproj", "{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib", "dnlib\src\dnlib.csproj", "{18A3AD8D-DBF6-4489-A407-2972272CC6CB}"
-EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "VisualBasicRenamingResx", "Tests\VisualBasicRenamingResx\VisualBasicRenamingResx.vbproj", "{4B2CE997-8157-40B4-B42F-51CE33954AAC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualBasicRenamingResx.Test", "Tests\VisualBasicRenamingResx.Test\VisualBasicRenamingResx.Test.csproj", "{40C6A1BB-69AA-4869-81EE-41917D0B009A}"
@@ -78,17 +76,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "161_DynamicTypeRename", "Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "161_DynamicTypeRename.Test", "Tests\161_DynamicTypeRename.Test\161_DynamicTypeRename.Test.csproj", "{2B914EE7-F206-4A83-B435-460D054315BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "193_ConstantsInlining", "Tests\193_ConstantsInlining\193_ConstantsInlining.csproj", "{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "193_ConstantsInlining", "Tests\193_ConstantsInlining\193_ConstantsInlining.csproj", "{AB2E1440-7EC2-45A2-8CF3-2975DE8A57AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "193_ConstantsInlining.Lib", "Tests\193_ConstantsInlining.Lib\193_ConstantsInlining.Lib.csproj", "{630BF262-768C-4085-89B1-9FEF7375F442}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "193_ConstantsInlining.Lib", "Tests\193_ConstantsInlining.Lib\193_ConstantsInlining.Lib.csproj", "{630BF262-768C-4085-89B1-9FEF7375F442}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "193_ConstantsInlining.Test", "Tests\193_ConstantsInlining.Test\193_ConstantsInlining.Test.csproj", "{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "193_ConstantsInlining.Test", "Tests\193_ConstantsInlining.Test\193_ConstantsInlining.Test.csproj", "{E9D90B2A-F563-4A5E-9EFB-B1D6B1E7F8CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignatureMismatch2", "Tests\SignatureMismatch2\SignatureMismatch2.csproj", "{3504F678-95FA-4DB2-8437-31A927CABC16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignatureMismatch2", "Tests\SignatureMismatch2\SignatureMismatch2.csproj", "{3504F678-95FA-4DB2-8437-31A927CABC16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignatureMismatch2Helper", "Tests\SignatureMismatch2Helper\SignatureMismatch2Helper.csproj", "{02948DD6-47BD-4C82-9B4B-78931DB23B8A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignatureMismatch2Helper", "Tests\SignatureMismatch2Helper\SignatureMismatch2Helper.csproj", "{02948DD6-47BD-4C82-9B4B-78931DB23B8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignatureMismatch2.Test", "Tests\SignatureMismatch2.Test\SignatureMismatch2.Test.csproj", "{87BEF4D7-813E-48BA-96FE-E3A24BF2DC34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignatureMismatch2.Test", "Tests\SignatureMismatch2.Test\SignatureMismatch2.Test.csproj", "{87BEF4D7-813E-48BA-96FE-E3A24BF2DC34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -164,10 +162,6 @@ Global
 		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C8ECB51-EECE-49C3-89EC-CB0AAECCFF7E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{18A3AD8D-DBF6-4489-A407-2972272CC6CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{18A3AD8D-DBF6-4489-A407-2972272CC6CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{18A3AD8D-DBF6-4489-A407-2972272CC6CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{18A3AD8D-DBF6-4489-A407-2972272CC6CB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4B2CE997-8157-40B4-B42F-51CE33954AAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4B2CE997-8157-40B4-B42F-51CE33954AAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4B2CE997-8157-40B4-B42F-51CE33954AAC}.Release|Any CPU.ActiveCfg = Release|Any CPU

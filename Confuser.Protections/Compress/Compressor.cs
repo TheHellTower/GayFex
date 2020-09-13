@@ -301,7 +301,7 @@ namespace Confuser.Protections {
 			}
 		}
 
-		class KeyInjector : IModuleWriterListener {
+		class KeyInjector {
 			readonly CompressorContext ctx;
 
 			public KeyInjector(CompressorContext ctx) {
@@ -312,7 +312,7 @@ namespace Confuser.Protections {
 				OnWriterEvent(args.Writer, args.Event);
 			}
 
-			public void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
+			private void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 				if (evt == ModuleWriterEvent.MDBeginCreateTables) {
 					// Add key signature
 					uint sigBlob = writer.Metadata.BlobHeap.Add(ctx.KeySig);
