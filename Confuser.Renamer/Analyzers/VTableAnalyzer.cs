@@ -239,18 +239,18 @@ namespace Confuser.Renamer.Analyzers {
 				service.AddReference(def, new TypeRefReference(typeRef, def));
 		}
 
-		private static GenericInstSig SetupSignatureReferences(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, GenericInstSig typeSig) {
-			var genericType = SetupSignatureReferences(service, modules, module, typeSig.GenericType);
-			var genericArguments = typeSig.GenericArguments.Select(a => SetupSignatureReferences(service, modules, module, a)).ToList();
-			return new GenericInstSig(genericType, genericArguments);
+		private static void SetupSignatureReferences(INameService service, ICollection<ModuleDefMD> modules,
+			ModuleDef module, GenericInstSig typeSig) {
+			SetupSignatureReferences(service, modules, module, typeSig.GenericType);
+			foreach (var genericArgument in typeSig.GenericArguments)
+				SetupSignatureReferences(service, modules, module, genericArgument);
 		}
 
-		private static T SetupSignatureReferences<T>(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, T typeSig) where T : TypeSig {
+		private static void SetupSignatureReferences(INameService service, ICollection<ModuleDefMD> modules, ModuleDef module, TypeSig typeSig) {
 			var asTypeRef = typeSig.TryGetTypeRef();
 			if (asTypeRef != null) {
 				SetupTypeReference(service, modules, module, asTypeRef);
 			}
-			return typeSig;
 		}
 
 		private static void SetupOverwriteReferences(INameService service, ICollection<ModuleDefMD> modules, VTableSlot slot, ModuleDef module) {
@@ -266,10 +266,10 @@ namespace Confuser.Renamer.Analyzers {
 
 			IMethodDefOrRef target;
 			if (baseSlot.MethodDefDeclType is GenericInstSig declType) {
-				var signature = SetupSignatureReferences(service, modules, module, declType);
-				MemberRef targetRef = new MemberRefUser(module, baseMethodDef.Name, baseMethodDef.MethodSig, signature.ToTypeDefOrRef());
+				MemberRef targetRef = new MemberRefUser(module, baseMethodDef.Name, baseMethodDef.MethodSig, declType.ToTypeDefOrRef());
 				targetRef = importer.Import(targetRef);
 				service.AddReference(baseMethodDef, new MemberRefReference(targetRef, baseMethodDef));
+				SetupSignatureReferences(service, modules, module, targetRef.DeclaringType.ToTypeSig() as GenericInstSig);
 
 				target = targetRef;
 			}
