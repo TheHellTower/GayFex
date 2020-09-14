@@ -9,19 +9,19 @@ using Xunit.Abstractions;
 
 namespace Confuser.UnitTest {
 	public abstract class TestBase {
-		protected readonly ITestOutputHelper outputHelper;
+		readonly ITestOutputHelper outputHelper;
 
-		public TestBase(ITestOutputHelper outputHelper) =>
+		protected TestBase(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		public async Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
+		protected async Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
 			Action<ProjectModule> projectModuleAction = null) =>
 
 			await Run(new[] { inputFileName }, expectedOutput, protection, outputDirSuffix, outputAction, packer,
 				projectModuleAction);
 
-		public async Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection,
+		protected async Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
 			Action<ProjectModule> projectModuleAction = null) {
 
