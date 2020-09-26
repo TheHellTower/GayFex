@@ -30,48 +30,26 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 		internal void ProcessBody(MethodDef method) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");
 
-			ProcessLocals(method.Body);
+			foreach (var local in method.Body.Variables) {
+				local.Type = UpdateSignature(local.Type);
+			}
 
 			var il = method.Body.Instructions;
 			for (int i = 0; i < il.Count; i++)
 				RewriteFactory.Process(Service, method, il, ref i);
 		}
 
-		internal void ProcessReturnType(MethodDef method) {
-			var leaf = SignatureUtils.GetLeaf(method.ReturnType);
+		internal TypeSig UpdateSignature(TypeSig original) {
+			var leaf = SignatureUtils.GetLeaf(original);
 			if (leaf is TypeDefOrRefSig typeDefSig && typeDefSig.TypeDef != null) {
 				var scannedDef = Service.GetItem(typeDefSig.TypeDef);
 				if (scannedDef?.IsScambled == true) {
 					TypeSig newSig = scannedDef.CreateGenericTypeSig(null);
-					method.ReturnType = SignatureUtils.CopyModifiers(method.ReturnType, newSig);
+					return SignatureUtils.CopyModifiers(original, newSig);
 				}
 			}
-		}
 
-		private void ProcessLocals(CilBody body) {
-			foreach (var local in body.Variables) {
-				var leaf = SignatureUtils.GetLeaf(local.Type);
-				if (leaf is TypeDefOrRefSig typeDefSig && typeDefSig.TypeDef != null) {
-					var scannedDef = Service.GetItem(typeDefSig.TypeDef);
-					if (scannedDef?.IsScambled == true) {
-						TypeSig newSig = scannedDef.CreateGenericTypeSig(null);
-						local.Type = SignatureUtils.CopyModifiers(local.Type, newSig);
-					}
-				}
-			}
-		}
-
-		internal void ProcessFields(TypeDef type) {
-			foreach (var field in type.Fields) {
-				var leaf = SignatureUtils.GetLeaf(field.FieldType);
-				if (leaf is TypeDefOrRefSig typeDefSig && typeDefSig.TypeDef != null) {
-					var scannedDef = Service.GetItem(typeDefSig.TypeDef);
-					if (scannedDef?.IsScambled == true) {
-						TypeSig newSig = scannedDef.CreateGenericTypeSig(null);
-						field.FieldType = SignatureUtils.CopyModifiers(field.FieldType, newSig);
-					}
-				}
-			}
+			return original;
 		}
 	}
 }

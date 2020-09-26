@@ -31,20 +31,20 @@ namespace Confuser.Protections.TypeScramble {
 			foreach (var def in context.CurrentModule.FindDefinitions().WithProgress(context.Logger)) {
 				switch (def) {
 					case MethodDef md:
-						rewriter.ProcessReturnType(md);
+						md.ReturnType = rewriter.UpdateSignature(md.ReturnType);
 						if (md.HasBody) {
 							rewriter.ProcessBody(md);
 						}
 						break;
 					case TypeDef td:
-						rewriter.ProcessFields(td);
+						foreach (var field in td.Fields) {
+							field.FieldType = rewriter.UpdateSignature(field.FieldType);
+						}
 						break;
 				}
 
 				context.CheckCancellation();
 			}
-
-
 		}
 	}
 }
