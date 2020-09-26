@@ -32,6 +32,9 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			// Delegates are something that shouldn't be touched.
 			if (type.IsDelegate) return false;
 
+			// No entrypoints
+			if (type.Methods.Any(x => x.Module.EntryPoint == x)) return false;
+
 			if (type.IsValueType) return false;
 
 			return true;

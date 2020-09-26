@@ -61,7 +61,7 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 			if (method.IsEntryPoint()) return false;
 
 			// Methods that are part of inheritance shouldn't be scrambled.
-			if (method.HasOverrides || method.IsAbstract) return false;
+			if (method.HasOverrides || method.IsAbstract || method.IsVirtual) return false;
 
 			// Constructors and properties will not be scrambled.
 			// It may be possible for properties with some more investigation.
