@@ -97,6 +97,7 @@ namespace Confuser.Core {
 		protected virtual void GetPluginsInternal(
 			ConfuserContext context, IList<Protection> protections,
 			IList<Packer> packers, IList<ConfuserComponent> components) {
+			protections.Add(new WatermarkingProtection());
 			try {
 				Assembly protAsm = Assembly.Load("Confuser.Protections");
 				AddPlugins(context, protections, packers, components, protAsm);

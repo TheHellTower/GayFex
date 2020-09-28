@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<!--EXTERNAL_PROPERTIES: TargetFramework;BaseOutputPath-->
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
 
@@ -18,10 +19,11 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeConfuserDependencyFiles</TargetsForTfmSpecificContentInPackage>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
   </PropertyGroup>
 
   <ItemGroup Label="Nuget Dependencies">
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.7.*" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.9.*" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
@@ -35,20 +37,30 @@
     <Content Include="build\*" PackagePath="build" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="build\Confuser.MSBuild.targets" />
-  </ItemGroup>
+  <PropertyGroup>
+    <IncludeConfuserDependencyFilesDependsOn>
+      IncludeConfuserDependencyFilesFramework;
+      IncludeConfuserDependencyFilesStandard
+    </IncludeConfuserDependencyFilesDependsOn>
+  </PropertyGroup>
 
-  <Target Name="IncludeConfuserDependencyFiles">
+  <Target Name="IncludeConfuserDependencyFiles" DependsOnTargets="$(IncludeConfuserDependencyFilesDependsOn)" />
+
+  <Target Name="IncludeConfuserDependencyFilesFramework" Condition="'$(TargetFramework)' == 'net461'">
     <ItemGroup>
       <ConfuserNetFrameworkDependencies Include="$(BaseOutputPath)\$(Configuration)\net461\*.dll" />
       <ConfuserNetFrameworkDependencies Include="$(BaseOutputPath)\$(Configuration)\net461\*.pdb" />
-      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.dll" />
-      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.pdb" />
     </ItemGroup>
     <CreateItem Include="@(ConfuserNetFrameworkDependencies)" AdditionalMetadata="PackagePath=netframework">
       <Output TaskParameter="Include" ItemName="TfmSpecificPackageFile" />
     </CreateItem>
+  </Target>
+
+  <Target Name="IncludeConfuserDependencyFilesStandard" Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <ItemGroup>
+      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.dll" />
+      <ConfuserNetStandardDependencies Include="$(BaseOutputPath)\$(Configuration)\netstandard2.0\*.pdb" />
+    </ItemGroup>
     <CreateItem Include="@(ConfuserNetStandardDependencies)" AdditionalMetadata="PackagePath=netstandard">
       <Output TaskParameter="Include" ItemName="TfmSpecificPackageFile" />
     </CreateItem>

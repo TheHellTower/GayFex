@@ -27,64 +27,77 @@ namespace Confuser.Core {
 		/// <param name="module">The stub module.</param>
 		/// <param name="snKey">The strong name key.</param>
 		/// <param name="prot">The packer protection that applies to the stub.</param>
-		protected void ProtectStub(ConfuserContext context, string fileName, byte[] module, StrongNameKey snKey, Protection prot = null) {
+		protected void ProtectStub(ConfuserContext context, string fileName, byte[] module, StrongNameKey snKey, StrongNamePublicKey snPubKey, StrongNameKey snSigKey, StrongNamePublicKey snPubSigKey, bool snDelaySig, Protection prot = null) {
 			string tmpDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-			string outDir = Path.Combine(tmpDir, Path.GetRandomFileName());
-			Directory.CreateDirectory(tmpDir);
-
-			for (int i = 0; i < context.OutputModules.Count; i++) {
-				string path = Path.GetFullPath(Path.Combine(tmpDir, context.OutputPaths[i]));
-				var dir = Path.GetDirectoryName(path);
-				if (!Directory.Exists(dir))
-					Directory.CreateDirectory(dir);
-				File.WriteAllBytes(path, context.OutputModules[i]);
-			}
-			File.WriteAllBytes(Path.Combine(tmpDir, fileName), module);
-
-			var proj = new ConfuserProject();
-			proj.Seed = context.Project.Seed;
-			foreach (Rule rule in context.Project.Rules)
-				proj.Rules.Add(rule);
-			proj.Add(new ProjectModule {
-				Path = fileName
-			});
-			proj.BaseDirectory = tmpDir;
-			proj.OutputDirectory = outDir;
-			foreach (var path in context.Project.ProbePaths)
-				proj.ProbePaths.Add(path);
-			proj.ProbePaths.Add(context.Project.BaseDirectory);
-
-			PluginDiscovery discovery = null;
-			if (prot != null) {
-				var rule = new Rule {
-					Preset = ProtectionPreset.None,
-					Inherit = true,
-					Pattern = "true"
-				};
-				rule.Add(new SettingItem<Protection> {
-					Id = prot.Id,
-					Action = SettingItemAction.Add
-				});
-				proj.Rules.Add(rule);
-				discovery = new PackerDiscovery(prot);
-			}
-
 			try {
-				ConfuserEngine.Run(new ConfuserParameters {
-					Logger = new PackerLogger(context.Logger),
-					PluginDiscovery = discovery,
-					Marker = new PackerMarker(snKey),
-					Project = proj,
-					PackerInitiated = true
-				}, context.token).Wait();
-			}
-			catch (AggregateException ex) {
-				context.Logger.Error("Failed to protect packer stub.");
-				throw new ConfuserException(ex);
-			}
+				string outDir = Path.Combine(tmpDir, Path.GetRandomFileName());
+				Directory.CreateDirectory(tmpDir);
 
-			context.OutputModules = new[] { File.ReadAllBytes(Path.Combine(outDir, fileName)) };
-			context.OutputPaths = new[] { fileName };
+				for (int i = 0; i < context.OutputModules.Count; i++) {
+					string path = Path.GetFullPath(Path.Combine(tmpDir, context.OutputPaths[i]));
+					var dir = Path.GetDirectoryName(path);
+					if (!Directory.Exists(dir))
+						Directory.CreateDirectory(dir);
+					File.WriteAllBytes(path, context.OutputModules[i]);
+				}
+
+				File.WriteAllBytes(Path.Combine(tmpDir, fileName), module);
+
+				var proj = new ConfuserProject();
+				proj.Seed = context.Project.Seed;
+				foreach (Rule rule in context.Project.Rules)
+					proj.Rules.Add(rule);
+				proj.Add(new ProjectModule {Path = fileName});
+				proj.BaseDirectory = tmpDir;
+				proj.OutputDirectory = outDir;
+				foreach (var path in context.Project.ProbePaths)
+					proj.ProbePaths.Add(path);
+				proj.ProbePaths.Add(context.Project.BaseDirectory);
+
+				PluginDiscovery discovery = null;
+				if (prot != null) {
+					var rule = new Rule {
+						Preset = ProtectionPreset.None,
+						Inherit = true,
+						Pattern = "true"
+					};
+					rule.Add(new SettingItem<Protection> {
+						Id = prot.Id,
+						Action = SettingItemAction.Add
+					});
+					proj.Rules.Add(rule);
+					discovery = new PackerDiscovery(prot);
+				}
+
+				try {
+					ConfuserEngine
+						.Run(
+							new ConfuserParameters {
+								Logger = new PackerLogger(context.Logger),
+								PluginDiscovery = discovery,
+								Marker = new PackerMarker(snKey, snPubKey, snDelaySig, snSigKey, snPubSigKey),
+								Project = proj,
+								PackerInitiated = true
+							}, context.token).Wait();
+				}
+				catch (AggregateException ex) {
+					context.Logger.Error("Failed to protect packer stub.");
+					throw new ConfuserException(ex);
+				}
+
+				context.OutputModules = new[] {File.ReadAllBytes(Path.Combine(outDir, fileName))};
+				context.OutputPaths = new[] {fileName};
+			}
+			finally {
+				try {
+					if (Directory.Exists(tmpDir)) {
+						Directory.Delete(tmpDir, true);
+					}
+				}
+				catch (IOException ex) {
+					context.Logger.WarnException("Failed to remove temporary files of packer.", ex);
+				}
+			}
 		}
 	}
 
@@ -152,15 +165,28 @@ namespace Confuser.Core {
 
 	internal class PackerMarker : Marker {
 		readonly StrongNameKey snKey;
+		readonly StrongNamePublicKey snPubKey;
+		readonly bool snDelaySig;
+		readonly StrongNameKey snSigKey;
+		readonly StrongNamePublicKey snPubSigKey;
 
-		public PackerMarker(StrongNameKey snKey) {
+		public PackerMarker(StrongNameKey snKey, StrongNamePublicKey snPubKey, bool snDelaySig, StrongNameKey snSigKey, StrongNamePublicKey snPubSigKey) {
 			this.snKey = snKey;
+			this.snPubKey = snPubKey;
+			this.snDelaySig = snDelaySig;
+			this.snSigKey = snSigKey;
+			this.snPubSigKey = snPubSigKey;
 		}
 
 		protected internal override MarkerResult MarkProject(ConfuserProject proj, ConfuserContext context) {
 			MarkerResult result = base.MarkProject(proj, context);
-			foreach (ModuleDefMD module in result.Modules)
+			foreach (ModuleDefMD module in result.Modules) {
 				context.Annotations.Set(module, SNKey, snKey);
+				context.Annotations.Set(module, SNPubKey, snPubKey);
+				context.Annotations.Set(module, SNDelaySig, snDelaySig);
+				context.Annotations.Set(module, SNSigKey, snSigKey);
+				context.Annotations.Set(module, SNSigPubKey, snPubSigKey);
+			}
 			return result;
 		}
 	}

@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 using Confuser.Core.Project;
 using ConfuserEx.Views;
-using GalaSoft.MvvmLight.Command;
+using GalaSoft.MvvmLight.CommandWpf;
 using Ookii.Dialogs.Wpf;
 
 namespace ConfuserEx.ViewModel {
@@ -83,12 +83,15 @@ namespace ConfuserEx.ViewModel {
 
 		public ICommand Edit {
 			get {
-				return new RelayCommand(() => {
-					Debug.Assert(App.Project.Modules.Count(m => m.IsSelected) == 1);
-					var dialog = new ProjectModuleView(App.Project.Modules.Single(m => m.IsSelected));
+				return new RelayCommand<ProjectModuleVM>(module => {
+					if (module is null) {
+						Debug.Assert(App.Project.Modules.Count(m => m.IsSelected) == 1);
+						module = App.Project.Modules.Single(m => m.IsSelected);
+					}
+					var dialog = new ProjectModuleView(module);
 					dialog.Owner = Application.Current.MainWindow;
 					dialog.ShowDialog();
-				}, () => App.Project.Modules.Count(m => m.IsSelected) == 1);
+				}, module => !(module is null) || App.Project.Modules.Count(m => m.IsSelected) == 1);
 			}
 		}
 

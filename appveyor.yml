@@ -10,7 +10,7 @@ skip_commits:
 
 nuget:
   disable_publish_on_pr: true
-  
+
 install:
 - cmd: git submodule update --init --recursive
 
@@ -21,17 +21,55 @@ build:
   project: Confuser2.sln
   verbosity: minimal
 
+after_build:
+- pwsh: >-
+    Push-Location Confuser.CLI\bin\$env:CONFIGURATION;
+    . 7z a ..\..\..\ConfuserEx-CLI.zip "-xr!*.pdb" "-xr!*.xml";
+    Pop-Location
+- pwsh: >-
+    Push-Location ConfuserEx\bin\$env:CONFIGURATION;
+    . 7z a ..\..\..\ConfuserEx-GUI.zip "-xr!*.pdb" "-xr!*.xml";
+    Pop-Location
+- pwsh: >-
+    Push-Location Confuser.CLI\bin\$env:CONFIGURATION;
+    . 7z a ..\..\..\ConfuserEx.zip "-xr!*.pdb" "-xr!*.xml";
+    Pop-Location;
+    Push-Location ConfuserEx\bin\$env:CONFIGURATION;
+    . 7z a ..\..\..\ConfuserEx.zip "-xr!*.pdb" "-xr!*.xml" -y;
+    Pop-Location
+
 artifacts:
-- path: Release/bin
-  name: ConfuserEx
-  type: zip
-  
+- path: ConfuserEx*.zip
+- path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
+  name: ConfuserEx.MSBuild
+
 for:
 -
   branches:
-    only:
+    except:
       - master
 
-  artifacts:
-  - path: Confuser.MSBuild.Tasks/bin/Release/*.nupkg
-    name: ConfuserEx.MSBuild
+  build:
+    publish_nuget: false
+
+deploy:
+- provider: GitHub
+  tag: $(APPVEYOR_REPO_TAG_NAME)
+  description: "ConfuserEx $(APPVEYOR_REPO_TAG_NAME) Release"
+  auth_token:
+    secure: k2MIY7tKQEsg6+w3QIxMx6ptoBccUgOadKA1I8O9myFZS4SBdEINCbjGwALZrhdm
+  on:
+    APPVEYOR_REPO_TAG: true
+- provider: NuGet
+  api_key:
+    secure: yqARg8GA5EIFGPVpYPZeS3I5gjsByMvYLVfXylpC9mF33W4Z40tAmE9q0/yf2Xne
+  on:
+    APPVEYOR_REPO_TAG: true
+- provider: NuGet
+  server: https://nuget.pkg.github.com/mkaring/index.json
+  api_key:
+    secure: k2MIY7tKQEsg6+w3QIxMx6ptoBccUgOadKA1I8O9myFZS4SBdEINCbjGwALZrhdm
+  username:
+    secure: NGDRiYcrJaLN2PkRszWIVg==
+  on:
+    APPVEYOR_REPO_TAG: true

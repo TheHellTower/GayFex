@@ -253,12 +253,16 @@ namespace Confuser.Renamer.BAML {
 			foreach (ITypeDefOrRef type in typeSig.FindTypeRefs()) {
 				TypeDef typeDef = type.ResolveTypeDefThrow();
 				if (context.Modules.Contains((ModuleDefMD)typeDef.Module)) {
-					service.ReduceRenameMode(typeDef, RenameMode.Letters);
-					if (type is TypeRef)
-						service.AddReference(typeDef, new TypeRefReference((TypeRef)type, typeDef));
-					service.AddReference(typeDef, reference);
+					AddDefReference(typeDef, reference);
+					if (type is TypeRef typeRef)
+						service.AddReference(typeDef, new TypeRefReference(typeRef, typeDef));
 				}
 			}
+		}
+
+		void AddDefReference<T>(T def, INameReference<T> reference) where T : IDnlibDef {
+			service.ReduceRenameMode(def, RenameMode.Letters);
+			service.AddReference(def, reference);
 		}
 
 		void ProcessBAMLElement(BamlElement root, BamlElement elem) {
@@ -428,7 +432,7 @@ namespace Confuser.Renamer.BAML {
 						AddTypeSigReference(sig, reference);
 					}
 					else
-						AnalyzePropertyPath(value);
+						AnalyzePropertyPath(value, s => txt.Value = s);
 				}
 			}
 		}
@@ -459,15 +463,13 @@ namespace Confuser.Renamer.BAML {
 							if (property != null) {
 								var reference = new BAMLConverterMemberReference(xmlnsCtx, sig, property, rec);
 								AddTypeSigReference(sig, reference);
-								service.ReduceRenameMode(property, RenameMode.Letters);
-								service.AddReference(property, reference);
+								AddDefReference(property, reference);
 							}
 							FieldDef field = typeDef.FindField(cmdName);
 							if (field != null) {
 								var reference = new BAMLConverterMemberReference(xmlnsCtx, sig, field, rec);
 								AddTypeSigReference(sig, reference);
-								service.ReduceRenameMode(field, RenameMode.Letters);
-								service.AddReference(field, reference);
+								AddDefReference(field, reference);
 							}
 							if (property == null && field == null)
 								context.Logger.WarnFormat("Could not resolve command '{0}' in '{1}'.", cmd, CurrentBAMLName);
@@ -479,14 +481,13 @@ namespace Confuser.Renamer.BAML {
 				// Umm... Again nothing to do, DP already won't be renamed.
 			}
 			else if (converter.FullName == "System.Windows.PropertyPathConverter") {
-				AnalyzePropertyPath(rec.Value);
+				AnalyzePropertyPath(rec.Value, s => rec.Value = s);
 			}
 			else if (converter.FullName == "System.Windows.Markup.RoutedEventConverter") {
 				;
 			}
 			else if (converter.FullName == "System.Windows.Markup.TypeTypeConverter") {
-				string prefix;
-				TypeSig sig = ResolveType(rec.Value.Trim(), out prefix);
+				TypeSig sig = ResolveType(rec.Value.Trim(), out _);
 				if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
 					var reference = new BAMLConverterTypeReference(xmlnsCtx, sig, rec);
 					AddTypeSigReference(sig, reference);
@@ -501,7 +502,12 @@ namespace Confuser.Renamer.BAML {
 				attrName = attrInfo.Item2.Name;
 
 			if (attrName == "DisplayMemberPath") {
-				AnalyzePropertyPath(rec.Value);
+				AnalyzePropertyPath(rec.Value, s => rec.Value = s);
+			}
+			else if (attrName == "TypeName") {
+				var sig = ResolveType(rec.Value.Trim(), out _);
+				if (!(sig is null))
+					AddTypeSigReference(sig, new BAMLConverterTypeReference(xmlnsCtx, sig, rec));
 			}
 			else if (attrName == "Source") {
 				string declType = null;
@@ -512,13 +518,24 @@ namespace Confuser.Renamer.BAML {
 				if (declType == "System.Windows.ResourceDictionary") {
 					var src = rec.Value.ToUpperInvariant();
 					if (src.EndsWith(".BAML") || src.EndsWith(".XAML")) {
+						var refModule = Module;
 						var match = WPFAnalyzer.UriPattern.Match(src);
 						if (match.Success) {
-							var resourceAssemblyName = match.Groups[1].Value;
-							if (resourceAssemblyName != null && !resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
-								// This resource points to another assembly.
-								// Leave it alone!
-								return;
+							var resourceAssemblyName = match.Groups[1].Success ? match.Groups[1].Value : string.Empty;
+							// Check if the expression contains a resource name (group 1)
+							// If it does, check if it is this assembly.
+							if (!string.IsNullOrWhiteSpace(resourceAssemblyName) &&
+								!resourceAssemblyName.Equals(Module.Assembly.Name.String, StringComparison.OrdinalIgnoreCase)) {
+								// Let's see if we can find this assembly.
+								refModule = context.Modules.FirstOrDefault(m =>
+									resourceAssemblyName.Equals(m.Assembly.Name.String,
+										StringComparison.OrdinalIgnoreCase));
+
+								if (refModule == null) {
+									// This resource points to an assembly that is not part of the obfuscation.
+									// Leave it alone!
+									return;
+								}
 							}
 							src = match.Groups[2].Value;
 						}
@@ -529,15 +546,13 @@ namespace Confuser.Renamer.BAML {
 							var rel = new Uri(new Uri(packScheme + "application:,,,/" + CurrentBAMLName), src);
 							src = rel.LocalPath;
 						}
-						var reference = new BAMLPropertyReference(rec);
+						var reference = new BAMLPropertyReference(refModule, rec);
 						src = WebUtility.UrlDecode(src.TrimStart('/'));
 						var baml = src.Substring(0, src.Length - 5) + ".BAML";
 						var xaml = src.Substring(0, src.Length - 5) + ".XAML";
 						var bamlRefs = service.FindRenamer<WPFAnalyzer>().bamlRefs;
 						bamlRefs.AddListEntry(baml, reference);
 						bamlRefs.AddListEntry(xaml, reference);
-						bamlRefs.AddListEntry(Uri.EscapeUriString(baml), reference);
-						bamlRefs.AddListEntry(Uri.EscapeUriString(xaml), reference);
 					}
 				}
 			}
@@ -572,48 +587,61 @@ namespace Confuser.Renamer.BAML {
 			return Tuple.Create(retDef, rec, retType == null ? null : retType.ResolveTypeDefThrow());
 		}
 
-		void AnalyzePropertyPath(string path) {
-			var parsedPath = PathParser.Parse(path);
-			foreach (var part in parsedPath) {
-				switch (part.type) {
+		void AnalyzePropertyPath(string path, Action<string> updateAction) {
+			var pathUpdater = new PropertyPathUpdater(path, updateAction);
+			foreach (var part in pathUpdater) {
+				switch (part.Type) {
 					case SourceValueType.Property:
-						// This is a property reference. This may be directly the name of a property or a reference by
-						// with the type to the property
-						// Simple Property:    "TestProperty"
-						// Property with Type: "(local:DataClass.TestProperty)"
-
-						var typeName = part.GetTypeName();
-						var propertyName = part.GetPropertyName();
-						if (!string.IsNullOrWhiteSpace(typeName)) {
-							var sig = ResolveType(typeName, out var prefix);
-							if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-								var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
-								AddTypeSigReference(sig, reference);
-								break;
-							}
-						}
-
-						// Reaching this point means that the type reference was either not present or failed to
-						// resolve. In this case every property with the matching name will be flagged so it does not
-						// get renamed.
-						if (properties.TryGetValue(propertyName, out var candidates))
-							foreach (var property in candidates)
-								service.SetCanRename(property, false);
-
+						AnalyzePropertyPathProperty(part);
 						break;
 					case SourceValueType.Indexer:
 						// This is the indexer part of a property reference.
-						foreach (var indexerArg in part.paramList) {
-							if (!string.IsNullOrWhiteSpace(indexerArg.parenString)) {
-								var sig = ResolveType(indexerArg.parenString, out var prefix);
-								if (sig != null && context.Modules.Contains((ModuleDefMD)sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-									var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
-									AddTypeSigReference(sig, reference);
-									break;
-								}
-							}
-						}
+						AnalyzePropertyPathIndexer(part);
 						break;
+				}
+			}
+		}
+
+		void AnalyzePropertyPathProperty(PropertyPathPartUpdater part) {
+			// This is a property reference. This may be directly the name of a property or a reference by
+			// with the type to the property
+			// Simple Property:    "TestProperty"
+			// Property with Type: "(local:DataClass.TestProperty)"
+
+			var typeName = part.GetTypeName();
+			var propertyName = part.GetPropertyName();
+			if (!string.IsNullOrWhiteSpace(typeName)) {
+				var sig = ResolveType(typeName, out _);
+				var basicTypeDef = sig?.ToBasicTypeDefOrRef().ResolveTypeDef();
+				if (!(basicTypeDef is null) && context.Modules.Contains(basicTypeDef.Module as ModuleDefMD)) {
+					var propDef = basicTypeDef.FindPropertyCheckBaseType(propertyName);
+					var reference = new BAMLPathTypeReference(xmlnsCtx, sig, propDef, part);
+					AddTypeSigReference(sig, reference);
+
+					if (!(propDef is null)) {
+						AddDefReference(propDef, reference);
+						return; // Return to avoid blocking renaming of the property.
+					}
+				}
+			}
+
+			// Reaching this point means that the type reference was either not present or failed to
+			// resolve. In this case every property with the matching name will be flagged so it does not
+			// get renamed.
+			if (properties.TryGetValue(propertyName, out var candidates))
+				foreach (var property in candidates)
+					service.SetCanRename(property, false);
+		}
+
+		void AnalyzePropertyPathIndexer(PropertyPathPartUpdater part) {
+			foreach (var indexerArg in part.ParamList) {
+				if (!string.IsNullOrWhiteSpace(indexerArg.ParenString)) {
+					var sig = ResolveType(indexerArg.ParenString, out var prefix);
+					if (sig != null && context.Modules.Contains((ModuleDefMD) sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
+						var reference = new BAMLPathTypeReference(xmlnsCtx, sig, indexerArg);
+						AddTypeSigReference(sig, reference);
+						break;
+					}
 				}
 			}
 		}
@@ -652,6 +680,9 @@ namespace Confuser.Renamer.BAML {
 				Debug.Assert(rootIndex != -1);
 			}
 
+			public void AddNsMap(string clrNs, AssemblyDef assembly, string prefix) => 
+				AddNsMap(Tuple.Create(assembly, clrNs), prefix);
+
 			public void AddNsMap(Tuple<AssemblyDef, string> scope, string prefix) {
 				xmlNsMap[scope] = prefix;
 			}
@@ -672,6 +703,8 @@ namespace Confuser.Renamer.BAML {
 						XmlNamespace = "clr-namespace:" + clrNs
 					});
 					rootIndex++;
+
+					AddNsMap(clrNs, assembly, prefix);
 				}
 				return prefix;
 			}

@@ -30,9 +30,15 @@ namespace Confuser.Renamer {
 		void RegisterRenamer(IRenamer renamer);
 		T FindRenamer<T>();
 		void AddReference<T>(T obj, INameReference<T> reference);
+		IList<INameReference> GetReferences(object obj);
 
 		void SetOriginalName(object obj, string name);
 		void SetOriginalNamespace(object obj, string ns);
+		string GetOriginalName(object obj);
+		string GetOriginalNamespace(object obj);
+
+		bool IsRenamed(IDnlibDef def);
+		void SetIsRenamed(IDnlibDef def);
 
 		void MarkHelper(IDnlibDef def, IMarkerService marker, ConfuserComponent parentComp);
 	}
@@ -43,6 +49,7 @@ namespace Confuser.Renamer {
 		static readonly object ReferencesKey = new object();
 		static readonly object OriginalNameKey = new object();
 		static readonly object OriginalNamespaceKey = new object();
+		static readonly object IsRenamedKey = new object();
 
 		readonly ConfuserContext context;
 		readonly byte[] nameSeed;
@@ -67,7 +74,9 @@ namespace Confuser.Renamer {
 				new VTableAnalyzer(),
 				new TypeBlobAnalyzer(),
 				new ResourceAnalyzer(),
-				new LdtokenEnumAnalyzer()
+				new LdtokenEnumAnalyzer(),
+				new ManifestResourceAnalyzer(),
+				new ReflectionAnalyzer()
 			};
 		}
 
@@ -204,16 +213,18 @@ namespace Confuser.Renamer {
 
 		public string ObfuscateName(string name, RenameMode mode) {
 			string newName = null;
-			int? count;
-			name = ParseGenericName(name, out count);
+			name = ParseGenericName(name, out var count);
 
 			if (string.IsNullOrEmpty(name))
 				return string.Empty;
 
 			if (mode == RenameMode.Empty)
 				return "";
-			if (mode == RenameMode.Debug)
-				return "_" + name;
+			if (mode == RenameMode.Debug || mode == RenameMode.Retain) {
+				// When flattening there are issues, in case there is a . in the name of the assembly.
+				newName = MakeGenericName(name.Replace('.', '_'), count);
+				return mode == RenameMode.Debug ? "_" + newName : newName;
+			}
 			if (mode == RenameMode.Reversible) {
 				if (reversibleRenamer == null)
 					throw new ArgumentException("Password not provided for reversible renaming.");
@@ -222,7 +233,7 @@ namespace Confuser.Renamer {
 			}
 
 			if (nameMap1.ContainsKey(name))
-				return nameMap1[name];
+				return MakeGenericName(nameMap1[name], count);
 
 			byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed);
 			for (int i = 0; i < 100; i++) {
@@ -339,5 +350,9 @@ namespace Confuser.Renamer {
 		public ICollection<KeyValuePair<string, string>> GetNameMap() {
 			return nameMap2;
 		}
+
+		public bool IsRenamed(IDnlibDef def) => context.Annotations.Get(def, IsRenamedKey, !CanRename(def));
+
+		public void SetIsRenamed(IDnlibDef def) => context.Annotations.Set(def, IsRenamedKey, true);
 	}
 }

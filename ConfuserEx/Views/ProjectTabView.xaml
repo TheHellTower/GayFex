@@ -3,7 +3,7 @@
                     xmlns:local="clr-namespace:ConfuserEx"
                     xmlns:vm="clr-namespace:ConfuserEx.ViewModel">
     <DataTemplate DataType="{x:Type vm:ProjectTabVM}">
-        <Grid Background="Transparent">
+        <Grid Background="Transparent" x:Name="PART_ProjectTabGrid">
             <Grid.RowDefinitions>
                 <RowDefinition Height="36px" />
                 <RowDefinition Height="36px" />
@@ -60,6 +60,11 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:ProjectModuleVM}">
                         <Grid>
+                            <Grid.InputBindings>
+                                <MouseBinding Gesture="LeftDoubleClick" 
+                                              Command="{Binding DataContext.Edit, ElementName=PART_ProjectTabGrid}" 
+                                              CommandParameter="{Binding}" />
+                            </Grid.InputBindings>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />

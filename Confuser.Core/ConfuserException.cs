@@ -5,6 +5,8 @@ namespace Confuser.Core {
 	///     The exception that is thrown when a handled error occurred during the protection process.
 	/// </summary>
 	public class ConfuserException : Exception {
+		public ConfuserException() : this(null) { }
+
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ConfuserException" /> class.
 		/// </summary>

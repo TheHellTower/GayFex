@@ -1,29 +1,37 @@
 ﻿using System;
 using System.Diagnostics;
 using Confuser.Core;
+using dnlib.DotNet;
 
 namespace Confuser.Renamer.BAML {
-	internal class BAMLPropertyReference : IBAMLReference {
-		PropertyRecord rec;
+	sealed class BAMLPropertyReference : IBAMLReference {
+		readonly ModuleDef _refModule;
+		readonly PropertyRecord _rec;
 
-		public BAMLPropertyReference(PropertyRecord rec) {
-			this.rec = rec;
+		public BAMLPropertyReference(ModuleDef refModule, PropertyRecord rec) {
+			_refModule = refModule;
+			_rec = rec;
 		}
 
-		public bool CanRename(string oldName, string newName) {
-			return true;
-		}
+		public bool CanRename(ModuleDef moduleDef, string oldName, string newName) => true;
 
-		public void Rename(string oldName, string newName) {
-			var value = rec.Value;
-			if (value.IndexOf(oldName, StringComparison.OrdinalIgnoreCase) != -1) {
-				rec.Value = value.Substring(0, value.Length - oldName.Length) + newName;
+		public void Rename(ModuleDef moduleDef, string oldName, string newName) {
+			if (moduleDef != _refModule) return;
+
+			var value = _rec.Value;
+			while (true) {
+				if (value.EndsWith(oldName, StringComparison.OrdinalIgnoreCase)) {
+					value = value.Substring(0, value.Length - oldName.Length) + newName;
+					_rec.Value = value;
+				}
+				else if (oldName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase)) {
+					oldName = ToXaml(oldName);
+					newName = ToXaml(newName);
+					continue;
+				}
+
+				break;
 			}
-			else if (oldName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase)) {
-				// Lets try this again with .xaml at the end.
-				Rename(ToXaml(oldName), ToXaml(newName));
-			}
-			// Reaching this point means that the record was already properly replaced.
 		}
 
 		private static string ToXaml(string refName) {

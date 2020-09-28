@@ -343,12 +343,38 @@ namespace Confuser.Core {
 		}
 
 		/// <summary>
+		///     Determines whether the specified property is abstract.
+		/// </summary>
+		/// <param name="property">The property.</param>
+		/// <returns><see langword="true" /> if the specified property is abstract; otherwise, <see langword="false" /></returns>
+		public static bool IsAbstract(this PropertyDef property) =>
+			property.AllMethods().Any(method => method.IsAbstract);
+
+		/// <summary>
 		///     Determines whether the specified property is public.
 		/// </summary>
 		/// <param name="property">The property.</param>
 		/// <returns><c>true</c> if the specified property is public; otherwise, <c>false</c>.</returns>
 		public static bool IsPublic(this PropertyDef property) {
 			return property.AllMethods().Any(method => method.IsPublic);
+		}
+
+		/// <summary>
+		///     Determines whether the specified property is family or assembly.
+		/// </summary>
+		/// <param name="property">The property.</param>
+		/// <returns><c>true</c> if the specified property is family or assembly; otherwise, <c>false</c>.</returns>
+		public static bool IsFamilyOrAssembly(this PropertyDef property) {
+			return property.AllMethods().Any(method => method.IsFamilyOrAssembly);
+		}
+
+		/// <summary>
+		///     Determines whether the specified property is family.
+		/// </summary>
+		/// <param name="property">The property.</param>
+		/// <returns><c>true</c> if the specified property is family; otherwise, <c>false</c>.</returns>
+		public static bool IsFamily(this PropertyDef property) {
+			return property.AllMethods().Any(method => method.IsFamily);
 		}
 
 		/// <summary>
@@ -361,12 +387,38 @@ namespace Confuser.Core {
 		}
 
 		/// <summary>
+		///     Determines whether the specified event is abstract.
+		/// </summary>
+		/// <param name="evt">The event.</param>
+		/// <returns><see langword="true" /> if the specified event is abstract; otherwise, <see langword="false" /></returns>
+		public static bool IsAbstract(this EventDef evt) =>
+			evt.AllMethods().Any(method => method.IsAbstract);
+
+		/// <summary>
 		///     Determines whether the specified event is public.
 		/// </summary>
 		/// <param name="evt">The event.</param>
 		/// <returns><c>true</c> if the specified event is public; otherwise, <c>false</c>.</returns>
 		public static bool IsPublic(this EventDef evt) {
 			return evt.AllMethods().Any(method => method.IsPublic);
+		}
+
+		/// <summary>
+		///     Determines whether the specified event is family or assembly.
+		/// </summary>
+		/// <param name="evt">The event.</param>
+		/// <returns><c>true</c> if the specified property is family or assembly; otherwise, <c>false</c>.</returns>
+		public static bool IsFamilyOrAssembly(this EventDef evt) {
+			return evt.AllMethods().Any(method => method.IsFamilyOrAssembly);
+		}
+
+		/// <summary>
+		///     Determines whether the specified event is family.
+		/// </summary>
+		/// <param name="evt">The event.</param>
+		/// <returns><c>true</c> if the specified property is family; otherwise, <c>false</c>.</returns>
+		public static bool IsFamily(this EventDef evt) {
+			return evt.AllMethods().Any(method => method.IsFamily);
 		}
 
 		/// <summary>
@@ -462,6 +514,8 @@ namespace Confuser.Core {
 					eh.HandlerStart = newInstr;
 				if (eh.HandlerEnd == target)
 					eh.HandlerEnd = newInstr;
+				if (eh.FilterStart == target)
+					eh.FilterStart = newInstr;
 			}
 			foreach (Instruction instr in body.Instructions) {
 				if (instr.Operand == target)
@@ -501,6 +555,98 @@ namespace Confuser.Core {
 			if (typeDef == null) throw new ArgumentNullException(nameof(typeDef));
 
 			return typeDef == typeDef.Module.EntryPoint?.DeclaringType;
+		}
+		
+		/// <summary>
+		///		Merges a specified call instruction into the body.
+		/// </summary>
+		/// <param name="targetBody">The target body</param>
+		/// <param name="callInstruction">The instruction to merge in</param>
+		public static void MergeCall(this CilBody targetBody, Instruction callInstruction) {
+			if (!(callInstruction.Operand is MethodDef methodToMerge))
+				throw new ArgumentException("Call instruction has invalid operand");
+			if (!methodToMerge.HasBody)
+				throw new Exception("Method to merge has no body!");
+
+			var localParams = methodToMerge.Parameters.ToDictionary(param => param.Index, param => new Local(param.Type));
+			var localMap = methodToMerge.Body.Variables.ToDictionary(local => local, local => new Local(local.Type));
+			foreach (var local in localParams)
+				targetBody.Variables.Add(local.Value);
+			foreach (var local in localMap)
+				targetBody.Variables.Add(local.Value);
+
+			// Nop the call
+			int index = targetBody.Instructions.IndexOf(callInstruction) + 1;
+			callInstruction.OpCode = OpCodes.Nop;
+			callInstruction.Operand = null;
+			var afterIndex = targetBody.Instructions[index];
+
+			// Find Exception handler index
+			int exIndex = 0;
+			foreach (var ex in targetBody.ExceptionHandlers) {
+				if (targetBody.Instructions.IndexOf(ex.TryStart) < index)
+					exIndex = targetBody.ExceptionHandlers.IndexOf(ex);
+			}
+
+			// setup parameter locals
+			foreach (var paramLocal in localParams.Reverse()) {
+				targetBody.Instructions.Insert(index++, new Instruction(OpCodes.Stloc, paramLocal.Value));
+			}
+
+			var instrMap = new Dictionary<Instruction, Instruction>();
+			var newInstrs = new List<Instruction>();
+
+			// Transfer instructions to list
+			foreach (var instr in methodToMerge.Body.Instructions) {
+				Instruction newInstr;
+				if (instr.OpCode == OpCodes.Ret) {
+					newInstr = new Instruction(OpCodes.Br, afterIndex);
+				}
+				else if (instr.IsLdarg()) {
+					localParams.TryGetValue(instr.GetParameterIndex(), out var lc);
+					newInstr = new Instruction(OpCodes.Ldloc, lc);
+				}
+				else if (instr.IsStarg()) {
+					localParams.TryGetValue(instr.GetParameterIndex(), out var lc);
+					newInstr = new Instruction(OpCodes.Stloc, lc);
+				}
+				else if (instr.IsLdloc()) {
+					localMap.TryGetValue(instr.GetLocal(methodToMerge.Body.Variables), out var lc);
+					newInstr = new Instruction(OpCodes.Ldloc, lc);
+				}
+				else if (instr.IsStloc()) {
+					localMap.TryGetValue(instr.GetLocal(methodToMerge.Body.Variables), out var lc);
+					newInstr = new Instruction(OpCodes.Stloc, lc);
+				}
+				else {
+					newInstr = new Instruction(instr.OpCode, instr.Operand);
+				}
+
+				newInstrs.Add(newInstr);
+				instrMap[instr] = newInstr;
+			}
+
+			// Fix branch targets & add instructions
+			foreach (var instr in newInstrs) {
+				if (instr.Operand != null && instr.Operand is Instruction instrOp && instrMap.ContainsKey(instrOp))
+					instr.Operand = instrMap[instrOp];
+				else if (instr.Operand is Instruction[] instructionArrayOp)
+					instr.Operand = instructionArrayOp.Select(target => instrMap[target]).ToArray();
+
+				targetBody.Instructions.Insert(index++, instr);
+			}
+
+			// Add Exception Handlers
+			foreach (var eh in methodToMerge.Body.ExceptionHandlers) {
+				targetBody.ExceptionHandlers.Insert(++exIndex, new ExceptionHandler(eh.HandlerType) {
+					CatchType = eh.CatchType,
+					TryStart = instrMap[eh.TryStart],
+					TryEnd = instrMap[eh.TryEnd],
+					HandlerStart = instrMap[eh.HandlerStart],
+					HandlerEnd = instrMap[eh.HandlerEnd],
+					FilterStart = eh.FilterStart == null ? null : instrMap[eh.FilterStart]
+				});
+			}
 		}
 	}
 }

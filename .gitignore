@@ -26,7 +26,6 @@ Thumbs.db
 *.log
 [Bb]in
 [Dd]ebug*/
-*.lib
 *.sbr
 obj/
 [Rr]elease*/
@@ -38,3 +37,5 @@ packages/
 /Confuser.Test
 *.sln.*
 gh-pages/
+
+.idea/

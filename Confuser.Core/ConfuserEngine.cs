@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Confuser.Core.Project;
 using Confuser.Core.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -85,13 +86,18 @@ namespace Confuser.Core {
 
 			bool ok = false;
 			try {
+				// Enable watermarking by default
+				context.Project.Rules.Insert(0, new Rule {
+					new SettingItem<Protection>(WatermarkingProtection._Id)
+				});
+
 				var asmResolver = new AssemblyResolver();
 				asmResolver.EnableTypeDefCache = true;
 				asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
 				context.Resolver = asmResolver;
-				context.BaseDirectory = Path.Combine(Environment.CurrentDirectory, parameters.Project.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
-				context.OutputDirectory = Path.Combine(parameters.Project.BaseDirectory, parameters.Project.OutputDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
-				foreach (string probePath in parameters.Project.ProbePaths)
+				context.BaseDirectory = Path.Combine(Environment.CurrentDirectory, context.Project.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+				context.OutputDirectory = Path.Combine(context.Project.BaseDirectory, context.Project.OutputDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+				foreach (string probePath in context.Project.ProbePaths)
 					asmResolver.PostSearchPaths.Insert(0, Path.Combine(context.BaseDirectory, probePath));
 
 				context.CheckCancellation();
@@ -121,7 +127,7 @@ namespace Confuser.Core {
 					throw new ConfuserException(ex);
 				}
 
-				components.Insert(0, new CoreComponent(parameters, marker));
+				components.Insert(0, new CoreComponent(context, marker));
 				foreach (Protection prot in prots)
 					components.Add(prot);
 				foreach (Packer packer in packers)
@@ -132,7 +138,7 @@ namespace Confuser.Core {
 				// 4. Load modules
 				context.Logger.Info("Loading input modules...");
 				marker.Initalize(prots, packers);
-				MarkerResult markings = marker.MarkProject(parameters.Project, context);
+				MarkerResult markings = marker.MarkProject(context.Project, context);
 				context.Modules = new ModuleSorter(markings.Modules).Sort().ToList().AsReadOnly();
 				foreach (var module in context.Modules)
 					module.EnableTypeDefFindCache = false;
@@ -268,15 +274,8 @@ namespace Confuser.Core {
 			}
 
 			context.Logger.Debug("Checking Strong Name...");
-			foreach (ModuleDefMD module in context.Modules) {
-				var snKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
-				if (snKey == null && module.IsStrongNameSigned)
-					context.Logger.WarnFormat("[{0}] SN Key is not provided for a signed module, the output may not be working.", module.Name);
-				else if (snKey != null && !module.IsStrongNameSigned)
-					context.Logger.WarnFormat("[{0}] SN Key is provided for an unsigned module, the output may not be working.", module.Name);
-				else if (snKey != null && module.IsStrongNameSigned &&
-						 !module.Assembly.PublicKey.Data.SequenceEqual(snKey.PublicKey))
-					context.Logger.WarnFormat("[{0}] Provided SN Key and signed module's public key do not match, the output may not be working.", module.Name);
+			foreach (var module in context.Modules) {
+				CheckStrongName(context, module);
 			}
 
 			var marker = context.Registry.GetService<IMarkerService>();
@@ -294,32 +293,28 @@ namespace Confuser.Core {
 				if (!marker.IsMarked(cctor))
 					marker.Mark(cctor, null);
 			}
+		}
 
-			context.Logger.Debug("Watermarking...");
-			foreach (ModuleDefMD module in context.Modules) {
-				TypeRef attrRef = module.CorLibTypes.GetTypeRef("System", "Attribute");
-				var attrType = new TypeDefUser("", "ConfusedByAttribute", attrRef);
-				module.Types.Add(attrType);
-				marker.Mark(attrType, null);
+		static void CheckStrongName(ConfuserContext context, ModuleDef module) {
+			var snKey = context.Annotations.Get<StrongNameKey>(module, Marker.SNKey);
+			var snPubKeyBytes = context.Annotations.Get<StrongNamePublicKey>(module, Marker.SNPubKey)?.CreatePublicKey();
+			var snDelaySign = context.Annotations.Get<bool>(module, Marker.SNDelaySig);
 
-				var ctor = new MethodDefUser(
-					".ctor",
-					MethodSig.CreateInstance(module.CorLibTypes.Void, module.CorLibTypes.String),
-					MethodImplAttributes.Managed,
-					MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
-				ctor.Body = new CilBody();
-				ctor.Body.MaxStack = 1;
-				ctor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-				ctor.Body.Instructions.Add(OpCodes.Call.ToInstruction(new MemberRefUser(module, ".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void), attrRef)));
-				ctor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
-				attrType.Methods.Add(ctor);
-				marker.Mark(ctor, null);
+			if (snPubKeyBytes == null && snKey != null)
+				snPubKeyBytes = snKey.PublicKey;
 
-				var attr = new CustomAttribute(ctor);
-				attr.ConstructorArguments.Add(new CAArgument(module.CorLibTypes.String, Version));
+			bool moduleIsSignedOrDelayedSigned = module.IsStrongNameSigned || !module.Assembly.PublicKey.IsNullOrEmpty;
 
-				module.CustomAttributes.Add(attr);
-			}
+			bool isKeyProvided = snKey != null || (snDelaySign && snPubKeyBytes != null);
+
+			if (!isKeyProvided && moduleIsSignedOrDelayedSigned)
+				context.Logger.WarnFormat("[{0}] SN Key or SN public Key is not provided for a signed module, the output may not be working.", module.Name);
+			else if (isKeyProvided && !moduleIsSignedOrDelayedSigned)
+				context.Logger.WarnFormat("[{0}] SN Key or SN public Key is provided for an unsigned module, the output may not be working.", module.Name);
+			else if (snPubKeyBytes != null && moduleIsSignedOrDelayedSigned &&
+			         !module.Assembly.PublicKey.Data.SequenceEqual(snPubKeyBytes))
+				context.Logger.WarnFormat("[{0}] Provided SN public Key and signed module's public key do not match, the output may not be working.",
+					module.Name);
 		}
 
 		static void CopyPEHeaders(PEHeadersOptions writerOptions, ModuleDefMD module) {
@@ -345,7 +340,25 @@ namespace Confuser.Core {
 				context.RequestNative();
 
 			var snKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNKey);
-			context.CurrentModuleWriterOptions.InitializeStrongNameSigning(context.CurrentModule, snKey);
+			var snPubKey = context.Annotations.Get<StrongNamePublicKey>(context.CurrentModule, Marker.SNPubKey);
+			var snSigKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNSigKey);
+			var snSigPubKey = context.Annotations.Get<StrongNamePublicKey>(context.CurrentModule, Marker.SNSigPubKey);
+
+			var snDelaySig = context.Annotations.Get<bool>(context.CurrentModule, Marker.SNDelaySig, false);
+
+			context.CurrentModuleWriterOptions.DelaySign = snDelaySig;
+
+			if (snKey != null && snPubKey != null && snSigKey != null && snSigPubKey != null)
+				context.CurrentModuleWriterOptions.InitializeEnhancedStrongNameSigning(context.CurrentModule, snSigKey, snSigPubKey, snKey, snPubKey);
+			else if (snSigPubKey != null && snSigKey != null)
+				context.CurrentModuleWriterOptions.InitializeEnhancedStrongNameSigning(context.CurrentModule, snSigKey, snSigPubKey);
+			else
+				context.CurrentModuleWriterOptions.InitializeStrongNameSigning(context.CurrentModule, snKey);
+
+			if (snDelaySig) {
+				context.CurrentModuleWriterOptions.StrongNamePublicKey = snPubKey;
+				context.CurrentModuleWriterOptions.StrongNameKey = null;
+			}
 
 			foreach (TypeDef type in context.CurrentModule.GetTypes())
 				foreach (MethodDef method in type.Methods) {

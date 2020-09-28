@@ -83,16 +83,23 @@ namespace Confuser.Protections {
 			InjectStub(context, ctx, parameters, stubModule);
 
 			var snKey = context.Annotations.Get<StrongNameKey>(originModule, Marker.SNKey);
+			var snPubKey = context.Annotations.Get<StrongNamePublicKey>(originModule, Marker.SNPubKey);
+			var snDelaySig = context.Annotations.Get<bool>(originModule, Marker.SNDelaySig, false);
+			var snSigKey = context.Annotations.Get<StrongNameKey>(originModule, Marker.SNSigKey);
+			var snPubSigKey = context.Annotations.Get<StrongNamePublicKey>(originModule, Marker.SNSigPubKey);
+
 			using (var ms = new MemoryStream()) {
 				var options = new ModuleWriterOptions(stubModule) {
-					StrongNameKey = snKey
+					StrongNameKey = snKey,
+					StrongNamePublicKey = snPubKey,
+					DelaySign = snDelaySig
 				};
 				var injector = new KeyInjector(ctx);
 				options.WriterEvent += injector.WriterEvent;
 
 				stubModule.Write(ms, options);
 				context.CheckCancellation();
-				ProtectStub(context, context.OutputPaths[ctx.ModuleIndex], ms.ToArray(), snKey, new StubProtection(ctx, originModule));
+				ProtectStub(context, context.OutputPaths[ctx.ModuleIndex], ms.ToArray(), snKey, snPubKey, snSigKey, snPubKey, snDelaySig, new StubProtection(ctx, originModule));
 			}
 		}
 
@@ -294,7 +301,7 @@ namespace Confuser.Protections {
 			}
 		}
 
-		class KeyInjector : IModuleWriterListener {
+		class KeyInjector {
 			readonly CompressorContext ctx;
 
 			public KeyInjector(CompressorContext ctx) {
@@ -305,7 +312,7 @@ namespace Confuser.Protections {
 				OnWriterEvent(args.Writer, args.Event);
 			}
 
-			public void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
+			private void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 				if (evt == ModuleWriterEvent.MDBeginCreateTables) {
 					// Add key signature
 					uint sigBlob = writer.Metadata.BlobHeap.Add(ctx.KeySig);

@@ -119,7 +119,7 @@ namespace Confuser.Core {
 						}
 					}
 					if (!string.IsNullOrEmpty(info.Settings)) {
-						if ((type == ApplyInfoType.ParentInfo && info.Condition != null && info.ApplyToMember) ||
+						if ((type == ApplyInfoType.ParentInfo && info.ApplyToMember) ||
 							type == ApplyInfoType.CurrentInfoOnly ||
 							(type == ApplyInfoType.CurrentInfoInherits && info.Condition == null && info.ApplyToMember)) {
 							parser.ParseProtectionString(settings, info.Settings);
@@ -192,6 +192,9 @@ namespace Confuser.Core {
 				}
 				if (strip)
 					item.CustomAttributes.RemoveAt(i);
+
+				if (item is IMemberRef && !(item is ITypeDefOrRef))
+					info.ApplyToMembers = false;
 
 				ret.Add(Tuple.Create(order, info));
 			}
@@ -370,7 +373,14 @@ namespace Confuser.Core {
 		}
 
 		void MarkModule(ProjectModule projModule, ModuleDefMD module, Rules rules, bool isMain) {
-			string snKeyPath = projModule.SNKeyPath, snKeyPass = projModule.SNKeyPassword;
+			string snKeyPath = projModule.SNKeyPath;
+			string snKeyPass = projModule.SNKeyPassword;
+			string snPubKeyPath = projModule.SNPubKeyPath;
+			bool snDelaySig = projModule.SNDelaySig;
+			string snSigKeyPath = projModule.SNSigKeyPath;
+			string snSigKeyPass = projModule.SNSigKeyPassword;
+			string snPubSigKeyPath = projModule.SNPubSigKeyPath;
+
 			var stack = new ProtectionSettingsStack(context, protections);
 
 			var layer = new List<ProtectionSettingsInfo>();
@@ -422,8 +432,23 @@ namespace Confuser.Core {
 			}
 
 			snKeyPath = snKeyPath == null ? null : Path.Combine(project.BaseDirectory, snKeyPath);
+			snPubKeyPath = snPubKeyPath == null ? null : Path.Combine(project.BaseDirectory, snPubKeyPath);
+			snSigKeyPath = snSigKeyPath == null ? null : Path.Combine(project.BaseDirectory, snSigKeyPath);
+			snPubSigKeyPath = snPubSigKeyPath == null ? null : Path.Combine(project.BaseDirectory, snPubSigKeyPath);
+
 			var snKey = LoadSNKey(context, snKeyPath, snKeyPass);
 			context.Annotations.Set(module, SNKey, snKey);
+
+			var snPubKey = LoadSNPubKey(context, snPubKeyPath);
+			context.Annotations.Set(module, SNPubKey, snPubKey);
+
+			context.Annotations.Set(module, SNDelaySig, snDelaySig);
+
+			var snSigKey = LoadSNKey(context, snSigKeyPath, snSigKeyPass);
+			context.Annotations.Set(module, SNSigKey, snSigKey);
+
+			var snSigPubKey = LoadSNPubKey(context, snPubSigKeyPath);
+			context.Annotations.Set(module, SNSigPubKey, snSigPubKey);
 
 			using (stack.Apply(module, layer))
 				ProcessModule(module, stack);

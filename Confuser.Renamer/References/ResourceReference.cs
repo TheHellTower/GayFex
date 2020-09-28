@@ -1,12 +1,15 @@
-﻿using System;
+﻿using System.Globalization;
+using System.Text;
 using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal class ResourceReference : INameReference<TypeDef> {
+	public sealed class ResourceReference : INameReference<TypeDef> {
 		readonly string format;
 		readonly Resource resource;
 		readonly TypeDef typeDef;
+
+		public bool ShouldCancelRename => false;
 
 		public ResourceReference(Resource resource, TypeDef typeDef, string format) {
 			this.resource = resource;
@@ -14,13 +17,26 @@ namespace Confuser.Renamer.References {
 			this.format = format;
 		}
 
+		/// <inheritdoc />
+		public bool DelayRenaming(INameService service) => false;
+
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
-			resource.Name = string.Format(format, typeDef.ReflectionFullName);
+			var newName = string.Format(CultureInfo.InvariantCulture, format, typeDef.ReflectionFullName);
+			if (UTF8String.Equals(resource.Name, newName)) return false;
+			resource.Name = newName;
 			return true;
 		}
 
-		public bool ShouldCancelRename() {
-			return false;
+		public override string ToString() => ToString(null);
+
+		public string ToString(INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("Resource Reference").Append("(");
+			builder.Append("Resource").Append("(").AppendHashedIdentifier("Name", resource.Name).Append(")");
+			builder.Append("; ");
+			builder.AppendReferencedType(typeDef, nameService);
+			builder.Append(")");
+			return builder.ToString();
 		}
 	}
 }

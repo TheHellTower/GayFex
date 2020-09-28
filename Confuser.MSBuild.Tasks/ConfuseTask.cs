@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Xml;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -10,15 +11,18 @@ namespace Confuser.MSBuild.Tasks {
 		[Required]
 		public ITaskItem Project { get; set; }
 
-		[Required, Output]
+		[Required]
 		public ITaskItem OutputAssembly { get; set; }
+
+		[Output]
+		public ITaskItem[] ConfusedFiles { get; set; }
 
 		public override bool Execute() {
 			var project = new ConfuserProject();
 			var xmlDoc = new XmlDocument();
 			xmlDoc.Load(Project.ItemSpec);
 			project.Load(xmlDoc);
-			project.OutputDirectory = Path.GetDirectoryName(OutputAssembly.ItemSpec);
+			project.OutputDirectory = Path.GetDirectoryName(Path.GetFullPath(OutputAssembly.ItemSpec));
 
 			var logger = new MSBuildLogger(Log);
 			var parameters = new ConfuserParameters {
@@ -27,6 +31,9 @@ namespace Confuser.MSBuild.Tasks {
 			};
 
 			ConfuserEngine.Run(parameters).Wait();
+
+			ConfusedFiles = project.Select(m => new TaskItem(Path.Combine(project.OutputDirectory, m.Path))).Cast<ITaskItem>().ToArray();
+
 			return !logger.HasError;
 		}
 	}

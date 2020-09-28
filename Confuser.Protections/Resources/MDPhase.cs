@@ -38,8 +38,10 @@ namespace Confuser.Protections.Resources {
 				// move resources
 				string asmName = ctx.Name.RandomName(RenameMode.Letters);
 				PublicKey pubKey = null;
-				if (writer.TheOptions.StrongNameKey != null)
-					pubKey = PublicKeyBase.CreatePublicKey(writer.TheOptions.StrongNameKey.PublicKey);
+				if (writer.TheOptions.StrongNamePublicKey != null)
+					pubKey = PublicKeyBase.CreatePublicKey(writer.TheOptions.StrongNamePublicKey.CreatePublicKey());
+				else if (writer.TheOptions.StrongNameKey != null)
+					pubKey = PublicKeyBase.CreatePublicKey(writer.TheOptions.StrongNameKey.PublicKey); 
 				var assembly = new AssemblyDefUser(asmName, new Version(0, 0), pubKey);
 				assembly.Modules.Add(new ModuleDefUser(asmName + ".dll"));
 				ModuleDef module = assembly.ManifestModule;
@@ -54,7 +56,7 @@ namespace Confuser.Protections.Resources {
 				}
 				byte[] moduleBuff;
 				using (var ms = new MemoryStream()) {
-					module.Write(ms, new ModuleWriterOptions(e.Writer.Module) { StrongNameKey = writer.TheOptions.StrongNameKey });
+					module.Write(ms, new ModuleWriterOptions(e.Writer.Module) { StrongNameKey = writer.TheOptions.StrongNameKey, StrongNamePublicKey = writer.TheOptions.StrongNamePublicKey, DelaySign = writer.TheOptions.DelaySign });
 					moduleBuff = ms.ToArray();
 				}
 

@@ -1,40 +1,47 @@
 ﻿using System;
 using System.Diagnostics;
 using Confuser.Core;
+using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Renamer.BAML {
-	public class BAMLStringReference : IBAMLReference {
-		Instruction instr;
+	sealed class BAMLStringReference : IBAMLReference {
+		readonly ModuleDef _refModule;
+		readonly Instruction _instr;
 
-		public BAMLStringReference(Instruction instr) {
-			this.instr = instr;
+		public BAMLStringReference(ModuleDef refModule, Instruction instr) {
+			_refModule = refModule;
+			_instr = instr;
 		}
 
-		public bool CanRename(string oldName, string newName) {
-			// TODO: Other protection interfering
-			return instr.OpCode.Code == Code.Ldstr;
+		public bool CanRename(ModuleDef moduleDef, string oldName, string newName) {
+			if (moduleDef != _refModule) return true; // Not relevant for renaming.
+
+			return _instr.OpCode.Code == Code.Ldstr;
 		}
 
-		public void Rename(string oldName, string newName) {
-			var value = (string)instr.Operand;
-			if (value.IndexOf(oldName, StringComparison.OrdinalIgnoreCase) != -1)
-				value = newName;
-			else if (oldName.EndsWith(".baml")) {
-				Debug.Assert(newName.EndsWith(".baml"));
-				/*
-                 * Nik's patch for maintaining relative paths. If the xaml file is referenced in this manner
-                 * "/some.namespace;component/somefolder/somecontrol.xaml"
-                 * then we want to keep the relative path and namespace intact. We should be obfuscating it like this - /some.namespace;component/somefolder/asjdjh2398498dswk.xaml
-                 * */
-				//value = newName.Substring(0, newName.Length - 5) + ".xaml";
-				value = value.Replace(oldName.Replace(".baml", string.Empty, StringComparison.InvariantCultureIgnoreCase),
-				                      newName.Replace(".baml", String.Empty, StringComparison.InvariantCultureIgnoreCase),
-				                      StringComparison.InvariantCultureIgnoreCase);
+		public void Rename(ModuleDef moduleDef, string oldName, string newName) {
+			if (moduleDef != _refModule) return;
+
+			var value = (string)_instr.Operand;
+			while (true) {
+				if (value.EndsWith(oldName, StringComparison.OrdinalIgnoreCase)) {
+					value = value.Substring(0, value.Length - oldName.Length) + newName;
+					_instr.Operand = value;
+				}
+				else if (oldName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase)) {
+					oldName = ToXaml(oldName);
+					newName = ToXaml(newName);
+					continue;
+				}
+
+				break;
 			}
-			else
-				throw new UnreachableException();
-			instr.Operand = value;
+		}
+
+		private static string ToXaml(string refName) {
+			Debug.Assert(refName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase));
+			return refName.Substring(0, refName.Length - 5) + ".xaml";
 		}
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Confuser.Core;
 using Confuser.Renamer.Analyzers;
 using dnlib.DotNet;
@@ -63,6 +64,7 @@ namespace Confuser.Renamer {
 			bool winforms = false;
 			bool json = false;
 			bool visualBasic = false;
+			bool vsComposition = false;
 
 			foreach (var module in context.Modules) {
 				foreach (var asmRef in module.GetAssemblyRefs()) {
@@ -78,6 +80,9 @@ namespace Confuser.Renamer {
 					}
 					else if (asmRef.Name == "Newtonsoft.Json") {
 						json = true;
+					}
+					else if (asmRef.Name == "Microsoft.VisualStudio.Composition") {
+						vsComposition = true;
 					}
 				}
 
@@ -113,6 +118,12 @@ namespace Confuser.Renamer {
 				var vbAnalyzer = new VisualBasicRuntimeAnalyzer();
 				context.Logger.Debug("Visual Basic Embedded Runtime found, enabling compatibility.");
 				service.Renamers.Add(vbAnalyzer);
+			}
+
+			if (vsComposition) {
+				var analyzer = new VsCompositionAnalyzer();
+				context.Logger.Debug("Visual Studio Composition found, enabling compatibility.");
+				service.Renamers.Add(analyzer);
 			}
 		}
 
@@ -158,10 +169,6 @@ namespace Confuser.Renamer {
 				service.SetCanRename(type, false);
 			}
 			else if (type.IsRuntimeSpecialName || type.IsGlobalModuleType) {
-				service.SetCanRename(type, false);
-			}
-			else if (type.FullName == "ConfusedByAttribute") {
-				// Courtesy
 				service.SetCanRename(type, false);
 			}
 
@@ -221,14 +228,11 @@ namespace Confuser.Renamer {
 
 		void Analyze(NameService service, ConfuserContext context, ProtectionParameters parameters, PropertyDef property) {
 			if (IsVisibleOutside(context, parameters, property.DeclaringType) &&
-				property.IsPublic() &&
+			    (property.IsFamily() || property.IsFamilyOrAssembly() || property.IsPublic()) &&
 				IsVisibleOutside(context, parameters, property))
 				service.SetCanRename(property, false);
 
 			else if (property.IsRuntimeSpecialName)
-				service.SetCanRename(property, false);
-
-			else if (property.IsExplicitlyImplementedInterfaceMember())
 				service.SetCanRename(property, false);
 
 			else if (parameters.GetParameter(context, property, "forceRen", false))
@@ -243,14 +247,11 @@ namespace Confuser.Renamer {
 
 		void Analyze(NameService service, ConfuserContext context, ProtectionParameters parameters, EventDef evt) {
 			if (IsVisibleOutside(context, parameters, evt.DeclaringType) &&
-				evt.IsPublic() &&
+			    (evt.IsFamily() || evt.IsFamilyOrAssembly() || evt.IsPublic()) &&
 				IsVisibleOutside(context, parameters, evt))
 				service.SetCanRename(evt, false);
 
 			else if (evt.IsRuntimeSpecialName)
-				service.SetCanRename(evt, false);
-
-			else if (evt.IsExplicitlyImplementedInterfaceMember())
 				service.SetCanRename(evt, false);
 		}
 	}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace Confuser.UnitTest {
@@ -15,6 +16,14 @@ namespace Confuser.UnitTest {
 			try {
 				if (File.Exists(debugSymbols)) {
 					File.Delete(debugSymbols);
+				}
+			}
+			catch (UnauthorizedAccessException) { }
+
+			try {
+				var directoryName = Path.GetDirectoryName(outputFile);
+				if (Directory.Exists(directoryName) && !Directory.EnumerateFileSystemEntries(directoryName).Any()) {
+					Directory.Delete(directoryName);
 				}
 			}
 			catch (UnauthorizedAccessException) { }

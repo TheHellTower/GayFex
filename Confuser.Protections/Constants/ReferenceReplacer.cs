@@ -12,6 +12,7 @@ namespace Confuser.Protections.Constants {
 	internal class ReferenceReplacer {
 		public static void ReplaceReference(CEContext ctx, ProtectionParameters parameters) {
 			foreach (var entry in ctx.ReferenceRepl) {
+				EnsureNoInlining(entry.Key);
 				if (parameters.GetParameter<bool>(ctx.Context, entry.Key, "cfg"))
 					ReplaceCFG(entry.Key, entry.Value, ctx);
 				else
@@ -28,6 +29,11 @@ namespace Confuser.Protections.Constants {
 				Instruction instr1 = method.Body.Instructions[i + 1];
 				method.Body.Instructions.Insert(i + 1, Instruction.Create(OpCodes.Br_S, instr1));
 			}
+		}
+
+		static void EnsureNoInlining(MethodDef method) {
+			method.ImplAttributes &= ~MethodImplAttributes.AggressiveInlining;
+			method.ImplAttributes |= MethodImplAttributes.NoInlining;
 		}
 
 		struct CFGContext {

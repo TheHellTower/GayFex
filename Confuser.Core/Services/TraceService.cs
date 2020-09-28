@@ -6,16 +6,14 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Core.Services {
-	internal class TraceService : ITraceService {
+	public sealed class TraceService : ITraceService {
 		readonly Dictionary<MethodDef, MethodTrace> cache = new Dictionary<MethodDef, MethodTrace>();
-		ConfuserContext context;
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="TraceService" /> class.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		public TraceService(ConfuserContext context) {
-			this.context = context;
+		public TraceService() {
 		}
 
 
@@ -207,9 +205,7 @@ namespace Confuser.Core.Services {
 		public int[] TraceArguments(Instruction instr) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 				throw new ArgumentException("Invalid call instruction.", "instr");
-
-			int push, pop;
-			instr.CalculateStackUsage(out push, out pop); // pop is number of arguments
+			instr.CalculateStackUsage(out _, out int pop); // pop is number of arguments
 			if (pop == 0)
 				return new int[0];
 
@@ -225,8 +221,25 @@ namespace Confuser.Core.Services {
 			while (working.Count > 0) {
 				int index = working.Dequeue();
 				while (index >= 0) {
-					if (BeforeStackDepths[index] == targetStack)
-						break;
+					if (BeforeStackDepths[index] == targetStack) {
+						var currentInstr = method.Body.Instructions[index];
+						currentInstr.CalculateStackUsage(out int push, out pop);
+						if (push == 0 && pop == 0) {
+							// This instruction isn't doing anything to the stack. Could be a nop or some prefix.
+							// Ignore it and move on to the next.
+						} else if (method.Body.Instructions[index].OpCode.Code != Code.Dup) {
+							// It's not a duplicate instruction, this is an acceptable start point.
+							break;
+						} else {
+							var prevInstr = method.Body.Instructions[index - 1];
+							prevInstr.CalculateStackUsage(out push, out _);
+							if (push > 0) {
+								// A duplicate instruction is an acceptable start point in case the preceeding instruction
+								// pushes a value.
+								break;
+							}
+						}
+					}
 
 					if (fromInstrs.ContainsKey(index))
 						foreach (Instruction fromInstr in fromInstrs[index]) {
@@ -246,6 +259,9 @@ namespace Confuser.Core.Services {
 					return null;
 			}
 
+			while (method.Body.Instructions[beginInstrIndex].OpCode.Code == Code.Dup)
+				beginInstrIndex--;
+
 			// Trace the index of arguments
 			seen.Clear();
 			var working2 = new Queue<Tuple<int, Stack<int>>>();
@@ -259,18 +275,26 @@ namespace Confuser.Core.Services {
 
 				while (index != instrIndex && index < method.Body.Instructions.Count) {
 					Instruction currentInstr = Instructions[index];
-					currentInstr.CalculateStackUsage(out push, out pop);
-					int stackUsage = pop - push;
-					if (stackUsage < 0) {
-						Debug.Assert(stackUsage == -1); // i.e. push
-						evalStack.Push(index);
+					currentInstr.CalculateStackUsage(out int push, out pop);
+					if (currentInstr.OpCode.Code == Code.Dup) {
+						// Special case duplicate. This causes the current value on the stack to be duplicated.
+						// To show this behaviour, we'll fetch the last object on the eval stack and add it back twice.
+						Debug.Assert(pop == 1 && push == 2 && evalStack.Count > 0);
+						var lastIdx = evalStack.Pop();
+						evalStack.Push(lastIdx);
+						evalStack.Push(lastIdx);
 					}
 					else {
-						if (evalStack.Count < stackUsage)
-							return null;
-
-						for (int i = 0; i < stackUsage; i++)
-							evalStack.Pop();
+						// Removing values from the stack. If the stack is already empty, the poped values are of no relevance.
+						Debug.Assert(evalStack.Count >= pop);
+						for (var i = 0; i < pop; i++) {
+							if (evalStack.Count > 0)
+								evalStack.Pop();
+						}
+						Debug.Assert(push <= 1); // Instructions shouldn't put more than one value on the stack.
+						for (var i = 0; i < push; i++) {
+							evalStack.Push(index);
+						}
 					}
 
 					object instrOperand = currentInstr.Operand;
@@ -279,17 +303,27 @@ namespace Confuser.Core.Services {
 						if (currentInstr.OpCode.FlowControl == FlowControl.Branch)
 							index = targetIndex;
 						else {
-							working2.Enqueue(Tuple.Create(targetIndex, new Stack<int>(evalStack)));
+							working2.Enqueue(Tuple.Create(targetIndex, CopyStack(evalStack)));
 							index++;
 						}
 					}
 					else if (currentInstr.Operand is Instruction[]) {
 						foreach (Instruction targetInstr in (Instruction[])currentInstr.Operand)
-							working2.Enqueue(Tuple.Create(offset2index[targetInstr.Offset], new Stack<int>(evalStack)));
+							working2.Enqueue(Tuple.Create(offset2index[targetInstr.Offset], CopyStack(evalStack)));
 						index++;
 					}
 					else
 						index++;
+				}
+
+				if (evalStack.Count > argCount) {
+					// There are too many instructions on the eval stack.
+					// That means that there are instructions for following commands.
+					// To handle things properly we're only using the required amount on the top of the stack.
+					var tmp = evalStack.ToArray();
+					evalStack.Clear();
+					foreach(var idx in tmp.Take(argCount).Reverse())
+						evalStack.Push(idx);
 				}
 
 				if (evalStack.Count != argCount)
@@ -304,6 +338,14 @@ namespace Confuser.Core.Services {
 
 			Array.Reverse(ret);
 			return ret;
+		}
+
+		public static Stack<T> CopyStack<T>(Stack<T> original)
+		{
+			var arr = new T[original.Count];
+			original.CopyTo(arr, 0);
+			Array.Reverse(arr);
+			return new Stack<T>(arr);
 		}
 	}
 }

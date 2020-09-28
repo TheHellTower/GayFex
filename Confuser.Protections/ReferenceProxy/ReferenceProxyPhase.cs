@@ -119,6 +119,9 @@ namespace Confuser.Protections.ReferenceProxy {
 		}
 
 		void ProcessMethod(RPContext ctx) {
+			if (ctx.Marker.GetHelperParent(ctx.Method) != null)
+				return;
+
 			for (int i = 0; i < ctx.Body.Instructions.Count; i++) {
 				Instruction instr = ctx.Body.Instructions[i];
 				if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt || instr.OpCode.Code == Code.Newobj) {

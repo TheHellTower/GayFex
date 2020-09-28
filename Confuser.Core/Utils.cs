@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -155,7 +156,7 @@ namespace Confuser.Core {
 
 		/// <summary>
 		///     Returns a new string in which all occurrences of a specified string in
-		///     <paramref name="str" /><paramref name="str" /> are replaced with another specified string.
+		///     <paramref name="str" /> are replaced with another specified string.
 		/// </summary>
 		/// <returns>
 		///     A <see cref="string" /> equivalent to <paramref name="str" /> but with all instances of
@@ -223,13 +224,25 @@ namespace Confuser.Core {
 		/// <param name="logger">The logger.</param>
 		/// <returns>A wrapper of the list.</returns>
 		public static IEnumerable<T> WithProgress<T>(this IEnumerable<T> enumerable, ILogger logger) {
-			var list = new List<T>(enumerable);
-			int i;
-			for (i = 0; i < list.Count; i++) {
-				logger.Progress(i, list.Count);
-				yield return list[i];
+			switch (enumerable) {
+				case IReadOnlyCollection<T> readOnlyCollection:
+					return WithProgress(enumerable, readOnlyCollection.Count, logger);
+				case ICollection<T> collection:
+					return WithProgress(enumerable, collection.Count, logger);
+				default:
+					var buffered = enumerable.ToList();
+					return WithProgress(buffered, buffered.Count, logger);
 			}
-			logger.Progress(i, list.Count);
+		}
+
+		public static IEnumerable<T> WithProgress<T>(this IEnumerable<T> enumerable, int totalCount, ILogger logger) {
+			var counter = 0;
+			foreach (var obj in enumerable) {
+				logger.Progress(counter, totalCount);
+				yield return obj;
+				counter++;
+			}
+			logger.Progress(totalCount, totalCount);
 			logger.EndProgress();
 		}
 	}
