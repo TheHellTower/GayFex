@@ -430,6 +430,35 @@ namespace Confuser.Core {
 			return evt.AllMethods().Any(method => method.IsStatic);
 		}
 
+		public static bool IsInterfaceImplementation(this MethodDef method) {
+			if (method == null) throw new ArgumentNullException(nameof(method));
+
+			return IsImplicitImplementedInterfaceMember(method) || IsExplicitlyImplementedInterfaceMember(method);
+		}
+
+		/// <summary>
+		///     Determines whether the specified method is an implicitly implemented interface member.
+		/// </summary>
+		/// <param name="method">The method.</param>
+		/// <returns>
+		///     <see langword="true" /> if the specified method is an implicitly implemented interface member;
+		///     otherwise, <see langword="false" />.
+		/// </returns>
+		/// <exception cref="ArgumentNullException"><paramref name="method"/> is <see langword="null" />.</exception>
+		/// <exception cref="TypeResolveException">Failed to resolve required interface types.</exception>
+		public static bool IsImplicitImplementedInterfaceMember(this MethodDef method) {
+			if (method == null) throw new ArgumentNullException(nameof(method));
+
+			if (method.IsPublic && method.IsNewSlot) {
+				foreach (var iFace in method.DeclaringType.Interfaces) {
+					var iFaceDef = iFace.Interface.ResolveTypeDefThrow();
+					if (iFaceDef.FindMethod(method.Name, (MethodSig)method.Signature) != null)
+						return true;
+				}
+			}
+			return false;
+		}
+
 		/// <summary>
 		///     Determines whether the specified method is an explicitly implemented interface member.
 		/// </summary>
@@ -516,6 +545,18 @@ namespace Confuser.Core {
 			return false;
 		}
 
+		public static bool IsEntryPoint(this MethodDef methodDef) {
+			if (methodDef == null) throw new ArgumentNullException(nameof(methodDef));
+
+			return methodDef == methodDef.Module.EntryPoint;
+		}
+
+		public static bool IsEntryPoint(this TypeDef typeDef) {
+			if (typeDef == null) throw new ArgumentNullException(nameof(typeDef));
+
+			return typeDef == typeDef.Module.EntryPoint?.DeclaringType;
+		}
+		
 		/// <summary>
 		///		Merges a specified call instruction into the body.
 		/// </summary>
