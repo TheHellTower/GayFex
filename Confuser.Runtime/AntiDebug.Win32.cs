@@ -8,7 +8,7 @@ namespace Confuser.Runtime {
 		static void Initialize() {
 			string x = "COR";
 			if (Environment.GetEnvironmentVariable(x + "_PROFILER") != null ||
-				Environment.GetEnvironmentVariable(x + "_ENABLE_PROFILING") != null)
+			    Environment.GetEnvironmentVariable(x + "_ENABLE_PROFILING") != null)
 				Environment.FailFast(null);
 			//Anti dnspy
 			Process here = GetParentProcess();
@@ -24,14 +24,14 @@ namespace Confuser.Runtime {
 
 		private static ParentProcessUtilities PPU;
 		public static Process GetParentProcess() {
-			return PPU.GetParentProcess();
+			return ParentProcessUtilities.GetParentProcess();
 		}
 
 		/// <summary>
 		/// A utility class to determine a process parent.
 		/// </summary>
 		[StructLayout(LayoutKind.Sequential)]
-		struct ParentProcessUtilities {
+		internal struct ParentProcessUtilities {
 			// These members must match PROCESS_BASIC_INFORMATION
 			internal IntPtr Reserved1;
 			internal IntPtr PebBaseAddress;
@@ -42,14 +42,12 @@ namespace Confuser.Runtime {
 
 			[DllImport("ntdll.dll")]
 			private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, int processInformationLength, out int returnLength);
-
-
-
+			
 			/// <summary>
 			/// Gets the parent process of the current process.
 			/// </summary>
 			/// <returns>An instance of the Process class.</returns>
-			internal Process GetParentProcess() {
+			internal static Process GetParentProcess() {
 				return GetParentProcess(Process.GetCurrentProcess().Handle);
 			}
 

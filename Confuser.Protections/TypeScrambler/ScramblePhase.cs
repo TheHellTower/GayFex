@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using Confuser.Core;
-using Confuser.Protections.TypeScramble.Scrambler;
+using Confuser.Protections.TypeScrambler.Scrambler;
 using dnlib.DotNet;
 
-namespace Confuser.Protections.TypeScramble {
+namespace Confuser.Protections.TypeScrambler {
 	internal sealed class ScramblePhase : ProtectionPhase {
-
 		public ScramblePhase(TypeScrambleProtection parent) : base(parent) { }
 
 		public override ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods;

@@ -4,9 +4,8 @@ using System.Diagnostics;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
+namespace Confuser.Protections.TypeScrambler.Scrambler.Rewriter.Instructions {
 	internal sealed class MemberRefInstructionRewriter : InstructionRewriter<MemberRef> {
-
 		internal override void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, MemberRef operand) {
 			Debug.Assert(service != null, $"{nameof(service)} != null");
 			Debug.Assert(method != null, $"{nameof(method)} != null");
@@ -37,13 +36,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 				sig = typeSpec.ToTypeSig();
 
 			if (sig != null) {
-
-				//ScannedItem t = service.GetItem(operand.MDToken);
-				//if (t != null) {
-				//    sig = t.CreateGenericTypeSig(service.GetItem(method.DeclaringType.MDToken));
-				// }
-				var paramCount = operand.MethodSig.Params.Count;
-
 				body[index].OpCode = OpCodes.Ldtoken;
 
 				var gen = current?.GetGeneric(sig);
@@ -55,19 +47,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
 					newTypeSpec = new TypeSpecUser(sig);
 				}
 				body[index].Operand = newTypeSpec;
-
-				/*
-				var genericCallSig =  new GenericInstMethodSig( new TypeSig[] { current.ConvertToGenericIfAvalible(sig) });
-				foreach(var param in operand.MethodSig.Params.Select(x => current.ConvertToGenericIfAvalible(x))) {
-				    genericCallSig.GenericArguments.Add(param);
-				}
-
-				// tgtMethod.GenericInstMethodSig = genericCallSig;
-				var spec = new MethodSpecUser(tgtMethod, genericCallSig);
-
-				body[index].OpCode = OpCodes.Call;
-				body[index].Operand = tgtMethod;
-				*/
 
 				body.Insert(++index, Instruction.Create(OpCodes.Call, mod.Import(gettype)));
 				body.Insert(++index, Instruction.Create(OpCodes.Call, mod.Import(createInstance)));

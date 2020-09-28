@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using dnlib.DotNet;
 
-namespace Confuser.Protections.TypeScramble.Scrambler {
+namespace Confuser.Protections.TypeScrambler.Scrambler {
 	internal static class SignatureUtils {
 		internal static TypeSig GetLeaf(TypeSig t) {
 			Debug.Assert(t != null, $"{nameof(t)} != null");

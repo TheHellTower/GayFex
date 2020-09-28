@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using dnlib.DotNet.Emit;
 
-namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
+namespace Confuser.Protections.TypeScrambler.Scrambler.Analyzers {
 	internal sealed class ContextAnalyzerFactory : IEnumerable<ContextAnalyzer> {
 		private IDictionary<Type, ContextAnalyzer> Analyzers { get; } = new Dictionary<Type, ContextAnalyzer>();
 		private ScannedMethod TargetMethod { get; }

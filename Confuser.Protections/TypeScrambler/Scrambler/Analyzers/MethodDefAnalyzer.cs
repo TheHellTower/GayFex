@@ -2,7 +2,7 @@
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
+namespace Confuser.Protections.TypeScrambler.Scrambler.Analyzers {
 	internal sealed class MethodDefAnalyzer : ContextAnalyzer<MethodDef> {
 		private TypeService Service { get; }
 
@@ -20,7 +20,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
 			if (sc?.IsScambled == true)
 				foreach (var regTypes in sc.TrueTypes)
 					method.RegisterGeneric(regTypes);
-
 		}
 	}
 }

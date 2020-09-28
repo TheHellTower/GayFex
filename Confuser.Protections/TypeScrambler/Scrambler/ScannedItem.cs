@@ -4,7 +4,7 @@ using System.Linq;
 using Confuser.Core;
 using dnlib.DotNet;
 
-namespace Confuser.Protections.TypeScramble.Scrambler {
+namespace Confuser.Protections.TypeScrambler.Scrambler {
 	internal abstract class ScannedItem {
 		private readonly List<TypeSig> _trueTypes;
 

@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
 using Confuser.Core;
-using Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions;
+using Confuser.Protections.TypeScrambler.Scrambler.Rewriter.Instructions;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace Confuser.Protections.TypeScramble.Scrambler {
+namespace Confuser.Protections.TypeScrambler.Scrambler {
 	internal sealed class TypeRewriter {
 		private TypeService Service { get; }
 		private InstructionRewriterFactory RewriteFactory { get; }

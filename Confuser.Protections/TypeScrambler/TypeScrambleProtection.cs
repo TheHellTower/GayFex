@@ -1,7 +1,7 @@
 ﻿using System;
 using Confuser.Core;
 
-namespace Confuser.Protections.TypeScramble {
+namespace Confuser.Protections.TypeScrambler {
 	class TypeScrambleProtection : Protection {
 		public override ProtectionPreset Preset => ProtectionPreset.None;
 

@@ -3,7 +3,7 @@ using System.Diagnostics;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace Confuser.Protections.TypeScramble.Scrambler.Rewriter.Instructions {
+namespace Confuser.Protections.TypeScrambler.Scrambler.Rewriter.Instructions {
 	internal sealed class TypeDefInstructionRewriter : InstructionRewriter<TypeDef> {
 		internal override void ProcessOperand(TypeService service, MethodDef method, IList<Instruction> body, ref int index, TypeDef operand) {
 			Debug.Assert(service != null, $"{nameof(service)} != null");

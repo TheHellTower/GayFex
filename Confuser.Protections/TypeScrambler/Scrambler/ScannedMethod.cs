@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Confuser.Core;
-using Confuser.Protections.TypeScramble.Scrambler.Analyzers;
+using Confuser.Protections.TypeScrambler.Scrambler.Analyzers;
 using dnlib.DotNet;
 
-namespace Confuser.Protections.TypeScramble.Scrambler {
+namespace Confuser.Protections.TypeScrambler.Scrambler {
 	internal sealed class ScannedMethod : ScannedItem {
-
 		internal MethodDef TargetMethod { get; }
 
 		private ContextAnalyzerFactory Analyzers { get; }
@@ -154,7 +154,6 @@ namespace Confuser.Protections.TypeScramble.Scrambler {
 					types.Add(originalArgument);
 				} else if (from?.IsScambled == true) {
 					types.Add(from.ConvertToGenericIfAvalible(trueType));
-
 				} else if (trueType.ToTypeDefOrRef() is TypeDef def) {
 					// I am sure there are cleaner and better ways to do this.
 					var item = srv.GetItem(def);

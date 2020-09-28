@@ -2,7 +2,7 @@
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace Confuser.Protections.TypeScramble.Scrambler.Analyzers {
+namespace Confuser.Protections.TypeScrambler.Scrambler.Analyzers {
 	internal sealed class MethodSpecAnalyzer : ContextAnalyzer<MethodSpec> {
 		internal override void Process(ScannedMethod method, Instruction instruction, MethodSpec operand) {
 			Debug.Assert(method != null, $"{nameof(method)} != null");

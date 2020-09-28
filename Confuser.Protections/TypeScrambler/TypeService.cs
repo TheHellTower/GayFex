@@ -2,17 +2,16 @@
 using System.Diagnostics;
 using System.Linq;
 using Confuser.Core;
-using Confuser.Protections.TypeScramble.Scrambler;
+using Confuser.Protections.TypeScrambler.Scrambler;
 using dnlib.DotNet;
 
-namespace Confuser.Protections.TypeScramble {
+namespace Confuser.Protections.TypeScrambler {
 	internal sealed class TypeService {
 		private Dictionary<IMemberDef, ScannedItem> GenericsMapper = new Dictionary<IMemberDef, ScannedItem>();
 
 		internal bool ScrambledAnything => GenericsMapper.Any();
 
 		internal void AddScannedItem(ScannedMethod m) => AddScannedItemGeneral(m);
-
 
 		internal void AddScannedItem(ScannedType m) {
 			//AddScannedItemGeneral(m);
@@ -41,6 +40,5 @@ namespace Confuser.Protections.TypeScramble {
 		internal ScannedMethod GetItem(MethodDef methodDef) => GetItemInternal(methodDef) as ScannedMethod;
 
 		internal ScannedType GetItem(TypeDef typeDef) => GetItemInternal(typeDef) as ScannedType;
-
 	}
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using Confuser.Core;
 using dnlib.DotNet;
 
-namespace Confuser.Protections.TypeScramble.Scrambler {
+namespace Confuser.Protections.TypeScrambler.Scrambler {
 	internal sealed class ScannedType : ScannedItem {
 		internal TypeDef TargetType { get; private set; }
 
