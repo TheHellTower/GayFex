@@ -48,7 +48,13 @@ namespace Confuser.Core {
 		///     Gets the assembly resolver.
 		/// </summary>
 		/// <value>The assembly resolver.</value>
-		public AssemblyResolver Resolver { get; internal set; }
+		public IAssemblyResolver Resolver => InternalResolver;
+
+		/// <summary>
+		///     Gets the assembly resolver.
+		/// </summary>
+		/// <value>The assembly resolver.</value>
+		internal ConfuserAssemblyResolver InternalResolver { get; set; }
 
 		/// <summary>
 		///     Gets the modules being protected.

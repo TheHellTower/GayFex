@@ -152,13 +152,13 @@ namespace Confuser.Core {
 					continue;
 				}
 
-				ModuleDefMD modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
+				ModuleDefMD modDef = module.Resolve(proj.BaseDirectory, context.InternalResolver.DefaultModuleContext);
 				context.CheckCancellation();
 
 				if (proj.Debug)
 					modDef.LoadPdb();
 
-				context.Resolver.AddToCache(modDef);
+				context.InternalResolver.AddToCache(modDef);
 				modules.Add(Tuple.Create(module, modDef));
 			}
 

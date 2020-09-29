@@ -9,6 +9,8 @@ using Xunit.Abstractions;
 
 namespace Confuser.UnitTest {
 	public abstract class TestBase {
+		private const string _externalPrefix = "external:";
+
 		readonly ITestOutputHelper outputHelper;
 
 		protected TestBase(ITestOutputHelper outputHelper) =>
@@ -30,8 +32,10 @@ namespace Confuser.UnitTest {
 			if (Directory.Exists(outputDir)) {
 				Directory.Delete(outputDir, true);
 			}
-			string entryInputFileName = Path.Combine(baseDir, inputFileNames[0]);
-			var entryOutputFileName = Path.Combine(outputDir, inputFileNames[0]);
+
+			string firstFileName = GetFileName(inputFileNames[0]);
+			string entryInputFileName = Path.Combine(baseDir, firstFileName);
+			var entryOutputFileName = Path.Combine(outputDir, firstFileName);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir,
@@ -39,7 +43,10 @@ namespace Confuser.UnitTest {
 			};
 
 			foreach (string name in inputFileNames) {
-				var projectModule = new ProjectModule { Path = Path.Combine(baseDir, name) };
+				var projectModule = new ProjectModule {
+					Path = Path.Combine(baseDir, GetFileName(name)),
+					IsExternal = IsExternal(name)
+				};
 				projectModuleAction?.Invoke(projectModule);
 				proj.Add(projectModule);
 			}
@@ -56,7 +63,7 @@ namespace Confuser.UnitTest {
 			await ConfuserEngine.Run(parameters);
 
 			for (var index = 0; index < inputFileNames.Length; index++) {
-				string name = inputFileNames[index];
+				string name = GetFileName(inputFileNames[index]);
 				string outputName = Path.Combine(outputDir, name);
 
 				bool exists;
@@ -72,8 +79,13 @@ namespace Confuser.UnitTest {
 					// Check if output assemblies is obfuscated
 					Assert.NotEqual(FileUtilities.ComputeFileChecksum(Path.Combine(baseDir, name)),
 						FileUtilities.ComputeFileChecksum(outputName));
+				} else if (IsExternal(inputFileNames[index])) {
+					File.Copy(
+						Path.Combine(baseDir, GetFileName(inputFileNames[index])),
+						Path.Combine(outputDir, GetFileName(inputFileNames[index])));
 				}
 			}
+
 
 			if (Path.GetExtension(entryInputFileName) == ".exe") {
 				var info = new ProcessStartInfo(entryOutputFileName) { RedirectStandardOutput = true, UseShellExecute = false };
@@ -92,5 +104,13 @@ namespace Confuser.UnitTest {
 				}
 			}
 		}
+
+		private static string GetFileName(string name) {
+			if (IsExternal(name))
+				return name.Substring(_externalPrefix.Length);
+			return name;
+		}
+
+		private static bool IsExternal(string name) => name.StartsWith(_externalPrefix, StringComparison.OrdinalIgnoreCase);
 	}
 }
