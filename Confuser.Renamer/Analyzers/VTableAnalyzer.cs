@@ -117,7 +117,9 @@ namespace Confuser.Renamer.Analyzers {
 			if (discoveredBaseMemberDef is null)
 				discoveredBaseMemberDef = basePropDef;
 			else {
-				var references = service.GetReferences(discoveredBaseMemberDef).OfType<MemberSiblingReference>().ToArray();
+				var references = service.GetReferences(discoveredBaseMemberDef)
+					.OfType<MemberSiblingReference>()
+					.ToArray();
 				if (references.Length > 0) {
 					discoveredBaseMemberDef = (T)references[0].OldestSiblingDef;
 					foreach (var siblingRef in references.Skip(1)) {
@@ -125,6 +127,9 @@ namespace Confuser.Renamer.Analyzers {
 						RedirectSiblingReferences(siblingRef.OldestSiblingDef, discoveredBaseMemberDef, service);
 					}
 				}
+
+				// Check if the discovered base type is the current type. If so, nothing needs to be done.
+				if (ReferenceEquals(basePropDef, discoveredBaseMemberDef)) return;
 
 				service.AddReference(basePropDef, new MemberSiblingReference(basePropDef, discoveredBaseMemberDef));
 				UpdateOldestSiblingReference(discoveredBaseMemberDef, basePropDef, service);
