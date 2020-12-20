@@ -22,7 +22,7 @@ and the [ConfuserEx](https://github.com/yck1509/ConfuserEx) project.
 
 Features
 --------
-ConfuserEx supports .NET Framework from 2.0 - 4.7.2, .NET Standard, .NET Core and Mono.
+ConfuserEx supports .NET Framework from 2.0 - 4.8, .NET Standard, .NET Core and Mono.
 It supports most of the protections you'll find in commerical protectors, and some more!
 
 <div class="container-fluid">
@@ -70,7 +70,7 @@ Downloads
 ---------
 You could obtain the latest source code and releases at [GitHub project page](https://github.com/mkaring/ConfuserEx/releases).
 You may find the bleeding edge builds at [the CI Server](https://ci.appveyor.com/project/mkaring/confuserex).
-ConfuserEx requires .NET Framework 4.6.1 to run. The CLI interface runs also on .NET Core 2.2 on multiple platforms.
+ConfuserEx requires .NET Framework 4.6.1 or later to run. The CLI interface runs also on .NET Core 2.2 on multiple platforms.
 It might be helpful to read the [FAQ]({{ BASE_PATH }}/faq/)!
 
 ---
@@ -86,5 +86,5 @@ You could also contribute to the project by creating pull requests and [reportin
 Donation
 ---------
 If you find ConfuserEx 2 helpful and want to donate to support my work on the project you can support me on
-[open collective](https://opencollective.com/confuserex), [liberapay](https://liberapay.com/mkaring/) or 
+[open collective](https://opencollective.com/confuserex), [GitHub Sponsors](https://github.com/sponsors/mkaring) or 
 you can [buy me a coffee](http://buymeacoff.ee/fFUnXMCdW) :coffee:.
