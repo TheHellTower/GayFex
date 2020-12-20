@@ -12,7 +12,6 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="70px" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="100px" />
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center">
@@ -39,12 +38,12 @@
 
                 <StackPanel TextBlock.FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                     <Label FontWeight="Bold">ConfuserEx, a .NET protector</Label>
-                    <Label>Developed by Ki, open sourced under MIT license.</Label>
+                    <Label>Developed by Martin Karing, open sourced under MIT license.</Label>
                     <Label>
                         <TextBlock>
-                            <Hyperlink NavigateUri="http://yck1509.github.io/ConfuserEx/"
+                            <Hyperlink NavigateUri="https://mkaring.github.io/ConfuserEx/"
                                        Command="{Binding LaunchBrowser}"
-                                       CommandParameter="http://yck1509.github.io/ConfuserEx/">
+                                       CommandParameter="https://mkaring.github.io/ConfuserEx/">
                                 Visit the project page for details.
                             </Hyperlink>
                         </TextBlock>
@@ -54,9 +53,9 @@
                     <Label>If you like it or find it useful,</Label>
                     <Label>
                         <TextBlock>
-                            <Hyperlink NavigateUri="http://yck1509.github.io/ConfuserEx/#donation"
+                            <Hyperlink NavigateUri="https://mkaring.github.io/ConfuserEx/#donation"
                                        Command="{Binding LaunchBrowser}"
-                                       CommandParameter="http://yck1509.github.io/ConfuserEx/#donation">
+                                       CommandParameter="https://mkaring.github.io/ConfuserEx/#donation">
                                 feel free to support the project by making a donation!
                             </Hyperlink>
                         </TextBlock>
@@ -64,19 +63,10 @@
                 </StackPanel>
             </DockPanel>
 
-            <Button Grid.Row="2" Grid.Column="0" Command="{Binding LaunchBrowser}"
-                    CommandParameter="http://board.b-at-s.info/" Focusable="False" Cursor="Hand">
-                <Button.Template>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <ContentPresenter />
-                    </ControlTemplate>
-                </Button.Template>
-                <Image Source="{DynamicResource TeamLogo}" Width="400" Height="100" />
-            </Button>
-
-            <StackPanel Grid.Column="1" Grid.RowSpan="3" TextBlock.FontSize="13" Margin="10"
+            <StackPanel Grid.Column="1" Grid.RowSpan="2" TextBlock.FontSize="13" Margin="10"
                         VerticalAlignment="Stretch" HorizontalAlignment="Center">
                 <Label HorizontalContentAlignment="Center">Special Thanks to:</Label>
+                <Label HorizontalContentAlignment="Center">Ki</Label>
                 <Label HorizontalContentAlignment="Center">0xd4d</Label>
                 <Label HorizontalContentAlignment="Center">CodeCracker</Label>
                 <Label HorizontalContentAlignment="Center">JeRRy</Label>
