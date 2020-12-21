@@ -40,34 +40,36 @@ namespace Confuser.Runtime {
 			b = Lzma.Decompress(o);
 		}
 
-		static T Get<T>(uint id) {
+		static T Get<T>(int id) {
 			// op_equality is not available on .NET Framework 2.0 and older. To ensure compatibility,
 			// we'll be using equals.
 			if (Assembly.GetExecutingAssembly().Equals(Assembly.GetCallingAssembly())) {
-				id = (uint)Mutation.Placeholder((int)id);
-				uint t = id >> 30;
+				id = Mutation.Placeholder(id);
+				int t = (int)((uint)id >> 30);
 
-				T ret = default(T);
-				id &= 0x3fffffff;
-				id <<= 2;
+				T ret;
+				id = (id & 0x3fffffff) << 2;
 
 				if (t == Mutation.KeyI0) {
-					int l = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
-					ret = (T)(object)string.Intern(Encoding.UTF8.GetString(b, (int)id, l));
+					int l = b[id] | (b[id+1] << 8) | (b[id+2] << 16) | (b[id+3] << 24);
+					ret = (T)(object)string.Intern(Encoding.UTF8.GetString(b, id+4, l));
 				}
 				// NOTE: Assume little-endian
 				else if (t == Mutation.KeyI1) {
 					var v = new T[1];
-					Buffer.BlockCopy(b, (int)id, v, 0, Mutation.Value<int>());
+					Buffer.BlockCopy(b, id, v, 0, Mutation.Value<int>());
 					ret = v[0];
 				}
 				else if (t == Mutation.KeyI2) {
-					int s = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
-					int l = b[id++] | (b[id++] << 8) | (b[id++] << 16) | (b[id++] << 24);
+					int s = b[id] | (b[id+1] << 8) | (b[id+2] << 16) | (b[id+3] << 24);
+					int l = b[id+4] | (b[id+5] << 8) | (b[id+6] << 16) | (b[id+7] << 24);
 					Array v = Array.CreateInstance(typeof(T).GetElementType(), l);
-					Buffer.BlockCopy(b, (int)id, v, 0, s - 4);
+					Buffer.BlockCopy(b, id+8, v, 0, s - 4);
 					ret = (T)(object)v;
 				}
+				else
+					ret = default(T);
+
 				return ret;
 			}
 			return default(T);
