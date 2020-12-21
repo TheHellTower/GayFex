@@ -38,7 +38,7 @@ namespace Confuser.Renamer.Analyzers {
 						context.Logger.WarnFormat(Resources.ResourceAnalyzer_Analyze_CouldNotFindResourceType, typeName);
 						continue;
 					}
-					service.ReduceRenameMode(type, RenameMode.ASCII);
+					service.ReduceRenameMode(type, RenameMode.Reflection);
 					service.AddReference(type, new ResourceReference(res, type, format));
 				}
 			}
@@ -69,7 +69,7 @@ namespace Confuser.Renamer.Analyzers {
 						context.Logger.WarnFormat(Resources.ResourceAnalyzer_Analyze_CouldNotFindResourceType, typeName);
 						continue;
 					}
-					service.ReduceRenameMode(type, RenameMode.ASCII);
+					service.ReduceRenameMode(type, RenameMode.Reflection);
 					service.AddReference(type, new ResourceReference(res, type, format));
 
 					if (mismatchingName)

@@ -179,6 +179,8 @@ namespace Confuser.Renamer {
 					return Utils.EncodeString(hash, letterCharset);
 				case RenameMode.ASCII:
 					return Utils.EncodeString(hash, asciiCharset);
+				case RenameMode.Reflection:
+					return Utils.EncodeString(hash, reflectionCharset);
 				case RenameMode.Decodable:
 					IncrementNameId();
 					return "_" + Utils.EncodeString(hash, alphaNumCharset);
@@ -310,6 +312,8 @@ namespace Confuser.Renamer {
 		                                                .Select(ord => (char)ord)
 		                                                .Except(new[] { '.' })
 		                                                .ToArray();
+
+		static readonly char[] reflectionCharset = asciiCharset.Except(new[] { ' ', '[', ']' }).ToArray();
 
 		static readonly char[] letterCharset = Enumerable.Range(0, 26)
 		                                                 .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })

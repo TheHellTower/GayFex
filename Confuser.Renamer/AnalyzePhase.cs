@@ -176,7 +176,7 @@ namespace Confuser.Renamer {
 				return;
 
 			if (type.InheritsFromCorlib("System.Attribute")) {
-				service.ReduceRenameMode(type, RenameMode.ASCII);
+				service.ReduceRenameMode(type, RenameMode.Reflection);
 			}
 
 			if (type.InheritsFrom("System.Configuration.SettingsBase")) {

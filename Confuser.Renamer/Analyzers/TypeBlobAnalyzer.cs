@@ -134,7 +134,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (modules.Contains((ModuleDefMD)typeDef.Module)) {
 						if (typeRef is TypeRef)
 							service.AddReference(typeDef, new TypeRefReference((TypeRef)typeRef, typeDef));
-						service.ReduceRenameMode(typeDef, RenameMode.ASCII);
+						service.ReduceRenameMode(typeDef, RenameMode.Reflection);
 					}
 				}
 			}
