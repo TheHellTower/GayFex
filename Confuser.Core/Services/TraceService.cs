@@ -200,11 +200,8 @@ namespace Confuser.Core.Services {
 		/// </summary>
 		/// <param name="instr">The call instruction.</param>
 		/// <returns>The indexes of the begin instruction of arguments.</returns>
-		/// <exception cref="System.ArgumentException">The specified call instruction is invalid.</exception>
 		/// <exception cref="InvalidMethodException">The method body is invalid.</exception>
 		public int[] TraceArguments(Instruction instr) {
-			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
-				throw new ArgumentException("Invalid call instruction.", "instr");
 			instr.CalculateStackUsage(out _, out int pop); // pop is number of arguments
 			if (pop == 0)
 				return new int[0];
