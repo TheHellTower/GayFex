@@ -25,34 +25,19 @@ namespace Confuser.Protections.ControlFlow {
 
 				if (block.Instructions[i].OpCode.OpCodeType == OpCodeType.Prefix) {
 					skipCount = 1;
-					currentFragment.Add(block.Instructions[i]);
 				}
-				if (i + 2 < block.Instructions.Count &&
-				    block.Instructions[i + 0].OpCode.Code == Code.Dup &&
-				    block.Instructions[i + 1].OpCode.Code == Code.Ldvirtftn &&
-				    block.Instructions[i + 2].OpCode.Code == Code.Newobj) {
+				else if (HasInstructionSeq(block.Instructions, i,Code.Dup, Code.Ldvirtftn, Code.Newobj)) {
 					skipCount = 2;
-					currentFragment.Add(block.Instructions[i]);
 				}
-				if (i + 4 < block.Instructions.Count &&
-				    block.Instructions[i + 0].OpCode.Code == Code.Ldc_I4 &&
-				    block.Instructions[i + 1].OpCode.Code == Code.Newarr &&
-				    block.Instructions[i + 2].OpCode.Code == Code.Dup &&
-				    block.Instructions[i + 3].OpCode.Code == Code.Ldtoken &&
-				    block.Instructions[i + 4].OpCode.Code == Code.Call) // Array initializer
-				{
+				else if (HasInstructionSeq(block.Instructions, i,Code.Ldc_I4, Code.Newarr, Code.Dup, Code.Ldtoken, Code.Call)) { // Array initializer
 					skipCount = 4;
-					currentFragment.Add(block.Instructions[i]);
 				}
-				if (i + 1 < block.Instructions.Count &&
-				    block.Instructions[i + 0].OpCode.Code == Code.Ldftn &&
-				    block.Instructions[i + 1].OpCode.Code == Code.Newobj) {
+				else if (HasInstructionSeq(block.Instructions, i,Code.Ldftn, Code.Newobj)) { // Create delegate to function
 					skipCount = 1;
-					currentFragment.Add(block.Instructions[i]);
 				}
 				currentFragment.Add(block.Instructions[i]);
 
-				if (ctx.Intensity > ctx.Random.NextDouble()) {
+				if (skipCount == -1 && ctx.Intensity > ctx.Random.NextDouble()) {
 					fragments.AddLast(currentFragment.ToArray());
 					currentFragment.Clear();
 				}
@@ -62,6 +47,11 @@ namespace Confuser.Protections.ControlFlow {
 				fragments.AddLast(currentFragment.ToArray());
 
 			return fragments;
+		}
+
+		private static bool HasInstructionSeq(List<Instruction> instructions, int offset, params Code[] codes) {
+			if (offset + codes.Length > instructions.Count) return false;
+			return !codes.Where((code, i) => instructions[i + offset].OpCode.Code != code).Any();
 		}
 
 		public override void Mangle(CilBody body, ScopeBlock root, CFContext ctx) {
