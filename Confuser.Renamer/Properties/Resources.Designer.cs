@@ -71,6 +71,15 @@ namespace Confuser.Renamer.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Invalid format string provided for the namespace format. Got: {0} ähnelt.
+        /// </summary>
+        internal static string NameService_ObfuscateName_InvalidFormat {
+            get {
+                return ResourceManager.GetString("NameService_ObfuscateName_InvalidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Tracing arguments for {0} call in {1} failed. What ever member is referenced here by reflection won&apos;t be properly handled by the name obfuscation. ähnelt.
         /// </summary>
         internal static string ReflectionAnalyzer_Analyze_TracingArgumentsFailed {

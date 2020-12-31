@@ -135,4 +135,8 @@
   <data name="ReflectionAnalyzer_Analyze_TracingArgumentsFailed" xml:space="preserve">
     <value>Tracing arguments for {0} call in {1} failed. What ever member is referenced here by reflection won't be properly handled by the name obfuscation.</value>
   </data>
+  <data name="NameService_ObfuscateName_InvalidFormat" xml:space="preserve">
+    <value>Invalid format string provided for the namespace format. Got: {0}</value>
+    <comment>Exception message</comment>
+  </data>
 </root>

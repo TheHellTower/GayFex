@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
+using Confuser.Renamer.Properties;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer {
@@ -213,7 +215,9 @@ namespace Confuser.Renamer {
 				return string.Format("{0}`{1}", name, count.Value);
 		}
 
-		public string ObfuscateName(string name, RenameMode mode) {
+		public string ObfuscateName(string name, RenameMode mode) => ObfuscateName(null, name, mode);
+
+		public string ObfuscateName(string format, string name, RenameMode mode) {
 			string newName = null;
 			name = ParseGenericName(name, out var count);
 
@@ -240,6 +244,17 @@ namespace Confuser.Renamer {
 			byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed);
 			for (int i = 0; i < 100; i++) {
 				newName = ObfuscateNameInternal(hash, mode);
+
+				try {
+					if (!(format is null))
+						newName = string.Format(CultureInfo.InvariantCulture, format, newName);
+				}
+				catch (FormatException ex) {
+					throw new ArgumentException(
+						string.Format(CultureInfo.InvariantCulture, Resources.NameService_ObfuscateName_InvalidFormat, format), 
+						nameof(format), ex);
+				}
+				
 				if (!identifiers.Contains(MakeGenericName(newName, count)))
 					break;
 				hash = Utils.SHA1(hash);
