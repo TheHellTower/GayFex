@@ -22,7 +22,7 @@ project. While Confuser is widely regarded as one of the strongest
 obfuscators available in .NET, ConfuserEx continues to provide excellent 
 protections to .NET applications.
 
-<div class="a-right"><a class="back-to-top" href="#top"><i class="glyphicon glyphicon-chevron-up"></i></a></div>
+{% include scrollToTop.html %}
 ---
 
 
@@ -43,7 +43,7 @@ ConfuserEx's plugin system allows developers to create their own
 protections. This allows different modular protections to be applied in the 
 same application, and greatly enhance the security.
 
-<div class="a-right"><a class="back-to-top" href="#top"><i class="glyphicon glyphicon-chevron-up"></i></a></div>
+{% include scrollToTop.html %}
 ---
 
 
@@ -64,7 +64,7 @@ available for it, and it doesn't even have 100% sucess rate in deobfuscation.
 Apparently, Confuser, an open-source protector, provides better security than 
 those close-sourced protectors.
 
-<div class="a-right"><a class="back-to-top" href="#top"><i class="glyphicon glyphicon-chevron-up"></i></a></div>
+{% include scrollToTop.html %}
 ---
 
 
@@ -76,7 +76,7 @@ Sure it is!
 ConfuserEx has many techniques that commerical protector used, and some more! 
 If you have any doubt about protection strength, feel free to contact me!
 
-<div class="a-right"><a class="back-to-top" href="#top"><i class="glyphicon glyphicon-chevron-up"></i></a></div>
+{% include scrollToTop.html %}
 ---
 
 
@@ -85,7 +85,7 @@ Is there any GUI for ConfuserEX?
 
 A GUI is available since version 0.2.0. Go check it out!
 
-<div class="a-right"><a class="back-to-top" href="#top"><i class="glyphicon glyphicon-chevron-up"></i></a></div>
+{% include scrollToTop.html %}
 ---
 
 
@@ -95,7 +95,7 @@ What about documentation?
 Documentation is now available at [the project wiki](https://github.com/yck1509/ConfuserEx/wiki)!
 If you still got any problem, please don’t hesitate to contact me or open an issue!
 
-<div class="a-right"><a class="back-to-top" href="#top"><i class="glyphicon glyphicon-chevron-up"></i></a></div>
+{% include scrollToTop.html %}
 ---
 
 
@@ -112,5 +112,5 @@ of project file.
 - the rules are now a expression that matching the items, see the documentation 
 for details.
 
-<div class="a-right"><a class="back-to-top" href="#top"><i class="glyphicon glyphicon-chevron-up"></i></a></div>
+{% include scrollToTop.html %}
 ---
