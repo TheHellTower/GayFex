@@ -1,5 +1,5 @@
 version: '{build}'
-image: Visual Studio 2017
+image: Visual Studio 2019
 configuration: Release
 platform: Any CPU
 skip_commits:
@@ -27,19 +27,19 @@ build:
 
 after_build:
 - pwsh: >-
-    Push-Location Confuser.CLI\bin\$env:CONFIGURATION;
-    . 7z a ..\..\..\ConfuserEx-CLI.zip "-xr!*.pdb" "-xr!*.xml";
+    Push-Location Confuser.CLI\bin\$env:CONFIGURATION\net461;
+    . 7z a ..\..\..\..\ConfuserEx-CLI.zip "-xr!*.pdb" "-xr!*.xml";
     Pop-Location
 - pwsh: >-
-    Push-Location ConfuserEx\bin\$env:CONFIGURATION;
-    . 7z a ..\..\..\ConfuserEx-GUI.zip "-xr!*.pdb" "-xr!*.xml";
+    Push-Location ConfuserEx\bin\$env:CONFIGURATION\net461;
+    . 7z a ..\..\..\..\ConfuserEx-GUI.zip "-xr!*.pdb" "-xr!*.xml";
     Pop-Location
 - pwsh: >-
-    Push-Location Confuser.CLI\bin\$env:CONFIGURATION;
-    . 7z a ..\..\..\ConfuserEx.zip "-xr!*.pdb" "-xr!*.xml";
+    Push-Location Confuser.CLI\bin\$env:CONFIGURATION\net461;
+    . 7z a ..\..\..\..\ConfuserEx.zip "-xr!*.pdb" "-xr!*.xml";
     Pop-Location;
-    Push-Location ConfuserEx\bin\$env:CONFIGURATION;
-    . 7z a ..\..\..\ConfuserEx.zip "-xr!*.pdb" "-xr!*.xml" -y;
+    Push-Location ConfuserEx\bin\$env:CONFIGURATION\net461;
+    . 7z a ..\..\..\..\ConfuserEx.zip "-xr!*.pdb" "-xr!*.xml" -y;
     Pop-Location
 
 artifacts:

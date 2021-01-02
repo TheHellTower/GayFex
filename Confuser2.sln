@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Core", "Confuser.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Protections", "Confuser.Protections\Confuser.Protections.csproj", "{3EAB01B5-9B49-48D8-BFA1-5493B26CCB71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.CLI", "Confuser.CLI\Confuser.CLI.csproj", "{CE61ADEE-C032-43EC-ACD8-E4A742F894A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.CLI", "Confuser.CLI\Confuser.CLI.csproj", "{CE61ADEE-C032-43EC-ACD8-E4A742F894A3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Renamer", "Confuser.Renamer\Confuser.Renamer.csproj", "{862DA0DA-52E1-47CD-B9C2-46B106031B28}"
 EndProject
@@ -18,7 +18,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Runtime", "Confuse
 		{BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92} = {BEB67A6E-4C54-4DE5-8C6B-2C12F44A7B92}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfuserEx", "ConfuserEx\ConfuserEx.csproj", "{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfuserEx", "ConfuserEx\ConfuserEx.csproj", "{B5205EBA-EC32-4C53-86A0-FAEEE7393EC0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{356BDB31-853E-43BB-8F9A-D8AC08F69EBB}"
 EndProject
@@ -30,7 +30,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		appveyor.yml = appveyor.yml
-		global.json = global.json
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 		version.json = version.json
@@ -96,9 +95,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IncorrectRedirectToGac", "T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IncorrectRedirectToGac.Test", "Tests\IncorrectRedirectToGac.Test\IncorrectRedirectToGac.Test.csproj", "{B7FF0EE8-6C68-46C6-AADB-58C0E3309FB2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "252_ComplexInterfaceRenaming", "Tests\252_ComplexInterfaceRenaming\252_ComplexInterfaceRenaming.csproj", "{F233D36D-B64A-4F14-A9F9-B8557C2D4F5D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "252_ComplexInterfaceRenaming", "Tests\252_ComplexInterfaceRenaming\252_ComplexInterfaceRenaming.csproj", "{F233D36D-B64A-4F14-A9F9-B8557C2D4F5D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "252_ComplexInterfaceRenaming.Test", "Tests\252_ComplexInterfaceRenaming.Test\252_ComplexInterfaceRenaming.Test.csproj", "{C10599E3-5A79-484F-940B-E4B61F256466}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "252_ComplexInterfaceRenaming.Test", "Tests\252_ComplexInterfaceRenaming.Test\252_ComplexInterfaceRenaming.Test.csproj", "{C10599E3-5A79-484F-940B-E4B61F256466}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
