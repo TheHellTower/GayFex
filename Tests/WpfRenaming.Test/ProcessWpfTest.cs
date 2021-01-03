@@ -18,7 +18,7 @@ namespace WpfRenaming.Test {
 			await Run(
 				"WpfRenaming.dll",
 				null,
-				null);
+				NoProtections);
 
 		[Fact]
 		[Trait("Category", "Protection")]

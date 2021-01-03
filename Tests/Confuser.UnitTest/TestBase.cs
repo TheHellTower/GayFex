@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -13,19 +15,35 @@ namespace Confuser.UnitTest {
 
 		readonly ITestOutputHelper outputHelper;
 
+		protected static IEnumerable<SettingItem<Protection>> NoProtections => Enumerable.Empty<SettingItem<Protection>>();
+
 		protected TestBase(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
-		protected async Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
+		protected Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
-			Action<ProjectModule> projectModuleAction = null) =>
+			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null) =>
 
-			await Run(new[] { inputFileName }, expectedOutput, protection, outputDirSuffix, outputAction, packer,
-				projectModuleAction);
+			Run(new[] { inputFileName }, expectedOutput, protection, outputDirSuffix, outputAction, packer,
+				projectModuleAction, postProcessAction);
 
-		protected async Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection,
+		protected Task Run(string inputFileName, string[] expectedOutput, IEnumerable<SettingItem<Protection>> protections,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
-			Action<ProjectModule> projectModuleAction = null) {
+			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null) =>
+
+			Run(new[] { inputFileName }, expectedOutput, protections, outputDirSuffix, outputAction, packer,
+				projectModuleAction, postProcessAction);
+
+		protected Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection,
+			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
+			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null) {
+			var protections = (protection is null) ? Enumerable.Empty<SettingItem<Protection>>() : new[] { protection };
+			return Run(inputFileNames, expectedOutput, protections, outputDirSuffix, outputAction, packer, projectModuleAction, postProcessAction);
+		}
+
+		protected async Task Run(string[] inputFileNames, string[] expectedOutput, IEnumerable<SettingItem<Protection>> protections,
+			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
+			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null) {
 
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "obfuscated" + outputDirSuffix);
@@ -51,9 +69,10 @@ namespace Confuser.UnitTest {
 				proj.Add(projectModule);
 			}
 
-			if (protection != null) {
-				proj.Rules.Add(new Rule { protection });
-			}
+			var rule = new Rule();
+			rule.AddRange(protections);
+			if (rule.Count > 0)
+				proj.Rules.Add(rule);
 
 			var parameters = new ConfuserParameters {
 				Project = proj,
@@ -86,7 +105,6 @@ namespace Confuser.UnitTest {
 				}
 			}
 
-
 			if (Path.GetExtension(entryInputFileName) == ".exe") {
 				var info = new ProcessStartInfo(entryOutputFileName) { RedirectStandardOutput = true, UseShellExecute = false };
 				using (var process = Process.Start(info)) {
@@ -103,6 +121,9 @@ namespace Confuser.UnitTest {
 					Assert.Equal(42, process.ExitCode);
 				}
 			}
+
+			if (!(postProcessAction is null))
+				await postProcessAction.Invoke(outputDir);
 		}
 
 		private static string GetFileName(string name) {
