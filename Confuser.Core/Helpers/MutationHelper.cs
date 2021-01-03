@@ -86,18 +86,30 @@ namespace Confuser.Core.Helpers {
 					var operand = (IMethod)instr.Operand;
 					if (operand.DeclaringType.FullName == mutationType &&
 					    operand.Name == "Placeholder") {
-						int[] argIndexes = trace.TraceArguments(instr);
-						if (argIndexes == null)
-							throw new ArgumentException("Failed to trace placeholder argument.");
+						var initialLoadInstructions = new List<Instruction>();
+						var pendingInstructions = new Queue<Instruction>();
+						pendingInstructions.Enqueue(instr);
+						while (pendingInstructions.Count > 0) {
+							var currentInstr = pendingInstructions.Dequeue();
+							int[] argIndexes = trace.TraceArguments(currentInstr);
+							if (argIndexes == null)
+								throw new ArgumentException("Failed to trace placeholder argument.");
 
-						int argIndex = argIndexes[0];
-						Instruction[] arg = method.Body.Instructions.Skip(argIndex).Take(i - argIndex).ToArray();
+							if (argIndexes.Length == 0)
+								initialLoadInstructions.Add(currentInstr);
+
+							foreach (int argIndex in argIndexes)
+								pendingInstructions.Enqueue(method.Body.Instructions[argIndex]);
+						}
+
+						var firstArgIndex = initialLoadInstructions.Select(method.Body.Instructions.IndexOf).Min();
+						Instruction[] arg = method.Body.Instructions.Skip(firstArgIndex).Take(i - firstArgIndex).ToArray();
 						for (int j = 0; j < arg.Length; j++)
-							method.Body.Instructions.RemoveAt(argIndex);
-						method.Body.Instructions.RemoveAt(argIndex);
+							method.Body.Instructions.RemoveAt(firstArgIndex);
+						method.Body.Instructions.RemoveAt(firstArgIndex);
 						arg = repl(arg);
 						for (int j = arg.Length - 1; j >= 0; j--)
-							method.Body.Instructions.Insert(argIndex, arg[j]);
+							method.Body.Instructions.Insert(firstArgIndex, arg[j]);
 						return;
 					}
 				}
