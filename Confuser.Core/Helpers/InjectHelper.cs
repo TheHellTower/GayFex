@@ -272,6 +272,18 @@ namespace Confuser.Core.Helpers {
 			public override ITypeDefOrRef Map(ITypeDefOrRef source) {
 				if (DefMap.TryGetValue(source, out var mappedRef))
 					return mappedRef as ITypeDefOrRef;
+				
+				// check if the assembly reference needs to be fixed.
+				if (source is TypeRef sourceRef) {
+					var targetAssemblyRef = TargetModule.GetAssemblyRef(sourceRef.DefinitionAssembly.Name);
+					if (!(targetAssemblyRef is null) && !string.Equals(targetAssemblyRef.FullName, source.DefinitionAssembly.FullName, StringComparison.Ordinal)) {
+						// We got a matching assembly by the simple name, but not by the full name.
+						// This means the injected code uses a different assembly version than the target assembly.
+						// We'll fix the assembly reference, to avoid breaking anything.
+						var fixedTypeRef = new TypeRefUser(sourceRef.Module, sourceRef.Namespace, sourceRef.Name, targetAssemblyRef);
+						return Importer.Import(fixedTypeRef);
+					}
+				}
 				return null;
 			}
 
