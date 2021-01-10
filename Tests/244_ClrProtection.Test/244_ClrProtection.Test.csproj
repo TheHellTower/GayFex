@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RootNamespace>ClrProtection.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\244_ClrProtection\244_ClrProtection.vcxproj" />
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+
+</Project>
