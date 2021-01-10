@@ -6,8 +6,9 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
+    <_CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</_CurrentYear>
     <Authors>Ki;Martin Karing</Authors>
-    <Copyright>Copyright © 2014 Ki, 2018 Martin Karing</Copyright>
+    <Copyright>Copyright © 2014 Ki, 2018 - $(_CurrentYear) Martin Karing</Copyright>
     <RepositoryUrl>https://github.com/mkaring/ConfuserEx.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
