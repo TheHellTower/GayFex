@@ -5,7 +5,7 @@ using Confuser.Protections.TypeScrambler.Scrambler;
 using dnlib.DotNet;
 
 namespace Confuser.Protections.TypeScrambler {
-	internal sealed class ScramblePhase : ProtectionPhase {
+	sealed class ScramblePhase : ProtectionPhase {
 		public ScramblePhase(TypeScrambleProtection parent) : base(parent) { }
 
 		public override ProtectionTargets Targets => ProtectionTargets.Types | ProtectionTargets.Methods;
@@ -30,7 +30,8 @@ namespace Confuser.Protections.TypeScrambler {
 			foreach (var def in context.CurrentModule.FindDefinitions().WithProgress(context.Logger)) {
 				switch (def) {
 					case MethodDef md:
-						md.ReturnType = rewriter.UpdateSignature(md.ReturnType);
+						if (md.HasReturnType)
+							md.ReturnType = rewriter.UpdateSignature(md.ReturnType);
 						if (md.HasBody) {
 							rewriter.ProcessBody(md);
 						}

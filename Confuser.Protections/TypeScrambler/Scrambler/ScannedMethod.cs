@@ -39,9 +39,10 @@ namespace Confuser.Protections.TypeScrambler.Scrambler {
 				}
 			}
 
-			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void) {
+			if (TargetMethod.HasReturnType) {
 				RegisterGeneric(TargetMethod.ReturnType);
 			}
+			
 			foreach (var param in TargetMethod.Parameters.Where(ProcessParameter))
 				RegisterGeneric(param.Type);
 
@@ -129,7 +130,7 @@ namespace Confuser.Protections.TypeScrambler.Scrambler {
 					$"{nameof(parameter)}.Type == {nameof(TargetMethod)}.MethodSig.Params[{nameof(parameter)}.MethodSigIndex]");
 			}
 
-			if (TargetMethod.ReturnType != TargetMethod.Module.CorLibTypes.Void)
+			if (TargetMethod.HasReturnType)
 				TargetMethod.ReturnType = ConvertToGenericIfAvalible(TargetMethod.ReturnType);
 
 			Debug.Assert(TargetMethod.ReturnType == TargetMethod.MethodSig.RetType,
