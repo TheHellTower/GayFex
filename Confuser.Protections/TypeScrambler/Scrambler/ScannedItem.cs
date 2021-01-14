@@ -35,6 +35,10 @@ namespace Confuser.Protections.TypeScrambler.Scrambler {
 			// Get proper type.
 			t = SignatureUtils.GetLeaf(t);
 
+			// scrambling voids leads to peverify errors, better leave them out.
+			if (t.ElementType == ElementType.Void)
+				return false;
+
 			if (!Generics.ContainsKey(t)) {
 				GenericParam newGenericParam;
 				if (t.IsGenericMethodParameter) {
