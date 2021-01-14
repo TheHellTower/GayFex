@@ -90,6 +90,8 @@ namespace Confuser.Protections.TypeScrambler.Scrambler {
 			// PInvoke implementations won't work with this.
 			if (method.IsPinvokeImpl) return false;
 
+			if (method.DeclaringType.IsGlobalModuleType) return false;
+
 			return true;
 		}
 
