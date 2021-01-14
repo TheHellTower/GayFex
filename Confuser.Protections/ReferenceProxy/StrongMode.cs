@@ -48,7 +48,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				}
 
 				int push, pop;
-				currentInstr.CalculateStackUsage(out push, out pop);
+				currentInstr.CalculateStackUsage(ctx.Method.HasReturnType, out push, out pop);
 				currentStack += pop;
 				currentStack -= push;
 
@@ -71,7 +71,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				return;
 
 			int push, pop;
-			invoke.CalculateStackUsage(out push, out pop);
+			invoke.CalculateStackUsage(ctx.Method.HasReturnType, out push, out pop);
 			int? begin = TraceBeginning(ctx, instrIndex, pop);
 			// Fail to trace the arguments => fall back to bridge method
 			bool fallBack = begin == null;
