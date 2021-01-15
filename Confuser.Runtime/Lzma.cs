@@ -32,16 +32,22 @@ namespace Confuser.Runtime {
 			var s = new MemoryStream(data);
 			var decoder = new LzmaDecoder();
 			var prop = new byte[5];
-			s.Read(prop, 0, 5);
-			decoder.SetDecoderProperties(prop);
-			long outSize = 0;
-			for (int i = 0; i < 8; i++) {
-				int v = s.ReadByte();
-				outSize |= ((long)(byte)v) << (8 * i);
+			var readCnt = 0;
+			while (readCnt < 5) {
+				readCnt += s.Read(prop, readCnt, 5 - readCnt);
 			}
-			var b = new byte[(int)outSize];
+			decoder.SetDecoderProperties(prop);
+
+			readCnt = 0;
+			while (readCnt < sizeof(int)) {
+				readCnt += s.Read(prop, readCnt, sizeof(int) - readCnt);
+			}
+			if (!BitConverter.IsLittleEndian)
+				Array.Reverse(prop, 0, sizeof(int));
+			var outSize = BitConverter.ToInt32(prop, 0);
+			var b = new byte[outSize];
 			var z = new MemoryStream(b, true);
-			long compressedSize = s.Length - 13;
+			long compressedSize = s.Length - 5 - sizeof(int);
 			decoder.Code(s, z, compressedSize, outSize);
 			return b;
 		}
