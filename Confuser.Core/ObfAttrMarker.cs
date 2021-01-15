@@ -322,7 +322,7 @@ namespace Confuser.Core {
 					modules.Add(Tuple.Create(module, modDef));
 				}
 				catch (BadImageFormatException ex) {
-					context.Logger.ErrorFormat("Failed to load \"{0}\" - Assembly does not appear to be a .NET assembly.", module.Path);
+					context.Logger.ErrorFormat("Failed to load \"{0}\" - Assembly does not appear to be a .NET assembly: \"{1}\".", module.Path, ex.Message);
 					throw new ConfuserException(ex);
 				}
 			}
