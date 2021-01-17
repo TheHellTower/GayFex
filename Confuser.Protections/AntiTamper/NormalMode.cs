@@ -102,10 +102,6 @@ namespace Confuser.Protections.AntiTamper {
 		void WriterEvent(object sender, ModuleWriterEventArgs e) {
 			switch (e.Event)
 			{
-				case ModuleWriterEvent.Begin when e.Writer is NativeModuleWriter nativeWriter:
-					// disable the optimization of the image size for the native writer, so the method bodies can be protected.
-					nativeWriter.Options = new NativeModuleWriterOptions(nativeWriter.ModuleDefMD, false);
-					break;
 				case ModuleWriterEvent.MDEndCreateTables:
 					CreateSections(e.Writer);
 					break;

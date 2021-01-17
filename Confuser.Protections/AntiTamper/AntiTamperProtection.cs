@@ -3,6 +3,7 @@ using System.Linq;
 using Confuser.Core;
 using Confuser.Protections.AntiTamper;
 using dnlib.DotNet;
+using dnlib.DotNet.Writer;
 
 namespace Confuser.Protections {
 	public interface IAntiTamperService {
@@ -41,12 +42,32 @@ namespace Confuser.Protections {
 		}
 
 		protected override void PopulatePipeline(ProtectionPipeline pipeline) {
+			pipeline.InsertPostStage(PipelineStage.BeginModule, new ModuleWriterSetupPhase(this));
 			pipeline.InsertPreStage(PipelineStage.OptimizeMethods, new InjectPhase(this));
 			pipeline.InsertPreStage(PipelineStage.EndModule, new MDPhase(this));
 		}
 
 		public void ExcludeMethod(ConfuserContext context, MethodDef method) {
 			ProtectionParameters.GetParameters(context, method).Remove(this);
+		}
+
+		class ModuleWriterSetupPhase : ProtectionPhase {
+			public ModuleWriterSetupPhase(AntiTamperProtection parent) : base(parent) { }
+
+			/// <inheritdoc />
+			public override ProtectionTargets Targets => ProtectionTargets.Methods;
+
+			/// <inheritdoc />
+			public override string Name => "Anti-tamper module writer preparation";
+
+			/// <inheritdoc />
+			protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
+				if (!parameters.Targets.Any()) return;
+
+				if (context.CurrentModuleWriterOptions is NativeModuleWriterOptions nativeOptions) {
+					context.RequestNative(false);
+				}
+			}
 		}
 
 		class InjectPhase : ProtectionPhase {

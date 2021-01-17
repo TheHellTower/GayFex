@@ -332,11 +332,10 @@ namespace Confuser.Core {
 			context.Logger.InfoFormat("Processing module '{0}'...", context.CurrentModule.Name);
 
 			context.CurrentModuleWriterOptions = new ModuleWriterOptions(context.CurrentModule);
-			context.CurrentModuleWriterOptions.WriterEvent += (sender, e) => context.CheckCancellation();
 			CopyPEHeaders(context.CurrentModuleWriterOptions.PEHeadersOptions, context.CurrentModule);
 
 			if (!context.CurrentModule.IsILOnly || context.CurrentModule.VTableFixups != null)
-				context.RequestNative();
+				context.RequestNative(true);
 
 			var snKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNKey);
 			var snPubKey = context.Annotations.Get<StrongNamePublicKey>(context.CurrentModule, Marker.SNPubKey);
@@ -367,7 +366,8 @@ namespace Confuser.Core {
 				}
 		}
 
-		static void ProcessModule(ConfuserContext context) { }
+		static void ProcessModule(ConfuserContext context) => 
+			context.CurrentModuleWriterOptions.WriterEvent += (sender, e) => context.CheckCancellation();
 
 		static void OptimizeMethods(ConfuserContext context) {
 			foreach (TypeDef type in context.CurrentModule.GetTypes())

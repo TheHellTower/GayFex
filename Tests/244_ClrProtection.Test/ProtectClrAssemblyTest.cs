@@ -39,5 +39,16 @@ namespace ClrProtection.Test {
 			Array.Empty<String>(),
 			new SettingItem<Protection>("typescramble"),
 			$"_{nameof(TypeScrambleProtection)}");
+
+		[Fact]
+		[Trait("Category", "Protection")]
+		[Trait("Protection", "anti tamper")]
+		[Trait("Protection", "resources")]
+		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/244")]
+		public Task AntiTamperResourceProtection() => Run(
+			"244_ClrProtection.exe",
+			Array.Empty<String>(),
+			new[] {new SettingItem<Protection>("anti tamper"), new SettingItem<Protection>("resources") },
+			$"_{nameof(AntiTamperResourceProtection)}");
 	}
 }
