@@ -56,7 +56,12 @@ namespace Confuser.Protections.Resources {
 				}
 				byte[] moduleBuff;
 				using (var ms = new MemoryStream()) {
-					module.Write(ms, new ModuleWriterOptions(e.Writer.Module) { StrongNameKey = writer.TheOptions.StrongNameKey, StrongNamePublicKey = writer.TheOptions.StrongNamePublicKey, DelaySign = writer.TheOptions.DelaySign });
+					var options = new ModuleWriterOptions(module) {
+						StrongNameKey = writer.TheOptions.StrongNameKey,
+						StrongNamePublicKey = writer.TheOptions.StrongNamePublicKey,
+						DelaySign = writer.TheOptions.DelaySign
+					};
+					module.Write(ms, options);
 					moduleBuff = ms.ToArray();
 				}
 
