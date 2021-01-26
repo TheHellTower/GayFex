@@ -8,6 +8,7 @@ using Confuser.Core;
 using Confuser.Core.Project;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Confuser.UnitTest {
 	public abstract class TestBase {
@@ -98,7 +99,8 @@ namespace Confuser.UnitTest {
 					// Check if output assemblies is obfuscated
 					Assert.NotEqual(FileUtilities.ComputeFileChecksum(Path.Combine(baseDir, name)),
 						FileUtilities.ComputeFileChecksum(outputName));
-				} else if (IsExternal(inputFileNames[index])) {
+				}
+				else if (IsExternal(inputFileNames[index])) {
 					File.Copy(
 						Path.Combine(baseDir, GetFileName(inputFileNames[index])),
 						Path.Combine(outputDir, GetFileName(inputFileNames[index])));
@@ -106,17 +108,41 @@ namespace Confuser.UnitTest {
 			}
 
 			if (Path.GetExtension(entryInputFileName) == ".exe") {
-				var info = new ProcessStartInfo(entryOutputFileName) { RedirectStandardOutput = true, UseShellExecute = false };
+				var info = new ProcessStartInfo(entryOutputFileName) {
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					UseShellExecute = false
+				};
 				using (var process = Process.Start(info)) {
-					var stdout = process.StandardOutput;
-					Assert.Equal("START", await stdout.ReadLineAsync());
+					using (var stdout = process.StandardOutput) {
+						try {
+							Assert.Equal("START", await stdout.ReadLineAsync());
 
-					foreach (string line in expectedOutput) {
-						Assert.Equal(line, await stdout.ReadLineAsync());
+							foreach (string line in expectedOutput) {
+								Assert.Equal(line, await stdout.ReadLineAsync());
+							}
+
+							Assert.Equal("END", await stdout.ReadLineAsync());
+							Assert.Empty(await stdout.ReadToEndAsync());
+						}
+						catch (XunitException) {
+							try {
+								LogRemainingStream("Remaining standard output:", stdout);
+								using (var stderr = process.StandardError) {
+									LogRemainingStream("Remaining standard error:", stderr);
+								}
+							}
+							catch {
+								// ignore
+							}
+							throw;
+						}
 					}
 
-					Assert.Equal("END", await stdout.ReadLineAsync());
-					Assert.Empty(await stdout.ReadToEndAsync());
+					using (var stderr = process.StandardError) {
+						Assert.Empty(await stderr.ReadToEndAsync());
+					}
+
 					Assert.True(process.HasExited);
 					Assert.Equal(42, process.ExitCode);
 				}
@@ -124,6 +150,14 @@ namespace Confuser.UnitTest {
 
 			if (!(postProcessAction is null))
 				await postProcessAction.Invoke(outputDir);
+		}
+
+		private void LogRemainingStream(string header, StreamReader reader) {
+			var remainingOutput = reader.ReadToEnd();
+			if (!string.IsNullOrWhiteSpace(remainingOutput)) {
+				outputHelper.WriteLine(header);
+				outputHelper.WriteLine(remainingOutput.Trim());
+			}
 		}
 
 		private static string GetFileName(string name) {

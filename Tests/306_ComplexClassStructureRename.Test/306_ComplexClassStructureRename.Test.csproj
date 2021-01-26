@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RootNamespace>ComplexClassStructureRename.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+    <ProjectReference Include="..\306_ComplexClassStructureRename\306_ComplexClassStructureRename.csproj" />
+  </ItemGroup>
+</Project>

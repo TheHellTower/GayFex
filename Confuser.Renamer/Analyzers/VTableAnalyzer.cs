@@ -40,6 +40,14 @@ namespace Confuser.Renamer.Analyzers {
 					else if (baseUnderCtrl && !ifaceUnderCtrl || !service.CanRename(slot.Overrides.MethodDef)) {
 						service.SetCanRename(slot.MethodDef, false);
 					}
+
+					// Now it is possible that the method implementing the interface, belongs to the base class.
+					// If that happens the methods analyzing the methods will not pick up on this. We'll mark that
+					// case here.
+					if (!TypeEqualityComparer.Instance.Equals(slot.MethodDef.DeclaringType, type)) {
+						SetupOverwriteReferences(service, modules, slot, type);
+						//CreateOverrideReference(service, slot.MethodDef, slot.Overrides.MethodDef);
+					}
 				}
 			}
 		}
@@ -103,7 +111,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (slot.Overrides == null)
 						continue;
 
-					SetupOverwriteReferences(service, modules, slot, method.Module);
+					SetupOverwriteReferences(service, modules, slot, method.DeclaringType);
 				}
 			}
 			else if (!doesOverridePropertyOrEvent) {
@@ -258,7 +266,8 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		private static void SetupOverwriteReferences(INameService service, ICollection<ModuleDefMD> modules, VTableSlot slot, ModuleDef module) {
+		private static void SetupOverwriteReferences(INameService service, ICollection<ModuleDefMD> modules, VTableSlot slot, TypeDef thisType) {
+			var module = thisType.Module;
 			var methodDef = slot.MethodDef;
 			var baseSlot = slot.Overrides;
 			var baseMethodDef = baseSlot.MethodDef;
@@ -290,10 +299,15 @@ namespace Confuser.Renamer.Analyzers {
 			if (target is MemberRef methodRef)
 				AddImportReference(service, modules, module, baseMethodDef, methodRef);
 
-			if (methodDef.Overrides.Any(impl => IsMatchingOverride(impl, target)))
-				return;
+			if (TypeEqualityComparer.Instance.Equals(methodDef.DeclaringType, thisType)) {
+				if (methodDef.Overrides.Any(impl => IsMatchingOverride(impl, target)))
+					return;
 
-			methodDef.Overrides.Add(new MethodOverride(methodDef, target));
+				methodDef.Overrides.Add(new MethodOverride(methodDef, target));
+			}
+			else if (target is IMemberDef targetDef) {
+				CreateOverrideReference(service, methodDef, targetDef);
+			}
 		}
 
 		private static bool IsMatchingOverride(MethodOverride methodOverride, IMethodDefOrRef targetMethod) {
