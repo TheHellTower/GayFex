@@ -11,30 +11,29 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace _123_InheritCustomAttr.Test {
-	public class InheritCustomAttributeTest {
+namespace DynamicTypeRename.Test {
+	public class RenameDynamicTypeTest {
 		private readonly ITestOutputHelper outputHelper;
 
-		public InheritCustomAttributeTest(ITestOutputHelper outputHelper) =>
+		public RenameDynamicTypeTest(ITestOutputHelper outputHelper) =>
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		[Theory]
-		[MemberData(nameof(InheritCustomAttributeData))]
+		[MemberData(nameof(RenameDynamicTypeData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
-		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/123")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/161")]
-		public async Task InheritCustomAttribute(string renameMode, bool flatten) {
+		public async Task RenameDynamicType(string renameMode, bool flatten) {
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
-			var inputFile = Path.Combine(baseDir, "123_InheritCustomAttr.exe");
-			var outputFile = Path.Combine(outputDir, "123_InheritCustomAttr.exe");
+			var inputFile = Path.Combine(baseDir, "161_DynamicTypeRename.exe");
+			var outputFile = Path.Combine(outputDir, "161_DynamicTypeRename.exe");
 			FileUtilities.ClearOutput(outputFile);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir
 			};
-			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = Path.Combine(baseDir, "Confuser.Test.snk") });
+			proj.Add(new ProjectModule() { Path = inputFile });
 			proj.Rules.Add(new Rule() {
 				new SettingItem<IProtection>("rename") {
 					{ "mode", renameMode },
@@ -44,7 +43,7 @@ namespace _123_InheritCustomAttr.Test {
 
 			var parameters = new ConfuserParameters {
 				Project = proj,
-				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper, l => Assert.False(l.StartsWith("[WARN]", StringComparison.Ordinal), "Logged line may not start with [WARN]\r\n" + l)))
+				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper))
 			};
 
 			await ConfuserEngine.Run(parameters);
@@ -59,9 +58,10 @@ namespace _123_InheritCustomAttr.Test {
 			using (var process = Process.Start(info)) {
 				var stdout = process.StandardOutput;
 				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("Monday", await stdout.ReadLineAsync());
-				Assert.Equal("43", await stdout.ReadLineAsync());
-				Assert.Equal("1", await stdout.ReadLineAsync());
+				Assert.Equal("Type declaration done", await stdout.ReadLineAsync());
+				Assert.Equal("Dynamic type created", await stdout.ReadLineAsync());
+				Assert.Equal("Fields in type: 1", await stdout.ReadLineAsync());
+				Assert.Equal("Fetching field value is okay", await stdout.ReadLineAsync());
 				Assert.Equal("END", await stdout.ReadLineAsync());
 				Assert.Empty(await stdout.ReadToEndAsync());
 				Assert.True(process.HasExited);
@@ -71,7 +71,7 @@ namespace _123_InheritCustomAttr.Test {
 			FileUtilities.ClearOutput(outputFile);
 		}
 
-		public static IEnumerable<object[]> InheritCustomAttributeData() {
+		public static IEnumerable<object[]> RenameDynamicTypeData() {
 			foreach (var renameMode in new string[] { nameof(RenameMode.Unicode), nameof(RenameMode.ASCII), nameof(RenameMode.Letters), nameof(RenameMode.Debug), nameof(RenameMode.Retain) })
 				foreach (var flatten in new bool[] { true, false })
 					yield return new object[] { renameMode, flatten };

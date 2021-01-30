@@ -176,16 +176,18 @@ namespace Confuser.Renamer.Services {
 
 		public string ObfuscateName(ModuleDef module, string name, RenameMode mode) {
 			string newName = null;
-			int? count;
-			name = ParseGenericName(name, out count);
+			name = ParseGenericName(name, out var count);
 
 			if (string.IsNullOrEmpty(name))
 				return string.Empty;
 
 			if (mode == RenameMode.Empty)
 				return "";
-			if (mode == RenameMode.Debug)
-				return "_" + name;
+			if (mode == RenameMode.Debug || mode == RenameMode.Retain) {
+				// When flattening there are issues, in case there is a . in the name of the assembly.
+				newName = MakeGenericName(name.Replace('.', '_'), count);
+				return mode == RenameMode.Debug ? "_" + newName : newName;
+			}
 			if (mode == RenameMode.Reversible) {
 				if (reversibleRenamer == null)
 					throw new ArgumentException("Password not provided for reversible renaming.");
