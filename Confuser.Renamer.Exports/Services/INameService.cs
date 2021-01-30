@@ -51,9 +51,15 @@ namespace Confuser.Renamer.Services {
 		void RegisterRenamer(IRenamer renamer);
 		T FindRenamer<T>();
 		void AddReference<T>(IConfuserContext context, T obj, INameReference<T> reference);
+		IList<INameReference> GetReferences(IConfuserContext context, object obj);
 
 		void SetOriginalName(IConfuserContext context, object obj, string name);
 		void SetOriginalNamespace(IConfuserContext context, object obj, string ns);
+		string GetOriginalName(IConfuserContext context, object obj);
+		string GetOriginalNamespace(IConfuserContext context, object obj);
+
+		bool IsRenamed(IConfuserContext context, IDnlibDef def);
+		void SetIsRenamed(IConfuserContext context, IDnlibDef def);
 
 		void MarkHelper(IConfuserContext context, IDnlibDef def, IMarkerService marker, IConfuserComponent parentComp);
 	}

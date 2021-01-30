@@ -16,6 +16,7 @@ namespace Confuser.Renamer.Services {
 		static readonly object ReferencesKey = new object();
 		static readonly object OriginalNameKey = new object();
 		static readonly object OriginalNamespaceKey = new object();
+		static readonly object IsRenamedKey = new object();
 
 		private readonly ReadOnlyMemory<byte> nameSeed;
 		readonly IRandomGenerator random;
@@ -40,6 +41,7 @@ namespace Confuser.Renamer.Services {
 				new TypeBlobAnalyzer(),
 				new ResourceAnalyzer(),
 				new LdtokenEnumAnalyzer(),
+				new ManifestResourceAnalyzer(),
 				new ReflectionAnalyzer()
 			);
 		}
@@ -309,5 +311,9 @@ namespace Confuser.Renamer.Services {
 		}
 
 		public IReadOnlyCollection<KeyValuePair<string, string>> GetNameMap(ModuleDef module) => nameMap2;
+
+		public bool IsRenamed(IConfuserContext context, IDnlibDef def) => context.Annotations.Get(def, IsRenamedKey, !CanRename(context, def));
+
+		public void SetIsRenamed(IConfuserContext context, IDnlibDef def) => context.Annotations.Set(def, IsRenamedKey, true);
 	}
 }

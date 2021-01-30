@@ -54,7 +54,7 @@ namespace Confuser.Renamer.Analyzers {
 
 				TypeDef declType = memberRef.DeclaringType.ResolveTypeDefThrow();
 				if (declType.Module != module && context.Modules.Contains((ModuleDefMD)declType.Module)) {
-					var memberDef = (IDnlibDef)declType.ResolveThrow(memberRef);
+					var memberDef = (IMemberDef)declType.ResolveThrow(memberRef);
 					service.AddReference(context, memberDef, new MemberRefReference(memberRef, memberDef));
 				}
 			}

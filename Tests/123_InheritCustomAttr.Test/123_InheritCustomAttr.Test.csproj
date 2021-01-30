@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  
+  <PropertyGroup>
+    <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
+    <RootNamespace>InheritCustomAttr.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
+    <ProjectReference Include="..\..\Confuser.DynCipher\Confuser.DynCipher.csproj" />
+    <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
+    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
+    <ProjectReference Include="..\123_InheritCustomAttr\123_InheritCustomAttr.csproj" />
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="..\Confuser.Test.snk" Link="Confuser.Test.snk">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  
+</Project>

@@ -63,19 +63,23 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
-			IDnlibDef def) {
-			if (!(def is ModuleDefMD module) ||
-			    !parameters.GetParameter(context, def, Protection.Parameters.RenameXaml))
+		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters, IDnlibDef def) {
+			if (!(def is ModuleDefMD module) || !parameters.GetParameter(context, def, Protection.Parameters.RenameXaml))
 				return;
-
-			var wpfResInfo =
-				context.Annotations.Get<Dictionary<string, Dictionary<string, BamlDocument>>>(module, BAMLKey);
-			if (wpfResInfo == null)
-				return;
-
+			
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 
+			var renameMode = parameters.GetParameter(context, def, Protection.Parameters.RenameXamlMode);
+			if (renameMode < RenameMode.Letters) {
+				var illegalValues = Enum.GetValues(typeof(RenameMode)).Cast<RenameMode>().Where(m => m < RenameMode.Letters);
+				logger.LogWarning("The renaming modes " + String.Join(", ", illegalValues) + " are not allowed for XAML resources. Letters mode will be used.");
+				renameMode = RenameMode.Letters;
+			}
+
+			var wpfResInfo = context.Annotations.Get<Dictionary<string, Dictionary<string, BamlDocument>>>(module, BAMLKey);
+			if (wpfResInfo == null)
+				return;
+			
 			foreach (var res in wpfResInfo.Values)
 				foreach (var doc in res.Values) {
 					var decodedName = HttpUtility.UrlDecode(doc.DocumentName);
@@ -84,7 +88,7 @@ namespace Confuser.Renamer.Analyzers {
 						var decodedDirectory = decodedName.Substring(0, decodedName.LastIndexOf('/') + 1);
 						var encodedDirectory = encodedName.Substring(0, encodedName.LastIndexOf('/') + 1);
 
-						var fileName = service.RandomName(RenameMode.Letters).ToLowerInvariant();
+						var fileName = service.RandomName(renameMode).ToLowerInvariant();
 						if (decodedName.EndsWith(".BAML", StringComparison.OrdinalIgnoreCase))
 							fileName += ".baml";
 						else if (decodedName.EndsWith(".XAML", StringComparison.OrdinalIgnoreCase))

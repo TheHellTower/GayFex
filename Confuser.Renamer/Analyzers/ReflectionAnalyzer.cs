@@ -5,6 +5,7 @@ using System.Linq;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.Properties;
+using Confuser.Renamer.References;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -59,13 +60,26 @@ namespace Confuser.Renamer.Analyzers {
 								if (!types.Any())
 									types = ImmutableList.CreateRange(context.Modules.SelectMany(m => m.GetTypes()));
 
-								foreach (var possibleMethod in types.SelectMany(getMember).Where(m => names.Contains(m.Name))) {
-									nameService.SetCanRename(context, possibleMethod, false);
+								foreach (var possibleMember in types.SelectMany(GetTypeAndBaseTypes).SelectMany(getMember).Where(m => names.Contains(m.Name))) {
+									nameService.SetCanRename(context, possibleMember, false);
+									if (!(possibleMember is IMethod) && !(possibleMember is PropertyDef) && !(possibleMember is EventDef)) continue;
+									
+									foreach (var reference in nameService.GetReferences(context, possibleMember).OfType<MemberOverrideReference>()) {
+										nameService.SetCanRename(context, reference.BaseMemberDef, false);
+									}
 								}
 							}
 						}
 					}
 				}
+			}
+		}
+
+		private static IEnumerable<TypeDef> GetTypeAndBaseTypes(TypeDef typeDef) {
+			var currentType = typeDef;
+			while (currentType != null) {
+				yield return currentType;
+				currentType = currentType.BaseType.ResolveTypeDef();
 			}
 		}
 

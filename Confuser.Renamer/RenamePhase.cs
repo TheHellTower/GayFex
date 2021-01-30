@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Confuser.Core;
 using Confuser.Core.Services;
@@ -9,6 +11,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Pdb;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Renamer {
 	internal sealed class RenamePhase : IProtectionPhase {
@@ -40,7 +43,7 @@ namespace Confuser.Renamer {
 
 			var targets = service.GetRandom().Shuffle(parameters.Targets);
 			var pdbDocs = new HashSet<string>();
-			foreach (var def in targets /*.WithProgress(logger)*/) {
+			foreach (IDnlibDef def in GetTargetsWithDelay(targets, context, service, logger)/*.WithProgress(logger)*/) {
 				if (def is ModuleDef && parameters.GetParameter(context, def, Parent.Parameters.RickRoll))
 					RickRoller.CommenceRickroll(context, (ModuleDef)def);
 
@@ -75,13 +78,10 @@ namespace Confuser.Renamer {
 				if (!canRename)
 					continue;
 
-				var references = service.GetReferences(context, def);
-				bool cancel = false;
-				foreach (var refer in references) {
-					cancel |= refer.ShouldCancelRename();
-					if (cancel) break;
-				}
+				service.SetIsRenamed(context, def);
 
+				IList<INameReference> references = service.GetReferences(context, def);
+				bool cancel = references.Any(r => r.ShouldCancelRename);
 				if (cancel)
 					continue;
 
@@ -110,14 +110,54 @@ namespace Confuser.Renamer {
 					throw new NotImplementedException("Unexpected implementation of IDnlibDef: " +
 					                                  def.GetType().FullName);
 
-				foreach (var refer in references.ToList()) {
-					if (!refer.UpdateNameReference(context, service)) {
-						logger.LogCritical("Failed to update name reference on '{0}'.", def);
+				int updatedReferences = -1;
+				do {
+					var oldUpdatedCount = updatedReferences;
+					// This resolves the changed name references and counts how many were changed.
+					var updatedReferenceList = references.Where(refer => refer.UpdateNameReference(context, service)).ToArray();
+					updatedReferences = updatedReferenceList.Length;
+					if (updatedReferences == oldUpdatedCount) {
+						var errorBuilder = new StringBuilder();
+						errorBuilder.AppendLine("Infinite loop detected while resolving name references.");
+						errorBuilder.Append("Processed definition: ").AppendDescription(def, context, service).AppendLine();
+						errorBuilder.Append("Assembly: ").AppendLine(context.CurrentModule.FullName);
+						errorBuilder.AppendLine("Faulty References:");
+						foreach (var reference in updatedReferenceList) {
+							errorBuilder.Append(" - ").AppendLine(reference.ToString(context, service));
+						}
+						logger.LogError(errorBuilder.ToString().Trim());
 						throw new ConfuserException();
 					}
+					token.ThrowIfCancellationRequested();
+				} while (updatedReferences > 0);
+			}
+		}
+
+		private static IEnumerable<IDnlibDef> GetTargetsWithDelay(IImmutableList<IDnlibDef> definitions, IConfuserContext context, INameService service, ILogger logger) {
+			var delayedItems = ImmutableArray.CreateBuilder<IDnlibDef>();
+			var currentList = definitions;
+			var lastCount = -1;
+			while (currentList.Any()) {
+				foreach (var def in currentList) {
+					if (service.GetReferences(context, def).Any(r => r.DelayRenaming(context, service)))
+						delayedItems.Add(def);
+					else
+						yield return def;
 				}
 
-				token.ThrowIfCancellationRequested();
+				if (delayedItems.Count == lastCount) {
+					var errorBuilder = new StringBuilder();
+					errorBuilder.AppendLine("Failed to rename all targeted members, because the references are blocking each other.");
+					errorBuilder.AppendLine("Remaining definitions: ");
+					foreach (var def in delayedItems) {
+						errorBuilder.Append("• ").AppendDescription(def, context, service).AppendLine();
+					}
+					logger.LogWarning(errorBuilder.ToString().Trim());
+					yield break;
+				}
+				lastCount = delayedItems.Count;
+				currentList = delayedItems.ToImmutable();
+				delayedItems.Clear();
 			}
 		}
 	}

@@ -70,6 +70,7 @@ namespace Confuser.Renamer {
 			bool winforms = false;
 			bool json = false;
 			bool visualBasic = false;
+			bool vsComposition = false;
 
 			foreach (var module in context.Modules) {
 				foreach (var asmRef in module.GetAssemblyRefs()) {
@@ -85,6 +86,9 @@ namespace Confuser.Renamer {
 					}
 					else if (asmRef.Name == "Newtonsoft.Json") {
 						json = true;
+					}
+					else if (asmRef.Name == "Microsoft.VisualStudio.Composition") {
+						vsComposition = true;
 					}
 				}
 
@@ -121,6 +125,12 @@ namespace Confuser.Renamer {
 				logger.LogDebug("Visual Basic Embedded Runtime found, enabling compatibility.");
 				service.RegisterRenamer(vbAnalyzer);
 			}
+
+			if (vsComposition) {
+				var analyzer = new VsCompositionAnalyzer();
+				logger.LogDebug("Visual Studio Composition found, enabling compatibility.");
+				service.Renamers.Add(analyzer);
+			}
 		}
 
 		internal void Analyze(NameService service, IConfuserContext context, IProtectionParameters parameters,
@@ -156,10 +166,6 @@ namespace Confuser.Renamer {
 
 		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters, TypeDef type) {
 			if (type.IsRuntimeSpecialName || type.IsGlobalModuleType) {
-				service.SetCanRename(context, type, false);
-			}
-			else if (type.FullName == "ConfusedByAttribute") {
-				// Courtesy
 				service.SetCanRename(context, type, false);
 			}
 
@@ -214,9 +220,6 @@ namespace Confuser.Renamer {
 			if (property.IsRuntimeSpecialName)
 				service.SetCanRename(context, property, false);
 
-			else if (property.IsExplicitlyImplementedInterfaceMember())
-				service.SetCanRename(context, property, false);
-
 			else if (parameters.GetParameter(context, property, Parent.Parameters.ForceRename))
 				return;
 
@@ -225,19 +228,13 @@ namespace Confuser.Renamer {
 
 			else if (property.DeclaringType.Name.String.Contains("AnonymousType"))
 				service.SetCanRename(context, property, false);
-
-			else if (property.IsAbstract())
-				service.SetCanRename(context, property, false);
 		}
 
 		void Analyze(INameService service, IConfuserContext context, IProtectionParameters parameters, EventDef evt) {
-			if (evt.IsRuntimeSpecialName)
+			if (evt.DeclaringType.IsVisibleOutside() && evt.IsVisibleOutside())
 				service.SetCanRename(context, evt, false);
 
-			else if (evt.IsExplicitlyImplementedInterfaceMember())
-				service.SetCanRename(context, evt, false);
-
-			else if (evt.IsAbstract())
+			else if (evt.IsRuntimeSpecialName)
 				service.SetCanRename(context, evt, false);
 		}
 	}

@@ -120,15 +120,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsRenaming", "Tests\W
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsRenaming.Test", "Tests\WinFormsRenaming.Test\WinFormsRenaming.Test.csproj", "{FE560D1C-744F-45FE-9FA2-D55953A334F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confuser.Helpers.Test", "Tests\Confuser.Helpers.Test\Confuser.Helpers.Test.csproj", "{5C6920F8-7B5F-4A9A-B791-208CEB858B34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Helpers.Test", "Tests\Confuser.Helpers.Test\Confuser.Helpers.Test.csproj", "{5C6920F8-7B5F-4A9A-B791-208CEB858B34}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "118_EnhancedStrongName", "Tests\118_EnhancedStrongName\118_EnhancedStrongName.csproj", "{D5C4F5A2-5713-4A0A-A833-F9466AE5A339}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "118_EnhancedStrongName.Test", "Tests\118_EnhancedStrongName.Test\118_EnhancedStrongName.Test.csproj", "{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "118_EnhancedStrongName.Test", "Tests\118_EnhancedStrongName.Test\118_EnhancedStrongName.Test.csproj", "{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "123_InheritCustomAttr", "Tests\123_InheritCustomAttr\123_InheritCustomAttr.csproj", "{3B85D7A9-6BD0-4CD8-9009-36554EF24D32}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "123_InheritCustomAttr.Test", "Tests\123_InheritCustomAttr.Test\123_InheritCustomAttr.Test.csproj", "{DA7DF89C-447D-4C2D-9C75-933037BF245E}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		SevenZip\SevenZip.projitems*{7477ae82-d0be-4c24-91c1-6abcb6c18b8f}*SharedItemsImports = 13
+		SevenZip\SevenZip.projitems*{beb67a6e-4c54-4de5-8c6b-2c12f44a7b92}*SharedItemsImports = 5
+		SevenZip\SevenZip.projitems*{e2adcfc4-8505-4efc-9a7d-54ba491b8ad3}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -307,6 +313,14 @@ Global
 		{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B85D7A9-6BD0-4CD8-9009-36554EF24D32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B85D7A9-6BD0-4CD8-9009-36554EF24D32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B85D7A9-6BD0-4CD8-9009-36554EF24D32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B85D7A9-6BD0-4CD8-9009-36554EF24D32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA7DF89C-447D-4C2D-9C75-933037BF245E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA7DF89C-447D-4C2D-9C75-933037BF245E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA7DF89C-447D-4C2D-9C75-933037BF245E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA7DF89C-447D-4C2D-9C75-933037BF245E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -339,6 +353,8 @@ Global
 		{5C6920F8-7B5F-4A9A-B791-208CEB858B34} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{D5C4F5A2-5713-4A0A-A833-F9466AE5A339} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{D8BDABF6-6A96-4B48-8C1C-B6E78CBBF50E} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{3B85D7A9-6BD0-4CD8-9009-36554EF24D32} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{DA7DF89C-447D-4C2D-9C75-933037BF245E} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}

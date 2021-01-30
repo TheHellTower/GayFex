@@ -1,22 +1,28 @@
-﻿using Confuser.Core;
+﻿using System;
+using System.Text;
+using Confuser.Core;
 using Confuser.Renamer.BAML;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
-	internal class BAMLConverterMemberReference : INameReference<IDnlibDef> {
-		readonly IDnlibDef member;
+	internal sealed class BAMLConverterMemberReference : INameReference<IDnlibDef> {
+		readonly IMemberDef member;
 		readonly PropertyRecord rec;
 		readonly TypeSig sig;
 		readonly BAMLAnalyzer.XmlNsContext xmlnsCtx;
 
-		public BAMLConverterMemberReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IDnlibDef member,
-			PropertyRecord rec) {
+		public bool ShouldCancelRename => false;
+
+		public BAMLConverterMemberReference(BAMLAnalyzer.XmlNsContext xmlnsCtx, TypeSig sig, IMemberDef member, PropertyRecord rec) {
 			this.xmlnsCtx = xmlnsCtx;
 			this.sig = sig;
 			this.member = member;
 			this.rec = rec;
 		}
+
+		/// <inheritdoc />
+		public bool DelayRenaming(IConfuserContext context, INameService service) => false;
 
 		public bool UpdateNameReference(IConfuserContext context, INameService service) {
 			string typeName = sig.ReflectionName;
@@ -24,10 +30,24 @@ namespace Confuser.Renamer.References {
 				sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module.Assembly);
 			if (!string.IsNullOrEmpty(prefix))
 				typeName = prefix + ":" + typeName;
-			rec.Value = typeName + "." + member.Name;
+			var newValue = typeName + "." + member.Name;
+			if (string.Equals(rec.Value, newValue, StringComparison.Ordinal)) return false;
+			rec.Value = newValue;
 			return true;
 		}
 
-		public bool ShouldCancelRename() => false;
+		public override string ToString() => ToString(null, null);
+
+		public string ToString(IConfuserContext context, INameService nameService) {
+			var builder = new StringBuilder();
+			builder.Append("BAML Converter Member Reference").Append("(");
+			builder.Append("Property Record").Append("(").AppendHashedIdentifier("Value", rec.Value).Append(")");
+			builder.Append("; ");
+			builder.Append("Type Signature").Append("(").AppendHashedIdentifier("Name", sig.ReflectionFullName).Append(")");
+			builder.Append("; ");
+			builder.AppendReferencedDef(member, context, nameService);
+			builder.Append(")");
+			return builder.ToString();
+		}
 	}
 }

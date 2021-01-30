@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -63,6 +64,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 			var nameService = Mock.Of<INameService>();
 			Mock.Get(nameService).Setup(s => s.SetCanRename(context, refMethod, false));
 			Mock.Get(nameService).Setup(s => s.SetCanRename(context, refMethod, false));
+			Mock.Get(nameService).Setup(s => s.GetReferences(context, refMethod)).Returns(new List<INameReference>());
 			Mock.Get(context).Setup(c => c.Modules).Returns(ImmutableArray.Create(moduleDef));
 
 			var traceService = new TraceService();
@@ -108,6 +110,7 @@ namespace Confuser.Renamer.Test.Analyzers {
 			var nameService = Mock.Of<INameService>();
 			Mock.Get(nameService).Setup(s => s.SetCanRename(context, refProp, false));
 			Mock.Get(nameService).Setup(s => s.SetCanRename(context, refProp, false));
+			Mock.Get(nameService).Setup(s => s.GetReferences(context, It.IsAny<object>())).Returns(new List<INameReference>());
 			Mock.Get(context).Setup(c => c.Modules).Returns(ImmutableArray.Create(moduleDef));
 
 			var traceService = new TraceService();

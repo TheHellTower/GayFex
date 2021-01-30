@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.ComponentModel.Composition.Primitives;
 using System.Linq;
 using System.Threading;
 using Confuser.Core.Services;
@@ -14,8 +15,8 @@ namespace Confuser.Core {
 	[ExportMetadata(nameof(IProtectionMetadata.Id), FullId)]
 	[ExportMetadata(nameof(IProtectionMetadata.MarkerId), Id)]
 	public sealed class WatermarkingProtection : IProtection {
-		private const string Id = "watermark";
-		private const string FullId = "Cx.Watermark";
+		public const string Id = "watermark";
+		public const string FullId = "Cx.Watermark";
 
 		/// <inheritdoc />
 		public string Name => "Watermarking";
@@ -29,13 +30,13 @@ namespace Confuser.Core {
 
 		/// <inheritdoc />
 		public void PopulatePipeline(IProtectionPipeline pipeline) =>
-			pipeline.InsertPreStage(PipelineStage.BeginModule, new WatermarkingPhase(this));
+			pipeline.InsertPostStage(PipelineStage.EndModule, new WatermarkingPhase(this));
 
 		/// <inheritdoc />
 		public ProtectionPreset Preset => ProtectionPreset.None;
 
 		/// <inheritdoc />
-		public IReadOnlyDictionary<string, IProtectionParameter> Parameters { get; }
+		public IReadOnlyDictionary<string, IProtectionParameter> Parameters => ProtectionParameter.EmptyDictionary;
 
 		private sealed class WatermarkingPhase : IProtectionPhase {
 			/// <inheritdoc />
@@ -66,7 +67,7 @@ namespace Confuser.Core {
 					if (attrType == null) {
 						attrType = new TypeDefUser("", "ConfusedByAttribute", attrRef);
 						module.Types.Add(attrType);
-						marker.Mark(context, attrType, null);
+						marker.Mark(context, attrType, Parent);
 					}
 
 					var ctor = attrType.FindInstanceConstructors()
@@ -84,7 +85,7 @@ namespace Confuser.Core {
 							MethodSig.CreateInstance(module.CorLibTypes.Void), attrRef)));
 						ctor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
 						attrType.Methods.Add(ctor);
-						marker.Mark(context, ctor, null);
+						marker.Mark(context, ctor, Parent);
 					}
 
 					var attr = new CustomAttribute(ctor);

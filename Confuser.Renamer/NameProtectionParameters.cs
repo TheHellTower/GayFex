@@ -15,5 +15,6 @@ namespace Confuser.Renamer {
 			ProtectionParameter.String("mapFileName", "symbols.map");
 
 		internal IProtectionParameter<bool> RenameXaml { get; } = ProtectionParameter.Boolean("renXaml", true);
+		internal IProtectionParameter<RenameMode> RenameXamlMode { get; } = ProtectionParameter.Enum("renXamlMode", RenameMode.Letters);
 	}
 }

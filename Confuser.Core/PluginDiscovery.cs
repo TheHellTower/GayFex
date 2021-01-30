@@ -83,6 +83,7 @@ namespace Confuser.Core {
 			private AggregateCatalog GetDefaultPlugInsInternal(ILogger logger) {
 				var result = new List<ComposablePartCatalog>();
 
+				result.Add(new AssemblyCatalog(typeof(PluginDiscovery).Assembly));
 				LoadAssemblyCatalog("Confuser.Optimizations", result);
 				LoadAssemblyCatalog("Confuser.Protections", result);
 				LoadAssemblyCatalog("Confuser.Renamer", result);

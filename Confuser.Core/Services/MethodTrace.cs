@@ -151,7 +151,7 @@ namespace Confuser.Core.Services {
 				instr.OpCode.Code != Code.Newobj)
 				throw new ArgumentException("Invalid call instruction.", nameof(instr));
 
-			instr.CalculateStackUsage(pushes: out var push, out var pop); // pop is number of arguments
+			instr.CalculateStackUsage(out _, out int pop); // pop is number of arguments
 			if (pop == 0)
 				return Array.Empty<int>();
 
@@ -168,7 +168,12 @@ namespace Confuser.Core.Services {
 				int index = working.Dequeue();
 				while (index >= 0) {
 					if (BeforeStackDepths[index] == targetStack) {
-						if (Method.Body.Instructions[index].OpCode.Code != Code.Dup) {
+						var currentInstr = Method.Body.Instructions[index];
+						currentInstr.CalculateStackUsage(out int push, out pop);
+						if (push == 0 && pop == 0) {
+							// This instruction isn't doing anything to the stack. Could be a nop or some prefix.
+							// Ignore it and move on to the next.
+						} else if (Method.Body.Instructions[index].OpCode.Code != Code.Dup) {
 							// It's not a duplicate instruction, this is an acceptable start point.
 							break;
 						} else {
@@ -216,7 +221,7 @@ namespace Confuser.Core.Services {
 				while (index != instrIndex && index < Instructions.Length) {
 					var currentInstr = Instructions[index];
 
-					currentInstr.CalculateStackUsage(out push, out pop);
+					currentInstr.CalculateStackUsage(out int push, out pop);
 					if (currentInstr.OpCode.Code == Code.Dup) {
 						// Special case duplicate. This causes the current value on the stack to be duplicated.
 						// To show this behaviour, we'll fetch the last object on the eval stack and add it back twice.

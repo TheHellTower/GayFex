@@ -7,7 +7,7 @@ namespace Confuser.Core {
 	/// </summary>
 	internal sealed class CoreComponent : IConfuserComponent {
 		readonly Marker marker;
-		readonly ConfuserParameters parameters;
+		readonly ConfuserParameters _parameters;
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="CoreComponent" /> class.
@@ -15,7 +15,7 @@ namespace Confuser.Core {
 		/// <param name="parameters">The parameters.</param>
 		/// <param name="marker">The marker.</param>
 		internal CoreComponent(ConfuserParameters parameters, Marker marker) {
-			this.parameters = parameters;
+			_parameters = parameters;
 			this.marker = marker;
 		}
 
@@ -28,7 +28,7 @@ namespace Confuser.Core {
 		/// <inheritdoc />
 		void IConfuserComponent.Initialize(IServiceCollection collection) {
 			collection.AddTransient(typeof(IPackerService), (p) => new PackerService(p));
-			collection.AddSingleton(typeof(IRandomService), (p) => new RandomService(parameters.Project.Seed));
+			collection.AddSingleton(typeof(IRandomService), (p) => new RandomService(_parameters.Project.Seed));
 			collection.AddSingleton(typeof(IMarkerService), (p) => new MarkerService(marker));
 			collection.AddSingleton(typeof(ITraceService), (p) => new TraceService());
 			collection.AddSingleton(typeof(IRuntimeService), (p) => new RuntimeService());
