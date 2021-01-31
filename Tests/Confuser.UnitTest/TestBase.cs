@@ -138,56 +138,22 @@ namespace Confuser.UnitTest {
 			}
 
 			if (Path.GetExtension(entryInputFileName) == ".exe") {
-				var info = new ProcessStartInfo(entryOutputFileName) {
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
-					UseShellExecute = false
-				};
-				using (var process = Process.Start(info)) {
-					using (var stdout = process.StandardOutput) {
-						try {
-							Assert.Equal("START", await stdout.ReadLineAsync());
+				var exitCode = await ProcessUtilities.ExecuteTestApplication(entryInputFileName, async (stdout) => {
+					Assert.Equal("START", await stdout.ReadLineAsync());
 
-							foreach (string line in expectedOutput) {
-								Assert.Equal(line, await stdout.ReadLineAsync());
-							}
-
-							Assert.Equal("END", await stdout.ReadLineAsync());
-							Assert.Empty(await stdout.ReadToEndAsync());
-						}
-						catch (XunitException) {
-							try {
-								LogRemainingStream("Remaining standard output:", stdout);
-								using (var stderr = process.StandardError) {
-									LogRemainingStream("Remaining standard error:", stderr);
-								}
-							}
-							catch {
-								// ignore
-							}
-							throw;
-						}
+					foreach (string line in expectedOutput) {
+						Assert.Equal(line, await stdout.ReadLineAsync());
 					}
 
-					using (var stderr = process.StandardError) {
-						Assert.Empty(await stderr.ReadToEndAsync());
-					}
+					Assert.Equal("END", await stdout.ReadLineAsync());
+					Assert.Empty(await stdout.ReadToEndAsync());
+				}, outputHelper);
 
-					Assert.True(process.HasExited);
-					Assert.Equal(42, process.ExitCode);
-				}
+				Assert.Equal(42, exitCode);				
 			}
 
 			if (!(postProcessAction is null))
 				await postProcessAction.Invoke(outputDir);
-		}
-
-		private void LogRemainingStream(string header, StreamReader reader) {
-			var remainingOutput = reader.ReadToEnd();
-			if (!string.IsNullOrWhiteSpace(remainingOutput)) {
-				outputHelper.WriteLine(header);
-				outputHelper.WriteLine(remainingOutput.Trim());
-			}
 		}
 
 		private static string GetFileName(string name) {
