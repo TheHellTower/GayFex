@@ -1,5 +1,5 @@
-storage: symlink
-framework: net461, net472, netcoreapp2.2, netstandard2.0
+storage: none
+framework: auto-detect
 
 source https://api.nuget.org/v3/index.json
 source https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json
@@ -11,7 +11,6 @@ nuget dnlib ~> 3.3
 nuget Humanizer.Core ~> 2.7
 nuget K4os.Compression.LZ4 = 1.1.11
 nuget Microsoft.Build.Tasks.Core ~> 15
-nuget Microsoft.CodeAnalysis.FxCopAnalyzers copy_local: true
 nuget Microsoft.DiaSymReader.Native
 nuget Microsoft.Extensions.CommandLineUtils ~> 1.1
 nuget Microsoft.Extensions.DependencyInjection ~> 3.0
@@ -22,8 +21,7 @@ nuget Microsoft.Extensions.Logging.Console ~> 3.0
 nuget Microsoft.NET.Test.Sdk ~> 16
 nuget Microsoft.Win32.Registry > 4 < 6
 nuget Moq ~> 4.11
-nuget MvvmLightLibs ~> 5.4
-nuget Nerdbank.GitVersioning copy_local: true
+nuget MvvmLightLibsStd10 ~> 5.4
 nuget NuGet.Frameworks ~> 5
 nuget Ookii.Dialogs.Wpf ~> 3
 nuget System.Collections.Immutable ~> 1.6
@@ -42,6 +40,15 @@ nuget System.ValueTuple ~> 4
 nuget System.Xml.XmlDocument ~> 4
 nuget xunit ~> 2.4
 nuget xunit.runner.visualstudio ~> 2.4
+
+group Build
+  storage: none
+  framework: auto-detect
+
+  source https://api.nuget.org/v3/index.json
+  
+  nuget Microsoft.CodeAnalysis.NetAnalyzers
+  nuget Nerdbank.GitVersioning
 
 group Runtime
   storage: none

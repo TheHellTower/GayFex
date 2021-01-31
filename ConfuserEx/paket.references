@@ -1,8 +1,10 @@
-Antlr4.Runtime restriction: == net472
-Microsoft.Extensions.Logging restriction: == net472
-Microsoft.Extensions.Logging.Abstractions restriction: == net472
-MvvmLightLibs restriction: == net472
-Nerdbank.GitVersioning restriction: == net472
-Microsoft.CodeAnalysis.FxCopAnalyzers restriction: == net472
+Antlr4.Runtime
+Microsoft.Extensions.Logging
+Microsoft.Extensions.Logging.Abstractions
+MvvmLightLibsStd10
 Ookii.Dialogs.Wpf
-System.ComponentModel.Composition restriction: == net472
+System.ComponentModel.Composition
+
+group Build
+  Microsoft.CodeAnalysis.NetAnalyzers
+  Nerdbank.GitVersioning

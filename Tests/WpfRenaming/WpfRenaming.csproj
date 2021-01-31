@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <TargetFrameworks>net40;net471</TargetFrameworks>
+    <TargetFrameworks>net35;net40;net48</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <UseWPF>true</UseWPF>
   </PropertyGroup>

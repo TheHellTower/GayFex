@@ -1,13 +1,15 @@
 Antlr4
 dnlib
 K4os.Compression.LZ4
-Microsoft.CodeAnalysis.FxCopAnalyzers
 Microsoft.DiaSymReader.Native
 Microsoft.Extensions.Logging
 Microsoft.Win32.Registry
-Nerdbank.GitVersioning
 NuGet.Frameworks
 System.Collections.Immutable
 System.ComponentModel.Composition
 System.ValueTuple
 System.Xml.XmlDocument
+
+group Build
+  Microsoft.CodeAnalysis.NetAnalyzers
+  Nerdbank.GitVersioning

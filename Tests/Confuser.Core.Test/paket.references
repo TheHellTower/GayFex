@@ -1,4 +1,5 @@
 ApprovalTests
+Microsoft.NET.Test.Sdk
 Moq
 xunit
 xunit.runner.visualstudio

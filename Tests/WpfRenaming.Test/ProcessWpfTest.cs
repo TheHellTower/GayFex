@@ -5,6 +5,7 @@ using Confuser.Core.Project;
 using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace WpfRenaming.Test {
 	public class ProcessWpfTest : TestBase {
@@ -16,28 +17,25 @@ namespace WpfRenaming.Test {
 		[Trait("Category", "Analysis")]
 		[Trait("Protection", "rename")]
 		[Trait("Technology", "WPF")]
-		public async Task ProcessWithoutObfuscationTest(string framework) =>
-			await Run(
-				framework,
-				"WpfRenaming.dll",
-				null,
-				NoProtections);
+		public Task ProcessWithoutObfuscationTest(string framework) => Run(
+			framework,
+			"WpfRenaming.dll",
+			null,
+			NoProtections);
 
 		[Theory]
 		[MemberData(nameof(ProcessWithoutObfuscationTestData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
 		[Trait("Technology", "WPF")]
-		public async Task ProcessWithObfuscationTest(string framework) =>
-			await Run(
-				framework,
-				"WpfRenaming.dll",
-				null,
-				new SettingItem<IProtection>("rename"));
+		public Task ProcessWithObfuscationTest(string framework) => Run(
+			framework,
+			"WpfRenaming.dll",
+			null,
+			new SettingItem<IProtection>("rename"));
 
-		public static IEnumerable<object[]> ProcessWithoutObfuscationTestData() {
-			foreach (var framework in new string[] { "net40", "net471" })
-				yield return new object[] { framework };
-		}
+		public static IEnumerable<object[]> ProcessWithoutObfuscationTestData() =>
+			from framework in "net35;net40;net48".Split(';')
+			select new object[] { framework };
 	}
 }

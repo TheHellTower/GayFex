@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace WpfRenaming {
+﻿namespace WpfRenaming {
 	internal class UserControl1Context {
 		public string TestProperty => "This is from a property!";
 

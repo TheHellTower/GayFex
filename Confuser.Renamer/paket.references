@@ -5,5 +5,7 @@ System.ComponentModel.Composition
 System.IO.Packaging
 System.Runtime.Extensions
 System.ValueTuple
-Microsoft.CodeAnalysis.FxCopAnalyzers
-Nerdbank.GitVersioning
+
+group Build
+  Microsoft.CodeAnalysis.NetAnalyzers
+  Nerdbank.GitVersioning

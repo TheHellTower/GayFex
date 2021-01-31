@@ -1,12 +1,10 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using Confuser.Core;
 using Confuser.Core.Project;
 using ConfuserEx.ViewModel;
-using GalaSoft.MvvmLight.CommandWpf;
 
 namespace ConfuserEx.Views {
 	public partial class ProjectRuleView : Window {

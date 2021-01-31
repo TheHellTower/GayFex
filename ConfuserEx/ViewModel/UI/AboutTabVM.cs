@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using GalaSoft.MvvmLight.CommandWpf;
 
 namespace ConfuserEx.ViewModel {
 	internal class AboutTabVM : TabViewModel {

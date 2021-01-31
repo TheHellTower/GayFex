@@ -3,13 +3,11 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using Confuser.Core;
 using Confuser.Core.Project;
-using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Extensions.Logging;
 
 namespace ConfuserEx.ViewModel {

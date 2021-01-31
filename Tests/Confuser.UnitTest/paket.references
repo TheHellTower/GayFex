@@ -1,3 +1,4 @@
 Microsoft.Extensions.Logging.Abstractions
+Microsoft.NET.Test.Sdk
 xunit
 xunit.runner.visualstudio

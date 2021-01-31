@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -8,7 +7,6 @@ using System.Windows.Input;
 using System.Xml;
 using Confuser.Core;
 using Confuser.Core.Project;
-using GalaSoft.MvvmLight.CommandWpf;
 using Ookii.Dialogs.Wpf;
 
 namespace ConfuserEx.ViewModel {

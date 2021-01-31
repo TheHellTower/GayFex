@@ -1,5 +1,7 @@
 dnlib
 Microsoft.Extensions.DependencyInjection.Abstractions
-Nerdbank.GitVersioning
 System.Collections.Immutable
-Microsoft.CodeAnalysis.FxCopAnalyzers
+
+group Build
+  Microsoft.CodeAnalysis.NetAnalyzers
+  Nerdbank.GitVersioning
