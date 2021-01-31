@@ -12,7 +12,6 @@
       <Grid.RowDefinitions>
         <RowDefinition Height="70px" />
         <RowDefinition Height="*" />
-        <RowDefinition Height="100px" />
       </Grid.RowDefinitions>
 
       <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center">
@@ -64,17 +63,7 @@
         </StackPanel>
       </DockPanel>
 
-      <Button Grid.Row="2" Grid.Column="0" Command="{Binding LaunchBrowser}"
-              CommandParameter="http://board.b-at-s.info/" Focusable="False" Cursor="Hand">
-        <Button.Template>
-          <ControlTemplate TargetType="{x:Type Button}">
-            <ContentPresenter />
-          </ControlTemplate>
-        </Button.Template>
-        <Image Source="{DynamicResource TeamLogo}" Width="400" Height="100" />
-      </Button>
-
-      <StackPanel Grid.Column="1" Grid.RowSpan="3" TextBlock.FontSize="13" Margin="10"
+      <StackPanel Grid.Column="1" Grid.RowSpan="2" TextBlock.FontSize="13" Margin="10"
                   VerticalAlignment="Stretch" HorizontalAlignment="Center">
         <Label HorizontalContentAlignment="Center">Special Thanks to:</Label>
         <Label HorizontalContentAlignment="Center">yck1509</Label>

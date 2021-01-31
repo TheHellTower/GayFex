@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFrameworks>net20;net40;net471</TargetFrameworks>
     <RootNamespace>InheritCustomAttr</RootNamespace>
     <StartupObject>InheritCustomAttr.Program</StartupObject>
   </PropertyGroup>

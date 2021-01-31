@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RootNamespace>ComplexClassStructureRename.Lib</RootNamespace>
+  </PropertyGroup>
+
+</Project>

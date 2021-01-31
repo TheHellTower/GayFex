@@ -33,7 +33,6 @@ paket-files/
 *.log
 [Bb]in
 [Dd]ebug*/
-*.lib
 *.sbr
 obj/
 [Rr]elease*/
@@ -48,3 +47,4 @@ packages/
 gh-pages/
 *.received.txt
 Publish
+.idea/

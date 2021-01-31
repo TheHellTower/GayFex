@@ -249,20 +249,26 @@ namespace Confuser.Core {
 					continue;
 				}
 
-				var modDef = module.Resolve(proj.BaseDirectory, context.Resolver.DefaultModuleContext);
-				foreach (var method in modDef.FindDefinitions().OfType<MethodDef>()) {
-					logger.LogTrace("Loading custom debug infos for '{0}'.", method);
-					logger.LogTrace(
-						method.HasCustomDebugInfos
-							? "Custom debug infos for '{0}' loaded."
-							: "Method '{0}' has no custom debug infos.", method);
+				try {
+					var modDef = module.Resolve(proj.BaseDirectory, context.InternalResolver.DefaultModuleContext);
+					foreach (var method in modDef.FindDefinitions().OfType<MethodDef>()) {
+						logger.LogTrace("Loading custom debug infos for '{0}'.", method);
+						logger.LogTrace(
+							method.HasCustomDebugInfos
+								? "Custom debug infos for '{0}' loaded."
+								: "Method '{0}' has no custom debug infos.", method);
+						token.ThrowIfCancellationRequested();
+					}
+
 					token.ThrowIfCancellationRequested();
+
+					context.InternalResolver.AddToCache(modDef);
+					modules.Add((module, modDef));
 				}
-
-				token.ThrowIfCancellationRequested();
-
-				context.Resolver.AddToCache(modDef);
-				modules.Add((module, modDef));
+				catch (BadImageFormatException ex) {
+					logger.LogError("Failed to load \"{0}\" - Assembly does not appear to be a .NET assembly: \"{1}\"", module.Path, ex.Message);
+					throw new ConfuserException(ex);
+				}
 			}
 
 			foreach (var module in modules) {

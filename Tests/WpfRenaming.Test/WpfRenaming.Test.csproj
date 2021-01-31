@@ -7,9 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
-    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
-    <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
 

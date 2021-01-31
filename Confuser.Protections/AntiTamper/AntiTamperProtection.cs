@@ -30,6 +30,7 @@ namespace Confuser.Protections {
 			collection.AddTransient(typeof(IAntiTamperService), (p) => new AntiTamperService(this));
 
 		void IConfuserComponent.PopulatePipeline(IProtectionPipeline pipeline) {
+			pipeline.InsertPostStage(PipelineStage.BeginModule, new ModuleWriterSetupPhase(this));
 			pipeline.InsertPreStage(PipelineStage.OptimizeMethods, new InjectPhase(this));
 			pipeline.InsertPreStage(PipelineStage.EndModule, new MetadataPhase(this));
 		}

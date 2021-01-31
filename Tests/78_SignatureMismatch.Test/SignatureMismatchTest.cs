@@ -1,6 +1,4 @@
-using System;
-using System.Diagnostics;
-using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -10,55 +8,29 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace SignatureMismatch.Test {
-	public class SignatureMismatchTest {
-		private readonly ITestOutputHelper outputHelper;
+	public class SignatureMismatchTest : TestBase {
+		public SignatureMismatchTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
-		public SignatureMismatchTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
-
-		[Fact]		
-        [Trait("Category", "Protection")]
+		[Theory]
+		[MemberData(nameof(SignatureMismatchData))]
+		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/78")]
-		public async Task SignatureMismatch() {
-			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp");
-			var inputFile = Path.Combine(baseDir, "78_SignatureMismatch.exe");
-			var outputFile = Path.Combine(outputDir, "78_SignatureMismatch.exe");
-			FileUtilities.ClearOutput(outputFile);
-			var proj = new ConfuserProject {
-				BaseDirectory = baseDir,
-				OutputDirectory = outputDir
-			};
-			proj.Add(new ProjectModule() { Path = inputFile });
+		public async Task SignatureMismatch(string framework) =>
+			await Run(
+				framework,
+				"78_SignatureMismatch.exe",
+				new [] {
+					"Dictionary created",
+					"Dictionary count: 1",
+					"[Test1] = Test2"
+				},
+				new SettingItem<IProtection>("rename")
+			);
 
-			var parameters = new ConfuserParameters {
-				Project = proj,
-				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper))
-			};
-
-			await ConfuserEngine.Run(parameters);
-
-			Assert.True(File.Exists(outputFile));
-			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
-
-			var info = new ProcessStartInfo(outputFile) {
-				RedirectStandardOutput = true,
-				UseShellExecute = false
-			};
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
-				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("Dictionary created", await stdout.ReadLineAsync());
-				Assert.Equal("Dictionary count: 1", await stdout.ReadLineAsync());
-				Assert.Equal("[Test1] = Test2", await stdout.ReadLineAsync());
-				Assert.Equal("END", await stdout.ReadLineAsync());
-				Assert.Empty(await stdout.ReadToEndAsync());
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-			}
-
-			FileUtilities.ClearOutput(outputFile);
+		public static IEnumerable<object[]> SignatureMismatchData() {
+			foreach (var framework in "net20;net40;net471".Split(';'))
+				yield return new object[] { framework };
 		}
 	}
 }

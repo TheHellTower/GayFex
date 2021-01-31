@@ -43,6 +43,14 @@ namespace Confuser.Renamer.Analyzers {
 					else if (baseUnderCtrl && !ifaceUnderCtrl || !service.CanRename(context, slot.Overrides.MethodDef)) {
 						service.SetCanRename(context, slot.MethodDef, false);
 					}
+
+					// Now it is possible that the method implementing the interface, belongs to the base class.
+					// If that happens the methods analyzing the methods will not pick up on this. We'll mark that
+					// case here.
+					if (!TypeEqualityComparer.Instance.Equals(slot.MethodDef.DeclaringType, type)) {
+						SetupOverwriteReferences(context, service, slot, type);
+						//CreateOverrideReference(service, slot.MethodDef, slot.Overrides.MethodDef);
+					}
 				}
 			}
 		}
@@ -106,7 +114,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (slot.Overrides == null)
 						continue;
 
-					SetupOverwriteReferences(context, service, slot, method.Module);
+					SetupOverwriteReferences(context, service, slot, method.DeclaringType);
 				}
 			}
 			else if (!doesOverridePropertyOrEvent) {
@@ -120,7 +128,9 @@ namespace Confuser.Renamer.Analyzers {
 			if (discoveredBaseMemberDef is null)
 				discoveredBaseMemberDef = basePropDef;
 			else {
-				var references = service.GetReferences(context, discoveredBaseMemberDef).OfType<MemberSiblingReference>().ToArray();
+				var references = service.GetReferences(context, discoveredBaseMemberDef)
+					.OfType<MemberSiblingReference>()
+					.ToArray();
 				if (references.Length > 0) {
 					discoveredBaseMemberDef = (T)references[0].OldestSiblingDef;
 					foreach (var siblingRef in references.Skip(1)) {
@@ -128,6 +138,9 @@ namespace Confuser.Renamer.Analyzers {
 						RedirectSiblingReferences(siblingRef.OldestSiblingDef, discoveredBaseMemberDef, context, service);
 					}
 				}
+
+				// Check if the discovered base type is the current type. If so, nothing needs to be done.
+				if (ReferenceEquals(basePropDef, discoveredBaseMemberDef)) return;
 
 				service.AddReference(context, basePropDef, new MemberSiblingReference(basePropDef, discoveredBaseMemberDef));
 				UpdateOldestSiblingReference(discoveredBaseMemberDef, basePropDef, context, service);
@@ -242,21 +255,21 @@ namespace Confuser.Renamer.Analyzers {
 				service.AddReference(context, def, new TypeRefReference(typeRef, def));
 		}
 
-		private static GenericInstSig SetupSignatureReferences(IConfuserContext context, INameService service, ModuleDef module, GenericInstSig typeSig) {
-			var genericType = SetupSignatureReferences(context, service, module, typeSig.GenericType);
-			var genericArguments = typeSig.GenericArguments.Select(a => SetupSignatureReferences(context, service, module, a)).ToList();
-			return new GenericInstSig(genericType, genericArguments);
+		private static void SetupSignatureReferences(IConfuserContext context, INameService service, ModuleDef module, GenericInstSig typeSig) {
+			SetupSignatureReferences(context, service, module, typeSig.GenericType);
+			foreach (var genericArgument in typeSig.GenericArguments)
+				SetupSignatureReferences(context, service, module, genericArgument);
 		}
 
-		private static T SetupSignatureReferences<T>(IConfuserContext context, INameService service, ModuleDef module, T typeSig) where T : TypeSig {
+		private static void SetupSignatureReferences(IConfuserContext context, INameService service, ModuleDef module, TypeSig typeSig) {
 			var asTypeRef = typeSig.TryGetTypeRef();
 			if (asTypeRef != null) {
 				SetupTypeReference(context, service, module, asTypeRef);
 			}
-			return typeSig;
 		}
 
-		private static void SetupOverwriteReferences(IConfuserContext context, INameService service, VTableSlot slot, ModuleDef module) {
+		private static void SetupOverwriteReferences(IConfuserContext context, INameService service, VTableSlot slot, TypeDef thisType) {
+			var module = thisType.Module;
 			var methodDef = slot.MethodDef;
 			var baseSlot = slot.Overrides;
 			var baseMethodDef = baseSlot.MethodDef;
@@ -269,10 +282,10 @@ namespace Confuser.Renamer.Analyzers {
 
 			IMethodDefOrRef target;
 			if (baseSlot.MethodDefDeclType is GenericInstSig declType) {
-				var signature = SetupSignatureReferences(context, service, module, declType);
-				MemberRef targetRef = new MemberRefUser(module, baseMethodDef.Name, baseMethodDef.MethodSig, signature.ToTypeDefOrRef());
+				MemberRef targetRef = new MemberRefUser(module, baseMethodDef.Name, baseMethodDef.MethodSig, declType.ToTypeDefOrRef());
 				targetRef = importer.Import(targetRef);
 				service.AddReference(context, baseMethodDef, new MemberRefReference(targetRef, baseMethodDef));
+				SetupSignatureReferences(context, service, module, targetRef.DeclaringType.ToTypeSig() as GenericInstSig);
 
 				target = targetRef;
 			}
@@ -285,14 +298,18 @@ namespace Confuser.Renamer.Analyzers {
 				}
 			}
 
-			target.MethodSig = importer.Import(target.MethodSig);
 			if (target is MemberRef methodRef)
 				AddImportReference(context, service, module, baseMethodDef, methodRef);
 
-			if (methodDef.Overrides.Any(impl => IsMatchingOverride(impl, target)))
-				return;
+			if (TypeEqualityComparer.Instance.Equals(methodDef.DeclaringType, thisType)) {
+				if (methodDef.Overrides.Any(impl => IsMatchingOverride(impl, target)))
+					return;
 
-			methodDef.Overrides.Add(new MethodOverride(methodDef, target));
+				methodDef.Overrides.Add(new MethodOverride(methodDef, target));
+			}
+			else if (target is IMemberDef targetDef) {
+				CreateOverrideReference(context, service, methodDef, targetDef);
+			}
 		}
 
 		private static bool IsMatchingOverride(MethodOverride methodOverride, IMethodDefOrRef targetMethod) {

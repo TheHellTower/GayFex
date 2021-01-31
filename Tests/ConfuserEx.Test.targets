@@ -16,7 +16,6 @@
   <PropertyGroup>
     <BuildConfuserTestProjectReferenceDependsOn>
       _ConfuserTestProjectGetTargetFrameworks;
-      _ConfuserTestProjectCreateTargetFrameworkList;
       _ConfuserTestProjectBuildAndCopy;
     </BuildConfuserTestProjectReferenceDependsOn>
   </PropertyGroup>
@@ -53,38 +52,32 @@
              RemoveProperties="%(ConfuserTestTargetProject.RemoveGlobalProperties)">
       <Output TaskParameter="TargetOutputs" ItemName="_BuildConfuserTestProjectReferenceTargets" />
     </MSBuild>
-
-    <ItemGroup>
-      <_BuildConfuserTestProjectReferenceTargetFrameworks Include="@(_BuildConfuserTestProjectReferenceTargets->'%(TargetFrameworks)')" />
-    </ItemGroup>
-
-  </Target>
-
-  <Target Name="_ConfuserTestProjectCreateTargetFrameworkList">
-    <PropertyGroup>
-      <_BuildConfuserTestProjectReferenceTargetFrameworks2>@(_BuildConfuserTestProjectReferenceTargetFrameworks)</_BuildConfuserTestProjectReferenceTargetFrameworks2>
-      <_BuildConfuserTestProjectReferenceProjectFile>%(_BuildConfuserTestProjectReferenceTargetFrameworks.MSBuildSourceProjectFile)</_BuildConfuserTestProjectReferenceProjectFile>
-    </PropertyGroup>
-    <ItemGroup>
-      <_BuildConfuserTestProjectReferenceTargetFramework Include="$(_BuildConfuserTestProjectReferenceTargetFrameworks2.Split(';'))">
-        <MSBuildSourceProjectFile>$(_BuildConfuserTestProjectReferenceProjectFile)</MSBuildSourceProjectFile>
-      </_BuildConfuserTestProjectReferenceTargetFramework>
-    </ItemGroup>
   </Target>
 
   <Target Name="_ConfuserTestProjectBuildAndCopy">
-    <MSBuild Projects="%(_BuildConfuserTestProjectReferenceTargetFramework.MSBuildSourceProjectFile)"
+    <MSBuild Projects="%(_BuildConfuserTestProjectReferenceTargets.MSBuildSourceProjectFile)"
              Targets="Build"
-             Properties="Configuration=$(ConfuserRuntimeConfiguration);TargetFramework=%(_BuildConfuserTestProjectReferenceTargetFramework.Identity)"
-             RemoveProperties="TargetFrameworks;RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
+             Properties="Configuration=$(ConfuserRuntimeConfiguration);CustomAfterMicrosoftCommonCrossTargetingTargets=$(MSBuildThisFileDirectory)ConfuserEx.CrossTarget.Workaround.targets"
+             RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;TargetPlatformIdentifier;TargetPlatformMoniker"
              BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="_ConfuserTestProjectBuildOutput" />
     </MSBuild>
+
     <ItemGroup>
+      <_ConfuserTestProjectBuildOutput Update="@(_ConfuserTestProjectBuildOutput)">
+        <TargetFrameworkIdentifier Condition="'%(_ConfuserTestProjectBuildOutput.TargetFrameworkIdentifier)' == ''">Unknown</TargetFrameworkIdentifier>
+        <TargetFrameworkVersion Condition="'%(_ConfuserTestProjectBuildOutput.TargetFrameworkVersion)' == ''">0.0.0</TargetFrameworkVersion>
+      </_ConfuserTestProjectBuildOutput>
+
       <_ConfuserTestProjectBuildOutput Update="@(_ConfuserTestProjectBuildOutput)">
         <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETFramework'">net$([System.String]::Copy('%(TargetFrameworkVersion)').Replace('.', ''))</_tfm>
         <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETStandard'">netstandard%(TargetFrameworkVersion)</_tfm>
         <_tfm Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp'">netcoreapp%(TargetFrameworkVersion)</_tfm>
+      </_ConfuserTestProjectBuildOutput>
+
+      <_ConfuserTestProjectBuildOutput Update="@(_ConfuserTestProjectBuildOutput)">
+        <SubDir Condition="'%(_ConfuserTestProjectBuildOutput._tfm)' != ''">%(_ConfuserTestProjectBuildOutput._tfm)\</SubDir>
+        <SubDir Condition="'%(_ConfuserTestProjectBuildOutput._tfm)' == ''"></SubDir>
       </_ConfuserTestProjectBuildOutput>
     </ItemGroup>
 
@@ -94,7 +87,7 @@
 
     <ItemGroup>
       <None Include="@(_ConfuserTestProjectCopy)" Condition="Exists('%(FullPath)')">
-        <Link>%(_ConfuserTestProjectCopy._tfm)\%(RecursiveDir)%(Filename)%(Extension)</Link>
+        <Link>%(_ConfuserTestProjectCopy.SubDir)%(RecursiveDir)%(Filename)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

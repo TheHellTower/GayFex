@@ -428,6 +428,17 @@ namespace Confuser.Helpers {
 						return CopyDef(typeDef);
 				}
 
+				// check if the assembly reference needs to be fixed.
+				if (typeDefOrRef is TypeRef sourceRef) {
+					var targetAssemblyRef = InjectContext.TargetModule.GetAssemblyRef(sourceRef.DefinitionAssembly.Name);
+					if (!(targetAssemblyRef is null) && !string.Equals(targetAssemblyRef.FullName, typeDefOrRef.DefinitionAssembly.FullName, StringComparison.Ordinal)) {
+						// We got a matching assembly by the simple name, but not by the full name.
+						// This means the injected code uses a different assembly version than the target assembly.
+						// We'll fix the assembly reference, to avoid breaking anything.
+						return new TypeRefUser(sourceRef.Module, sourceRef.Namespace, sourceRef.Name, targetAssemblyRef);
+					}
+				}
+
 				return base.Map(typeDefOrRef);
 			}
 

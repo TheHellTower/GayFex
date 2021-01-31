@@ -71,7 +71,8 @@ namespace Confuser.Renamer {
 								local.Name = service.ObfuscateName(method.Module, local.Name, mode);
 						}
 
-						method.Body.PdbMethod.Scope = new PdbScope();
+						if (method.Body.HasPdbMethod)
+							method.Body.PdbMethod.Scope = new PdbScope();
 					}
 				}
 
@@ -91,7 +92,8 @@ namespace Confuser.Renamer {
 						typeDef.Namespace = "";
 					}
 					else {
-						typeDef.Namespace = service.ObfuscateName(typeDef.Module, typeDef.Namespace, mode);
+						var nsFormat = parameters.GetParameter(context, def, Parent.Parameters.NamespaceFormat);
+						typeDef.Namespace = service.ObfuscateName(nsFormat, typeDef.Module, typeDef.Namespace, mode);
 						typeDef.Name = service.ObfuscateName(typeDef.Module, typeDef.Name, mode);
 					}
 

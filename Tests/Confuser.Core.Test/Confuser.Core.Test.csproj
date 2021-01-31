@@ -8,26 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
-    <ProjectReference Include="..\..\Confuser.Optimizations\Confuser.Optimizations.csproj" />
-    <ProjectReference Include="..\..\Confuser.Protections\Confuser.Protections.csproj" />
-    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 
   <Import Project="..\..\.paket\Paket.Restore.targets" />

@@ -152,10 +152,10 @@ namespace Confuser.Core {
 							new SettingItem<IProtection>(WatermarkingProtection.Id)
 						});
 
-						var asmResolver = new AssemblyResolver();
+						var asmResolver = new ConfuserAssemblyResolver {EnableTypeDefCache = true};
 						asmResolver.EnableTypeDefCache = true;
 						asmResolver.DefaultModuleContext = new ModuleContext(asmResolver);
-						context.Resolver = asmResolver;
+						context.InternalResolver = asmResolver;
 						context.BaseDirectory = Path.Combine(Environment.CurrentDirectory,
 							context.Project.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) +
 							Path.DirectorySeparatorChar);
@@ -373,11 +373,10 @@ namespace Confuser.Core {
 			logger.LogInformation("Processing module '{0}'...", context.CurrentModule.Name);
 
 			context.CurrentModuleWriterOptions = new ModuleWriterOptions(context.CurrentModule);
-			context.CurrentModuleWriterOptions.WriterEvent += (sender, e) => token.ThrowIfCancellationRequested();
 			CopyPEHeaders(context.CurrentModuleWriterOptions.PEHeadersOptions, context.CurrentModule);
 
 			if (!context.CurrentModule.IsILOnly || context.CurrentModule.VTableFixups != null)
-				context.RequestNative();
+				context.RequestNative(true);
 
 			var snKey = context.Annotations.Get<StrongNameKey>(context.CurrentModule, Marker.SNKey);
 			var snPubKey = context.Annotations.Get<StrongNamePublicKey>(context.CurrentModule, Marker.SNPubKey);
@@ -410,8 +409,8 @@ namespace Confuser.Core {
 				}
 		}
 
-		private static void ProcessModule(ConfuserContext context, CancellationToken token) {
-		}
+		private static void ProcessModule(ConfuserContext context, CancellationToken token) => 
+			context.CurrentModuleWriterOptions.WriterEvent += (sender, e) => token.ThrowIfCancellationRequested();
 
 		private static void OptimizeMethods(ConfuserContext context, CancellationToken token) {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
@@ -512,7 +511,7 @@ namespace Confuser.Core {
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
-			context.Resolver.Clear();
+			context.InternalResolver.Clear();
 
 			for (int i = 0; i < context.OutputModules.Count; i++) {
 				token.ThrowIfCancellationRequested();
@@ -635,7 +634,7 @@ namespace Confuser.Core {
 
 				if (context.Resolver != null) {
 					buildMsg.AppendLine("Cached assemblies:");
-					foreach (var asm in context.Resolver.GetCachedAssemblies().Where(def => def != null)) {
+					foreach (var asm in context.InternalResolver.GetCachedAssemblies().Where(def => def != null)) {
 						if (string.IsNullOrEmpty(asm.ManifestModule.Location))
 							buildMsg.AppendFormat("    {0}", asm.FullName).AppendLine();
 						else

@@ -7,10 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
-    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
-    <ProjectReference Include="..\WinFormsRenaming\WinFormsRenaming.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ConfuserTestTargetProject Include="..\WinFormsRenaming\WinFormsRenaming.csproj" />
   </ItemGroup>
 
   <Import Project="..\..\.paket\Paket.Restore.targets" />

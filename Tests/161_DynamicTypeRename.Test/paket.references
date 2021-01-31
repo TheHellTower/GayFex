@@ -1,5 +1,3 @@
-group Test
 Moq
 xunit
 xunit.runner.visualstudio
-dotnet-xunit

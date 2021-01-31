@@ -1,0 +1,13 @@
+<!--
+Simple issue to fix, yet Microsoft won't do it.
+https://github.com/dotnet/msbuild/issues/2148
+
+This change causes the output of the build commands
+to bubble up to the caller. This is required to get the 
+information what builds to copy.
+-->
+<Project>
+  <Target Name="Build" 
+    DependsOnTargets="_SetBuildInnerTarget;DispatchToInnerBuilds" 
+    Returns="@(InnerOutput)" />
+</Project>

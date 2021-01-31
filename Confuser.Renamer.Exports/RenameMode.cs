@@ -4,8 +4,14 @@ namespace Confuser.Renamer {
 	public enum RenameMode {
 		Empty = 0x0,
 		Unicode = 0x1,
+		// ReSharper disable once InconsistentNaming
 		ASCII = 0x2,
-		Letters = 0x3,
+		/// <summary>
+		/// This the the rename mode with the largest set of possible characters,
+		/// that is still save for reflection.
+		/// </summary>
+		Reflection = 0x3,
+		Letters = 0x4,
 
 		Decodable = 0x10,
 		Sequential = 0x11,

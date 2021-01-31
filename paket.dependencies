@@ -5,28 +5,34 @@ source https://api.nuget.org/v3/index.json
 source https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json
 
 nuget Antlr4 ~> 4.6
+nuget ApprovalTests ~> 4.3
+nuget coverlet.collector ~> 1
 nuget dnlib ~> 3.3
 nuget Humanizer.Core ~> 2.7
 nuget K4os.Compression.LZ4 = 1.1.11
 nuget Microsoft.Build.Tasks.Core ~> 15
 nuget Microsoft.CodeAnalysis.FxCopAnalyzers copy_local: true
+nuget Microsoft.DiaSymReader.Native
 nuget Microsoft.Extensions.CommandLineUtils ~> 1.1
 nuget Microsoft.Extensions.DependencyInjection ~> 3.0
 nuget Microsoft.Extensions.DependencyInjection.Abstractions ~> 3.0
 nuget Microsoft.Extensions.Logging ~> 3.0
 nuget Microsoft.Extensions.Logging.Abstractions ~> 3.0
 nuget Microsoft.Extensions.Logging.Console ~> 3.0
-nuget Microsoft.Win32.Registry ~> 4
+nuget Microsoft.NET.Test.Sdk ~> 16
+nuget Microsoft.Win32.Registry > 4 < 6
+nuget Moq ~> 4.11
 nuget MvvmLightLibs ~> 5.4
 nuget Nerdbank.GitVersioning copy_local: true
 nuget NuGet.Frameworks ~> 5
+nuget Ookii.Dialogs.Wpf ~> 3
 nuget System.Collections.Immutable ~> 1.6
 nuget System.ComponentModel ~> 4
 nuget System.ComponentModel.Composition ~> 4
 nuget System.Console ~> 4
 nuget System.Diagnostics.Debug ~> 4
 nuget System.Diagnostics.Tools ~> 4
-nuget System.IO.Packaging ~> 4
+nuget System.IO.Packaging > 4 < 6
 nuget System.Linq ~> 4
 nuget System.Reflection.Emit.Lightweight ~> 4
 nuget System.Runtime.Extensions ~> 4
@@ -34,35 +40,24 @@ nuget System.Security.Cryptography.Algorithms ~> 4
 nuget System.Text.RegularExpressions ~> 4
 nuget System.ValueTuple ~> 4
 nuget System.Xml.XmlDocument ~> 4
+nuget xunit ~> 2.4
+nuget xunit.runner.visualstudio ~> 2.4
 
 group Runtime
   storage: none
   framework: auto-detect
 
-	source https://api.nuget.org/v3/index.json
+  source https://api.nuget.org/v3/index.json
 
-	nuget Microsoft.NETFramework.ReferenceAssemblies ~> 1
+  nuget Microsoft.NETFramework.ReferenceAssemblies ~> 1
   github MiloszKrajewski/K4os.Compression.LZ4:1.1.11 src/K4os.Compression.LZ4/Engine/LZ4_xx.cs
 
-group Test
-  storage: none
-  framework: auto-detect
-
-  source https://api.nuget.org/v3/index.json
-  
-  nuget ApprovalTests ~> 4.3
-  nuget coverlet.collector ~> 1
-  clitool dotnet-xunit ~> 2.3
-  nuget Microsoft.NET.Test.Sdk ~> 16
-  nuget Moq ~> 4.11
-  nuget xunit ~> 2.4
-  nuget xunit.runner.visualstudio ~> 2.4
-  
 group TestTarget
   storage: none
   framework: >= net20
   
   source https://api.nuget.org/v3/index.json
   
-	nuget Microsoft.NETFramework.ReferenceAssemblies ~> 1
+  nuget Microsoft.Build.Framework
+  nuget Microsoft.NETFramework.ReferenceAssemblies ~> 1
   nuget System.Text.RegularExpressions ~> 4 framework: >= net45

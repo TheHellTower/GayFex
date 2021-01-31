@@ -142,14 +142,13 @@ namespace Confuser.Protections.AntiTamper {
 		}
 
 		private void WriterEvent(object sender, ModuleWriterEventArgs e) {
-			var writer = e.Writer;
-			// ReSharper disable once SwitchStatementMissingSomeCases
-			switch (e.Event) {
+			switch (e.Event)
+			{
 				case ModuleWriterEvent.MDEndCreateTables:
-					CreateSections(writer);
+					CreateSections(e.Writer);
 					break;
 				case ModuleWriterEvent.BeginStrongNameSign:
-					EncryptSection(writer);
+					EncryptSection(e.Writer);
 					break;
 			}
 		}

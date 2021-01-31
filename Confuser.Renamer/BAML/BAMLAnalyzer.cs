@@ -263,12 +263,16 @@ namespace Confuser.Renamer.BAML {
 			foreach (ITypeDefOrRef type in typeSig.FindTypeRefs()) {
 				TypeDef typeDef = type.ResolveTypeDefThrow();
 				if (Context.Modules.Contains((ModuleDefMD)typeDef.Module)) {
-					service.ReduceRenameMode(Context, typeDef, RenameMode.Letters);
+					AddDefReference(typeDef, reference);
 					if (type is TypeRef)
 						service.AddReference(Context, typeDef, new TypeRefReference((TypeRef)type, typeDef));
-					service.AddReference(Context, typeDef, reference);
 				}
 			}
+		}
+
+		private void AddDefReference<T>(T def, INameReference<T> reference) where T : IDnlibDef {
+			service.ReduceRenameMode(Context, def, RenameMode.Letters);
+			service.AddReference(Context, def, reference);
 		}
 
 		void ProcessBAMLElement(BamlElement root, BamlElement elem) {
@@ -477,16 +481,14 @@ namespace Confuser.Renamer.BAML {
 							if (property != null) {
 								var reference = new BAMLConverterMemberReference(xmlnsCtx, sig, property, rec);
 								AddTypeSigReference(sig, reference);
-								service.ReduceRenameMode(Context, property, RenameMode.Letters);
-								service.AddReference(Context, property, reference);
+								AddDefReference(property, reference);
 							}
 
 							FieldDef field = typeDef.FindField(cmdName);
 							if (field != null) {
 								var reference = new BAMLConverterMemberReference(xmlnsCtx, sig, field, rec);
 								AddTypeSigReference(sig, reference);
-								service.ReduceRenameMode(Context, field, RenameMode.Letters);
-								service.AddReference(Context, field, reference);
+								AddDefReference(field, reference);
 							}
 
 							if (property == null && field == null) {
@@ -635,11 +637,17 @@ namespace Confuser.Renamer.BAML {
 			var typeName = part.GetTypeName();
 			var propertyName = part.GetPropertyName();
 			if (!string.IsNullOrWhiteSpace(typeName)) {
-				var sig = ResolveType(typeName, out var prefix);
-				if (sig != null && Context.Modules.Contains((ModuleDefMD) sig.ToBasicTypeDefOrRef().ResolveTypeDefThrow().Module)) {
-					var reference = new BAMLPathTypeReference(xmlnsCtx, sig, part);
+				var sig = ResolveType(typeName, out _);
+				var basicTypeDef = sig?.ToBasicTypeDefOrRef().ResolveTypeDef();
+				if (!(basicTypeDef is null) && Context.Modules.Contains(basicTypeDef.Module as ModuleDefMD)) {
+					var propDef = basicTypeDef.FindPropertyCheckBaseType(propertyName);
+					var reference = new BAMLPathTypeReference(xmlnsCtx, sig, propDef, part);
 					AddTypeSigReference(sig, reference);
-					return;
+
+					if (!(propDef is null)) {
+						AddDefReference(propDef, reference);
+						return; // Return to avoid blocking renaming of the property.
+					}
 				}
 			}
 

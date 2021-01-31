@@ -10,6 +10,7 @@ namespace Confuser.Renamer {
 		internal IProtectionParameter<string> Password { get; } = ProtectionParameter.String("password", "");
 		internal IProtectionParameter<bool> ForceRename { get; } = ProtectionParameter.Boolean("forceRen", false);
 		internal IProtectionParameter<uint> IdOffset { get; } = ProtectionParameter.UInteger("idOffset", 0);
+		internal IProtectionParameter<string> NamespaceFormat { get; } = ProtectionParameter.String("nsFormat", "{0}");
 
 		internal IProtectionParameter<string> SymbolMapFileName { get; } =
 			ProtectionParameter.String("mapFileName", "symbols.map");

@@ -11,6 +11,7 @@
     <None Update="UserControl1.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
+    <Resource Include="TestData.xml" />
   </ItemGroup>
 
   <Import Project="..\..\.paket\Paket.Restore.targets" />

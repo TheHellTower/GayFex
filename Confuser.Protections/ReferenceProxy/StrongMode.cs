@@ -61,7 +61,7 @@ namespace Confuser.Protections.ReferenceProxy {
 						return null;
 				}
 
-				currentInstr.CalculateStackUsage(out var push, out var pop);
+				currentInstr.CalculateStackUsage(ctx.Method.HasReturnType, out var push, out var pop);
 				currentStack += pop;
 				currentStack -= push;
 
@@ -87,7 +87,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (declType.IsGlobalModuleType) // Reflection doesn't like global methods too.
 				return;
 
-			invoke.CalculateStackUsage(out var push, out var pop);
+			invoke.CalculateStackUsage(ctx.Method.HasReturnType, out var push, out var pop);
 			int? begin = TraceBeginning(ctx, instrIndex, pop);
 			// Fail to trace the arguments => fall back to bridge method
 			bool fallBack = begin == null;

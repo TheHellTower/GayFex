@@ -99,5 +99,11 @@ namespace Confuser.Core {
 		/// <param name="target">The protection target.</param>
 		/// <returns>The parameters</returns>
 		IProtectionSettings GetParameters(IDnlibDef target);
+
+		/// <summary>
+		///     Requests the current module to be written as mix-mode module, and return the native writer options.
+		/// </summary>
+		/// <returns>The native writer options.</returns>
+		NativeModuleWriterOptions RequestNative(bool optimizeImageSize);
 	}
 }

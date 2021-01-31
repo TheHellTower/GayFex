@@ -7,14 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Confuser.Core\Confuser.Core.csproj" />
-    <ProjectReference Include="..\..\Confuser.Renamer\Confuser.Renamer.csproj" />
     <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <ConfuserTestTargetProject Include="..\VisualBasicRenamingResx\VisualBasicRenamingResx.vbproj" />
   </ItemGroup>
+
 
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 

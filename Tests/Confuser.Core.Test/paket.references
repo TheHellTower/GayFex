@@ -1,6 +1,4 @@
-group Test
 ApprovalTests
 Moq
 xunit
 xunit.runner.visualstudio
-dotnet-xunit

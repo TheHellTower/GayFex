@@ -143,7 +143,7 @@ namespace Confuser.Renamer.Analyzers {
 					if (context.Modules.Contains((ModuleDefMD)typeDef.Module)) {
 						if (typeRef is TypeRef)
 							service.AddReference(context, typeDef, new TypeRefReference((TypeRef)typeRef, typeDef));
-						service.ReduceRenameMode(context, typeDef, RenameMode.ASCII);
+						service.ReduceRenameMode(context, typeDef, RenameMode.Reflection);
 					}
 				}
 			}

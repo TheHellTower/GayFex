@@ -1,22 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
 using Confuser.Renamer;
 using Confuser.UnitTest;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace _123_InheritCustomAttr.Test {
-	public class InheritCustomAttributeTest {
-		private readonly ITestOutputHelper outputHelper;
-
-		public InheritCustomAttributeTest(ITestOutputHelper outputHelper) =>
-			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
+	public class InheritCustomAttributeTest : TestBase {
+		public InheritCustomAttributeTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Theory]
 		[MemberData(nameof(InheritCustomAttributeData))]
@@ -24,57 +19,20 @@ namespace _123_InheritCustomAttr.Test {
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/123")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/161")]
-		public async Task InheritCustomAttribute(string renameMode, bool flatten) {
-			var baseDir = Environment.CurrentDirectory;
-			var outputDir = Path.Combine(baseDir, "testtmp_" + Guid.NewGuid().ToString());
-			var inputFile = Path.Combine(baseDir, "123_InheritCustomAttr.exe");
-			var outputFile = Path.Combine(outputDir, "123_InheritCustomAttr.exe");
-			FileUtilities.ClearOutput(outputFile);
-			var proj = new ConfuserProject {
-				BaseDirectory = baseDir,
-				OutputDirectory = outputDir
-			};
-			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = Path.Combine(baseDir, "Confuser.Test.snk") });
-			proj.Rules.Add(new Rule() {
-				new SettingItem<IProtection>("rename") {
-					{ "mode", renameMode },
-					{ "flatten", flatten ? "True" : "False" }
-				}
-			});
-
-			var parameters = new ConfuserParameters {
-				Project = proj,
-				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper, l => Assert.False(l.StartsWith("[WARN]", StringComparison.Ordinal), "Logged line may not start with [WARN]\r\n" + l)))
-			};
-
-			await ConfuserEngine.Run(parameters);
-
-			Assert.True(File.Exists(outputFile));
-			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
-
-			var info = new ProcessStartInfo(outputFile) {
-				RedirectStandardOutput = true,
-				UseShellExecute = false
-			};
-			using (var process = Process.Start(info)) {
-				var stdout = process.StandardOutput;
-				Assert.Equal("START", await stdout.ReadLineAsync());
-				Assert.Equal("Monday", await stdout.ReadLineAsync());
-				Assert.Equal("43", await stdout.ReadLineAsync());
-				Assert.Equal("1", await stdout.ReadLineAsync());
-				Assert.Equal("END", await stdout.ReadLineAsync());
-				Assert.Empty(await stdout.ReadToEndAsync());
-				Assert.True(process.HasExited);
-				Assert.Equal(42, process.ExitCode);
-			}
-
-			FileUtilities.ClearOutput(outputFile);
-		}
+		public async Task InheritCustomAttribute(string framework, string renameMode, bool flatten) =>
+			await Run(
+				framework,
+				"123_InheritCustomAttr.exe",
+				new[] {"Monday", "43", "1"},
+				new SettingItem<IProtection>("rename") {{"mode", renameMode}, {"flatten", flatten ? "True" : "False"}},
+				$"_{renameMode}_{flatten}",
+				l => Assert.False(l.StartsWith("[WARN]"), "Logged line may not start with [WARN]\r\n" + l));
 
 		public static IEnumerable<object[]> InheritCustomAttributeData() {
-			foreach (var renameMode in new string[] { nameof(RenameMode.Unicode), nameof(RenameMode.ASCII), nameof(RenameMode.Letters), nameof(RenameMode.Debug), nameof(RenameMode.Retain) })
-				foreach (var flatten in new bool[] { true, false })
-					yield return new object[] { renameMode, flatten };
+			foreach (var framework in "net20;net40;net471".Split(';'))
+				foreach (var renameMode in new [] { nameof(RenameMode.Unicode), nameof(RenameMode.ASCII), nameof(RenameMode.Letters), nameof(RenameMode.Debug), nameof(RenameMode.Retain) })
+					foreach (var flatten in new [] { true, false })
+						yield return new object[] { framework, renameMode, flatten };
 		}
 	}
 }

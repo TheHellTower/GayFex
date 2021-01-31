@@ -159,27 +159,36 @@ namespace Confuser.Helpers {
 					throw new InvalidOperationException(
 						"Found mutation placeholder, but there is no processor defined.");
 				var trace = TraceService.Trace(method);
-				int[] argIndexes = trace.TraceArguments(instr);
-				if (argIndexes == null) throw new InvalidOperationException("Failed to trace placeholder argument.");
+				var initialLoadInstructions = new List<Instruction>();
+				var pendingInstructions = new Queue<Instruction>();
+				pendingInstructions.Enqueue(instr);
+				while (pendingInstructions.Count > 0) {
+					var currentInstr = pendingInstructions.Dequeue();
+					int[] argIndexes = trace.TraceArguments(currentInstr);
+					if (argIndexes == null) 
+						throw new InvalidOperationException("Failed to trace placeholder argument.");
 
-				int argIndex = argIndexes[0];
-				IReadOnlyList<Instruction> arg = method.Body.Instructions.Skip(argIndex).Take(index - argIndex)
+					if (argIndexes.Length == 0)
+						initialLoadInstructions.Add(currentInstr);
+
+					foreach (int argIndex in argIndexes)
+						pendingInstructions.Enqueue(method.Body.Instructions[argIndex]);
+				}
+
+				var firstArgIndex = initialLoadInstructions.Select(method.Body.Instructions.IndexOf).Min();
+				var arg = method.Body.Instructions.Skip(firstArgIndex).Take(index - firstArgIndex)
 					.ToImmutableArray();
 
 				// Remove all the loading instructions for the arguments.
-				for (int j = 0; j < arg.Count; j++)
-					method.Body.RemoveInstruction(argIndex);
-
-				index -= arg.Count;
+				for (int j = 0; j < arg.Length; j++)
+					method.Body.RemoveInstruction(firstArgIndex);
 
 				// Insert the new instructions for the placeholder
-				arg = PlaceholderProcessor(TargetModule, method, arg);
-				method.Body.InsertPrefixInstructions(instr, arg);
-				index += arg.Count;
+				var replaceArgs = PlaceholderProcessor(TargetModule, method, arg);
+				method.Body.InsertPrefixInstructions(firstArgIndex, replaceArgs);
 				
 				// Remove the call to the placeholder function
 				method.Body.RemoveInstruction(instr);
-				index -= 1;
 
 				return true;
 			}
