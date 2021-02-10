@@ -1,0 +1,20 @@
+name: "Close stale issues"
+
+on:
+  schedule:
+    - cron: "00 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-close: 7
+          days-before-stale: 14
+          only-labels: "feedback-required"
+          close-issue-message: "Closing this issue because it needs more information and has not had recent activity. Please re-open this issue if more details can be provided. Thanks!"
+          stale-issue-label: "inactive"
+          stale-issue-message: "This issue needs more information and has not had recent activity. Please provide the missing information or it will be closed in 7 days. Thanks!"
