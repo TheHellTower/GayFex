@@ -11,6 +11,7 @@
     <licenseUrl>https://github.com/mkaring/ConfuserEx/blob/v{{PACKAGEVERSION}}/LICENSE.md</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/mkaring/ConfuserEx/tree/v{{PACKAGEVERSION}}</projectSourceUrl>
+    <packageSourceUrl>https://github.com/mkaring/ConfuserEx/tree/v{{PACKAGEVERSION}}/chocolatey-packages/confuserex</packageSourceUrl>
     <docsUrl>https://github.com/mkaring/ConfuserEx/wiki</docsUrl>
     <bugTrackerUrl>https://github.com/mkaring/ConfuserEx/issues</bugTrackerUrl>
     <tags>confuserex cil confuser dnlib dotnet il msil net .net obfuscator packer protector</tags>
