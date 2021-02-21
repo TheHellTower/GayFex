@@ -1,20 +1,8 @@
 {
-	"version": "1.5.0-rc2+{height}",
-	"nugetPackageVersion": {
-		"semVer": 1
-	},
-	"semVer1NumericIdentifierPadding": 4,
-	"publicReleaseRefSpec": [
-		"^refs/tags/v\\d+\\.\\d+"
-	],
-	"cloudBuild": {
-		"setVersionVariables": true,
-		"buildNumber": {
-			"enabled": false,
-			"includeCommitId": {
-				"when": "nonPublicReleaseOnly",
-				"where": "buildMetadata"
-			}
-		}
-	}
+  "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/master/src/NerdBank.GitVersioning/version.schema.json",
+  "version": "1.5.0+{height}",
+  "semVer1NumericIdentifierPadding": 4,
+  "publicReleaseRefSpec": [
+    "^refs/tags/v\\d+\\.\\d+"
+  ]
 }
