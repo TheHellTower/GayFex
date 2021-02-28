@@ -8,6 +8,7 @@ using Confuser.UnitTest;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace CompileResx.Test {
 	public sealed class CompileRegexTest {
@@ -49,7 +50,7 @@ namespace CompileResx.Test {
 				ConfigureLogging = builder => builder.AddProvider(new XunitLogger(outputHelper))
 			};
 
-			await ConfuserEngine.Run(parameters);
+			Assert.True(await ConfuserEngine.Run(parameters));
 
 			Assert.True(File.Exists(outputFile));
 			Assert.NotEqual(FileUtilities.ComputeFileChecksum(inputFile), FileUtilities.ComputeFileChecksum(outputFile));
@@ -64,8 +65,8 @@ namespace CompileResx.Test {
 		private async Task<IReadOnlyList<(string currentTest, string line)>> RecordOutput(StreamReader reader) {
 			var result = new List<(string currentTest, string line)>();
 
-			string line = null;
 			string currentTest = "";
+			string line;
 			while ((line = await reader.ReadLineAsync()) != null) {
 				if (line.StartsWith("START TEST: "))
 					currentTest = line.Substring(12);
@@ -91,9 +92,8 @@ namespace CompileResx.Test {
 			}
 		}
 
-		public static IEnumerable<object[]> OptimizeAndExecuteTestData() {
-			foreach (var framework in new string[] { "net20", "net40", "net471" })
-				yield return new object[] { framework };
-		}
+		public static IEnumerable<object[]> OptimizeAndExecuteTestData() =>
+			from framework in "net20;net35;net40;net48".Split(';')
+			select new object[] { framework };
 	}
 }
