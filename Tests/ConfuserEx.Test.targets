@@ -81,7 +81,7 @@
       </_ConfuserTestProjectBuildOutput>
     </ItemGroup>
 
-    <CreateItem Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory)**/%(Filename).*')">
+    <CreateItem Include="@(_ConfuserTestProjectBuildOutput->'%(RootDir)%(Directory)**/*.*')">
       <Output ItemName="_ConfuserTestProjectCopy" TaskParameter="Include" />
     </CreateItem>
 
