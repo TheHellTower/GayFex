@@ -23,6 +23,10 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - shell: cmd
+        run: |
+          dotnet tool restore
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v1
         with:
