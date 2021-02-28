@@ -46,7 +46,7 @@ namespace Confuser.Optimizations.CompileRegex {
 
 				logger.LogMsgRegexCompilingForModule(module, expressions.Length);
 
-				var compiler = new Compiler.RegexCompiler(module) {
+				var compiler = new Compiler.RegexCompiler(context, module) {
 					ExpectedExpressions = expressions.Length
 				};
 

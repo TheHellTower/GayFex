@@ -13,9 +13,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
+    <ProjectReference Include="..\Confuser.Helpers\Confuser.Helpers.csproj" />
     <ProjectReference Include="..\Confuser.Optimizations.Exports\Confuser.Optimizations.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Runtime Project Dependencies">
+    <ConfuserRuntimeReference Include="..\Confuser.Optimizations.Runtime\Confuser.Optimizations.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

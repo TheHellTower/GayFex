@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Confuser.Optimizations {
@@ -8,6 +9,7 @@ namespace Confuser.Optimizations {
 		public RegexOptions Options { get; }
 		public TimeSpan? Timeout { get; }
 		public bool StaticTimeout { get; }
+		public CultureInfo Culture => CultureInfo.InvariantCulture;
 		public ISet<IRegexTargetMethod> TargetMethods { get; }
 
 		public RegexCompileDef(string pattern, RegexOptions options, TimeSpan? timeout, bool staticTimeout) {

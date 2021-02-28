@@ -5,13 +5,19 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
+using Confuser.Core;
+using Confuser.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using OpCode = System.Reflection.Emit.OpCode;
 using OpCodes = dnlib.DotNet.Emit.OpCodes;
 using RU = Confuser.Optimizations.CompileRegex.Compiler.ReflectionUtilities;
 
 namespace Confuser.Optimizations.CompileRegex.Compiler {
 	internal sealed partial class RegexCompiler {
+		private readonly IConfuserContext _context;
 		private readonly ModuleDef _targetModule;
 		private readonly RegexRunnerDef _regexRunnerDef;
 		private readonly TypeDef _regexTypeDef;
@@ -35,7 +41,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			}
 		}
 
-		internal RegexCompiler(ModuleDef targetModule) {
+		internal RegexCompiler(IConfuserContext context, ModuleDef targetModule) {
+			_context = context ?? throw new ArgumentNullException(nameof(context));
 			_targetModule = targetModule ?? throw new ArgumentNullException(nameof(targetModule));
 
 			var regexModule = targetModule
@@ -57,7 +64,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			if (IsUnsafe(expression.Options)) return true;
 			RegexTree tree;
 			try {
-				tree = RegexParser.Parse(expression.Pattern, expression.Options);
+				tree = RegexParser.Parse(expression.Pattern, expression.Options, expression.Culture);
 			}
 			catch (ArgumentException) {
 				return false;
@@ -91,7 +98,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			RegexTree tree;
 			RegexCode code;
 			try {
-				tree = RegexParser.Parse(expression.Pattern, expression.Options);
+				tree = RegexParser.Parse(expression.Pattern, expression.Options, expression.Culture);
 				code = GetRegexCode(expression, tree);
 			}
 			catch (ArgumentException ex) {
@@ -147,41 +154,57 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			GenerateDefaultConstructor(runnerType);
 
-			var factory = _realCompiler.FactoryInstanceFromCode(code, expression.Options);
+			var hasTimeout = expression.Timeout.HasValue && expression.Timeout.Value != Regex.InfiniteMatchTimeout;
+			var factory = _realCompiler.FactoryInstanceFromCode(expression.Pattern, code, expression.Options, hasTimeout);
 
 			var goMethod = ReadMethodDef(factory.GoMethod);
 			var overrideGoMethod = CreateOverwriteMethodDef("Go", MethodSig.CreateInstance(_targetModule.CorLibTypes.Void),
 				_regexRunnerDef.RegexRunnerTypeDef);
 			overrideGoMethod.Body = goMethod.Body;
+			overrideGoMethod.DeclaringType = runnerType;
 			FixCheckTimeout(overrideGoMethod.Body);
+			FixSystemSpanReference(overrideGoMethod.Body);
+			CheckUnknownReferences(overrideGoMethod);
 
 			var findFirstCharMethod = ReadMethodDef(factory.FindFirstCharMethod);
 			var overrideFindFirstCharMethod = CreateOverwriteMethodDef("FindFirstChar",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Boolean), _regexRunnerDef.RegexRunnerTypeDef);
 			overrideFindFirstCharMethod.Body = findFirstCharMethod.Body;
+			overrideFindFirstCharMethod.DeclaringType = runnerType;
+			FixSystemSpanReference(overrideFindFirstCharMethod.Body);
+			CheckUnknownReferences(overrideFindFirstCharMethod);
 
-			var initTrackCountMethod = ReadMethodDef(factory.InitTrackCountMethod);
 			var overrideInitTrackCountMethod = CreateOverwriteMethodDef("InitTrackCount",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Void), _regexRunnerDef.RegexRunnerTypeDef);
-			overrideInitTrackCountMethod.Body = initTrackCountMethod.Body;
-
-			overrideGoMethod.DeclaringType = runnerType;
-			overrideFindFirstCharMethod.DeclaringType = runnerType;
+			var initTrackCountMethod = factory.InitTrackCountMethod;
+			if (!(initTrackCountMethod is null)) {
+				var initTrackCountMethodDef = ReadMethodDef(initTrackCountMethod);
+				overrideInitTrackCountMethod.Body = initTrackCountMethodDef.Body;
+			}
+			else {
+				var importer = CreateImporter();
+				overrideInitTrackCountMethod.Body = new CilBody();
+				overrideInitTrackCountMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+				overrideInitTrackCountMethod.Body.Instructions.Add(Instruction.CreateLdcI4(code.TrackCount));
+				overrideInitTrackCountMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, importer.Import(_regexRunnerDef.RunTrackCountFieldDef)));
+				overrideInitTrackCountMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+			}
 			overrideInitTrackCountMethod.DeclaringType = runnerType;
+			CheckUnknownReferences(overrideInitTrackCountMethod);
 
 			return runnerType;
 		}
 
 		private void FixCheckTimeout(CilBody body) {
-			if (body == null) throw new ArgumentNullException(nameof(body));
+			if (body is null) throw new ArgumentNullException(nameof(body));
 
 			if (_regexRunnerDef.CheckTimeoutMethodDef != null) return;
 
 			for (var i = body.Instructions.Count - 1; i >= 0; i--) {
 				var instr = body.Instructions[i];
 				if (instr.OpCode.Code != Code.Callvirt || !(instr.Operand is IMethodDefOrRef calledMethod) ||
-				    calledMethod.DeclaringType.FullName != _regexRunnerDef.RegexRunnerTypeDef.FullName ||
-				    calledMethod.Name != "CheckTimeout") continue;
+					calledMethod.DeclaringType.FullName != _regexRunnerDef.RegexRunnerTypeDef.FullName ||
+					calledMethod.Name != "CheckTimeout") continue;
 
 				// Found the timeout method, but there is no check timeout method in the version of .NET we are using.
 				body.RemoveInstruction(i);
@@ -190,9 +213,88 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			}
 		}
 
+		private void FixSystemSpanReference(CilBody body) {
+			if (body is null) throw new ArgumentNullException(nameof(body));
+
+			// The changes applied by this method are only required in case System.Memory is not available.
+			if (!(_targetModule.GetAssemblyRef("System.Memory") is null)) return;
+
+			var runtimeService = _context.Registry.GetRequiredService<OptimizationsRuntimeService>();
+			var runtimeModule = runtimeService.GetRuntimeModule();
+
+			var stringViewTypeDef = runtimeModule.GetRuntimeType("Confuser.Optimizations.Runtime.ReadOnlyStringView", _targetModule);
+			var stringHelperTypeDef = runtimeModule.GetRuntimeType("Confuser.Optimizations.Runtime.ReadOnlyStringHelper", _targetModule);
+
+			foreach (var variable in body.Variables) {
+				if (variable.Type.FullName.Equals("System.ReadOnlySpan`1<System.Char>")) {
+					var injectResult = InjectHelper.Inject(stringViewTypeDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+					variable.Type = injectResult.Requested.Mapped.ToTypeSig();
+				}
+			}
+
+			for (var i = 0; i < body.Instructions.Count; i++) {
+				var instruction = body.Instructions[i];
+				if (instruction.Operand is IMemberRef member) {
+					if (member.DeclaringType.FullName.Equals("System.MemoryExtensions")) {
+						if (member.Name.Equals("AsSpan")) {
+							var constructorDef = stringHelperTypeDef.FindMethod("GetView");
+							var injected = InjectHelper.Inject(constructorDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							instruction.Operand = injected.Requested.Mapped;
+						}
+						else if (member.Name.Equals("IndexOf")) {
+							var indexOfMethodDef = stringHelperTypeDef.FindMethod("IndexOf");
+							var injected = InjectHelper.Inject(indexOfMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							instruction.Operand = injected.Requested.Mapped;
+						}
+						else if (member.Name.Equals("IndexOfAny")) {
+							if (member is MethodSpec methodSpec && methodSpec.Method.GetParamCount() == 3) {
+								var indexOfMethodDef = stringHelperTypeDef.FindMethod("IndexOfAny");
+								var injected = InjectHelper.Inject(indexOfMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+								instruction.Operand = injected.Requested.Mapped;
+							}
+							else
+								throw new NotImplementedException();
+						}
+						else
+							throw new NotImplementedException();
+					}
+					else if (member.DeclaringType.FullName.Equals("System.ReadOnlySpan`1<System.Char>")) {
+						if (member.Name.Equals("get_Length")) {
+							var getLengthMethodDef = stringViewTypeDef.FindMethod("get_Length");
+							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							instruction.OpCode = OpCodes.Callvirt;
+							instruction.Operand = injected.Requested.Mapped;
+						}
+						else if (member.Name.Equals("Slice")) {
+							var getLengthMethodDef = stringViewTypeDef.FindMethod("Slice");
+							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							instruction.OpCode = OpCodes.Callvirt;
+							instruction.Operand = injected.Requested.Mapped;
+						}
+						else if (member.Name.Equals("get_Item")) {
+							var getLengthMethodDef = stringViewTypeDef.FindMethod("get_Item");
+							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							instruction.OpCode = OpCodes.Callvirt;
+							instruction.Operand = injected.Requested.Mapped;
+						}
+						else
+							throw new NotImplementedException();
+					}
+					else if (member.DeclaringType.FullName.Equals("System.Runtime.InteropServices.MemoryMarshal")) {
+						if (member.Name.Equals("GetReference")) {
+							var getLengthMethodDef = stringHelperTypeDef.FindMethod("GetReference");
+							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							instruction.Operand = injected.Requested.Mapped;
+						}
+						else
+							throw new NotImplementedException();
+					}
+				}
+			}
+		}
+
 		private MethodDef ReadMethodDef(DynamicMethod method) {
-			var gpContext = new GenericParamContext();
-			var importer = new Importer(_targetModule, ImporterOptions.TryToUseDefs, gpContext, new Mapper(_targetModule, _regexRunnerDef));
+			var importer = CreateImporter();
 			var methodReader = new DynamicMethodBodyReader(_targetModule, method, importer);
 			if (!methodReader.Read()) throw new Exception("Can't read compiled method.");
 
@@ -200,6 +302,11 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			methodDef.Body.SimplifyBranches();
 			methodDef.Body.SimplifyMacros(methodDef.Parameters);
 			return methodDef;
+		}
+
+		private Importer CreateImporter() {
+			var gpContext = new GenericParamContext();
+			return new Importer(_targetModule, ImporterOptions.TryToUseDefs, gpContext, new Mapper(_context, _targetModule, _regexRunnerDef));
 		}
 
 		#endregion
@@ -214,7 +321,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			};
 			_targetModule.AddAsNonNestedType(factoryType);
 
-			GenerateDefaultConstructor(factoryType);
+			var ctor = GenerateDefaultConstructor(factoryType);
+			CheckUnknownReferences(ctor);
 
 			var createInstanceSig = MethodSig.CreateInstance(runnerDef.ToTypeSig());
 			var initTrackCountMethod =
@@ -226,6 +334,8 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			compiler.Newobj(runnerType.FindDefaultConstructor());
 			compiler.Ret();
 
+			CheckUnknownReferences(initTrackCountMethod);
+
 			return factoryType;
 		}
 
@@ -236,7 +346,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			var newMethodDef = new MethodDefUser(name, methodSig) {
 				Attributes = (baseMethod.Attributes & ~(MethodAttributes.NewSlot | MethodAttributes.Abstract)) |
-				             MethodAttributes.Final
+							 MethodAttributes.Final
 			};
 
 			newMethodDef.Overrides.Add(new MethodOverride(newMethodDef, _targetModule.Import(baseMethod)));
@@ -256,6 +366,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			var compiler = new RegexConstructorCompiler(_targetModule, defaultCtor);
 			compiler.GenerateDefaultConstructor(factoryType, expression, code, tree);
+			CheckUnknownReferences(defaultCtor);
 
 			var factoryMethodDef = new MethodDefUser("GetRegex", MethodSig.CreateStatic(baseTypeRef.ToTypeSig())) {
 				Attributes = MethodAttributes.Assembly | MethodAttributes.Static,
@@ -264,6 +375,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var body = factoryMethodDef.Body = new CilBody();
 			body.Instructions.Add(OpCodes.Newobj.ToInstruction(defaultCtor));
 			body.Instructions.Add(OpCodes.Ret.ToInstruction());
+			CheckUnknownReferences(factoryMethodDef);
 
 			if (expression.StaticTimeout) return (regexType, factoryMethodDef, null);
 
@@ -278,6 +390,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			compiler = new RegexConstructorCompiler(_targetModule, timeSpanCtor);
 			compiler.GenerateTimeoutConstructor(defaultCtor);
+			CheckUnknownReferences(timeSpanCtor);
 
 			var timeoutFactoryMethodDef = new MethodDefUser("GetRegex",
 				MethodSig.CreateStatic(baseTypeRef.ToTypeSig(), timespanTypeSig)) {
@@ -288,6 +401,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
 			body.Instructions.Add(OpCodes.Newobj.ToInstruction(timeSpanCtor));
 			body.Instructions.Add(OpCodes.Ret.ToInstruction());
+			CheckUnknownReferences(timeoutFactoryMethodDef);
 
 			return (regexType, factoryMethodDef, timeoutFactoryMethodDef);
 		}
@@ -348,7 +462,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			return staticMethodDef;
 		}
 
-		private void GenerateDefaultConstructor(TypeDef runnerType) {
+		private MethodDef GenerateDefaultConstructor(TypeDef runnerType) {
 			Debug.Assert(runnerType != null, $"{nameof(runnerType)} != null");
 
 			var body = new CilBody();
@@ -361,13 +475,15 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var defaultCtor = CreateConstructorDef();
 			defaultCtor.DeclaringType = runnerType;
 			defaultCtor.Body = body;
+
+			return defaultCtor;
 		}
 
 		private MethodDefUser CreateConstructorDef() {
 			const MethodImplAttributes implFlags = MethodImplAttributes.IL | MethodImplAttributes.Managed;
 			const MethodAttributes flags = MethodAttributes.Assembly |
-			                               MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
-			                               MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+										   MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
+										   MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
 			return new MethodDefUser(".ctor",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Void), implFlags, flags);
@@ -376,11 +492,40 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 		private MethodDefUser CreateConstructorDef(TypeSig param) {
 			const MethodImplAttributes implFlags = MethodImplAttributes.IL | MethodImplAttributes.Managed;
 			const MethodAttributes flags = MethodAttributes.Assembly |
-			                               MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
-			                               MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+										   MethodAttributes.HideBySig | MethodAttributes.ReuseSlot |
+										   MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
 			return new MethodDefUser(".ctor",
 				MethodSig.CreateInstance(_targetModule.CorLibTypes.Void, param), implFlags, flags);
+		}
+
+		private void CheckUnknownReferences(MethodDef methodDef) {
+			bool IsKnownAssembly(IAssembly assemblyRef) {
+				var comp = AssemblyNameComparer.CompareAll;
+				return comp.Equals(_targetModule.Assembly, assemblyRef)
+					|| _targetModule.GetAssemblyRefs().Any(knownAssemblyRef => comp.Equals(assemblyRef, knownAssemblyRef));
+			}
+
+			void CheckAndReportAssembly(IAssembly assemblyRef) {
+				if (IsKnownAssembly(assemblyRef)) return;
+
+				var logger = _context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(RegexCompiler));
+				logger.LogError("Detected corruption caused by compile regex optimization. The assembly will be unusable.");
+				throw new ConfuserException();
+			}
+
+			foreach (var localVariable in methodDef.Body.Variables)
+				CheckAndReportAssembly(localVariable.Type.DefinitionAssembly);
+
+			foreach (var operand in methodDef.Body.Instructions.Select(i => i.Operand).Where(op => !(op is null)))
+				switch (operand) {
+					case ITypeDefOrRef typeRef:
+						CheckAndReportAssembly(typeRef.DefinitionAssembly);
+						break;
+					case IMemberRef memberRef:
+						CheckAndReportAssembly(memberRef.DeclaringType.DefinitionAssembly);
+						break;
+				}
 		}
 	}
 }

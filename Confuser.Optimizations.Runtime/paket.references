@@ -1,0 +1,6 @@
+group Build
+  Microsoft.CodeAnalysis.NetAnalyzers
+  Nerdbank.GitVersioning
+
+group Runtime
+  Microsoft.NETFramework.ReferenceAssemblies

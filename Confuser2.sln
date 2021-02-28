@@ -170,11 +170,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "244_ClrProtection", "Tests\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "244_ClrProtection.Test", "Tests\244_ClrProtection.Test\244_ClrProtection.Test.csproj", "{3ADB8BB1-AE14-49DA-A7E1-1C0D9BEB76E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "306_ComplexClassStructureRename.Lib", "Tests\306_ComplexClassStructureRename.Lib\306_ComplexClassStructureRename.Lib.csproj", "{FD93D181-2EC5-4863-8A8F-5F8C84C06B35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "306_ComplexClassStructureRename.Lib", "Tests\306_ComplexClassStructureRename.Lib\306_ComplexClassStructureRename.Lib.csproj", "{FD93D181-2EC5-4863-8A8F-5F8C84C06B35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "306_ComplexClassStructureRename", "Tests\306_ComplexClassStructureRename\306_ComplexClassStructureRename.csproj", "{1B52A3D9-014C-4CBF-BB98-09080D9A8D16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "306_ComplexClassStructureRename", "Tests\306_ComplexClassStructureRename\306_ComplexClassStructureRename.csproj", "{1B52A3D9-014C-4CBF-BB98-09080D9A8D16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "306_ComplexClassStructureRename.Test", "Tests\306_ComplexClassStructureRename.Test\306_ComplexClassStructureRename.Test.csproj", "{13431429-2DB6-480F-B73F-CA019FE759E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "306_ComplexClassStructureRename.Test", "Tests\306_ComplexClassStructureRename.Test\306_ComplexClassStructureRename.Test.csproj", "{13431429-2DB6-480F-B73F-CA019FE759E3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confuser.Optimizations.Runtime", "Confuser.Optimizations.Runtime\Confuser.Optimizations.Runtime.csproj", "{7E38148E-40C0-4649-9D24-2EDE774283EB}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1007,6 +1009,18 @@ Global
 		{13431429-2DB6-480F-B73F-CA019FE759E3}.Release|x64.Build.0 = Release|Any CPU
 		{13431429-2DB6-480F-B73F-CA019FE759E3}.Release|x86.ActiveCfg = Release|Any CPU
 		{13431429-2DB6-480F-B73F-CA019FE759E3}.Release|x86.Build.0 = Release|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Debug|x64.Build.0 = Debug|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Debug|x86.Build.0 = Debug|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Release|x64.ActiveCfg = Release|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Release|x64.Build.0 = Release|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Release|x86.ActiveCfg = Release|Any CPU
+		{7E38148E-40C0-4649-9D24-2EDE774283EB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

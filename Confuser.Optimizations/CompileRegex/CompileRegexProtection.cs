@@ -28,7 +28,9 @@ namespace Confuser.Optimizations.CompileRegex {
 		internal CompileRegexProtectionParameters Parameters { get; } = new CompileRegexProtectionParameters();
 
 		public void Initialize(IServiceCollection collection) =>
-			collection.AddSingleton(typeof(ICompileRegexService), p => new CompileRegexService());
+			collection
+				.AddRuntime()
+				.AddSingleton(typeof(ICompileRegexService), p => new CompileRegexService());
 
 		public void PopulatePipeline(IProtectionPipeline pipeline) {
 			pipeline.InsertPostStage(PipelineStage.Inspection, new InspectPhase(this));

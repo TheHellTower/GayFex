@@ -33,6 +33,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 		internal DynamicMethod InitTrackCountMethod {
 			get {
+				if (_initTrackCountMethodField is null) return null;
 				var method = (DynamicMethod)_initTrackCountMethodField.GetValue(RealCompiledRegexRunnerFactory);
 				method.CreateDelegate(typeof(Action<RegexRunner>));
 				return method;

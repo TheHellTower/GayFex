@@ -9,7 +9,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var regexAssembly = typeof(Regex).Assembly;
 			var fullName = "System.Text.RegularExpressions." + name;
 			var resultType = regexAssembly.GetType("System.Text.RegularExpressions." + name, true, false);
-			Debug.Assert(resultType != null, $"Failed to find type {fullName}");
+
 			return resultType;
 		}
 
@@ -24,8 +24,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					resultField = declaringType.GetField(altName, flags);
 					if (resultField != null) break;
 				}
-
-			Debug.Assert(resultField != null, $"Failed to find field {name} in type {declaringType.FullName}");
+			
 			return resultField;
 		}
 
@@ -37,7 +36,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				resultField = declaringType.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
 				if (resultField != null) break;
 			}
-			Debug.Assert(resultField != null, $"Failed to find field {string.Join(", ", names)} in type {declaringType.FullName}");
+
 			return resultField;
 		}
 
@@ -47,7 +46,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			var resultMethod = declaringType.GetMethod(name,
 				BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, parameters, null);
-			Debug.Assert(resultMethod != null, $"Failed to find method {name} in type {declaringType.FullName}");
+
 			return resultMethod;
 		}
 
@@ -57,7 +56,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 
 			var resultMethod = declaringType.GetMethod(name,
 				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, parameters, null);
-			Debug.Assert(resultMethod != null, $"Failed to find method {name} in type {declaringType.FullName}");
+
 			return resultMethod;
 		}
 
@@ -68,7 +67,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null,
 				CallingConventions.Standard | CallingConventions.HasThis,
 				Type.EmptyTypes, null);
-			Debug.Assert(constructor != null, $"Failed to find default constructor in type {declaringType.FullName}");
+
 			return constructor;
 		}
 	}
