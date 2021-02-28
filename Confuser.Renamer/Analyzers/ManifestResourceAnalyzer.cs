@@ -39,7 +39,7 @@ namespace Confuser.Renamer.Analyzers {
 				var typeLoadInstruction = instructions[argumentIdx[1]];
 				var resNameInstruction = instructions[argumentIdx[2]];
 				
-				if (IsGetTypeFromHandle(typeLoadInstruction)) continue;
+				if (!IsGetTypeFromHandle(typeLoadInstruction)) continue;
 
 				var typeLoadArguments = methodTrace.Value.TraceArguments(typeLoadInstruction);
 				if (typeLoadArguments.Length != 1) continue;

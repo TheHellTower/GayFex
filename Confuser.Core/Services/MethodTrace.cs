@@ -227,15 +227,16 @@ namespace Confuser.Core.Services {
 						evalStack.Push(lastIdx);
 					}
 					else {
-						Debug.Assert(push <= 1); // Instructions shouldn't put more than one value on the stack.
-
-						var diff = push - pop;
-						if (diff < 0)
-							for (var i = 0; i < -diff; i++)
+						// Removing values from the stack. If the stack is already empty, the pop values are of no relevance.
+						Debug.Assert(evalStack.Count >= pop);
+						for (var i = 0; i < pop; i++) {
+							if (evalStack.Count > 0)
 								evalStack.Pop();
-						else
-							for (var i = 0; i < diff; i++)
-								evalStack.Push(index);
+						}
+						Debug.Assert(push <= 1); // Instructions shouldn't put more than one value on the stack.
+						for (var i = 0; i < push; i++) {
+							evalStack.Push(index);
+						}
 					}
 
 					switch (currentInstr.Operand) {
