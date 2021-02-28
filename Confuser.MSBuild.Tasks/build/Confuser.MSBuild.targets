@@ -119,7 +119,7 @@
       <CopyConfuserSymbolsMapToOutputDirectory Condition="'$(CopyConfuserSymbolsMapToOutputDirectory)'==''">true</CopyConfuserSymbolsMapToOutputDirectory>
     </PropertyGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="Exists('$(ConfuserIntermediateOutputPath)symbols.map')">
       <_SymbolsMapSourceFiles Include="$(ConfuserIntermediateOutputPath)symbols.map" />
       <_SymbolsMapDestinationFiles Include="$(_SymbolsMapOutputDirectory)$(ConfuserSymbolFileName)" />
     </ItemGroup>

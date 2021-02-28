@@ -5,6 +5,7 @@ platform: Any CPU
 
 skip_commits:
   files:
+  - .github/*
   - doc/*
   - readme.md
   - license.md

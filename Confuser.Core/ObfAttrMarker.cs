@@ -245,7 +245,9 @@ namespace Confuser.Core {
 			var modules = new List<(ProjectModule ProjModule, ModuleDefMD ModuleDef)>();
 			foreach (var module in proj) {
 				if (module.IsExternal) {
-					extModules.Add(module.LoadRaw(proj.BaseDirectory));
+					var rawModule = module.LoadRaw(proj.BaseDirectory);
+					extModules.Add(rawModule);
+					context.InternalResolver.AddToCache(ModuleDefMD.Load(rawModule.ToArray(), context.InternalResolver.DefaultModuleContext));
 					continue;
 				}
 

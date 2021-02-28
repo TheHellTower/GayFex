@@ -97,8 +97,8 @@ using to develop ConfuserEx 2. Most notably:
 [buy me a coffee]: http://buymeacoff.ee/fFUnXMCdW
 [codefactor]: https://www.codefactor.io/repository/github/mkaring/confuserex/overview/release/2.0
 [confuser]: http://confuser.codeplex.com
+[issues]: https://github.com/mkaring/ConfuserEx/issues
 [gitter]: https://gitter.im/ConfuserEx/community
-[issues]: https://github.com/mkaring/ConfuserEx/issue
 [JetBrains]: https://www.jetbrains.com/
 [license]: LICENSE.md
 [mef]: https://docs.microsoft.com/dotnet/framework/mef/ "Managed Extensibility Framework (MEF) | Microsoft Docs"

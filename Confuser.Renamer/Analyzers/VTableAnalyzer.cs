@@ -322,11 +322,19 @@ namespace Confuser.Renamer.Analyzers {
 
 			var targetMethodSig = targetMethod.MethodSig;
 			var overrideMethodSig = methodOverride.MethodDeclaration.MethodSig;
-			if (methodOverride.MethodDeclaration.DeclaringType is TypeSpec spec && spec.TypeSig is GenericInstSig genericInstSig) {
+			
+			targetMethodSig = ResolveGenericSignature(targetMethod, targetMethodSig);
+			overrideMethodSig = ResolveGenericSignature(methodOverride.MethodDeclaration, overrideMethodSig);
+
+			return comparer.Equals(targetMethodSig, overrideMethodSig);
+		}
+
+		static MethodSig ResolveGenericSignature(IMemberRef method, MethodSig overrideMethodSig) {
+			if (method.DeclaringType is TypeSpec spec && spec.TypeSig is GenericInstSig genericInstSig) {
 				overrideMethodSig = GenericArgumentResolver.Resolve(overrideMethodSig, genericInstSig.GenericArguments);
 			}
 
-			return comparer.Equals(targetMethodSig, overrideMethodSig);
+			return overrideMethodSig;
 		}
 
 		public void PreRename(IConfuserContext context, INameService service, IProtectionParameters parameters,
