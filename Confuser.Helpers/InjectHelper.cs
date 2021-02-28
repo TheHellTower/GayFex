@@ -119,7 +119,7 @@ namespace Confuser.Helpers {
 		}
 
 		/// <summary>
-		///     Inject a method into the target module. The method is automatically added to the global type.
+		///     Inject a method into the target module.
 		/// </summary>
 		/// <param name="methodDef">The method to be injected.</param>
 		/// <param name="target">The target module.</param>
@@ -128,6 +128,10 @@ namespace Confuser.Helpers {
 		///     Any additional method code processors that are required to inject this and any dependency
 		///     method.
 		/// </param>
+		/// <remarks>
+		///     <para>Static methods are automatically added to the global type.</para>
+		///     <para>Instance methods are injected along with the type.</para>
+		/// </remarks>
 		/// <returns>The result of the injection that contains the mapping of all injected members.</returns>
 		/// <exception cref="ArgumentNullException">Any parameter is <see langword="null"/>.</exception>
 		public static InjectResult<MethodDef> Inject(MethodDef methodDef,
@@ -140,7 +144,8 @@ namespace Confuser.Helpers {
 			if (methodInjectProcessors == null) throw new ArgumentNullException(nameof(methodInjectProcessors));
 
 			var ctx = GetOrCreateContext(methodDef.Module, target);
-			ctx.ApplyMapping(methodDef.DeclaringType, target.GlobalType);
+			if (methodDef.IsStatic)
+				ctx.ApplyMapping(methodDef.DeclaringType, target.GlobalType);
 			var injector = new Injector(ctx, behavior, methodInjectProcessors);
 
 			var mappedMethod = injector.Inject(methodDef);
