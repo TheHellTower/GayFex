@@ -12,7 +12,7 @@ namespace Confuser.Runtime {
 				Environment.FailFast(null);
 			//Anti dnspy
 			Process here = GetParentProcess();
-			if (here.ProcessName.ToLower().Contains("dnspy"))
+			if (here != null && here.ProcessName.ToLower().Contains("dnspy"))
 				Environment.FailFast("");
 
 			var thread = new Thread(Worker);
@@ -41,7 +41,7 @@ namespace Confuser.Runtime {
 			internal IntPtr InheritedFromUniqueProcessId;
 
 			[DllImport("ntdll.dll")]
-			private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, int processInformationLength, out int returnLength);
+			private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, uint processInformationLength, out int returnLength);
 			
 			/// <summary>
 			/// Gets the parent process of the current process.
@@ -67,11 +67,10 @@ namespace Confuser.Runtime {
 			/// <param name="handle">The process handle.</param>
 			/// <returns>An instance of the Process class.</returns>
 			public static Process GetParentProcess(IntPtr handle) {
-				ParentProcessUtilities pbi = new ParentProcessUtilities();
-				int returnLength;
-				int status = NtQueryInformationProcess(handle, 0, ref pbi, Marshal.SizeOf(pbi), out returnLength);
+				var pbi = new ParentProcessUtilities();
+				int status = NtQueryInformationProcess(handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out _);
 				if (status != 0)
-					throw new System.ComponentModel.Win32Exception(status);
+					return null;
 
 				try {
 					return Process.GetProcessById(pbi.InheritedFromUniqueProcessId.ToInt32());
