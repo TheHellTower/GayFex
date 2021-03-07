@@ -101,6 +101,36 @@ namespace Confuser.Optimizations.TailCall {
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void RecursiveSumTernaryRecurseTest() => TestTailCallMethod(nameof(RecursiveSumTernary), OptimizeRecursionPhase.ProcessMethod);
 
+		[Fact]
+		[Trait("Category", "Optimization")]
+		[Trait("Optimization", TailCallProtection.Id)]
+		public void TailOptimizeDnlib() {
+			var dnLibModuleDef = ModuleDefMD.Load(typeof(ModuleDefMD).Module, new ModuleCreationOptions() {
+				TryToLoadPdbFromDisk = false
+			});
+
+			foreach (var types in dnLibModuleDef.GetTypes())
+				foreach (var methodDef in types.Methods)
+					using (var logger = new XunitLogger(OutputHelper))
+						OptimizeRecursionPhase.ProcessMethod(methodDef, logger);
+		}
+
+		[Fact]
+		[Trait("Category", "Optimization")]
+		[Trait("Optimization", TailCallProtection.Id)]
+		public void AddTailDnlib() {
+			var dnLibModuleDef = ModuleDefMD.Load(typeof(ModuleDefMD).Module, new ModuleCreationOptions() {
+				TryToLoadPdbFromDisk = false
+			});
+			
+			var traceService = new TraceService();
+			foreach (var types in dnLibModuleDef.GetTypes())
+				foreach (var methodDef in types.Methods)
+					using (var logger = new XunitLogger(OutputHelper))
+						AddTailCallPhase.ProcessMethod(methodDef, logger, traceService);
+		}
+
+
 		private sealed class ApprovalNamer : UnitTestFrameworkNamer {
 #if DEBUG
 			public override string Name => base.Name + ".Debug";

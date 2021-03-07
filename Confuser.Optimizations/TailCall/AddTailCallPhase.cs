@@ -70,9 +70,9 @@ namespace Confuser.Optimizations.TailCall {
 						instructions.Insert(i + 1, Instruction.Create(OpCodes.Ret));
 						i++;
 						instructionCount++;
-						trace = null; // Force the method trace to be initialized again (method body changed!)
 					}
 
+					trace = null; // Force the method trace to be initialized again (method body changed!)
 					modified = true;
 				}
 
