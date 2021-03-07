@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -78,24 +79,34 @@ namespace Confuser.CLI {
 					}
 
 					var proj = new ConfuserProject();
+					var templateModules = new List<ProjectModule>();
 
 					if (Path.GetExtension(files[files.Count - 1]) == ".crproj") {
-						var templateProj = new ConfuserProject();
-						var xmlDoc = new XmlDocument();
-						xmlDoc.Load(files[files.Count - 1]);
-						templateProj.Load(xmlDoc);
+						LoadTemplateProject(files[files.Count - 1], proj, templateModules);
 						files.RemoveAt(files.Count - 1);
-
-						foreach (var rule in templateProj.Rules)
-							proj.Rules.Add(rule);
 					}
 
 					// Generate a ConfuserProject for input modules
 					// Assuming first file = main module
-					foreach (var input in files)
-						proj.Add(new ProjectModule { Path = input });
-
 					proj.BaseDirectory = Path.GetDirectoryName(files[0]);
+					if (string.IsNullOrWhiteSpace(proj.BaseDirectory)) {
+						WriteLineWithColor(ConsoleColor.Red, "Failed to identify base directory for main assembly.");
+						PrintUsage();
+						return -1;
+					}
+
+					foreach (var input in files) {
+						string modulePath = input;
+						if (modulePath.StartsWith(proj.BaseDirectory, StringComparison.OrdinalIgnoreCase)) {
+							modulePath = modulePath.Substring(proj.BaseDirectory.Length + 1);
+						}
+
+						if (TryMatchTemplateProject(templateModules, proj.BaseDirectory, modulePath, out var matchedModule))
+							proj.Add(matchedModule);
+						else
+							proj.Add(new ProjectModule { Path = modulePath });
+					}
+
 					proj.OutputDirectory = outDir;
 					foreach (var path in probePaths)
 						proj.ProbePaths.Add(path);
@@ -118,6 +129,52 @@ namespace Confuser.CLI {
 				Console.ForegroundColor = original;
 				Console.Title = originalTitle;
 			}
+		}
+
+		static bool TryMatchTemplateProject(List<ProjectModule> templateModules, string baseDirectory, string modulePath, out ProjectModule matchedModule) {
+			var matchedToTemplate = false;
+			matchedModule = null;
+
+			foreach (var templateModule in templateModules) {
+				var templatePath = templateModule.Path;
+				if (templatePath.StartsWith(@".\", StringComparison.Ordinal))
+					templatePath = templatePath.Substring(2);
+
+				if (modulePath.Equals(templatePath, StringComparison.OrdinalIgnoreCase))
+					matchedToTemplate = true;
+
+				if (modulePath.Equals(Path.Combine(baseDirectory, templatePath), StringComparison.OrdinalIgnoreCase))
+					matchedToTemplate = true;
+
+				if (matchedToTemplate)
+					matchedModule = templateModule;
+			}
+
+			return matchedToTemplate;
+		}
+
+		static void LoadTemplateProject(string templatePath, ConfuserProject proj, List<ProjectModule> templateModules) {
+			var templateProj = new ConfuserProject();
+			var xmlDoc = new XmlDocument();
+			xmlDoc.Load(templatePath);
+			templateProj.Load(xmlDoc);
+
+			foreach (var rule in templateProj.Rules)
+				proj.Rules.Add(rule);
+
+			proj.Packer = templateProj.Packer;
+
+			foreach (string pluginPath in templateProj.PluginPaths)
+				proj.PluginPaths.Add(pluginPath);
+
+			foreach (string probePath in templateProj.ProbePaths)
+				proj.ProbePaths.Add(probePath);
+
+			foreach (var templateModule in templateProj)
+				if (templateModule.IsExternal)
+					proj.Add(templateModule);
+				else
+					templateModules.Add(templateModule);
 		}
 
 		static int RunProject(ConfuserParameters parameters) {
