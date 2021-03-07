@@ -2,7 +2,6 @@ storage: none
 framework: auto-detect
 
 source https://api.nuget.org/v3/index.json
-source https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json
 
 nuget Antlr4 ~> 4.6
 nuget ApprovalTests ~> 4.3

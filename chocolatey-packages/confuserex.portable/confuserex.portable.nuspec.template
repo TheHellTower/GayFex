@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
-    <id>confuserex.commandline</id>
+    <id>confuserex.portable</id>
     <version>{{PACKAGEVERSION}}</version>
     <owners>mkaring</owners>
     <title>ConfuserEx (CLI)</title>
@@ -11,6 +11,7 @@
     <licenseUrl>https://github.com/mkaring/ConfuserEx/blob/v{{PACKAGEVERSION}}/LICENSE.md</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/mkaring/ConfuserEx/tree/v{{PACKAGEVERSION}}</projectSourceUrl>
+    <packageSourceUrl>https://github.com/mkaring/ConfuserEx/tree/v{{PACKAGEVERSION}}/chocolatey-packages/confuserex.portable</packageSourceUrl>
     <docsUrl>https://github.com/mkaring/ConfuserEx/wiki</docsUrl>
     <bugTrackerUrl>https://github.com/mkaring/ConfuserEx/issues</bugTrackerUrl>
     <tags>confuserex cil confuser dnlib dotnet il msil net .net obfuscator packer protector</tags>

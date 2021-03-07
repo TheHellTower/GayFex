@@ -164,16 +164,16 @@ namespace Confuser.Core.Services {
 				int index = working.Dequeue();
 				while (index >= 0) {
 					if (BeforeStackDepths[index] == targetStack) {
-						var currentInstr = Method.Body.Instructions[index];
+						var currentInstr = Instructions[index];
 						currentInstr.CalculateStackUsage(Method.HasReturnType, out int push, out pop);
 						if (push == 0 && pop == 0) {
 							// This instruction isn't doing anything to the stack. Could be a nop or some prefix.
 							// Ignore it and move on to the next.
-						} else if (Method.Body.Instructions[index].OpCode.Code != Code.Dup) {
+						} else if (Instructions[index].OpCode.Code != Code.Dup) {
 							// It's not a duplicate instruction, this is an acceptable start point.
 							break;
 						} else {
-							var prevInstr = Method.Body.Instructions[index - 1];
+							var prevInstr = Instructions[index - 1];
 							prevInstr.CalculateStackUsage(Method.HasReturnType, out push, out _);
 							if (push > 0) {
 								// A duplicate instruction is an acceptable start point in case the preceeding instruction
