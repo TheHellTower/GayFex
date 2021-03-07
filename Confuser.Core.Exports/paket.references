@@ -3,5 +3,4 @@ Microsoft.Extensions.DependencyInjection.Abstractions
 System.Collections.Immutable
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning

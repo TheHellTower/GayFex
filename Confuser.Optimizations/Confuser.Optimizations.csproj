@@ -3,7 +3,6 @@
 
   <PropertyGroup Label="Assembly Settings">
     <TargetFramework>netstandard2.0</TargetFramework>
-    <EnableCodeAnalysis>true</EnableCodeAnalysis>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information">
@@ -22,6 +21,10 @@
   <ItemGroup Label="Runtime Project Dependencies">
     <ConfuserRuntimeReference Include="..\Confuser.Optimizations.Runtime\Confuser.Optimizations.Runtime.csproj" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleToTest Include="Confuser.Optimizations.Test" />

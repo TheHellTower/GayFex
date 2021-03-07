@@ -4,5 +4,4 @@ System.Collections.Immutable
 System.ValueTuple
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning

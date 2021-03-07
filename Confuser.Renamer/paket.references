@@ -7,5 +7,4 @@ System.Runtime.Extensions
 System.ValueTuple
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning

@@ -6,5 +6,4 @@ Ookii.Dialogs.Wpf
 System.ComponentModel.Composition
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning

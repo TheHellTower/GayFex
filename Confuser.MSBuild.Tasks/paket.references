@@ -1,5 +1,4 @@
 Microsoft.Build.Tasks.Core
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning

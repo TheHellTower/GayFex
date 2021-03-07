@@ -724,7 +724,6 @@ STORAGE: NONE
 RESTRICTION: || (== net20) (== net35) (== net40) (== net45) (== net461) (== net471) (== net472) (== net48) (== net5.0-windows7.0) (== net50) (== netcoreapp2.0) (== netstandard1.0) (== netstandard1.1) (== netstandard2.0)
 NUGET
   remote: https://api.nuget.org/v3/index.json
-    Microsoft.CodeAnalysis.NetAnalyzers (5.0.3)
     Nerdbank.GitVersioning (3.3.37)
 
 GROUP Runtime

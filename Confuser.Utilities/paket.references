@@ -2,5 +2,4 @@ dnlib
 System.Collections.Immutable
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning

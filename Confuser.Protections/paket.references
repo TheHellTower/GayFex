@@ -9,5 +9,4 @@ System.Security.Cryptography.Algorithms
 System.ValueTuple
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning

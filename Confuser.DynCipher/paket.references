@@ -5,5 +5,4 @@ System.Linq
 System.Reflection.Emit.Lightweight
 
 group Build
-  Microsoft.CodeAnalysis.NetAnalyzers
   Nerdbank.GitVersioning
