@@ -219,16 +219,16 @@ namespace Confuser.Core.Services {
 				int index = working.Dequeue();
 				while (index >= 0) {
 					if (BeforeStackDepths[index] == targetStack) {
-						var currentInstr = method.Body.Instructions[index];
+						var currentInstr = Instructions[index];
 						currentInstr.CalculateStackUsage(Method.HasReturnType, out int push, out pop);
 						if (push == 0 && pop == 0) {
 							// This instruction isn't doing anything to the stack. Could be a nop or some prefix.
 							// Ignore it and move on to the next.
-						} else if (method.Body.Instructions[index].OpCode.Code != Code.Dup) {
+						} else if (Instructions[index].OpCode.Code != Code.Dup) {
 							// It's not a duplicate instruction, this is an acceptable start point.
 							break;
 						} else {
-							var prevInstr = method.Body.Instructions[index - 1];
+							var prevInstr = Instructions[index - 1];
 							prevInstr.CalculateStackUsage(Method.HasReturnType, out push, out _);
 							if (push > 0) {
 								// A duplicate instruction is an acceptable start point in case the preceeding instruction
@@ -256,7 +256,7 @@ namespace Confuser.Core.Services {
 					return null;
 			}
 
-			while (method.Body.Instructions[beginInstrIndex].OpCode.Code == Code.Dup)
+			while (Instructions[beginInstrIndex].OpCode.Code == Code.Dup)
 				beginInstrIndex--;
 
 			// Trace the index of arguments
@@ -270,7 +270,7 @@ namespace Confuser.Core.Services {
 				int index = tuple.Item1;
 				Stack<int> evalStack = tuple.Item2;
 
-				while (index != instrIndex && index < method.Body.Instructions.Count) {
+				while (index != instrIndex && index < Instructions.Length) {
 					Instruction currentInstr = Instructions[index];
 					currentInstr.CalculateStackUsage(Method.HasReturnType, out int push, out pop);
 					if (currentInstr.OpCode.Code == Code.Dup) {
