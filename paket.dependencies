@@ -3,42 +3,42 @@ framework: auto-detect
 
 source https://api.nuget.org/v3/index.json
 
-nuget Antlr4 ~> 4.6
-nuget ApprovalTests ~> 4.3
-nuget coverlet.collector ~> 1
-nuget dnlib ~> 3.3
-nuget Humanizer.Core ~> 2.7
+nuget Antlr4
+nuget ApprovalTests
+nuget coverlet.collector
+nuget dnlib
+nuget Humanizer.Core
 nuget K4os.Compression.LZ4 = 1.1.11
 nuget Microsoft.Build.Tasks.Core ~> 15
 nuget Microsoft.DiaSymReader.Native
-nuget Microsoft.Extensions.CommandLineUtils ~> 1.1
-nuget Microsoft.Extensions.DependencyInjection ~> 3.0
-nuget Microsoft.Extensions.DependencyInjection.Abstractions ~> 3.0
-nuget Microsoft.Extensions.Logging ~> 3.0
-nuget Microsoft.Extensions.Logging.Abstractions ~> 3.0
-nuget Microsoft.Extensions.Logging.Console ~> 3.0
-nuget Microsoft.NET.Test.Sdk ~> 16
-nuget Microsoft.Win32.Registry > 4 < 6
-nuget Moq ~> 4.11
-nuget MvvmLightLibsStd10 ~> 5.4
-nuget NuGet.Frameworks ~> 5
-nuget Ookii.Dialogs.Wpf ~> 3
-nuget System.Collections.Immutable ~> 1.6
-nuget System.ComponentModel ~> 4
-nuget System.ComponentModel.Composition ~> 4
-nuget System.Console ~> 4
-nuget System.Diagnostics.Debug ~> 4
-nuget System.Diagnostics.Tools ~> 4
-nuget System.IO.Packaging > 4 < 6
-nuget System.Linq ~> 4
-nuget System.Reflection.Emit.Lightweight ~> 4
-nuget System.Runtime.Extensions ~> 4
-nuget System.Security.Cryptography.Algorithms ~> 4
-nuget System.Text.RegularExpressions ~> 4
-nuget System.ValueTuple ~> 4
-nuget System.Xml.XmlDocument ~> 4
-nuget xunit ~> 2.4
-nuget xunit.runner.visualstudio ~> 2.4
+nuget Microsoft.Extensions.CommandLineUtils
+nuget Microsoft.Extensions.DependencyInjection
+nuget Microsoft.Extensions.DependencyInjection.Abstractions
+nuget Microsoft.Extensions.Logging
+nuget Microsoft.Extensions.Logging.Abstractions
+nuget Microsoft.Extensions.Logging.Console
+nuget Microsoft.NET.Test.Sdk
+nuget Microsoft.Win32.Registry
+nuget Moq
+nuget MvvmLightLibsStd10
+nuget NuGet.Frameworks
+nuget Ookii.Dialogs.Wpf
+nuget System.Collections.Immutable
+nuget System.ComponentModel
+nuget System.ComponentModel.Composition
+nuget System.Console
+nuget System.Diagnostics.Debug
+nuget System.Diagnostics.Tools
+nuget System.IO.Packaging
+nuget System.Linq
+nuget System.Reflection.Emit.Lightweight
+nuget System.Runtime.Extensions
+nuget System.Security.Cryptography.Algorithms
+nuget System.Text.RegularExpressions
+nuget System.ValueTuple
+nuget System.Xml.XmlDocument
+nuget xunit
+nuget xunit.runner.visualstudio
 
 group Build
   storage: none
@@ -54,7 +54,7 @@ group Runtime
 
   source https://api.nuget.org/v3/index.json
 
-  nuget Microsoft.NETFramework.ReferenceAssemblies ~> 1
+  nuget Microsoft.NETFramework.ReferenceAssemblies
   github MiloszKrajewski/K4os.Compression.LZ4:1.1.11 src/K4os.Compression.LZ4/Engine/LZ4_xx.cs
 
 group TestTarget
@@ -64,5 +64,5 @@ group TestTarget
   source https://api.nuget.org/v3/index.json
   
   nuget Microsoft.Build.Framework
-  nuget Microsoft.NETFramework.ReferenceAssemblies ~> 1
+  nuget Microsoft.NETFramework.ReferenceAssemblies
   nuget System.Text.RegularExpressions ~> 4 framework: >= net45
