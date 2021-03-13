@@ -19,4 +19,6 @@
     <ProjectReference Include="..\193_ConstantsInlining.Lib\193_ConstantsInlining.Lib.csproj" />
   </ItemGroup>
 
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+
 </Project>

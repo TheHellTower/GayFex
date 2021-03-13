@@ -11,4 +11,6 @@
     <ProjectReference Include="..\SignatureMismatch2Helper\SignatureMismatch2Helper.csproj" />
   </ItemGroup>
 
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+
 </Project>
