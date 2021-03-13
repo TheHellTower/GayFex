@@ -43,6 +43,7 @@
     <InternalsVisibleToTest Include="Confuser.Core.Test" />
     <InternalsVisibleToTest Include="Confuser.Renamer.Test" />
     <InternalsVisibleToTest Include="Confuser.Helpers.Test" />
+    <InternalsVisibleToTest Include="Confuser.Optimizations.Test" />
   </ItemGroup>
 
   <Import Project="..\SevenZip\SevenZip.projitems" Label="Shared" />
