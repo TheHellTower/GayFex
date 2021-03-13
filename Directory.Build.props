@@ -3,7 +3,7 @@
   <PropertyGroup Label="C-Sharp Compiler Settings"
                  Condition="'$(MSBuildProjectExtension)' == '.csproj' AND $(MSBuildProjectFile.StartsWith('Confuser'))">
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Assembly Information" Condition="$(MSBuildProjectFile.StartsWith('Confuser'))">
