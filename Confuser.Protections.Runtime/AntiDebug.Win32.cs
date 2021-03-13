@@ -58,7 +58,7 @@ namespace Confuser.Runtime {
 			internal IntPtr InheritedFromUniqueProcessId;
 
 			[DllImport("ntdll.dll")]
-			private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, int processInformationLength, out int returnLength);
+			private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, uint processInformationLength, out int returnLength);
 			
 			/// <summary>
 			/// Gets the parent process of the current process.
@@ -83,10 +83,9 @@ namespace Confuser.Runtime {
 			/// </summary>
 			/// <param name="handle">The process handle.</param>
 			/// <returns>An instance of the Process class.</returns>
-			public unsafe static Process GetParentProcess(IntPtr handle) {
+			public static Process GetParentProcess(IntPtr handle) {
 				ParentProcessUtilities pbi = new ParentProcessUtilities();
-				int returnLength;
-				int status = NtQueryInformationProcess(handle, 0, ref pbi, sizeof(ParentProcessUtilities), out returnLength);
+				int status = NtQueryInformationProcess(handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out _);
 				if (status != 0)
 					return null;
 
