@@ -23,6 +23,10 @@
     <ConfuserRuntimeReference Include="..\Confuser.Protections.Runtime\Confuser.Protections.Runtime.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleToTest Include="ConstantProtection.Test" />
+  </ItemGroup>
+
   <Import Project="..\.paket\Paket.Restore.targets" />
 
 </Project>
