@@ -111,11 +111,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "244_ClrProtection", "Tests\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "244_ClrProtection.Test", "Tests\244_ClrProtection.Test\244_ClrProtection.Test.csproj", "{3ADB8BB1-AE14-49DA-A7E1-1C0D9BEB76E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "306_ComplexClassStructureRename.Lib", "Tests\306_ComplexClassStructureRename.Lib\306_ComplexClassStructureRename.Lib.csproj", "{FD93D181-2EC5-4863-8A8F-5F8C84C06B35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "306_ComplexClassStructureRename.Lib", "Tests\306_ComplexClassStructureRename.Lib\306_ComplexClassStructureRename.Lib.csproj", "{FD93D181-2EC5-4863-8A8F-5F8C84C06B35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "306_ComplexClassStructureRename", "Tests\306_ComplexClassStructureRename\306_ComplexClassStructureRename.csproj", "{1B52A3D9-014C-4CBF-BB98-09080D9A8D16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "306_ComplexClassStructureRename", "Tests\306_ComplexClassStructureRename\306_ComplexClassStructureRename.csproj", "{1B52A3D9-014C-4CBF-BB98-09080D9A8D16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "306_ComplexClassStructureRename.Test", "Tests\306_ComplexClassStructureRename.Test\306_ComplexClassStructureRename.Test.csproj", "{13431429-2DB6-480F-B73F-CA019FE759E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "306_ComplexClassStructureRename.Test", "Tests\306_ComplexClassStructureRename.Test\306_ComplexClassStructureRename.Test.csproj", "{13431429-2DB6-480F-B73F-CA019FE759E3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "342_InterfaceRenamingLoop", "Tests\342_InterfaceRenamingLoop\342_InterfaceRenamingLoop.csproj", "{382B6332-4A57-458D-96EB-B312688A7604}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "342_InterfaceRenamingLoop.Test", "Tests\342_InterfaceRenamingLoop.Test\342_InterfaceRenamingLoop.Test.csproj", "{EC62CE1D-ADD7-419A-84A9-D6A04E866197}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -727,6 +731,30 @@ Global
 		{13431429-2DB6-480F-B73F-CA019FE759E3}.Release|x64.Build.0 = Release|Any CPU
 		{13431429-2DB6-480F-B73F-CA019FE759E3}.Release|x86.ActiveCfg = Release|Any CPU
 		{13431429-2DB6-480F-B73F-CA019FE759E3}.Release|x86.Build.0 = Release|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Debug|x64.Build.0 = Debug|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Debug|x86.Build.0 = Debug|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Release|Any CPU.Build.0 = Release|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Release|x64.ActiveCfg = Release|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Release|x64.Build.0 = Release|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Release|x86.ActiveCfg = Release|Any CPU
+		{382B6332-4A57-458D-96EB-B312688A7604}.Release|x86.Build.0 = Release|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Debug|x64.Build.0 = Debug|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Debug|x86.Build.0 = Debug|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Release|x64.ActiveCfg = Release|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Release|x64.Build.0 = Release|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Release|x86.ActiveCfg = Release|Any CPU
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -774,6 +802,8 @@ Global
 		{FD93D181-2EC5-4863-8A8F-5F8C84C06B35} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{1B52A3D9-014C-4CBF-BB98-09080D9A8D16} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 		{13431429-2DB6-480F-B73F-CA019FE759E3} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{382B6332-4A57-458D-96EB-B312688A7604} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
+		{EC62CE1D-ADD7-419A-84A9-D6A04E866197} = {356BDB31-853E-43BB-8F9A-D8AC08F69EBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D937D9E-E04B-4A68-B639-D4260473A388}

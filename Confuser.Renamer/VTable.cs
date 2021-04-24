@@ -98,7 +98,7 @@ namespace Confuser.Renamer {
 		internal VTable(TypeSig type) {
 			Type = type;
 			Slots = new List<VTableSlot>();
-			InterfaceSlots = new Dictionary<TypeSig, IList<VTableSlot>>();
+			InterfaceSlots = new Dictionary<TypeSig, IList<VTableSlot>>(TypeEqualityComparer.Instance);
 		}
 
 		public TypeSig Type { get; private set; }
@@ -107,23 +107,11 @@ namespace Confuser.Renamer {
 		public IDictionary<TypeSig, IList<VTableSlot>> InterfaceSlots { get; private set; }
 
 		class VTableConstruction {
-			class TypeSigComparer : IEqualityComparer<TypeSig> {
-				public bool Equals(TypeSig x, TypeSig y) {
-					return new SigComparer().Equals(x, y);
-				}
-
-				public int GetHashCode(TypeSig obj) {
-					return new SigComparer().GetHashCode(obj);
-				}
-
-				public static readonly TypeSigComparer Instance = new TypeSigComparer();
-			}
-
 			// All virtual method slots, excluding interfaces
 			public List<VTableSlot> AllSlots = new List<VTableSlot>();
 			// All visible virtual method slots (i.e. excluded those being shadowed)
 			public Dictionary<VTableSignature, VTableSlot> SlotsMap = new Dictionary<VTableSignature, VTableSlot>();
-			public Dictionary<TypeSig, ILookup<VTableSignature, VTableSlot>> InterfaceSlots = new Dictionary<TypeSig, ILookup<VTableSignature, VTableSlot>>(TypeSigComparer.Instance);
+			public Dictionary<TypeSig, ILookup<VTableSignature, VTableSlot>> InterfaceSlots = new Dictionary<TypeSig, ILookup<VTableSignature, VTableSlot>>(TypeEqualityComparer.Instance);
 		}
 
 		public IEnumerable<VTableSlot> FindSlots(IMethod method) {
@@ -252,7 +240,7 @@ namespace Confuser.Renamer {
 
 			// Populate result V-table
 			ret.InterfaceSlots = vTbl.InterfaceSlots.ToDictionary(
-				kvp => kvp.Key, kvp => (IList<VTableSlot>)kvp.Value.SelectMany(g => g).ToList());
+				kvp => kvp.Key, kvp => (IList<VTableSlot>)kvp.Value.SelectMany(g => g).ToList(), TypeEqualityComparer.Instance);
 
 			foreach (var slot in vTbl.AllSlots) {
 				ret.Slots.Add(slot);
