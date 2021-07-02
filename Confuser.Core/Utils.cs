@@ -145,46 +145,14 @@ namespace Confuser.Core {
 			for (int i = 1; i < buff.Length; i++) {
 				current = (current << 8) + buff[i];
 				while (current >= charset.Length) {
-					ret.Append(charset[current % charset.Length]);
-					current /= charset.Length;
+					current = Math.DivRem(current, charset.Length, out int remainder);
+					ret.Append(charset[remainder]);
 				}
 			}
 			if (current != 0)
 				ret.Append(charset[current % charset.Length]);
 			return ret.ToString();
 		}
-
-		/// <summary>
-		///     Returns a new string in which all occurrences of a specified string in
-		///     <paramref name="str" /> are replaced with another specified string.
-		/// </summary>
-		/// <returns>
-		///     A <see cref="string" /> equivalent to <paramref name="str" /> but with all instances of
-		///     <paramref name="oldValue" />
-		///     replaced with <paramref name="newValue" />.
-		/// </returns>
-		/// <param name="str">A string to do the replace in. </param>
-		/// <param name="oldValue">A string to be replaced. </param>
-		/// <param name="newValue">A string to replace all occurrences of <paramref name="oldValue" />. </param>
-		/// <param name="comparison">One of the <see cref="StringComparison" /> values. </param>
-		/// <remarks>Adopted from http://stackoverflow.com/a/244933 </remarks>
-		public static string Replace(this string str, string oldValue, string newValue, StringComparison comparison) {
-			StringBuilder sb = new StringBuilder();
-
-			int previousIndex = 0;
-			int index = str.IndexOf(oldValue, comparison);
-			while (index != -1) {
-				sb.Append(str.Substring(previousIndex, index - previousIndex));
-				sb.Append(newValue);
-				index += oldValue.Length;
-				previousIndex = index;
-				index = str.IndexOf(oldValue, index, comparison);
-			}
-			sb.Append(str.Substring(previousIndex));
-
-			return sb.ToString();
-		}
-
 
 		/// <summary>
 		///     Encode the buffer to a hexadecimal string.
@@ -208,12 +176,17 @@ namespace Confuser.Core {
 		/// <param name="self">The list to remove from.</param>
 		/// <param name="match">The predicate that defines the conditions of the elements to remove.</param>
 		/// <returns><paramref name="self" /> for method chaining.</returns>
-		public static IList<T> RemoveWhere<T>(this IList<T> self, Predicate<T> match) {
+		public static void RemoveWhere<T>(this IList<T> self, Predicate<T> match) {
+			if (self is List<T> list) {
+				list.RemoveAll(match);
+				return;
+			}
+
+			// Switch to slow algorithm
 			for (int i = self.Count - 1; i >= 0; i--) {
 				if (match(self[i]))
 					self.RemoveAt(i);
 			}
-			return self;
 		}
 
 		/// <summary>

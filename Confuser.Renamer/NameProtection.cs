@@ -66,7 +66,7 @@ namespace Confuser.Renamer {
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
 
-				using (var writer = new StreamWriter(File.OpenWrite(path))) {
+				using (var writer = new StreamWriter(File.Create(path))) {
 					foreach (var entry in map)
 						writer.WriteLine("{0}\t{1}", entry.Key, entry.Value);
 				}

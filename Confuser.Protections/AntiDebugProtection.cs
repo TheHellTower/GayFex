@@ -121,7 +121,7 @@ namespace Confuser.Protections {
 							}
 						}
 						if (ren) {
-							member.Name = name.ObfuscateName(member.Name, RenameMode.Unicode);
+							member.Name = name.ObfuscateName(member, RenameMode.Unicode);
 							name.SetCanRename(member, false);
 						}
 					}

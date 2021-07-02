@@ -23,10 +23,11 @@ namespace Confuser.UnitTest {
 
 		protected Task Run(string inputFileName, string[] expectedOutput, SettingItem<Protection> protection,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
-			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null) =>
+			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null,
+			string seed = null) =>
 
 			Run(new[] { inputFileName }, expectedOutput, protection, outputDirSuffix, outputAction, packer,
-				projectModuleAction, postProcessAction);
+				projectModuleAction, postProcessAction, seed);
 
 		protected Task Run(string inputFileName, string[] expectedOutput, IEnumerable<SettingItem<Protection>> protections,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
@@ -37,14 +38,16 @@ namespace Confuser.UnitTest {
 
 		protected Task Run(string[] inputFileNames, string[] expectedOutput, SettingItem<Protection> protection,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
-			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null) {
+			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null,
+			string seed = null) {
 			var protections = (protection is null) ? Enumerable.Empty<SettingItem<Protection>>() : new[] { protection };
-			return Run(inputFileNames, expectedOutput, protections, outputDirSuffix, outputAction, packer, projectModuleAction, postProcessAction);
+			return Run(inputFileNames, expectedOutput, protections, outputDirSuffix, outputAction, packer, projectModuleAction, postProcessAction, seed);
 		}
 
 		protected async Task Run(string[] inputFileNames, string[] expectedOutput, IEnumerable<SettingItem<Protection>> protections,
 			string outputDirSuffix = "", Action<string> outputAction = null, SettingItem<Packer> packer = null,
-			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null) {
+			Action<ProjectModule> projectModuleAction = null, Func<string, Task> postProcessAction = null,
+			string seed = null) {
 
 			var baseDir = Environment.CurrentDirectory;
 			var outputDir = Path.Combine(baseDir, "obfuscated" + outputDirSuffix);
@@ -58,7 +61,8 @@ namespace Confuser.UnitTest {
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir,
-				Packer = packer
+				Packer = packer,
+				Seed = seed
 			};
 
 			foreach (string name in inputFileNames) {

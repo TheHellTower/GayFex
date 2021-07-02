@@ -33,11 +33,11 @@ namespace Confuser.Renamer.Analyzers {
 					// derived type. If the base type/interface is not in our control, we should
 					// not rename the methods.
 					bool baseUnderCtrl = modules.Contains(slot.MethodDef.DeclaringType.Module as ModuleDefMD);
-					bool ifaceUnderCtrl = modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
-					if ((!baseUnderCtrl && ifaceUnderCtrl) || !service.CanRename(slot.MethodDef)) {
+					bool interfaceUnderCtrl = modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
+					if (!baseUnderCtrl && interfaceUnderCtrl || !service.CanRename(slot.MethodDef)) {
 						service.SetCanRename(slot.Overrides.MethodDef, false);
 					}
-					else if (baseUnderCtrl && !ifaceUnderCtrl || !service.CanRename(slot.Overrides.MethodDef)) {
+					else if ((baseUnderCtrl && !interfaceUnderCtrl) || (!service.CanRename(slot.Overrides.MethodDef))) {
 						service.SetCanRename(slot.MethodDef, false);
 					}
 
@@ -47,6 +47,17 @@ namespace Confuser.Renamer.Analyzers {
 					if (!TypeEqualityComparer.Instance.Equals(slot.MethodDef.DeclaringType, type)) {
 						SetupOverwriteReferences(service, modules, slot, type);
 						//CreateOverrideReference(service, slot.MethodDef, slot.Overrides.MethodDef);
+					}
+
+					// For the case when method in base type implements an interface method for a derived type
+					// do not consider method parameters to make method name the same in base type, derived type and interface
+					var methodDef = slot.MethodDef;
+					var typeDef = type.BaseType?.ResolveTypeDef();
+					var baseMethod = typeDef?.FindMethod(methodDef.Name, methodDef.Signature as MethodSig);
+					if (baseMethod != null) {
+						string unifiedName = service.GetOriginalFullName(slot.Overrides.MethodDef);
+						service.SetOriginalName(slot.MethodDef, unifiedName);
+						service.SetOriginalName(baseMethod, unifiedName);
 					}
 				}
 			}
@@ -215,7 +226,7 @@ namespace Confuser.Renamer.Analyzers {
 					unprocessed.Enqueue(slot.Overrides.MethodDef);
 					slotsExists = true;
 				}
-				
+
 				if (!slotsExists && method != currentMethod)
 					yield return currentMethod;
 			}
@@ -335,7 +346,7 @@ namespace Confuser.Renamer.Analyzers {
 
 			var targetMethodSig = targetMethod.MethodSig;
 			var overrideMethodSig = methodOverride.MethodDeclaration.MethodSig;
-			
+
 			targetMethodSig = ResolveGenericSignature(targetMethod, targetMethodSig);
 			overrideMethodSig = ResolveGenericSignature(methodOverride.MethodDeclaration, overrideMethodSig);
 
