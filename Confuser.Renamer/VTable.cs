@@ -227,7 +227,10 @@ namespace Confuser.Renamer {
 							});
 					}
 					else {
-						var targetSlot = vTbl.AllSlots.Single(slot => slot.MethodDef == targetMethod);
+						var targetSlot = vTbl.AllSlots.SingleOrDefault(slot => slot.MethodDef == targetMethod);
+						if (targetSlot == null) {
+							throw new Exception($"method [{method}] not found.");
+						}
 						CheckKeyExist(storage, vTbl.SlotsMap, targetSlot.Signature, "MethodImpl Normal Sig");
 						targetSlot = vTbl.SlotsMap[targetSlot.Signature]; // Use the most derived slot
 																		  // Maybe implemented by above processes --- this process should take priority
