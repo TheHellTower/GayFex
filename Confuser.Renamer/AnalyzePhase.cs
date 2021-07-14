@@ -31,6 +31,10 @@ namespace Confuser.Renamer {
 		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
 			var service = (NameService)context.Registry.GetService<INameService>();
 			context.Logger.Debug("Building VTables & identifier list...");
+
+			foreach (ModuleDef moduleDef in parameters.Targets.OfType<ModuleDef>())
+				moduleDef.EnableTypeDefFindCache = true;
+
 			foreach (IDnlibDef def in parameters.Targets.WithProgress(context.Logger)) {
 				ParseParameters(def, context, service, parameters);
 
@@ -53,6 +57,11 @@ namespace Confuser.Renamer {
 			foreach (IDnlibDef def in parameters.Targets.WithProgress(context.Logger)) {
 				Analyze(service, context, parameters, def, true);
 				context.CheckCancellation();
+			}
+
+			foreach (ModuleDef moduleDef in parameters.Targets.OfType<ModuleDef>()) {
+				moduleDef.EnableTypeDefFindCache = false;
+				moduleDef.ResetTypeDefFindCache();
 			}
 		}
 
