@@ -1,5 +1,17 @@
 using System;
 
+namespace A {
+	public static class X
+	{
+	}
+}
+
+namespace B {
+	public static class X
+	{
+	}
+}
+
 namespace MethodOverloading {
 	public interface IInterface {
 		string Method(string param);
@@ -45,6 +57,16 @@ namespace MethodOverloading {
 	public class Class5 : BaseClass5<string>, Interface5 {
 	}
 
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
+	sealed class MyAttribute : Attribute
+	{
+		public MyAttribute(Type type)
+		{
+		}
+	}
+
+	[My(typeof(A.X))]
+	[My(typeof(B.X))]
 	public class Program {
 		public class NestedClass {
 			public override string ToString() => "test";

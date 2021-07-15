@@ -376,7 +376,7 @@ namespace Confuser.Renamer {
 			                 GetParam(dnlibDef, "shortNames")?.Equals("true", StringComparison.OrdinalIgnoreCase) ==
 			                 true;
 			if (shortNames) {
-				result = dnlibDef.Name;
+				result = dnlibDef is MethodDef ? (string)dnlibDef.Name : dnlibDef.FullName;
 			}
 			else {
 				if (dnlibDef is MethodDef methodDef) {

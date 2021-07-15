@@ -51,8 +51,8 @@ namespace MethodOverloading.Test {
 					}).ToDictionary(keyValue => keyValue.Key, keyValue => keyValue.Value);
 
 					if (shortNames) {
-						Assert.Equal("Class", symbols["_OatkF4GhWlgOakbgdlaLpqEglhm"]);
-						Assert.Equal("NestedClass", symbols["_GYHfKMUMLLO9oVLM117IvfCdmUC"]);
+						Assert.Equal("MethodOverloading.Class", symbols["_iyWU2GdYVZxajP8BQlt8KKTy6qQ"]);
+						Assert.Equal("MethodOverloading.Program/NestedClass", symbols["_CZIbNVHU7wPJyGhgOcTnIUsFtC0"]);
 						Assert.Equal("OverloadedMethod", symbols["_phF8iy7Y79cwt3EaAFmJzW2bGch"]);
 					}
 					else {
