@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
@@ -17,20 +18,16 @@ namespace MessageDeobfuscation.Test {
 
 		public MessageDeobfuscationTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
-		[Fact]
+		[Theory]
+		[MemberData(nameof(RenameModeAndExpectedObfuscatedOutput))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
-		public async Task MessageDeobfuscationWithSymbolsMap() {
-			var expectedObfuscatedOutput = new[] {
-				"Exception",
-				"   at _OokpKOmal5JNZMPvSAFgHLHjBke._tc5CFDIJ2J9Fx3ehd3sgjTMAxCaA._8Tq88jpv7mEXkEMavg6AaMFsXJt(String )",
-				"   at _ykdLsBmsKGrd6fxeEseqJs8XlpP._tfvbqapfg44suL8taZVvOKM4AoG()"
-			};
+		public async Task MessageDeobfuscationWithSymbolsMap(string renameMode, string[] expectedObfuscatedOutput) =>
 			await Run(
 				"MessageDeobfuscation.exe",
 				expectedObfuscatedOutput,
-				new SettingItem<Protection>("rename") {["mode"] = "decodable"},
-				"SymbolsMap",
+				new SettingItem<Protection>("rename") {["mode"] = renameMode},
+				$"SymbolsMap_{renameMode}",
 				seed: "1234",
 				postProcessAction: outputPath => {
 					var messageDeobfuscator = MessageDeobfuscator.Load(Path.Combine(outputPath, "symbols.map"));
@@ -39,7 +36,26 @@ namespace MessageDeobfuscation.Test {
 					return Task.Delay(0);
 				}
 			);
-		}
+
+		public static IEnumerable<object[]> RenameModeAndExpectedObfuscatedOutput() =>
+			new[] {
+				new object[] {
+					nameof(RenameMode.Decodable),
+					new[] {
+						"Exception",
+						"   at _OokpKOmal5JNZMPvSAFgHLHjBke._tc5CFDIJ2J9Fx3ehd3sgjTMAxCaA._8Tq88jpv7mEXkEMavg6AaMFsXJt(String )",
+						"   at _ykdLsBmsKGrd6fxeEseqJs8XlpP._tfvbqapfg44suL8taZVvOKM4AoG()"
+					}
+				},
+				new object[] {
+					nameof(RenameMode.Sequential),
+					new[] {
+					"Exception",
+					"   at _A._C._b(String )",
+					"   at _B._c()"
+					}
+				}
+			};
 
 		[Fact]
 		[Trait("Category", "Protection")]
