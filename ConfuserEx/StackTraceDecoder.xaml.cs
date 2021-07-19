@@ -41,7 +41,7 @@ namespace ConfuserEx {
 			}
 
 			if (!error) {
-				stackTrace.Text = _messageDeobfuscator.Deobfuscate(stackTrace.Text);
+				stackTrace.Text = _messageDeobfuscator.DeobfuscateMessage(stackTrace.Text);
 			}
 		}
 	}

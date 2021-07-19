@@ -54,12 +54,18 @@ namespace MethodOverloading.Test {
 						Assert.Equal("MethodOverloading.Class", symbols["_iyWU2GdYVZxajP8BQlt8KKTy6qQ"]);
 						Assert.Equal("MethodOverloading.Program/NestedClass", symbols["_CZIbNVHU7wPJyGhgOcTnIUsFtC0"]);
 						Assert.Equal("OverloadedMethod", symbols["_phF8iy7Y79cwt3EaAFmJzW2bGch"]);
+						Assert.Equal("Field", symbols["_6V1A5bTBinvE5uHIpOLYRNJLPo1"]);
+						Assert.Equal("Property", symbols["_R1FgkOY1t1oZChSgmkBM94XFyCj"]);
+						Assert.Equal("Event", symbols["_N2jFMB56aV9SI9hlSxW0X97PYvG"]);
 					}
 					else {
 						Assert.Equal("MethodOverloading.Class", symbols["_iyWU2GdYVZxajP8BQlt8KKTy6qQ"]);
 						Assert.Equal("MethodOverloading.Program/NestedClass", symbols["_CZIbNVHU7wPJyGhgOcTnIUsFtC0"]);
 						Assert.Equal("MethodOverloading.Program::OverloadedMethod(System.Object[])", symbols["_LzCBuBOSn49xbtKNsjuJxQZPIEW"]);
 						Assert.Equal("MethodOverloading.Program::OverloadedMethod(System.String)", symbols["_ywSbkiShk8k3qj7bBrEWEUfs9Km"]);
+						Assert.Equal("MethodOverloading.BaseClass::Field", symbols["_yqni8M5s0WdS43DWP1TXNaYbKEH"]);
+						Assert.Equal("MethodOverloading.BaseClass::Property", symbols["_3gBBhEIMEfnKvvSRKFDeTcFgGUPb"]);
+						Assert.Equal("MethodOverloading.BaseClass::Event", symbols["_MbPHu2jYmPBHHFrz4bK83xDAwLH"]);
 					}
 
 					return Task.Delay(0);

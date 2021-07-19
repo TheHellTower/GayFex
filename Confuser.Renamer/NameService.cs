@@ -140,7 +140,7 @@ namespace Confuser.Renamer {
 			if (original < val)
 				context.Annotations.Set(obj, RenameModeKey, val);
 			if (val <= RenameMode.Reflection && obj is IDnlibDef dnlibDef) {
-				string nameWithoutParams = GetSimplifiedFullName(dnlibDef, true);
+				string nameWithoutParams = ExtractActualName(dnlibDef, true);
 				SetOriginalName(dnlibDef, nameWithoutParams);
 			}
 		}
@@ -282,7 +282,7 @@ namespace Confuser.Renamer {
 			if (dnlibDef is TypeDef typeDef) {
 				AddReservedIdentifier(typeDef.Namespace);
 			}
-			string fullName = newFullName ?? GetSimplifiedFullName(dnlibDef);
+			string fullName = newFullName ?? ExtractActualName(dnlibDef);
 			context.Annotations.Set(dnlibDef, OriginalFullNameKey, fullName);
 		}
 
@@ -361,7 +361,7 @@ namespace Confuser.Renamer {
 		}
 
 		public string GetOriginalFullName(IDnlibDef obj) =>
-			context.Annotations.Get(obj, OriginalFullNameKey, (string)null) ?? GetSimplifiedFullName(obj);
+			context.Annotations.Get(obj, OriginalFullNameKey, (string)null) ?? ExtractActualName(obj);
 
 		public IReadOnlyDictionary<string, string> GetNameMap() => _obfuscatedToOriginalNameMap;
 
@@ -369,38 +369,43 @@ namespace Confuser.Renamer {
 
 		public void SetIsRenamed(IDnlibDef def) => context.Annotations.Set(def, IsRenamedKey, true);
 
-		string GetSimplifiedFullName(IDnlibDef dnlibDef, bool forceShortNames = false) {
+		string ExtractActualName(IDnlibDef dnlibDef, bool forceShortNames = false) {
 			string result;
 
 			var shortNames = forceShortNames ||
 			                 GetParam(dnlibDef, "shortNames")?.Equals("true", StringComparison.OrdinalIgnoreCase) ==
 			                 true;
 			if (shortNames) {
-				result = dnlibDef is MethodDef ? (string)dnlibDef.Name : dnlibDef.FullName;
+				result = dnlibDef is TypeDef ? dnlibDef.FullName : (string)dnlibDef.Name;
 			}
 			else {
-				if (dnlibDef is MethodDef methodDef) {
-					var resultBuilder = new StringBuilder();
-					resultBuilder.Append(methodDef.DeclaringType2?.FullName);
-					resultBuilder.Append("::");
-					resultBuilder.Append(dnlibDef.Name);
-
-					resultBuilder.Append('(');
-					if (methodDef.Signature is MethodSig methodSig) {
-						var methodParams = methodSig.Params;
-						for (var index = 0; index < methodParams.Count; index++) {
-							resultBuilder.Append(methodParams[index]);
-							if (index < methodParams.Count - 1) {
-								resultBuilder.Append(',');
-							}
-						}
-					}
-					resultBuilder.Append(')');
-
-					result = resultBuilder.ToString();
+				if (dnlibDef is TypeDef) {
+					result = dnlibDef.FullName;
 				}
 				else {
-					result = dnlibDef.FullName;
+					var resultBuilder = new StringBuilder();
+
+					if (dnlibDef is IMemberDef memberDef) {
+						resultBuilder.Append(memberDef.DeclaringType?.FullName);
+						resultBuilder.Append("::");
+						resultBuilder.Append(dnlibDef.Name);
+
+						if (memberDef is MethodDef methodDef) {
+							resultBuilder.Append('(');
+							if (methodDef.Signature is MethodSig methodSig) {
+								var methodParams = methodSig.Params;
+								for (var index = 0; index < methodParams.Count; index++) {
+									resultBuilder.Append(methodParams[index]);
+									if (index < methodParams.Count - 1) {
+										resultBuilder.Append(',');
+									}
+								}
+							}
+							resultBuilder.Append(')');
+						}
+					}
+
+					result = resultBuilder.ToString();
 				}
 			}
 
