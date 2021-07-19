@@ -62,6 +62,7 @@ namespace Confuser.Renamer {
 		readonly byte[] nameId = new byte[8];
 		readonly Dictionary<string, string> _originalToObfuscatedNameMap = new Dictionary<string, string>();
 		readonly Dictionary<string, string> _obfuscatedToOriginalNameMap = new Dictionary<string, string>();
+		readonly Dictionary<string, string> _prefixesMap = new Dictionary<string, string>();
 		internal ReversibleRenamer reversibleRenamer;
 
 		public NameService(ConfuserContext context) {
@@ -370,46 +371,62 @@ namespace Confuser.Renamer {
 		public void SetIsRenamed(IDnlibDef def) => context.Annotations.Set(def, IsRenamedKey, true);
 
 		string ExtractActualName(IDnlibDef dnlibDef, bool forceShortNames = false) {
-			string result;
-
 			var shortNames = forceShortNames ||
 			                 GetParam(dnlibDef, "shortNames")?.Equals("true", StringComparison.OrdinalIgnoreCase) ==
 			                 true;
-			if (shortNames) {
-				result = dnlibDef is TypeDef ? dnlibDef.FullName : (string)dnlibDef.Name;
+			var renameMode = GetRenameMode(dnlibDef);
+
+			if (dnlibDef is TypeDef typeDef) {
+				return typeDef.DeclaringType != null
+					? $"{CompressTypeName(typeDef.DeclaringType.FullName, renameMode)}/{dnlibDef.Name}"
+					: dnlibDef.FullName;
 			}
-			else {
-				if (dnlibDef is TypeDef) {
-					result = dnlibDef.FullName;
-				}
-				else {
-					var resultBuilder = new StringBuilder();
 
-					if (dnlibDef is IMemberDef memberDef) {
-						resultBuilder.Append(memberDef.DeclaringType?.FullName);
-						resultBuilder.Append("::");
-						resultBuilder.Append(dnlibDef.Name);
+			if (shortNames) {
+				return dnlibDef.Name;
+			}
 
-						if (memberDef is MethodDef methodDef) {
-							resultBuilder.Append('(');
-							if (methodDef.Signature is MethodSig methodSig) {
-								var methodParams = methodSig.Params;
-								for (var index = 0; index < methodParams.Count; index++) {
-									resultBuilder.Append(methodParams[index]);
-									if (index < methodParams.Count - 1) {
-										resultBuilder.Append(',');
-									}
-								}
+			var resultBuilder = new StringBuilder();
+			if (dnlibDef is IMemberDef memberDef) {
+				var declaringTypeName = CompressTypeName(memberDef.DeclaringType?.FullName ?? "", renameMode);
+				resultBuilder.Append(declaringTypeName);
+				resultBuilder.Append("::");
+				resultBuilder.Append(dnlibDef.Name);
+
+				if (memberDef is MethodDef methodDef) {
+					resultBuilder.Append('(');
+					if (methodDef.Signature is MethodSig methodSig) {
+						var methodParams = methodSig.Params;
+						for (var index = 0; index < methodParams.Count; index++) {
+							resultBuilder.Append(CompressTypeName(methodParams[index].ToString(), renameMode));
+							if (index < methodParams.Count - 1) {
+								resultBuilder.Append(',');
 							}
-							resultBuilder.Append(')');
 						}
 					}
 
-					result = resultBuilder.ToString();
+					resultBuilder.Append(')');
 				}
 			}
 
-			return result;
+			return resultBuilder.ToString();
+		}
+
+		string CompressTypeName(string typeName, RenameMode renameMode)
+		{
+			if (renameMode == RenameMode.Reversible)
+			{
+				if (!_prefixesMap.TryGetValue(typeName, out string prefix))
+				{
+					IncrementNameId();
+					prefix = Utils.EncodeString(nameId, alphaNumCharset);
+					_prefixesMap.Add(typeName, prefix);
+				}
+
+				return prefix;
+			}
+
+			return typeName;
 		}
 	}
 }

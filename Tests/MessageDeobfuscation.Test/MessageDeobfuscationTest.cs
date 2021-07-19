@@ -52,18 +52,24 @@ namespace MessageDeobfuscation.Test {
 						eventId = "_b";
 					}
 
+					void CheckName(string expectedFullName, string expectedShortName, string obfuscatedName) {
+						var fullName = deobfuscator.DeobfuscateSymbol(obfuscatedName, false);
+						Assert.Equal(expectedFullName, fullName);
+						Assert.Equal(expectedShortName, MessageDeobfuscator.ExtractShortName(fullName));
+					}
+
 					CheckName("MessageDeobfuscation.Class", "MessageDeobfuscation.Class",
-						classId, deobfuscator);
+						classId);
 					CheckName("MessageDeobfuscation.Class/NestedClass", "NestedClass",
-						nestedClassId, deobfuscator);
+						nestedClassId);
 					CheckName("MessageDeobfuscation.Class::Method(System.String,System.Int32)", "Method",
-						methodId, deobfuscator);
+						methodId);
 					CheckName("MessageDeobfuscation.Class::Field", "Field",
-						fieldId, deobfuscator);
+						fieldId);
 					CheckName("MessageDeobfuscation.Class::Property", "Property",
-						propertyId, deobfuscator);
+						propertyId);
 					CheckName("MessageDeobfuscation.Class::Event", "Event",
-						eventId, deobfuscator);
+						eventId);
 
 					Assert.Equal(_expectedDeobfuscatedOutput, deobfuscatedMessage);
 					return Task.Delay(0);
@@ -96,8 +102,8 @@ namespace MessageDeobfuscation.Test {
 		public async Task MessageDeobfuscationWithPassword() {
 			var expectedObfuscatedOutput = new[] {
 				"Exception",
-				"   at oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8.V1M$X52eDxP6ElgdFrRDlF0KSZU31AmQaiXXgzyoeJJ4KV64JBpi0Bh25Xdje$vCxw.fUHV$KyBiFTUH0$GNDHVx6XvtlZWHnzVgRO9N2M$jw5ysYWJWaUSMQYtPDT$wa$6MarZQoNxnbR_9cn$A2XXvRY(String )",
-				"   at EbUjRcrC76NnA7RJlhQffrfp$vMGHdDfqtVFtWrAOPyD.swzvaIVl3W8yDi8Ii3P1j_V9JC8eVu2JgvNNjeVDYc4bOHH37cCBf0_3URE_8UcWPQ()"
+				"   at oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8.CE8t0VDPQk9$jgv1XuRwt1k.FhsPrCLqIAaPKe7abGklvY4(String )",
+				"   at EbUjRcrC76NnA7RJlhQffrfp$vMGHdDfqtVFtWrAOPyD.xgIw9voebB21PlxPFA_hs60()"
 			};
 			string password = "password";
 			await Run(
@@ -113,29 +119,22 @@ namespace MessageDeobfuscation.Test {
 					var deobfuscator = new MessageDeobfuscator(password);
 					var deobfuscatedMessage = deobfuscator.DeobfuscateMessage(string.Join(Environment.NewLine, expectedObfuscatedOutput));
 
-					CheckName("MessageDeobfuscation.Class", "MessageDeobfuscation.Class",
-						"oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8", deobfuscator);
-					CheckName("MessageDeobfuscation.Class/NestedClass", "NestedClass",
-						"V1M$X52eDxP6ElgdFrRDlF0KSZU31AmQaiXXgzyoeJJ4KV64JBpi0Bh25Xdje$vCxw", deobfuscator);
-					CheckName("MessageDeobfuscation.Class::Method(System.String,System.Int32)", "Method",
-						"CPiRF0I_h5xVXKPEtJXNA7cLoPPS4vhkcjcJi6MAreEi2dBd0rRGyabz9ko1cgWS46oQIMTt_U99FxMd$wpcMBI", deobfuscator);
-					CheckName("MessageDeobfuscation.Class::Field", "Field",
-						"EbUjRcrC76NnA7RJlhQffrdNtUhGQ3K5irENJz724HX_R45xF8Tm$vzXOkAiVX4bXA", deobfuscator);
-					CheckName("MessageDeobfuscation.Class::Property", "Property",
-						"jpG4Jhvg51oUy7PG8hUhxDmJkR1IVttcUFtkOHedcZ2BvCUAjb2SvUsd3q9IoA2LEQ", deobfuscator);
-					CheckName("MessageDeobfuscation.Class::Event", "Event",
-						"NdAzNJfOt9g8GfsT5YEikaIAKenWzJC2RbWKmG8rcYU4f2t_KXIZp4wSkiAmLQe8sA", deobfuscator);
+					void CheckName(string expectedName, string obfuscatedName) {
+						var name = deobfuscator.DeobfuscateSymbol(obfuscatedName, true);
+						Assert.Equal(expectedName, name);
+					}
+
+					CheckName("MessageDeobfuscation.Class", "oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8");
+					CheckName("NestedClass", "CE8t0VDPQk9$jgv1XuRwt1k");
+					CheckName("Method", "jevJU4p4yNrAYGqN7GkRWaI");
+					CheckName("Field", "3IS4xsnUsvDQZop6e4WmNVw");
+					CheckName("Property", "917VMBMNYHd0kfnnNkgeJ10");
+					CheckName("Event", "AIyINk7kgFLFc73Md8Nu8Z0");
 
 					Assert.Equal(_expectedDeobfuscatedOutput, deobfuscatedMessage);
 					return Task.Delay(0);
 				}
 			);
-		}
-
-		void CheckName(string expectedFullName, string expectedShortName, string obfuscatedName, MessageDeobfuscator messageDeobfuscator) {
-			var fullName = messageDeobfuscator.DeobfuscateSymbol(obfuscatedName, false);
-			Assert.Equal(expectedFullName, fullName);
-			Assert.Equal(expectedShortName, MessageDeobfuscator.ExtractShortName(fullName));
 		}
 	}
 }
