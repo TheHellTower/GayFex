@@ -55,9 +55,9 @@ namespace Confuser.Renamer.Analyzers {
 					var typeDef = type.BaseType?.ResolveTypeDef();
 					var baseMethod = typeDef?.FindMethod(methodDef.Name, methodDef.Signature as MethodSig);
 					if (baseMethod != null) {
-						string unifiedName = service.GetOriginalFullName(slot.Overrides.MethodDef);
-						service.SetOriginalName(slot.MethodDef, unifiedName);
-						service.SetOriginalName(baseMethod, unifiedName);
+						string unifiedName = service.GetNormalizedName(slot.Overrides.MethodDef);
+						service.SetNormalizedName(slot.MethodDef, unifiedName);
+						service.SetNormalizedName(baseMethod, unifiedName);
 					}
 				}
 			}

@@ -35,8 +35,10 @@ namespace Confuser.Renamer {
 		void AddReference<T>(T obj, INameReference<T> reference);
 		IList<INameReference> GetReferences(object obj);
 
-		void SetOriginalName(IDnlibDef obj, string fullName = null);
-		string GetOriginalFullName(IDnlibDef obj);
+		void StoreNames(IDnlibDef obj);
+		void SetNormalizedName(IDnlibDef obj, string name);
+		string GetDisplayName(IDnlibDef obj);
+		string GetNormalizedName(IDnlibDef obj);
 
 		bool IsRenamed(IDnlibDef def);
 		void SetIsRenamed(IDnlibDef def);
@@ -48,7 +50,8 @@ namespace Confuser.Renamer {
 		static readonly object CanRenameKey = new object();
 		static readonly object RenameModeKey = new object();
 		static readonly object ReferencesKey = new object();
-		static readonly object OriginalFullNameKey = new object();
+		static readonly object DisplayNameKey = new object();
+		static readonly object NormalizedNameKey = new object();
 		static readonly object IsRenamedKey = new object();
 
 		readonly ConfuserContext context;
@@ -100,6 +103,7 @@ namespace Confuser.Renamer {
 					return false;
 				return context.Annotations.Get(obj, CanRenameKey, true);
 			}
+
 			return false;
 		}
 
@@ -141,8 +145,8 @@ namespace Confuser.Renamer {
 			if (original < val)
 				context.Annotations.Set(obj, RenameModeKey, val);
 			if (val <= RenameMode.Reflection && obj is IDnlibDef dnlibDef) {
-				string nameWithoutParams = ExtractActualName(dnlibDef, true);
-				SetOriginalName(dnlibDef, nameWithoutParams);
+				var name = ExtractDisplayNormalizedName(dnlibDef, true);
+				SetNormalizedName(dnlibDef, name.NormalizedName);
 			}
 		}
 
@@ -154,10 +158,11 @@ namespace Confuser.Renamer {
 			if (analyze == null)
 				analyze = context.Pipeline.FindPhase<AnalyzePhase>();
 
-			SetOriginalName(def);
+			StoreNames(def);
 			if (def is TypeDef typeDef) {
 				GetVTables().GetVTable(typeDef);
 			}
+
 			analyze.Analyze(this, context, ProtectionParameters.Empty, def, true);
 		}
 
@@ -200,6 +205,7 @@ namespace Confuser.Renamer {
 					return name.Substring(0, graveIndex);
 				}
 			}
+
 			count = 0;
 			return name;
 		}
@@ -209,10 +215,10 @@ namespace Confuser.Renamer {
 		public string ObfuscateName(string name, RenameMode mode) => ObfuscateName(null, name, mode, false);
 
 		public string ObfuscateName(IDnlibDef dnlibDef, RenameMode mode) {
-			var originalFullName = GetOriginalFullName(dnlibDef);
+			var normalizedName = GetNormalizedName(dnlibDef);
 			bool preserveGenericParams = GetParam(dnlibDef, "preserveGenericParams")
 				?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
-			return ObfuscateName(null, originalFullName, mode, preserveGenericParams);
+			return ObfuscateName(null, normalizedName, mode, preserveGenericParams);
 		}
 
 		public string ObfuscateName(string format, string name, RenameMode mode, bool preserveGenericParams = false) {
@@ -226,20 +232,17 @@ namespace Confuser.Renamer {
 			if (string.IsNullOrEmpty(name) || mode == RenameMode.Empty)
 				return string.Empty;
 
-			if (mode == RenameMode.Debug || mode == RenameMode.Retain)
-			{
+			if (mode == RenameMode.Debug || mode == RenameMode.Retain) {
 				// When flattening there are issues, in case there is a . in the name of the assembly.
 				newName = name.Replace('.', '_');
 				newName = mode == RenameMode.Debug ? "_" + newName : newName;
 			}
-			else if (mode == RenameMode.Reversible)
-			{
+			else if (mode == RenameMode.Reversible) {
 				if (reversibleRenamer == null)
 					throw new ArgumentException("Password not provided for reversible renaming.");
 				newName = reversibleRenamer.Encrypt(name);
 			}
-			else if (!_originalToObfuscatedNameMap.TryGetValue(name, out newName))
-			{
+			else if (!_originalToObfuscatedNameMap.TryGetValue(name, out newName)) {
 				byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed);
 				while (true) {
 					newName = ObfuscateNameInternal(hash, mode);
@@ -278,13 +281,19 @@ namespace Confuser.Renamer {
 			return ObfuscateName(Utils.ToHexString(random.NextBytes(16)), mode);
 		}
 
-		public void SetOriginalName(IDnlibDef dnlibDef, string newFullName = null) {
+		public void StoreNames(IDnlibDef dnlibDef) {
 			AddReservedIdentifier(dnlibDef.Name);
 			if (dnlibDef is TypeDef typeDef) {
 				AddReservedIdentifier(typeDef.Namespace);
 			}
-			string fullName = newFullName ?? ExtractActualName(dnlibDef);
-			context.Annotations.Set(dnlibDef, OriginalFullNameKey, fullName);
+
+			var name = ExtractDisplayNormalizedName(dnlibDef);
+			context.Annotations.Set(dnlibDef, DisplayNameKey, name.DisplayName);
+			context.Annotations.Set(dnlibDef, NormalizedNameKey, name.NormalizedName);
+		}
+
+		public void SetNormalizedName(IDnlibDef dnlibDef, string name) {
+			context.Annotations.Set(dnlibDef, NormalizedNameKey, name);
 		}
 
 		public void AddReservedIdentifier(string id) => identifiers.Add(id);
@@ -319,6 +328,7 @@ namespace Confuser.Renamer {
 				if (!type.IsSpecialName && !type.IsRuntimeSpecialName)
 					type.Name = RandomName();
 			}
+
 			SetCanRename(def, false);
 			Analyze(def);
 			marker.Mark(def, parentComp);
@@ -327,20 +337,20 @@ namespace Confuser.Renamer {
 		#region Charsets
 
 		static readonly char[] asciiCharset = Enumerable.Range(32, 95)
-		                                                .Select(ord => (char)ord)
-		                                                .Except(new[] { '.' })
-		                                                .ToArray();
+			.Select(ord => (char)ord)
+			.Except(new[] {'.'})
+			.ToArray();
 
-		static readonly char[] reflectionCharset = asciiCharset.Except(new[] { ' ', '[', ']' }).ToArray();
+		static readonly char[] reflectionCharset = asciiCharset.Except(new[] {' ', '[', ']'}).ToArray();
 
 		static readonly char[] letterCharset = Enumerable.Range(0, 26)
-		                                                 .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
-		                                                 .ToArray();
+			.SelectMany(ord => new[] {(char)('a' + ord), (char)('A' + ord)})
+			.ToArray();
 
 		static readonly char[] alphaNumCharset = Enumerable.Range(0, 26)
-		                                                   .SelectMany(ord => new[] { (char)('a' + ord), (char)('A' + ord) })
-		                                                   .Concat(Enumerable.Range(0, 10).Select(ord => (char)('0' + ord)))
-		                                                   .ToArray();
+			.SelectMany(ord => new[] {(char)('a' + ord), (char)('A' + ord)})
+			.Concat(Enumerable.Range(0, 10).Select(ord => (char)('0' + ord)))
+			.ToArray();
 
 		// Especially chosen, just to mess with people.
 		// Inspired by: http://xkcd.com/1137/ :D
@@ -348,7 +358,7 @@ namespace Confuser.Renamer {
 			.Concat(Enumerable.Range(0x200b, 5).Select(ord => (char)ord))
 			.Concat(Enumerable.Range(0x2029, 6).Select(ord => (char)ord))
 			.Concat(Enumerable.Range(0x206a, 6).Select(ord => (char)ord))
-			.Except(new[] { '\u2029' })
+			.Except(new[] {'\u2029'})
 			.ToArray();
 
 		#endregion
@@ -361,8 +371,11 @@ namespace Confuser.Renamer {
 			return context.Annotations.GetLazy(obj, ReferencesKey, key => new List<INameReference>());
 		}
 
-		public string GetOriginalFullName(IDnlibDef obj) =>
-			context.Annotations.Get(obj, OriginalFullNameKey, (string)null) ?? ExtractActualName(obj);
+		public string GetDisplayName(IDnlibDef obj) =>
+			context.Annotations.Get(obj, DisplayNameKey, (string)null);
+
+		public string GetNormalizedName(IDnlibDef obj) =>
+			context.Annotations.Get(obj, NormalizedNameKey, (string)null);
 
 		public IReadOnlyDictionary<string, string> GetNameMap() => _obfuscatedToOriginalNameMap;
 
@@ -370,49 +383,62 @@ namespace Confuser.Renamer {
 
 		public void SetIsRenamed(IDnlibDef def) => context.Annotations.Set(def, IsRenamedKey, true);
 
-		string ExtractActualName(IDnlibDef dnlibDef, bool forceShortNames = false) {
+		DisplayNormalizedName ExtractDisplayNormalizedName(IDnlibDef dnlibDef, bool forceShortNames = false) {
 			var shortNames = forceShortNames ||
 			                 GetParam(dnlibDef, "shortNames")?.Equals("true", StringComparison.OrdinalIgnoreCase) ==
 			                 true;
 			var renameMode = GetRenameMode(dnlibDef);
 
 			if (dnlibDef is TypeDef typeDef) {
-				return typeDef.DeclaringType != null
-					? $"{CompressTypeName(typeDef.DeclaringType.FullName, renameMode)}/{dnlibDef.Name}"
-					: dnlibDef.FullName;
+				if (typeDef.DeclaringType != null) {
+					var outerClassName = CompressTypeName(typeDef.DeclaringType.FullName, renameMode);
+					return
+						new DisplayNormalizedName(dnlibDef.FullName, $"{outerClassName.NormalizedName}/{dnlibDef.Name}");
+				}
+
+				return new DisplayNormalizedName(dnlibDef.FullName, dnlibDef.FullName);
 			}
 
-			if (shortNames) {
-				return dnlibDef.Name;
-			}
-
-			var resultBuilder = new StringBuilder();
+			var displayNameBuilder = new StringBuilder();
+			var normalizedNameBuilder = new StringBuilder();
 			if (dnlibDef is IMemberDef memberDef) {
 				var declaringTypeName = CompressTypeName(memberDef.DeclaringType?.FullName ?? "", renameMode);
-				resultBuilder.Append(declaringTypeName);
-				resultBuilder.Append("::");
-				resultBuilder.Append(dnlibDef.Name);
+
+				displayNameBuilder.Append(declaringTypeName.DisplayName);
+				displayNameBuilder.Append("::");
+				displayNameBuilder.Append(dnlibDef.Name);
+
+				normalizedNameBuilder.Append(declaringTypeName.NormalizedName);
+				normalizedNameBuilder.Append("::");
+				normalizedNameBuilder.Append(dnlibDef.Name);
 
 				if (memberDef is MethodDef methodDef) {
-					resultBuilder.Append('(');
+					displayNameBuilder.Append('(');
+					normalizedNameBuilder.Append('(');
 					if (methodDef.Signature is MethodSig methodSig) {
 						var methodParams = methodSig.Params;
 						for (var index = 0; index < methodParams.Count; index++) {
-							resultBuilder.Append(CompressTypeName(methodParams[index].ToString(), renameMode));
+							var parameterName = CompressTypeName(methodParams[index].ToString(), renameMode);
+							displayNameBuilder.Append(parameterName.DisplayName);
+							normalizedNameBuilder.Append(parameterName.NormalizedName);
+
 							if (index < methodParams.Count - 1) {
-								resultBuilder.Append(',');
+								displayNameBuilder.Append(',');
+								normalizedNameBuilder.Append(',');
 							}
 						}
 					}
 
-					resultBuilder.Append(')');
+					displayNameBuilder.Append(')');
+					normalizedNameBuilder.Append(')');
 				}
 			}
 
-			return resultBuilder.ToString();
+			return new DisplayNormalizedName(displayNameBuilder.ToString(),
+				shortNames ? dnlibDef.Name.ToString() : normalizedNameBuilder.ToString());
 		}
 
-		string CompressTypeName(string typeName, RenameMode renameMode)
+		DisplayNormalizedName CompressTypeName(string typeName, RenameMode renameMode)
 		{
 			if (renameMode == RenameMode.Reversible)
 			{
@@ -423,10 +449,10 @@ namespace Confuser.Renamer {
 					_prefixesMap.Add(typeName, prefix);
 				}
 
-				return prefix;
+				return new DisplayNormalizedName(typeName, prefix);
 			}
 
-			return typeName;
+			return new DisplayNormalizedName(typeName, typeName);
 		}
 	}
 }

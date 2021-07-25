@@ -38,8 +38,9 @@ namespace Confuser.Renamer {
 					foreach (var res in module.Resources)
 						service.AddReservedIdentifier(res.Name);
 				}
-				else
-					service.SetOriginalName(def);
+				else {
+					service.StoreNames(def);
+				}
 
 				if (def is TypeDef typeDef) {
 					service.GetVTables().GetVTable(typeDef);
