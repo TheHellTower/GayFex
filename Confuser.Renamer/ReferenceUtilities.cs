@@ -8,7 +8,7 @@ namespace Confuser.Renamer {
 				return builder.AppendHashedIdentifier("Name", def.FullName);
 
 			builder.Append("Original Name").Append(": ");
-			builder.Append(nameService.GetOriginalFullName(def));
+			builder.Append(nameService.GetDisplayName(def));
 			builder.Append("; ");
 			return builder.AppendHashedIdentifier("Name", def.FullName);
 		}

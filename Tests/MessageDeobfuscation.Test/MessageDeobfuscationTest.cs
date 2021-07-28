@@ -26,13 +26,52 @@ namespace MessageDeobfuscation.Test {
 			await Run(
 				"MessageDeobfuscation.exe",
 				expectedObfuscatedOutput,
-				new SettingItem<Protection>("rename") {["mode"] = renameMode},
+				new SettingItem<Protection>("rename") { ["mode"] = renameMode },
 				$"SymbolsMap_{renameMode}",
 				seed: "1234",
 				postProcessAction: outputPath => {
-					var messageDeobfuscator = MessageDeobfuscator.Load(Path.Combine(outputPath, "symbols.map"));
-					var deobfuscated = messageDeobfuscator.Deobfuscate(string.Join(Environment.NewLine, expectedObfuscatedOutput));
-					Assert.Equal(_expectedDeobfuscatedOutput, deobfuscated);
+					var deobfuscator = MessageDeobfuscator.Load(Path.Combine(outputPath, "symbols.map"));
+					var deobfuscatedMessage =
+						deobfuscator.DeobfuscateMessage(string.Join(Environment.NewLine, expectedObfuscatedOutput));
+
+					string classId, nestedClassId, methodId, fieldId, propertyId, eventId;
+					if (renameMode == nameof(RenameMode.Decodable)) {
+						classId = "_OokpKOmal5JNZMPvSAFgHLHjBke";
+						nestedClassId = "_tc5CFDIJ2J9Fx3ehd3sgjTMAxCaA";
+						methodId = "_zbgDV4jbK6Oi9WBq66uG2ct7IoRA";
+						fieldId = "_QHxqC1xaBFmUQawCZSOQpattICo";
+						propertyId = "_FJthtfOBOiQFgVDIymbi3wwJoeN";
+						eventId = "_cbPBZqkDuaNXOkmJtacrG2uYfZs";
+					}
+					else {
+						classId = "_g";
+						nestedClassId = "_e";
+						methodId = "_C";
+						fieldId = "_d";
+						propertyId = "_E";
+						eventId = "_b";
+					}
+
+					void CheckName(string expectedFullName, string expectedShortName, string obfuscatedName) {
+						var fullName = deobfuscator.DeobfuscateSymbol(obfuscatedName, false);
+						Assert.Equal(expectedFullName, fullName);
+						Assert.Equal(expectedShortName, MessageDeobfuscator.ExtractShortName(fullName));
+					}
+
+					CheckName("MessageDeobfuscation.Class", "MessageDeobfuscation.Class",
+						classId);
+					CheckName("MessageDeobfuscation.Class/NestedClass", "NestedClass",
+						nestedClassId);
+					CheckName("MessageDeobfuscation.Class::Method(System.String,System.Int32)", "Method",
+						methodId);
+					CheckName("MessageDeobfuscation.Class::Field", "Field",
+						fieldId);
+					CheckName("MessageDeobfuscation.Class::Property", "Property",
+						propertyId);
+					CheckName("MessageDeobfuscation.Class::Event", "Event",
+						eventId);
+
+					Assert.Equal(_expectedDeobfuscatedOutput, deobfuscatedMessage);
 					return Task.Delay(0);
 				}
 			);
@@ -50,9 +89,9 @@ namespace MessageDeobfuscation.Test {
 				new object[] {
 					nameof(RenameMode.Sequential),
 					new[] {
-					"Exception",
-					"   at _A._C._b(String )",
-					"   at _B._c()"
+						"Exception",
+						"   at _g._e._c(String )",
+						"   at _B._f()"
 					}
 				}
 			};
@@ -63,19 +102,36 @@ namespace MessageDeobfuscation.Test {
 		public async Task MessageDeobfuscationWithPassword() {
 			var expectedObfuscatedOutput = new[] {
 				"Exception",
-				"   at oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8.V1M$X52eDxP6ElgdFrRDlF0KSZU31AmQaiXXgzyoeJJ4KV64JBpi0Bh25Xdje$vCxw.fUHV$KyBiFTUH0$GNDHVx6XvtlZWHnzVgRO9N2M$jw5ysYWJWaUSMQYtPDT$wa$6MarZQoNxnbR_9cn$A2XXvRY(String )",
-				"   at EbUjRcrC76NnA7RJlhQffrfp$vMGHdDfqtVFtWrAOPyD.swzvaIVl3W8yDi8Ii3P1j_V9JC8eVu2JgvNNjeVDYc4bOHH37cCBf0_3URE_8UcWPQ()"
+				"   at oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8.CE8t0VDPQk9$jgv1XuRwt1k.FhsPrCLqIAaPKe7abGklvY4(String )",
+				"   at EbUjRcrC76NnA7RJlhQffrfp$vMGHdDfqtVFtWrAOPyD.xgIw9voebB21PlxPFA_hs60()"
 			};
 			string password = "password";
 			await Run(
 				"MessageDeobfuscation.exe",
 				expectedObfuscatedOutput,
-				new SettingItem<Protection>("rename") {["mode"] = "reversible", ["password"] = password},
+				new SettingItem<Protection>("rename") {
+					["mode"] = "reversible",
+					["password"] = password,
+					["renPdb"] = "true"
+				},
 				"Password",
 				postProcessAction: outputPath => {
-					var messageDeobfuscator = new MessageDeobfuscator(password);
-					var deobfuscated = messageDeobfuscator.Deobfuscate(string.Join(Environment.NewLine, expectedObfuscatedOutput));
-					Assert.Equal(_expectedDeobfuscatedOutput, deobfuscated);
+					var deobfuscator = new MessageDeobfuscator(password);
+					var deobfuscatedMessage = deobfuscator.DeobfuscateMessage(string.Join(Environment.NewLine, expectedObfuscatedOutput));
+
+					void CheckName(string expectedName, string obfuscatedName) {
+						var name = deobfuscator.DeobfuscateSymbol(obfuscatedName, true);
+						Assert.Equal(expectedName, name);
+					}
+
+					CheckName("MessageDeobfuscation.Class", "oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8");
+					CheckName("NestedClass", "CE8t0VDPQk9$jgv1XuRwt1k");
+					CheckName("Method", "jevJU4p4yNrAYGqN7GkRWaI");
+					CheckName("Field", "3IS4xsnUsvDQZop6e4WmNVw");
+					CheckName("Property", "917VMBMNYHd0kfnnNkgeJ10");
+					CheckName("Event", "AIyINk7kgFLFc73Md8Nu8Z0");
+
+					Assert.Equal(_expectedDeobfuscatedOutput, deobfuscatedMessage);
 					return Task.Delay(0);
 				}
 			);

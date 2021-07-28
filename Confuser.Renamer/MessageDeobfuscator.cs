@@ -5,8 +5,8 @@ using System.Text.RegularExpressions;
 
 namespace Confuser.Renamer {
 	public class MessageDeobfuscator {
-		static readonly Regex MapSymbolMatcher = new Regex("_[a-zA-Z0-9]+");
-		static readonly Regex PasswordSymbolMatcher = new Regex("[a-zA-Z0-9_$]{23,}");
+		static readonly Regex MapSymbolRegex = new Regex("_[a-zA-Z0-9]+");
+		static readonly Regex PasswordSymbolRegex = new Regex("[a-zA-Z0-9_$]{23,}");
 
 		readonly Dictionary<string, string> _symbolMap;
 		readonly ReversibleRenamer _renamer;
@@ -34,32 +34,34 @@ namespace Confuser.Renamer {
 
 		public MessageDeobfuscator(string password) => _renamer = new ReversibleRenamer(password);
 
-		public string Deobfuscate(string obfuscatedMessage) {
+		public string DeobfuscateMessage(string message) {
 			if (_symbolMap != null) {
-				return MapSymbolMatcher.Replace(obfuscatedMessage, DecodeSymbolMap);
+				return MapSymbolRegex.Replace(message, m => DeobfuscateSymbol(m.Value, true));
 			}
 
-			return PasswordSymbolMatcher.Replace(obfuscatedMessage, DecodeSymbolPassword);
+			return PasswordSymbolRegex.Replace(message, m => DeobfuscateSymbol(m.Value, true));
 		}
 
-		string DecodeSymbolMap(Match match) {
-			var symbol = match.Value;
-			if (_symbolMap.TryGetValue(symbol, out string result))
-				return ExtractShortName(result);
-			return ExtractShortName(symbol);
-		}
+		public string DeobfuscateSymbol(string obfuscatedIdentifier, bool shortName) {
+			string fullName;
 
-		string DecodeSymbolPassword(Match match) {
-			var sym = match.Value;
-			try {
-				return ExtractShortName(_renamer.Decrypt(sym));
+			if (_symbolMap != null) {
+				if (!_symbolMap.TryGetValue(obfuscatedIdentifier, out fullName))
+					fullName = obfuscatedIdentifier;
 			}
-			catch {
-				return sym;
+			else {
+				try {
+					fullName = _renamer.Decrypt(obfuscatedIdentifier);
+				}
+				catch {
+					fullName = obfuscatedIdentifier;
+				}
 			}
+
+			return shortName ? ExtractShortName(fullName) : fullName;
 		}
 
-		static string ExtractShortName(string fullName) {
+		public static string ExtractShortName(string fullName) {
 			const string doubleParen = "::";
 			int doubleParenIndex = fullName.IndexOf(doubleParen, StringComparison.Ordinal);
 			if (doubleParenIndex != -1) {

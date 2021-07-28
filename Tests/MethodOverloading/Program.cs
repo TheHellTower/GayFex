@@ -21,6 +21,12 @@ namespace MethodOverloading {
 		public string Method(string param) => param;
 
 		public virtual string VirtualMethod() => "BaseClassVirtualMethod";
+
+		public string Field = "field";
+
+		public string Property => "property";
+
+		public event EventHandler<string> Event;
 	}
 
 	public class Class : BaseClass, IInterface {
