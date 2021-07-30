@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RootNamespace>MixedCultureCasing.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+    <ProjectReference Include="..\389_MixedCultureCasing\389_MixedCultureCasing.csproj" />
+  </ItemGroup>
+
+</Project>
