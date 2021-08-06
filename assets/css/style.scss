@@ -1,10 +1,16 @@
 ---
 ---
-@import "{{ site.theme }}";
+//@import "{{ site.theme }}";
+
+body {
+  padding-bottom: 70px;
+  line-height: 1.7;
+}
 
 .a-right {
   text-align: right;
 }
+
 .back-to-top {
   font-size: 12px;
   text-decoration: none;
