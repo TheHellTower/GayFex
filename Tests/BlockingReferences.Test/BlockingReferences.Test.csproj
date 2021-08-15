@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net461</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BlockingReferences\BlockingReferences.csproj" />
+      <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+    </ItemGroup>
+</Project>
