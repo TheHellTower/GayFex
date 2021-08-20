@@ -16,6 +16,9 @@ namespace MessageDeobfuscation.Test {
 			"   at MessageDeobfuscation.Class.NestedClass.Method(String )",
 			"   at MessageDeobfuscation.Program.Main()");
 
+		const string Password = "password";
+		const string Seed = "seed";
+
 		public MessageDeobfuscationTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
 		[Theory]
@@ -87,14 +90,52 @@ namespace MessageDeobfuscation.Test {
 					}
 				},
 				new object[] {
-					nameof(RenameMode.Sequential),
-					new[] {
+					nameof(RenameMode.Sequential), new[] {
 						"Exception",
 						"   at _g._e._c(String )",
 						"   at _B._f()"
 					}
 				}
 			};
+
+		[Fact]
+		[Trait("Category", "Protection")]
+		public async Task CheckGeneratedPassword() {
+			string actualPassword1 = null, actualPassword2 = null;
+			await RunDeobfuscationWithPassword(true, null, "_0", Array.Empty<string>(),
+				outputPath => {
+				actualPassword1 = File.ReadAllText(Path.Combine(outputPath, CoreComponent.PasswordFileName));
+				Assert.True(Guid.TryParse(actualPassword1, out _));
+				return Task.Delay(0);
+			});
+			await RunDeobfuscationWithPassword(true, null, "_1", Array.Empty<string>(),
+				outputPath => {
+				actualPassword2 = File.ReadAllText(Path.Combine(outputPath, CoreComponent.PasswordFileName));
+				Assert.True(Guid.TryParse(actualPassword2, out _));
+				return Task.Delay(0);
+			});
+			Assert.NotEqual(actualPassword1, actualPassword2);
+		}
+
+		[Fact]
+		[Trait("Category", "Protection")]
+		public async Task CheckPasswordDependsOnSeed() {
+			var expectedObfuscatedOutput = new[] {
+				"Exception",
+				"   at oZuuchQgRo99FxO43G5kj2LB6aE3b$hsLiIOVL3cn0lg.CN9UQGJKgUbt4OKGBs8_vig.FtV6w7kWA1GcUNTnc2UDptg(String )",
+				"   at EcGxTPKtKIEeZuP3ekjPVhrVKQsiovm5zMkq5xfZbt1V.xvkt0Ir5VfNl8phozRzOvg8()"
+			};
+			await RunDeobfuscationWithPassword(true, Seed, "_0", expectedObfuscatedOutput,
+				outputPath => {
+					Assert.Equal(Seed, File.ReadAllText(Path.Combine(outputPath, CoreComponent.PasswordFileName)));
+				return Task.Delay(0);
+			});
+			await RunDeobfuscationWithPassword(true, Seed, "_1", expectedObfuscatedOutput,
+				outputPath => {
+					Assert.Equal(Seed, File.ReadAllText(Path.Combine(outputPath, CoreComponent.PasswordFileName)));
+				return Task.Delay(0);
+			});
+		}
 
 		[Fact]
 		[Trait("Category", "Protection")]
@@ -105,36 +146,41 @@ namespace MessageDeobfuscation.Test {
 				"   at oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8.CE8t0VDPQk9$jgv1XuRwt1k.FhsPrCLqIAaPKe7abGklvY4(String )",
 				"   at EbUjRcrC76NnA7RJlhQffrfp$vMGHdDfqtVFtWrAOPyD.xgIw9voebB21PlxPFA_hs60()"
 			};
-			string password = "password";
-			await Run(
-				"MessageDeobfuscation.exe",
-				expectedObfuscatedOutput,
-				new SettingItem<Protection>("rename") {
-					["mode"] = "reversible",
-					["password"] = password,
-					["renPdb"] = "true"
-				},
-				"Password",
-				postProcessAction: outputPath => {
-					var deobfuscator = new MessageDeobfuscator(password);
-					var deobfuscatedMessage = deobfuscator.DeobfuscateMessage(string.Join(Environment.NewLine, expectedObfuscatedOutput));
+			await RunDeobfuscationWithPassword(false, null, "", expectedObfuscatedOutput, outputPath => {
+				var deobfuscator = new MessageDeobfuscator(Password);
+				var deobfuscatedMessage =
+					deobfuscator.DeobfuscateMessage(string.Join(Environment.NewLine, expectedObfuscatedOutput));
 
-					void CheckName(string expectedName, string obfuscatedName) {
-						var name = deobfuscator.DeobfuscateSymbol(obfuscatedName, true);
-						Assert.Equal(expectedName, name);
-					}
-
-					CheckName("MessageDeobfuscation.Class", "oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8");
-					CheckName("NestedClass", "CE8t0VDPQk9$jgv1XuRwt1k");
-					CheckName("Method", "jevJU4p4yNrAYGqN7GkRWaI");
-					CheckName("Field", "3IS4xsnUsvDQZop6e4WmNVw");
-					CheckName("Property", "917VMBMNYHd0kfnnNkgeJ10");
-					CheckName("Event", "AIyINk7kgFLFc73Md8Nu8Z0");
-
-					Assert.Equal(_expectedDeobfuscatedOutput, deobfuscatedMessage);
-					return Task.Delay(0);
+				void CheckName(string expectedName, string obfuscatedName) {
+					var name = deobfuscator.DeobfuscateSymbol(obfuscatedName, true);
+					Assert.Equal(expectedName, name);
 				}
-			);
+
+				CheckName("MessageDeobfuscation.Class", "oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8");
+				CheckName("NestedClass", "CE8t0VDPQk9$jgv1XuRwt1k");
+				CheckName("Method", "jevJU4p4yNrAYGqN7GkRWaI");
+				CheckName("Field", "3IS4xsnUsvDQZop6e4WmNVw");
+				CheckName("Property", "917VMBMNYHd0kfnnNkgeJ10");
+				CheckName("Event", "AIyINk7kgFLFc73Md8Nu8Z0");
+
+				Assert.Equal(_expectedDeobfuscatedOutput, deobfuscatedMessage);
+				return Task.Delay(0);
+			});
 		}
+
+		async Task RunDeobfuscationWithPassword(bool generatePassword, string seed, string suffix,
+			string[] expectedObfuscatedOutput, Func<string, Task> postProcessAction) => await Run(
+			"MessageDeobfuscation.exe",
+			expectedObfuscatedOutput,
+			new SettingItem<Protection>("rename") {
+				["mode"] = "reversible",
+				["password"] = Password,
+				["generatePassword"] = generatePassword.ToString()
+			},
+			$"Password_{(generatePassword ? $"Random{(seed != null ? "_Seed" : "")}{suffix}" : $"Hardcoded{suffix}")}",
+			checkOutput: !generatePassword || seed != null,
+			seed: seed,
+			postProcessAction: postProcessAction
+		);
 	}
 }

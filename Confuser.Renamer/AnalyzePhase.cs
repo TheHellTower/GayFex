@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Confuser.Core;
+using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
 using dnlib.DotNet;
 
@@ -30,6 +33,7 @@ namespace Confuser.Renamer {
 
 		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
 			var service = (NameService)context.Registry.GetService<INameService>();
+
 			context.Logger.Debug("Building VTables & identifier list...");
 
 			foreach (ModuleDef moduleDef in parameters.Targets.OfType<ModuleDef>())
@@ -147,9 +151,21 @@ namespace Confuser.Renamer {
 			else if (def is EventDef)
 				Analyze(service, context, parameters, (EventDef)def);
 			else if (def is ModuleDef) {
-				var pass = parameters.GetParameter<string>(context, def, "password", null);
-				if (pass != null)
-					service.reversibleRenamer = new ReversibleRenamer(pass);
+				var renamingMode = parameters.GetParameter<RenameMode>(context, def, "mode");
+				if (renamingMode == RenameMode.Reversible && service.reversibleRenamer == null) {
+					var generatePassword = parameters.GetParameter<bool>(context, def, "generatePassword");
+					var password = parameters.GetParameter<string>(context, def, "password");
+					if (generatePassword || password == null) {
+						password = context.Registry.GetService<IRandomService>().SeedString;
+					}
+					string dir = context.OutputDirectory;
+					string path = Path.GetFullPath(Path.Combine(dir, CoreComponent.PasswordFileName));
+					if (!Directory.Exists(dir))
+						Directory.CreateDirectory(dir);
+					File.WriteAllText(path, password);
+					service.reversibleRenamer = new ReversibleRenamer(password);
+				}
+
 				service.SetCanRename(def, false);
 			}
 

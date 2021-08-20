@@ -61,8 +61,8 @@ namespace Confuser.Renamer {
 				if (map.Count == 0)
 					return;
 
-				string path = Path.GetFullPath(Path.Combine(context.OutputDirectory, "symbols.map"));
-				string dir = Path.GetDirectoryName(path);
+				string dir = context.OutputDirectory;
+				string path = Path.GetFullPath(Path.Combine(dir, CoreComponent.SymbolsFileName));
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
 

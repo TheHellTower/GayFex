@@ -5,11 +5,11 @@ using System.Text;
 
 namespace Confuser.Renamer {
 	public class ReversibleRenamer {
-		readonly RijndaelManaged cipher;
+		readonly Aes cipher;
 		readonly byte[] key;
 
 		public ReversibleRenamer(string password) {
-			cipher = new RijndaelManaged();
+			cipher = Aes.Create();
 			using (var sha = SHA256.Create())
 				cipher.Key = key = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
 		}

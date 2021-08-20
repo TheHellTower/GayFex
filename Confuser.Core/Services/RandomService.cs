@@ -36,11 +36,7 @@ namespace Confuser.Core.Services {
 		/// <param name="seed">The seed data.</param>
 		/// <returns>The seed buffer.</returns>
 		internal static byte[] Seed(string seed) {
-			byte[] ret;
-			if (!string.IsNullOrEmpty(seed))
-				ret = Utils.SHA256(Encoding.UTF8.GetBytes(seed));
-			else
-				ret = Utils.SHA256(Guid.NewGuid().ToByteArray());
+			byte[] ret = Utils.SHA256(!string.IsNullOrEmpty(seed) ? Encoding.UTF8.GetBytes(seed) : Guid.NewGuid().ToByteArray());
 
 			for (int i = 0; i < 32; i++) {
 				ret[i] *= primes[i % primes.Length];
@@ -224,12 +220,15 @@ namespace Confuser.Core.Services {
 	internal class RandomService : IRandomService {
 		readonly byte[] seed; //32 bytes
 
+		public string SeedString { get; }
+
 		/// <summary>
 		///     Initializes a new instance of the <see cref="RandomService" /> class.
 		/// </summary>
 		/// <param name="seed">The project seed.</param>
 		public RandomService(string seed) {
-			this.seed = RandomGenerator.Seed(seed);
+			SeedString = string.IsNullOrEmpty(seed) ? Guid.NewGuid().ToString() : seed;
+			this.seed = RandomGenerator.Seed(SeedString);
 		}
 
 		/// <inheritdoc />
@@ -255,5 +254,7 @@ namespace Confuser.Core.Services {
 		/// <returns>The requested RNG.</returns>
 		/// <exception cref="System.ArgumentNullException"><paramref name="id" /> is <c>null</c>.</exception>
 		RandomGenerator GetRandomGenerator(string id);
+
+		string SeedString { get; }
 	}
 }

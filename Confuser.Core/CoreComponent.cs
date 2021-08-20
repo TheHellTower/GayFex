@@ -37,6 +37,9 @@ namespace Confuser.Core {
 		/// </summary>
 		public const string _APIStoreId = "Confuser.APIStore";
 
+		public const string SymbolsFileName = "symbols.map";
+		public const string PasswordFileName = "password";
+
 		readonly Marker marker;
 		readonly ConfuserContext _context;
 
