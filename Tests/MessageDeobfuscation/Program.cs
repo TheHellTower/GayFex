@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Threading;
 
 namespace MessageDeobfuscation {
 	class Class {
@@ -11,15 +13,16 @@ namespace MessageDeobfuscation {
 		public event EventHandler<string> Event;
 
 		public class NestedClass {
-			internal string Method(string param) {
-				throw new Exception($"Exception");
-				return "";
-			}
+			internal string Method(string param) => throw new Exception($"Exception");
 		}
 	}
 
 	public class Program {
 		public static int Main() {
+			// Setting the culture is required, to get a consistent error output
+			Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+			Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
 			Console.WriteLine("START");
 			try {
 				new Class.NestedClass().Method("param");
