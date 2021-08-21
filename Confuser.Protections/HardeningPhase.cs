@@ -20,7 +20,7 @@ namespace Confuser.Protections {
 		public override string Name => "Hardening Phase";
 
 		/// <inheritdoc />
-		public override bool ProcessAll => true;
+		public override bool ProcessAll => false;
 
 		/// <inheritdoc />
 		protected override void Execute(ConfuserContext context, ProtectionParameters parameters) {
