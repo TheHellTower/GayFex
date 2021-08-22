@@ -2,6 +2,7 @@
 using Confuser.Core;
 
 namespace Confuser.Protections {
+	[AfterProtection(AntiTamperProtection._FullId)]
 	[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global", Justification = "Instantiated by reflection.")]
 	internal sealed class HardeningProtection : Protection {
 		/// <inheritdoc />

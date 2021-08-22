@@ -16,8 +16,21 @@ namespace ClrProtection.Test {
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/244")]
 		public Task AntiTamperProtection() => Run(
 			"244_ClrProtection.exe",
-			Array.Empty<String>(),
+			TestOutput,
 			new SettingItem<Protection>("anti tamper"),
+			$"_{nameof(AntiTamperProtection)}");
+
+		[Fact]
+		[Trait("Category", "Protection")]
+		[Trait("Protection", "anti tamper")]
+		[Trait("Protection", "harden")]
+		public Task AntiTamperProtectionHarden() => Run(
+			"244_ClrProtection.exe",
+			TestOutput,
+			new [] {
+				new SettingItem<Protection>("anti tamper"),
+				new SettingItem<Protection>("harden")
+			},
 			$"_{nameof(AntiTamperProtection)}");
 
 		[Fact]
@@ -26,7 +39,7 @@ namespace ClrProtection.Test {
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/244")]
 		public Task ResourceProtection() => Run(
 			"244_ClrProtection.exe",
-			Array.Empty<String>(),
+			TestOutput,
 			new SettingItem<Protection>("resources"),
 			$"_{nameof(ResourceProtection)}");
 
@@ -36,7 +49,7 @@ namespace ClrProtection.Test {
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/244")]
 		public Task TypeScrambleProtection() => Run(
 			"244_ClrProtection.exe",
-			Array.Empty<String>(),
+			TestOutput,
 			new SettingItem<Protection>("typescramble"),
 			$"_{nameof(TypeScrambleProtection)}");
 
@@ -47,8 +60,10 @@ namespace ClrProtection.Test {
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/244")]
 		public Task AntiTamperResourceProtection() => Run(
 			"244_ClrProtection.exe",
-			Array.Empty<String>(),
+			TestOutput,
 			new[] {new SettingItem<Protection>("anti tamper"), new SettingItem<Protection>("resources") },
 			$"_{nameof(AntiTamperResourceProtection)}");
+
+		private static string[] TestOutput { get; } = new[] {"From native method"};
 	}
 }

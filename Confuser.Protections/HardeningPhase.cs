@@ -46,7 +46,7 @@ namespace Confuser.Protections {
 				if (!marker.IsMarked(targetMethod) || !(marker.GetHelperParent(targetMethod) is Protection protection)) continue;
 
 				// Resource protection needs to rewrite the method during the write phase. Not compatible!
-				if (protection.FullId.Equals(ResourceProtection._FullId)) continue; 
+				if (protection.FullId.Equals(ResourceProtection._FullId)) continue;
 
 				cctor.Body.MergeCall(instructions[i]);
 				targetMethod.DeclaringType.Methods.Remove(targetMethod);
