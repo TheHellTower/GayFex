@@ -47,12 +47,12 @@ namespace MessageDeobfuscation.Test {
 						eventId = "_cbPBZqkDuaNXOkmJtacrG2uYfZs";
 					}
 					else {
-						classId = "_g";
-						nestedClassId = "_e";
-						methodId = "_C";
-						fieldId = "_d";
-						propertyId = "_E";
-						eventId = "_b";
+						classId = "_F";
+						nestedClassId = "_D";
+						methodId = "_c";
+						fieldId = "_C";
+						propertyId = "_e";
+						eventId = "_A";
 					}
 
 					void CheckName(string expectedFullName, string expectedShortName, string obfuscatedName) {
@@ -92,8 +92,8 @@ namespace MessageDeobfuscation.Test {
 				new object[] {
 					nameof(RenameMode.Sequential), new[] {
 						"Exception",
-						"   at _g._e._c(String )",
-						"   at _B._f()"
+						"   at _F._D._B(String )",
+						"   at _b._E()"
 					}
 				}
 			};
@@ -122,8 +122,8 @@ namespace MessageDeobfuscation.Test {
 		public async Task CheckPasswordDependsOnSeed() {
 			var expectedObfuscatedOutput = new[] {
 				"Exception",
-				"   at oZuuchQgRo99FxO43G5kj2LB6aE3b$hsLiIOVL3cn0lg.CN9UQGJKgUbt4OKGBs8_vig.FtV6w7kWA1GcUNTnc2UDptg(String )",
-				"   at EcGxTPKtKIEeZuP3ekjPVhrVKQsiovm5zMkq5xfZbt1V.xvkt0Ir5VfNl8phozRzOvg8()"
+				"   at oZuuchQgRo99FxO43G5kj2LB6aE3b$hsLiIOVL3cn0lg.98C7L64wnMJK6DFKHzyWSw8.at9I2jHJrbSIlewmDrNXdMI(String )",
+				"   at EcGxTPKtKIEeZuP3ekjPVhrVKQsiovm5zMkq5xfZbt1V.AiskF07vqbD8ZFG03Jyiiu8()"
 			};
 			await RunDeobfuscationWithPassword(true, Seed, "_0", expectedObfuscatedOutput,
 				outputPath => {
@@ -143,8 +143,8 @@ namespace MessageDeobfuscation.Test {
 		public async Task MessageDeobfuscationWithPassword() {
 			var expectedObfuscatedOutput = new[] {
 				"Exception",
-				"   at oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8.CE8t0VDPQk9$jgv1XuRwt1k.FhsPrCLqIAaPKe7abGklvY4(String )",
-				"   at EbUjRcrC76NnA7RJlhQffrfp$vMGHdDfqtVFtWrAOPyD.xgIw9voebB21PlxPFA_hs60()"
+				"   at oQmpV$y2k2b9P3d6GP1cxGPuRtKaNIZvZcKpZXSfKFG8.99_z9Rxdp_fWfuD3fr45FSA.at9DaPNMANuLaMV_3scPWDU(String )",
+				"   at EbUjRcrC76NnA7RJlhQffrfp$vMGHdDfqtVFtWrAOPyD.AkpOh$3Zo3M8ga5lTY9etcM()"
 			};
 			await RunDeobfuscationWithPassword(false, null, "", expectedObfuscatedOutput, outputPath => {
 				var deobfuscator = new MessageDeobfuscator(Password);

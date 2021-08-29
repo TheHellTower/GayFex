@@ -62,7 +62,8 @@ namespace Confuser.Renamer {
 
 		readonly HashSet<string> identifiers = new HashSet<string>();
 
-		readonly byte[] nameId = new byte[8];
+		long _nameId;
+		readonly StringBuilder _nameBuilder = new StringBuilder();
 		readonly Dictionary<string, string> _originalToObfuscatedNameMap = new Dictionary<string, string>();
 		readonly Dictionary<string, string> _obfuscatedToOriginalNameMap = new Dictionary<string, string>();
 		readonly Dictionary<string, string> _prefixesMap = new Dictionary<string, string>();
@@ -166,14 +167,6 @@ namespace Confuser.Renamer {
 			analyze.Analyze(this, context, ProtectionParameters.Empty, def, true);
 		}
 
-		void IncrementNameId() {
-			for (int i = nameId.Length - 1; i >= 0; i--) {
-				nameId[i]++;
-				if (nameId[i] != 0)
-					break;
-			}
-		}
-
 		string ObfuscateNameInternal(byte[] hash, RenameMode mode) {
 			switch (mode) {
 				case RenameMode.Empty:
@@ -187,11 +180,9 @@ namespace Confuser.Renamer {
 				case RenameMode.Reflection:
 					return Utils.EncodeString(hash, reflectionCharset);
 				case RenameMode.Decodable:
-					IncrementNameId();
 					return "_" + Utils.EncodeString(hash, alphaNumCharset);
 				case RenameMode.Sequential:
-					IncrementNameId();
-					return "_" + Utils.EncodeString(nameId, alphaNumCharset);
+					return "_" + GetNextSequentialName();
 				default:
 					throw new NotSupportedException("Rename mode '" + mode + "' is not supported.");
 			}
@@ -444,15 +435,24 @@ namespace Confuser.Renamer {
 			{
 				if (!_prefixesMap.TryGetValue(typeName, out string prefix))
 				{
-					IncrementNameId();
-					prefix = Utils.EncodeString(nameId, alphaNumCharset);
-					_prefixesMap.Add(typeName, prefix);
+					_prefixesMap.Add(typeName, GetNextSequentialName());
 				}
 
 				return new DisplayNormalizedName(typeName, prefix);
 			}
 
 			return new DisplayNormalizedName(typeName, typeName);
+		}
+
+		string GetNextSequentialName() {
+			var number = _nameId++;
+			var bigLength = (long)alphaNumCharset.Length;
+			_nameBuilder.Clear();
+			do {
+				number = Math.DivRem(number, bigLength, out var remainder);
+				_nameBuilder.Append(alphaNumCharset[remainder]);
+			} while (number != 0);
+			return _nameBuilder.ToString();
 		}
 	}
 }
