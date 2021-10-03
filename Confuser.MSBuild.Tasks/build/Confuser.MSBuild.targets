@@ -19,6 +19,11 @@
     <ConfuserProject Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).crproj')">$(MSBuildProjectDirectory)\$(MSBuildProjectName).crproj</ConfuserProject>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(ConfuserKeyFile)' != ''">
+    <ConfuserKeyFile Condition="!Exists('$(ConfuserKeyFile)')">$(MSBuildProjectDirectory)$(ConfuserKeyFile)</ConfuserKeyFile>
+    <ConfuserKeyFile Condition="!Exists('$(ConfuserKeyFile)')"></ConfuserKeyFile>
+  </PropertyGroup>
+
   <PropertyGroup>
     <ConfuserExDependsOn>
       CreateConfuserProject;
