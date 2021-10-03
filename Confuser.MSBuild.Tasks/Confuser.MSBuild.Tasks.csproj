@@ -11,7 +11,9 @@
 
   <PropertyGroup Label="Nuget Package Settings">
     <PackageId>Confuser.MSBuild</PackageId>
-    <PackageLicenseUrl>https://github.com/mkaring/ConfuserEx/blob/master/LICENSE.md</PackageLicenseUrl>
+    <Product>ConfuserEx - MSBuild Integration</Product>
+    <Description>This package contains the integration of ConfuserEx into the MSBuild build procedure. It allows automatically obfuscating the assemblies during the build.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/mkaring/ConfuserEx</PackageProjectUrl>
     <PackageTags>Obfuscation Confuser ConfuserEx</PackageTags>
     <DevelopmentDependency>true</DevelopmentDependency>
