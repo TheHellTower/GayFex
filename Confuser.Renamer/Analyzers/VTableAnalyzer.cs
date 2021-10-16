@@ -150,7 +150,9 @@ namespace Confuser.Renamer.Analyzers {
 				// Check if the discovered base type is the current type. If so, nothing needs to be done.
 				if (ReferenceEquals(basePropDef, discoveredBaseMemberDef)) return;
 
-				service.AddReference(basePropDef, new MemberSiblingReference(basePropDef, discoveredBaseMemberDef));
+				var reference = new MemberSiblingReference(basePropDef, discoveredBaseMemberDef);
+				service.AddReference(basePropDef, reference);
+				service.AddReference(discoveredBaseMemberDef, reference);
 				UpdateOldestSiblingReference(discoveredBaseMemberDef, basePropDef, service);
 			}
 		}
@@ -188,6 +190,7 @@ namespace Confuser.Renamer.Analyzers {
 		static void CreateOverrideReference(INameService service, IMemberDef thisMemberDef, IMemberDef baseMemberDef) {
 			var overrideRef = new MemberOverrideReference(thisMemberDef, baseMemberDef);
 			service.AddReference(thisMemberDef, overrideRef);
+			service.AddReference(baseMemberDef, overrideRef);
 
 			PropagateRenamingRestrictions(service, thisMemberDef, baseMemberDef);
 		}

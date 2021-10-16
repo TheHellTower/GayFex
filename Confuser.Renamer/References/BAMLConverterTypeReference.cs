@@ -26,7 +26,7 @@ namespace Confuser.Renamer.References {
 		}
 
 		/// <inheritdoc />
-		public bool DelayRenaming(INameService service) => false;
+		public bool DelayRenaming(INameService service, IDnlibDef currentDef) => false;
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
 			string name = sig.ReflectionName;
