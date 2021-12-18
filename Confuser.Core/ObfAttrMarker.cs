@@ -113,7 +113,8 @@ namespace Confuser.Core {
 						continue;
 
 					if (info.Condition == null && info.Exclude) {
-						if (type == ApplyInfoType.CurrentInfoOnly ||
+						if ((type == ApplyInfoType.ParentInfo && info.ApplyToMember) ||
+							type == ApplyInfoType.CurrentInfoOnly ||
 							(type == ApplyInfoType.CurrentInfoInherits && info.ApplyToMember)) {
 							settings.Clear();
 						}
