@@ -117,7 +117,7 @@ namespace ConfuserEx.ViewModel {
 			}
 			var module = new ProjectModuleVM(App.Project, new ProjectModule());
 			try {
-				module.Path = Confuser.Core.Utils.GetRelativePath(file, App.Project.BaseDirectory);
+				module.Path = Confuser.Core.Utils.GetRelativePath(file, App.Project.BaseDirectory) ?? file;
 			}
 			catch {
 				module.Path = file;

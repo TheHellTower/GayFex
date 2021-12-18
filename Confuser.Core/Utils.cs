@@ -71,19 +71,33 @@ namespace Confuser.Core {
 		/// <summary>
 		///     Obtains the relative path from the specified base path.
 		/// </summary>
-		/// <param name="filespec">The file path.</param>
-		/// <param name="folder">The base path.</param>
+		/// <param name="fileSpec">The file path.</param>
+		/// <param name="baseDirectory">The base path.</param>
 		/// <returns>The path of <paramref name="filespec" /> relative to <paramref name="folder" />.</returns>
-		public static string GetRelativePath(string filespec, string folder) {
-			//http://stackoverflow.com/a/703292/462805
+		public static string GetRelativePath(string fileSpec, string baseDirectory) {
+			if (fileSpec is null) throw new ArgumentNullException(nameof(fileSpec));
+			if (baseDirectory is null) throw new ArgumentNullException(nameof(fileSpec));
 
-			var pathUri = new Uri(filespec);
-			// Folders must end in a slash
-			if (!folder.EndsWith(Path.DirectorySeparatorChar.ToString())) {
-				folder += Path.DirectorySeparatorChar;
+			return GetRelativePath(new FileInfo(fileSpec), new DirectoryInfo(baseDirectory));
+		}
+
+		public static string GetRelativePath(FileInfo fileSpec, DirectoryInfo baseDirectory) {
+			if (fileSpec is null) throw new ArgumentNullException(nameof(fileSpec));
+			if (baseDirectory is null) throw new ArgumentNullException(nameof(fileSpec));
+
+			if (baseDirectory.FullName.EndsWith(Path.DirectorySeparatorChar.ToString())) {
+				baseDirectory = new DirectoryInfo(baseDirectory.FullName.TrimEnd(Path.DirectorySeparatorChar));
 			}
-			var folderUri = new Uri(folder);
-			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+
+			var relativePath = fileSpec.Name;
+			var currentDirectory = fileSpec.Directory;
+			while (!(currentDirectory is null) && !string.Equals(currentDirectory.FullName, baseDirectory.FullName, StringComparison.OrdinalIgnoreCase)) {
+				relativePath = currentDirectory.Name + Path.DirectorySeparatorChar + relativePath;
+				currentDirectory = currentDirectory.Parent;
+			}
+
+			if (currentDirectory is null) return null; //file is not inside the base directory
+			return relativePath;
 		}
 
 		/// <summary>
