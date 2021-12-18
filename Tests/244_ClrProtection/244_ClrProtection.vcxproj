@@ -25,8 +25,8 @@
     <RootNamespace>My244ClrProtection</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <PlatformToolset Condition="$(MSBuildVersion) &gt;= 16">v143</PlatformToolset>
-    <PlatformToolset Condition="$(MSBuildVersion) &lt; 16">v142</PlatformToolset>
+    <PlatformToolset Condition="$(MSBuildVersion) &gt;= 17">v143</PlatformToolset>
+    <PlatformToolset Condition="$(MSBuildVersion) &lt; 17">v142</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
