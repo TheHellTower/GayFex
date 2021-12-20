@@ -24,8 +24,10 @@ namespace Confuser.Protections.TypeScrambler.Scrambler.Rewriter.Instructions {
 
 			ModuleDef mod = method.Module;
 
-			var gettype = typeof(Type).GetMethod("GetTypeFromHandle");
-			var createInstance = typeof(Activator).GetMethod("CreateInstance", new Type[] { typeof(Type) });
+			var corlibType = mod.CorLibTypes.GetTypeRef("System", "Type").ResolveThrow();
+			var gettype = corlibType.FindMethod("GetTypeFromHandle");
+			var createInstance = mod.CorLibTypes.GetTypeRef("System", "Activator").ResolveThrow()
+				.FindMethod("CreateInstance", MethodSig.CreateStatic(mod.CorLibTypes.Object, corlibType.ToTypeSig()));
 
 			TypeSig sig = null;
 
