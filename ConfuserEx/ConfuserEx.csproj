@@ -18,7 +18,7 @@
 
   <ItemGroup Label="Nuget Dependencies">
     <PackageReference Include="MvvmLightLibs" Version="5.4.1.1" />
-    <PackageReference Include="Ookii.Dialogs.Wpf" Version="4.0.0" />
+    <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
   </ItemGroup>
   
   <ItemGroup Label="Project Dependencies">
