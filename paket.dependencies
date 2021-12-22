@@ -65,4 +65,5 @@ group TestTarget
   
   nuget Microsoft.Build.Framework
   nuget Microsoft.NETFramework.ReferenceAssemblies strategy: min
+  nuget Newtonsoft.Json
   nuget System.Text.RegularExpressions ~> 4 framework: >= net45

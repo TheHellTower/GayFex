@@ -145,17 +145,24 @@ namespace Confuser.Core {
 
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
 
-			logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
-			bool ok = ObfAttrParser.TryParse(protections, info.Settings, logger);
-			if (!ok) {
-				logger.LogWarning("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
-				return false;
-			}
+			if (!info.Exclude) {
+				logger.LogTrace("Parsing settings attribute: '{0}'", info.Settings);
 
-			if (!string.IsNullOrEmpty(attr.FeatureName))
-				throw new ArgumentException("Feature name must not be set. Owner=" + attr.Owner);
-			if (info.Exclude && (!string.IsNullOrEmpty(attr.FeatureName) || !string.IsNullOrEmpty(attr.FeatureValue))) {
-				throw new ArgumentException("Feature property cannot be set when Exclude is true. Owner=" + attr.Owner);
+				if (string.IsNullOrEmpty(info.Settings)) {
+					logger.LogWarning("Found empty rule in {0}.", attr.Owner);
+				} else { 
+					bool ok = ObfAttrParser.TryParse(protections, info.Settings, logger);
+					if (!ok) {
+						logger.LogWarning("Ignoring rule '{0}' in {1}.", info.Settings, attr.Owner);
+						return false;
+					}
+				}
+
+				if (!string.IsNullOrEmpty(attr.FeatureName))
+					throw new ArgumentException("Feature name must not be set. Owner=" + attr.Owner);
+				if (info.Exclude && (!string.IsNullOrEmpty(attr.FeatureName) || !string.IsNullOrEmpty(attr.FeatureValue))) {
+					throw new ArgumentException("Feature property cannot be set when Exclude is true. Owner=" + attr.Owner);
+				}
 			}
 
 			return true;

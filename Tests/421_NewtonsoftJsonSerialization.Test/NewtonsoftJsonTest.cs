@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
@@ -9,12 +10,14 @@ namespace NewtonsoftJsonSerialization.Test {
 	public class NewtonsoftJsonTest : TestBase {
 		public NewtonsoftJsonTest(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
-		[Fact]
+		[Theory]
+		[MemberData(nameof(NewtonsoftJsonAttributeDetectionData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/421")]
-		public async Task SignatureMismatch() =>
+		public async Task NewtonsoftJsonAttributeDetection(string framework) =>
 			await Run(
+				framework,
 				new[] {
 					"421_NewtonsoftJsonSerialization.exe",
 					"external:Newtonsoft.Json.dll"
@@ -25,5 +28,10 @@ namespace NewtonsoftJsonSerialization.Test {
 				},
 				new SettingItem<IProtection>("rename")
 			);
+
+		public static IEnumerable<object[]> NewtonsoftJsonAttributeDetectionData() {
+			foreach (var framework in "net35;net40;net471".Split(';'))
+				yield return new object[] { framework };
+		}
 	}
 }

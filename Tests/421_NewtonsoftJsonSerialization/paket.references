@@ -1,0 +1,3 @@
+group TestTarget
+  Microsoft.NETFramework.ReferenceAssemblies
+  Newtonsoft.Json
