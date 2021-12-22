@@ -89,9 +89,9 @@ namespace Confuser.UnitTest {
 				Directory.Delete(outputDir, true);
 			}
 
-			string firstFileName = GetFileName(inputFileNames[0]);
-			string entryInputFileName = Path.Combine(baseDir, firstFileName);
-			var entryOutputFileName = Path.Combine(outputDir, firstFileName);
+			string firstExecutable = inputFileNames.Select(GetFileName).First(n => n.EndsWith(".exe"));
+			string entryInputFileName = Path.Combine(baseDir, firstExecutable);
+			var entryOutputFileName = Path.Combine(outputDir, firstExecutable);
 			var proj = new ConfuserProject {
 				BaseDirectory = baseDir,
 				OutputDirectory = outputDir,
