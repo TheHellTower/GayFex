@@ -44,23 +44,23 @@ namespace Confuser.Renamer {
 			var targets = service.GetRandom().Shuffle(parameters.Targets);
 			var pdbDocs = new HashSet<string>();
 			foreach (IDnlibDef def in GetTargetsWithDelay(targets, context, service, logger)/*.WithProgress(logger)*/) {
-				if (def is ModuleDef && parameters.GetParameter(context, def, Parent.Parameters.RickRoll))
-					RickRoller.CommenceRickroll(context, (ModuleDef)def);
+				if (def is ModuleDef methodDef && parameters.GetParameter(context, def, Parent.Parameters.RickRoll))
+					RickRoller.CommenceRickroll(context, methodDef);
 
 				bool canRename = service.CanRename(context, def);
 				var mode = service.GetRenameMode(context, def);
 
 				if (def is MethodDef method) {
 					if ((canRename || method.IsConstructor) &&
-					    parameters.GetParameter(context, def, Parent.Parameters.RenameArguments)) {
+					    parameters.GetParameter(context, method, Parent.Parameters.RenameArguments)) {
 						foreach (var param in method.ParamDefs)
 							param.Name = null;
 					}
 
-					if (parameters.GetParameter(context, def, Parent.Parameters.RenamePdb) && method.HasBody) {
+					if (parameters.GetParameter(context, method, Parent.Parameters.RenamePdb) && method.HasBody) {
 						foreach (var instr in method.Body.Instructions) {
 							if (instr.SequencePoint != null && !pdbDocs.Contains(instr.SequencePoint.Document.Url)) {
-								instr.SequencePoint.Document.Url = service.ObfuscateName(method.Module,
+								instr.SequencePoint.Document.Url = service.ObfuscateName(
 									instr.SequencePoint.Document.Url, mode);
 								pdbDocs.Add(instr.SequencePoint.Document.Url);
 							}
@@ -68,7 +68,7 @@ namespace Confuser.Renamer {
 
 						foreach (var local in method.Body.Variables) {
 							if (!string.IsNullOrEmpty(local.Name))
-								local.Name = service.ObfuscateName(method.Module, local.Name, mode);
+								local.Name = service.ObfuscateName(local.Name, mode);
 						}
 
 						if (method.Body.HasPdbMethod)
@@ -88,29 +88,22 @@ namespace Confuser.Renamer {
 
 				if (def is TypeDef typeDef) {
 					if (parameters.GetParameter(context, def, Parent.Parameters.FlattenNamespace)) {
-						typeDef.Name = service.ObfuscateName(typeDef.Module, typeDef.FullName, mode);
 						typeDef.Namespace = "";
 					}
 					else {
-						var nsFormat = parameters.GetParameter(context, def, Parent.Parameters.NamespaceFormat);
-						typeDef.Namespace = service.ObfuscateName(nsFormat, typeDef.Module, typeDef.Namespace, mode);
-						typeDef.Name = service.ObfuscateName(typeDef.Module, typeDef.Name, mode);
+						var nsFormat = parameters.GetParameter(context, typeDef, Parent.Parameters.NamespaceFormat);
+						typeDef.Namespace = service.ObfuscateName(nsFormat, typeDef.Namespace, mode);
 					}
-
-					foreach (var param in typeDef.GenericParameters)
-						param.Name = ((char)(param.Number + 1)).ToString();
+					
+					typeDef.Name = service.ObfuscateName(context, typeDef, mode);
+					RenameGenericParameters(typeDef.GenericParameters);
 				}
-				else if (def is MethodDef methodDef) {
-					foreach (var param in methodDef.GenericParameters)
-						param.Name = ((char)(param.Number + 1)).ToString();
-
-					def.Name = service.ObfuscateName(methodDef.Module, def.Name, mode);
+				else if (def is MethodDef methodDef2) {
+					RenameGenericParameters(methodDef2.GenericParameters);
+					def.Name = service.ObfuscateName(context, methodDef2, mode);
 				}
-				else if (def is IOwnerModule ownerModuleDef)
-					def.Name = service.ObfuscateName(ownerModuleDef.Module, def.Name, mode);
 				else
-					throw new NotImplementedException("Unexpected implementation of IDnlibDef: " +
-					                                  def.GetType().FullName);
+					def.Name = service.ObfuscateName(context, def, mode);
 
 				int updatedReferences = -1;
 				do {
@@ -135,13 +128,19 @@ namespace Confuser.Renamer {
 			}
 		}
 
+		private static void RenameGenericParameters(IList<GenericParam> genericParams)
+		{
+			foreach (var param in genericParams)
+				param.Name = ((char) (param.Number + 1)).ToString();
+		}
+
 		private static IEnumerable<IDnlibDef> GetTargetsWithDelay(IImmutableList<IDnlibDef> definitions, IConfuserContext context, INameService service, ILogger logger) {
 			var delayedItems = ImmutableArray.CreateBuilder<IDnlibDef>();
 			var currentList = definitions;
 			var lastCount = -1;
 			while (currentList.Any()) {
 				foreach (var def in currentList) {
-					if (service.GetReferences(context, def).Any(r => r.DelayRenaming(context, service)))
+					if (service.GetReferences(context, def).Any(r => r.DelayRenaming(context, service, def)))
 						delayedItems.Add(def);
 					else
 						yield return def;

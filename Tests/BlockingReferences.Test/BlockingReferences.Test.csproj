@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>BlockingReferences.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ConfuserTestTargetProject Include="..\BlockingReferences\BlockingReferences.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+
+</Project>

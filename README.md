@@ -15,7 +15,7 @@ the features that are part of the new version 2.0 are still in development and m
 ## Features
 
 * Supported runtimes:
-  * .NET Framework 2.0 - 4.7.2
+  * .NET Framework 2.0 - 4.8
   * .NET Standard  1.0 - 2.0
   * .NET Core      1.0 - 2.2
 * Protections

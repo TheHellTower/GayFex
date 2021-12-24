@@ -121,9 +121,13 @@ namespace Confuser.Core.Services {
 				var encoder = new Encoder();
 				encoder.SetCoderProperties(propIDs, properties);
 				encoder.WriteCoderProperties(x);
-				long fileSize = data.Length;
-				for (int i = 0; i < 8; i++)
-					x.WriteByte((byte)(fileSize >> (8 * i)));
+
+				var length = BitConverter.GetBytes(data.Length);
+				if (!BitConverter.IsLittleEndian)
+					Array.Reverse(length);
+			
+				// Store 4 byte length value (little-endian)
+				x.Write(length, 0, sizeof(int));
 
 				ICodeProgress progress = null;
 				if (progressFunc != null)

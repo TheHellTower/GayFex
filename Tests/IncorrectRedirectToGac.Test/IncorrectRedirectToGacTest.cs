@@ -13,15 +13,6 @@ namespace IncorrectRedirectToGac.Test {
 		[Fact]
 		[Trait("Category", "core")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/144")]
-		public Task IncorrectRedirectToGac() =>
-			Run(
-				"net472",
-				new [] { "IncorrectRedirectToGac.exe", "Microsoft.Build.Framework.dll" }, new string[0], NoProtections
-			);
-
-		[Fact]
-		[Trait("Category", "core")]
-		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/144")]
 		public async Task IncorrectExternalRedirectToGac() =>
 			await Run(
 				"net472",
@@ -35,7 +26,7 @@ namespace IncorrectRedirectToGac.Test {
 		public async Task IncorrectRedirectToGacPacker(string compatKey, string deriverKey) =>
 			await Run(
 				"net472",
-				new [] { "IncorrectRedirectToGac.exe", "Microsoft.Build.Framework.dll" }, 
+				new [] { "IncorrectRedirectToGac.exe", "external:Microsoft.Build.Framework.dll" }, 
 				new string[0], 
 				NoProtections,
 				outputDirSuffix: $"_packer_{compatKey}_{deriverKey}",

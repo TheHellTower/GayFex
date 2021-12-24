@@ -41,6 +41,14 @@ namespace Confuser.Core {
 			throw new ArgumentException($"{component.Name} has no parameters", nameof(component));
 		}
 
+		/// <inheritdoc />
+		public bool HasParameter(IConfuserComponent component, string name) {
+			if (component == null) throw new ArgumentNullException(nameof(component));
+			if (name == null) throw new ArgumentNullException(nameof(name));
+
+			return TryGetValue(component, out var p) && p.ContainsKey(name);
+		}
+
 		public bool HasParameters(IConfuserComponent component) => component != null && ContainsKey(component);
 
 		/// <summary>

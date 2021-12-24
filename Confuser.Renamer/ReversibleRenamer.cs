@@ -5,22 +5,41 @@ using System.Text;
 
 namespace Confuser.Renamer {
 	public class ReversibleRenamer {
-		RijndaelManaged cipher;
-		byte[] key;
+		readonly Aes cipher;
+		readonly byte[] key;
 
 		public ReversibleRenamer(string password) {
-			cipher = new RijndaelManaged();
+			cipher = Aes.Create();
 			using (var sha = SHA256.Create())
 				cipher.Key = key = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
 		}
 
-		static string Base64Encode(byte[] buf) {
-			return Convert.ToBase64String(buf).Trim('=').Replace('+', '$').Replace('/', '_');
+		public string Encrypt(string name) {
+			byte ivId = GetIVId(name);
+			cipher.IV = GetIV(ivId);
+			var buf = Encoding.UTF8.GetBytes(name);
+
+			using (var ms = new MemoryStream()) {
+				ms.WriteByte(ivId);
+				using (var stream = new CryptoStream(ms, cipher.CreateEncryptor(), CryptoStreamMode.Write)) {
+					stream.Write(buf, 0, buf.Length);
+					stream.FlushFinalBlock();
+					return Base64Encode(ms.GetBuffer(), (int)ms.Length);
+				}
+			}
 		}
 
-		static byte[] Base64Decode(string str) {
-			str = str.Replace('$', '+').Replace('_', '/').PadRight((str.Length + 3) & ~3, '=');
-			return Convert.FromBase64String(str);
+		public string Decrypt(string name) {
+			using (var ms = new MemoryStream(Base64Decode(name))) {
+				byte ivId = (byte)ms.ReadByte();
+				cipher.IV = GetIV(ivId);
+
+				using (var result = new MemoryStream()) {
+					using (var stream = new CryptoStream(ms, cipher.CreateDecryptor(), CryptoStreamMode.Read))
+						stream.CopyTo(result);
+					return Encoding.UTF8.GetString(result.GetBuffer(), 0, (int)result.Length);
+				}
+			}
 		}
 
 		byte[] GetIV(byte ivId) {
@@ -37,32 +56,48 @@ namespace Confuser.Renamer {
 			return x;
 		}
 
-		public string Encrypt(string name) {
-			byte ivId = GetIVId(name);
-			cipher.IV = GetIV(ivId);
-			var buf = Encoding.UTF8.GetBytes(name);
+		static string Base64Encode(byte[] buffer, int length) {
+			int inputUnpaddedLength = 4 * length / 3;
+			var outArray = new char[(inputUnpaddedLength + 3) & ~3];
+			Convert.ToBase64CharArray(buffer, 0, length, outArray, 0);
 
-			using (var ms = new MemoryStream()) {
-				ms.WriteByte(ivId);
-				using (var stream = new CryptoStream(ms, cipher.CreateEncryptor(), CryptoStreamMode.Write))
-					stream.Write(buf, 0, buf.Length);
+			var result = new StringBuilder(inputUnpaddedLength);
+			foreach (var oldChar in outArray) {
+				if (oldChar == '=') {
+					break;
+				}
 
-				buf = ms.ToArray();
-				return Base64Encode(buf);
+				result.Append(oldChar == '+'
+					? '$'
+					: oldChar == '/'
+						? '_'
+						: oldChar);
 			}
+
+			return result.ToString();
 		}
 
-		public string Decrypt(string name) {
-			using (var ms = new MemoryStream(Base64Decode(name))) {
-				byte ivId = (byte)ms.ReadByte();
-				cipher.IV = GetIV(ivId);
+		static byte[] Base64Decode(string str) {
+			var newLength = (str.Length + 3) & ~3;
+			var inArray = new char[newLength];
+			for (int index = 0; index < newLength; index++) {
+				char newChar;
+				if (index < str.Length) {
+					char oldChar = str[index];
+					newChar = oldChar == '$'
+						? '+'
+						: oldChar == '_'
+							? '/'
+							: oldChar;
+				}
+				else {
+					newChar = '=';
+				}
 
-				var result = new MemoryStream();
-				using (var stream = new CryptoStream(ms, cipher.CreateDecryptor(), CryptoStreamMode.Read))
-					stream.CopyTo(result);
-
-				return Encoding.UTF8.GetString(result.ToArray());
+				inArray[index] = newChar;
 			}
+
+			return Convert.FromBase64CharArray(inArray, 0, inArray.Length);
 		}
 	}
 }

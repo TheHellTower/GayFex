@@ -25,10 +25,13 @@ namespace Confuser.Renamer.References {
 		}
 
 		/// <inheritdoc />
-		public bool ShouldCancelRename => false;
+		public bool ShouldCancelRename => ThisMemberDef.Module != OldestSiblingDef.Module;
 
 		/// <inheritdoc />
-		public bool DelayRenaming(IConfuserContext context, INameService service) => !service.IsRenamed(context, OldestSiblingDef);
+		public bool DelayRenaming(IConfuserContext context, INameService service, IDnlibDef currentDef) => 
+			currentDef != OldestSiblingDef 
+			&& !ShouldCancelRename 
+			&& !service.IsRenamed(context, OldestSiblingDef);
 
 		/// <inheritdoc />
 		public bool UpdateNameReference(IConfuserContext context, INameService service) {

@@ -162,7 +162,9 @@ namespace Confuser.Core {
 				if (module.IsExternal) {
 					var rawModule = module.LoadRaw(proj.BaseDirectory);
 					extModules.Add(rawModule);
-					context.InternalResolver.AddToCache(ModuleDefMD.Load(rawModule.ToArray(), context.InternalResolver.DefaultModuleContext));
+					var extModule = ModuleDefMD.Load(rawModule.ToArray(), context.InternalResolver.DefaultModuleContext);
+					extModule.EnableTypeDefFindCache = true;
+					context.InternalResolver.AddToCache(extModule);
 					continue;
 				}
 

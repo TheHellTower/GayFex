@@ -13,7 +13,18 @@
 		///   <br />- or -<br />
 		///   <paramref name="name"/> is <see langword="null" />
 		/// </exception>
+		/// <exception cref="System.ArgumentException">
+		///   No parameter with the <paramref name="name"/> is set.
+		/// </exception>
 		string GetParameter(IConfuserComponent component, string name);
+
+		/// <summary>
+		/// Check if the parameter is defined.
+		/// </summary>
+		/// <param name="component">The component</param>
+		/// <param name="name">The name used as key</param>
+		/// <returns><see langword="true"/> if the parameter is set</returns>
+		bool HasParameter(IConfuserComponent component, string name);
 
 		bool HasParameters(IConfuserComponent component);
 

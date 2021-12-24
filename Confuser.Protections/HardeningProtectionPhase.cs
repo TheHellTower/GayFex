@@ -29,7 +29,7 @@ namespace Confuser.Protections {
 		public string Name => "Hardening Phase";
 
 		/// <inheritdoc />
-		public bool ProcessAll => true;
+		public bool ProcessAll => false;
 
 		/// <inheritdoc />
 		public void Execute(IConfuserContext context, IProtectionParameters parameters, CancellationToken token) {

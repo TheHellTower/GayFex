@@ -26,10 +26,9 @@
                     Click="ChooseMapPath">
         <TextBlock FontSize="14px" FontFamily="{DynamicResource FontAwesome}" Text="&#xf141;" Height="10px"
                            TextOptions.TextRenderingMode="GrayScale" />
-      </Button>
-      <TextBox x:Name="PathBox" Grid.Row="1" Grid.Column="1" Margin="5" VerticalContentAlignment="Center"
-                     TextChanged="PathBox_TextChanged"
-                     local:FileDragDrop.Command="{x:Static local:FileDragDrop.FileCmd}" />
+        </Button>
+        <TextBox x:Name="PathBox" Grid.Row="1" Grid.Column="1" Margin="5" VerticalContentAlignment="Center"
+                  local:FileDragDrop.Command="{x:Static local:FileDragDrop.FileCmd}" />
     </DockPanel>
     <DockPanel Grid.Row="0" Grid.Column="1" Visibility="{Binding IsChecked, ElementName=optPass, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
       <Label DockPanel.Dock="Left" VerticalAlignment="Center" HorizontalAlignment="Right">Password:</Label>

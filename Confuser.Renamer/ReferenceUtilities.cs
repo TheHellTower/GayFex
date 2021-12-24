@@ -8,46 +8,11 @@ namespace Confuser.Renamer {
 		internal static StringBuilder AppendDescription(this StringBuilder builder, IDnlibDef def, IConfuserContext context, INameService nameService) {
 			if (nameService is null || context is null)
 				return builder.AppendHashedIdentifier("Name", def.FullName);
-			
-			builder.Append("Original Name").Append(": ");
 
-			switch (def) {
-				case TypeDef typeDef:
-					builder.AppendTypeName(typeDef, context, nameService);
-					break;
-				case IMemberDef memberDef:
-					builder.AppendTypeName(memberDef.DeclaringType, context, nameService)
-						.Append("::")
-						.AppendOriginalName(memberDef, context, nameService);
-					break;
-				default:
-					builder.AppendOriginalName(def, context, nameService);
-					break;
-			}
+			builder.Append("Original Name").Append(": ");
+			builder.Append(nameService.GetDisplayName(context, def));
 			builder.Append("; ");
 			return builder.AppendHashedIdentifier("Name", def.FullName);
-		}
-
-		private static StringBuilder AppendTypeName(this StringBuilder builder, TypeDef typeDef, IConfuserContext context, INameService nameService) {
-			var originalNamespace = nameService.GetOriginalNamespace(context, typeDef);
-			var originalName = nameService.GetOriginalName(context, typeDef);
-
-			if (string.IsNullOrWhiteSpace(originalNamespace))
-				originalNamespace = typeDef.Namespace;
-			if (string.IsNullOrWhiteSpace(originalName))
-				originalName = typeDef.Name;
-
-			if (!string.IsNullOrWhiteSpace(originalNamespace))
-				builder.Append(originalNamespace).Append(".");
-
-			return builder.Append(originalName);
-		}
-
-		private static StringBuilder AppendOriginalName(this StringBuilder builder, IDnlibDef def, IConfuserContext context, INameService nameService) {
-			var originalName = nameService.GetOriginalName(context, def);
-			if (string.IsNullOrWhiteSpace(originalName))
-				originalName = def.Name;
-			return builder.Append(originalName);
 		}
 
 		internal static StringBuilder AppendReferencedDef(this StringBuilder builder, IDnlibDef def, IConfuserContext context, INameService nameService) {

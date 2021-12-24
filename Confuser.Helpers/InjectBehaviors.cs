@@ -40,8 +40,7 @@ namespace Confuser.Helpers {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
-				_nameService.SetOriginalNamespace(_context, injected, injected.Namespace);
-				_nameService.SetOriginalName(_context, injected, injected.Name);
+				_nameService.StoreNames(_context, injected);
 
 				injected.Name = GetName(injected);
 				injected.Namespace = null;
@@ -54,7 +53,7 @@ namespace Confuser.Helpers {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
-				_nameService.SetOriginalName(_context, injected, injected.Name);
+				_nameService.StoreNames(_context, injected);
 
 				if (!injected.IsSpecialName && !injected.DeclaringType.IsDelegate && !injected.IsOverride())
 					injected.Name = GetName(injected.Name);
@@ -67,7 +66,7 @@ namespace Confuser.Helpers {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
-				_nameService.SetOriginalName(_context, injected, injected.Name);
+				_nameService.StoreNames(_context, injected);
 
 				if (!injected.IsSpecialName)
 					injected.Name = GetName(injected.Name);
@@ -80,7 +79,7 @@ namespace Confuser.Helpers {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
-				_nameService.SetOriginalName(_context, injected, injected.Name);
+				_nameService.StoreNames(_context, injected);
 
 				if (!injected.IsSpecialName)
 					injected.Name = GetName(injected.Name);
@@ -93,7 +92,7 @@ namespace Confuser.Helpers {
 				if (source == null) throw new ArgumentNullException(nameof(source));
 				if (injected == null) throw new ArgumentNullException(nameof(injected));
 
-				_nameService.SetOriginalName(_context, injected, injected.Name);
+				_nameService.StoreNames(_context, injected);
 
 				if (!injected.IsSpecialName)
 					injected.Name = GetName(injected.Name);

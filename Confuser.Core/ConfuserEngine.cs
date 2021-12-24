@@ -430,10 +430,20 @@ namespace Confuser.Core {
 
 		private static void EndModule(ConfuserContext context, CancellationToken token) {
 			string output = context.Modules[context.CurrentModuleIndex].Location;
-			if (output != null) {
+
+			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger("core");
+
+			if (output is not null) {
 				if (!Path.IsPathRooted(output))
-					output = Path.Combine(Environment.CurrentDirectory, output);
-				output = Utils.GetRelativePath(output, context.BaseDirectory);
+					output = Path.Combine(context.BaseDirectory, output);
+				string relativeOutput = Utils.GetRelativePath(output, context.BaseDirectory);
+				if (relativeOutput is null) {
+					logger.LogWarning("Input file is not inside the base directory. Relative path can't be created. Placing file into output root." +
+						Environment.NewLine + "Responsible file is: {0}", output);
+					output = Path.GetFileName(output);
+				} else {
+					output = relativeOutput;
+				}
 			}
 			else {
 				output = context.CurrentModule.Name;

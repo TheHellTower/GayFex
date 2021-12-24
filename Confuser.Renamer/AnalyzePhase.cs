@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using Confuser.Core;
+using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
@@ -37,19 +41,23 @@ namespace Confuser.Renamer {
 			var service = (NameService)context.Registry.GetRequiredService<INameService>();
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id);
 			logger.LogDebug("Building VTables & identifier list...");
+
+			foreach (ModuleDef moduleDef in parameters.Targets.OfType<ModuleDef>())
+				moduleDef.EnableTypeDefFindCache = true;
+
 			foreach (IDnlibDef def in parameters.Targets /*.WithProgress(logger)*/) {
 				ParseParameters(context, def, service, parameters);
 
 				if (def is ModuleDef module) {
 					foreach (var res in module.Resources)
-						service.SetOriginalName(context, res, res.Name);
+						service.AddReservedIdentifier(res.Name);
 				}
-				else
-					service.SetOriginalName(context, def, def.Name);
+				else {
+					service.StoreNames(context, def);
+				}
 
-				if (def is TypeDef) {
-					service.GetVTables().GetVTable((TypeDef)def);
-					service.SetOriginalNamespace(context, def, ((TypeDef)def).Namespace);
+				if (def is TypeDef typeDef) {
+					service.GetVTables().GetVTable(typeDef);
 				}
 
 				token.ThrowIfCancellationRequested();
@@ -61,6 +69,11 @@ namespace Confuser.Renamer {
 			foreach (IDnlibDef def in parameters.Targets /*.WithProgress(logger)*/) {
 				Analyze(service, context, parameters, def, true);
 				token.ThrowIfCancellationRequested();
+			}
+
+			foreach (ModuleDef moduleDef in parameters.Targets.OfType<ModuleDef>()) {
+				moduleDef.EnableTypeDefFindCache = false;
+				moduleDef.ResetTypeDefFindCache();
 			}
 		}
 
@@ -115,7 +128,7 @@ namespace Confuser.Renamer {
 			}
 
 			if (json) {
-				var jsonAnalyzer = new JsonAnalyzer();
+				var jsonAnalyzer = new JsonAnalyzer(Parent);
 				logger.LogDebug("Newtonsoft.Json found, enabling compatibility.");
 				service.RegisterRenamer(jsonAnalyzer);
 			}
@@ -146,9 +159,21 @@ namespace Confuser.Renamer {
 			else if (def is EventDef)
 				Analyze(service, context, parameters, (EventDef)def);
 			else if (def is ModuleDef) {
-				var pass = parameters.GetParameter(context, def, Parent.Parameters.Password);
-				if (!string.IsNullOrEmpty(pass))
-					service.reversibleRenamer = new ReversibleRenamer(pass);
+				var renamingMode = parameters.GetParameter(context, def, Parent.Parameters.Mode);
+				if (renamingMode == RenameMode.Reversible && service.reversibleRenamer == null) {
+					var generatePassword = parameters.GetParameter(context, def, Parent.Parameters.GeneratePassword);
+					var password = parameters.GetParameter(context, def, Parent.Parameters.Password);
+					if (generatePassword || password == null) {
+						password = context.Registry.GetService<IRandomService>().SeedString;
+					}
+
+					string dir = context.OutputDirectory;
+					string path = Path.GetFullPath(Path.Combine(dir, CoreConstants.PasswordFileName));
+					if (!Directory.Exists(dir))
+						Directory.CreateDirectory(dir);
+					File.WriteAllText(path, password);
+					service.reversibleRenamer = new ReversibleRenamer(password);
+				}
 
 				var idOffset = parameters.GetParameter(context, def, Parent.Parameters.IdOffset);
 				if (idOffset != 0)

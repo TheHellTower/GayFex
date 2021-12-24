@@ -36,11 +36,11 @@ namespace Confuser.Renamer.Analyzers {
 					// derived type. If the base type/interface is not in our control, we should
 					// not rename the methods.
 					bool baseUnderCtrl = context.Modules.Contains(slot.MethodDef.DeclaringType.Module as ModuleDefMD);
-					bool ifaceUnderCtrl = context.Modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
-					if ((!baseUnderCtrl && ifaceUnderCtrl) || !service.CanRename(context, slot.MethodDef)) {
+					bool interfaceUnderCtrl = context.Modules.Contains(slot.Overrides.MethodDef.DeclaringType.Module as ModuleDefMD);
+					if ((!baseUnderCtrl && interfaceUnderCtrl) || !service.CanRename(context, slot.MethodDef)) {
 						service.SetCanRename(context, slot.Overrides.MethodDef, false);
 					}
-					else if (baseUnderCtrl && !ifaceUnderCtrl || !service.CanRename(context, slot.Overrides.MethodDef)) {
+					else if (baseUnderCtrl && !interfaceUnderCtrl || !service.CanRename(context, slot.Overrides.MethodDef)) {
 						service.SetCanRename(context, slot.MethodDef, false);
 					}
 
@@ -51,6 +51,17 @@ namespace Confuser.Renamer.Analyzers {
 						SetupOverwriteReferences(context, service, slot, type);
 						//CreateOverrideReference(service, slot.MethodDef, slot.Overrides.MethodDef);
 					}
+
+					// For the case when method in base type implements an interface method for a derived type
+					// do not consider method parameters to make method name the same in base type, derived type and interface
+					var methodDef = slot.MethodDef;
+					var typeDef = type.BaseType?.ResolveTypeDef();
+					var baseMethod = typeDef?.FindMethod(methodDef.Name, methodDef.Signature as MethodSig);
+					if (baseMethod != null) {
+						string unifiedName = service.GetNormalizedName(context, slot.Overrides.MethodDef);
+						service.SetNormalizedName(context, slot.MethodDef, unifiedName);
+						service.SetNormalizedName(context, baseMethod, unifiedName);
+					}
 				}
 			}
 		}
@@ -59,7 +70,7 @@ namespace Confuser.Renamer.Analyzers {
 			if (!method.IsVirtual)
 				return;
 
-			var vTbl = service.GetVTables()[method.DeclaringType];
+			var vTbl = service.GetVTables().GetVTable(method.DeclaringType);
 			var slots = vTbl.FindSlots(method).ToArray();
 
 			IMemberDef discoveredBaseMemberDef = null;
@@ -142,7 +153,9 @@ namespace Confuser.Renamer.Analyzers {
 				// Check if the discovered base type is the current type. If so, nothing needs to be done.
 				if (ReferenceEquals(basePropDef, discoveredBaseMemberDef)) return;
 
-				service.AddReference(context, basePropDef, new MemberSiblingReference(basePropDef, discoveredBaseMemberDef));
+				var reference = new MemberSiblingReference(basePropDef, discoveredBaseMemberDef);
+				service.AddReference(context, basePropDef, reference);
+				service.AddReference(context, discoveredBaseMemberDef, reference);
 				UpdateOldestSiblingReference(discoveredBaseMemberDef, basePropDef, context, service);
 			}
 		}
@@ -180,6 +193,7 @@ namespace Confuser.Renamer.Analyzers {
 		private static void CreateOverrideReference(IConfuserContext context, INameService service, IMemberDef thisMemberDef, IMemberDef baseMemberDef) {
 			var overrideRef = new MemberOverrideReference(thisMemberDef, baseMemberDef);
 			service.AddReference(context, thisMemberDef, overrideRef);
+			service.AddReference(context, baseMemberDef, overrideRef);
 
 			PropagateRenamingRestrictions(context, service, thisMemberDef, baseMemberDef);
 		}
@@ -218,7 +232,7 @@ namespace Confuser.Renamer.Analyzers {
 					unprocessed.Enqueue(slot.Overrides.MethodDef);
 					slotsExists = true;
 				}
-				
+
 				if (!slotsExists && method != currentMethod)
 					yield return currentMethod;
 			}
@@ -268,7 +282,7 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		private static void SetupOverwriteReferences(IConfuserContext context, INameService service, VTableSlot slot, TypeDef thisType) {
+		private static void SetupOverwriteReferences(IConfuserContext context, NameService service, VTableSlot slot, TypeDef thisType) {
 			var module = thisType.Module;
 			var methodDef = slot.MethodDef;
 			var baseSlot = slot.Overrides;
@@ -308,7 +322,22 @@ namespace Confuser.Renamer.Analyzers {
 				methodDef.Overrides.Add(new MethodOverride(methodDef, target));
 			}
 			else if (target is IMemberDef targetDef) {
-				CreateOverrideReference(context, service, methodDef, targetDef);
+				// Reaching this place means that a slot of the base type is overwritten by a specific interface.
+				// In case the this type is implementing the interface responsible for this, we need to declare
+				// this as an override reference. If the base type is implementing the interface (as well), this
+				// declaration is redundant.
+				var overrideRefRequired = true;
+				if (targetDef.DeclaringType.IsInterface) {
+					var baseTypeDef = thisType.BaseType?.ResolveTypeDef();
+					if (!(baseTypeDef is null)) {
+						var baseTypeVTable = service.GetVTables()[baseTypeDef];
+						if (baseTypeVTable.InterfaceSlots.TryGetValue(targetDef.DeclaringType.ToTypeSig(), out var ifcSlots)) {
+							overrideRefRequired = !ifcSlots.Contains(slot);
+						}
+					}
+				}
+				if (overrideRefRequired)
+					CreateOverrideReference(context, service, methodDef, targetDef);
 			}
 		}
 
@@ -322,7 +351,7 @@ namespace Confuser.Renamer.Analyzers {
 
 			var targetMethodSig = targetMethod.MethodSig;
 			var overrideMethodSig = methodOverride.MethodDeclaration.MethodSig;
-			
+
 			targetMethodSig = ResolveGenericSignature(targetMethod, targetMethodSig);
 			overrideMethodSig = ResolveGenericSignature(methodOverride.MethodDeclaration, overrideMethodSig);
 

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using SevenZip.Compression.LZMA;
 
 namespace Confuser.Core.Runtime.Compression {
@@ -15,17 +16,25 @@ namespace Confuser.Core.Runtime.Compression {
 			var s = new MemoryStream(data);
 			var decoder = new Decoder();
 			var prop = new byte[5];
-			s.Read(prop, 0, 5);
+			var readCnt = 0;
+			while (readCnt < 5) {
+				readCnt += s.Read(prop, readCnt, 5 - readCnt);
+			}
 			decoder.SetDecoderProperties(prop);
-			long outSize = 0;
-			for (int i = 0; i < 8; i++) {
-				var v = (byte)s.ReadByte();
-				outSize |= (long)v << (8 * i);
+
+			readCnt = 0;
+			while (readCnt < sizeof(int)) {
+				readCnt += s.Read(prop, readCnt, sizeof(int) - readCnt);
 			}
 
-			var b = new byte[(int)outSize];
+			if (!BitConverter.IsLittleEndian)
+				Array.Reverse(prop, 0, sizeof(int));
+
+			var outSize = BitConverter.ToInt32(prop, 0);
+
+			var b = new byte[outSize];
 			var z = new MemoryStream(b, true);
-			long compressedSize = s.Length - 13;
+			long compressedSize = s.Length - 5 - sizeof(int);
 			decoder.Code(s, z, compressedSize, outSize, null);
 			return b;
 		}

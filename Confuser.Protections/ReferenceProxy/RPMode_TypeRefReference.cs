@@ -19,7 +19,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			public bool ShouldCancelRename => false;
 
 			/// <inheritdoc />
-			public bool DelayRenaming(IConfuserContext context, INameService service) => false;
+			public bool DelayRenaming(IConfuserContext context, INameService service, IDnlibDef currentDef) => false;
 
 			bool INameReference.UpdateNameReference(IConfuserContext context, INameService service) {
 				_typeRef.Namespace = _typeDef.Namespace;

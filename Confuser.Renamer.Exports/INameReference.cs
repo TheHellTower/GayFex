@@ -1,5 +1,6 @@
 ﻿using Confuser.Core;
 using Confuser.Renamer.Services;
+using dnlib.DotNet;
 
 namespace Confuser.Renamer {
 	public interface INameReference {
@@ -16,7 +17,7 @@ namespace Confuser.Renamer {
 		/// <returns>
 		///		<see langword="true" /> in case the reference can't be resolved yet;
 		///		otherwise <see langword="false" />.</returns>
-		bool DelayRenaming(IConfuserContext context, INameService service);
+		bool DelayRenaming(IConfuserContext context, INameService service, IDnlibDef currentDef);
 
 		/// <summary>
 		///		Update the name reference.

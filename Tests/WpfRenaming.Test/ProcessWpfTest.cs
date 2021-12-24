@@ -35,7 +35,7 @@ namespace WpfRenaming.Test {
 			new SettingItem<IProtection>("rename"));
 
 		public static IEnumerable<object[]> ProcessWithoutObfuscationTestData() =>
-			from framework in "net35;net40;net48".Split(';')
+			from framework in "net40;net48".Split(';')
 			select new object[] { framework };
 	}
 }

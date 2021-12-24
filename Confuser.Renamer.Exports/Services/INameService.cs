@@ -37,14 +37,14 @@ namespace Confuser.Renamer.Services {
 		/// </exception>
 		void SetCanRename(IConfuserContext context, IDnlibDef def, bool val);
 
-		void SetParam(IConfuserContext context, IDnlibDef def, string name, string value);
-		string GetParam(IConfuserContext context, IDnlibDef def, string name);
+		void SetParam<T>(IConfuserContext context, IDnlibDef def, IProtectionParameter<T> protectionParameter, T value);
+		T GetParam<T>(IConfuserContext context, IDnlibDef def, IProtectionParameter<T> protectionParameter);
 
 		RenameMode GetRenameMode(IConfuserContext context, object obj);
 		void SetRenameMode(IConfuserContext context, object obj, RenameMode val);
 		void ReduceRenameMode(IConfuserContext context, object obj, RenameMode val);
 
-		string ObfuscateName(ModuleDef module, string name, RenameMode mode);
+		string ObfuscateName(IConfuserContext context, IDnlibDef name, RenameMode mode);
 		string RandomName();
 		string RandomName(RenameMode mode);
 
@@ -53,10 +53,10 @@ namespace Confuser.Renamer.Services {
 		void AddReference<T>(IConfuserContext context, T obj, INameReference<T> reference);
 		IList<INameReference> GetReferences(IConfuserContext context, object obj);
 
-		void SetOriginalName(IConfuserContext context, object obj, string name);
-		void SetOriginalNamespace(IConfuserContext context, object obj, string ns);
-		string GetOriginalName(IConfuserContext context, object obj);
-		string GetOriginalNamespace(IConfuserContext context, object obj);
+		void StoreNames(IConfuserContext context, IDnlibDef obj);
+		void SetNormalizedName(IConfuserContext context, IDnlibDef obj, string name);
+		string GetDisplayName(IConfuserContext context, IDnlibDef obj);
+		string GetNormalizedName(IConfuserContext context, IDnlibDef obj);
 
 		bool IsRenamed(IConfuserContext context, IDnlibDef def);
 		void SetIsRenamed(IConfuserContext context, IDnlibDef def);

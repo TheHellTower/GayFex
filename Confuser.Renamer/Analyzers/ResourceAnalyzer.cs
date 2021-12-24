@@ -23,7 +23,7 @@ namespace Confuser.Renamer.Analyzers {
 			if (!string.IsNullOrEmpty(module.Assembly.Culture) &&
 			    asmName.EndsWith(".resources")) {
 				// Satellite assembly
-				var satellitePattern = new Regex(string.Format("^(.*)\\.{0}\\.resources$", module.Assembly.Culture));
+				string satellitePattern = $"^(.*)\\.(?i:({module.Assembly.Culture}))\\.resources$";
 				string nameAsmName = asmName.Substring(0, asmName.Length - ".resources".Length);
 				ModuleDef mainModule = context.Modules.SingleOrDefault(mod => mod.Assembly.Name == nameAsmName);
 				if (mainModule == null) {
@@ -32,17 +32,19 @@ namespace Confuser.Renamer.Analyzers {
 					throw new ConfuserException();
 				}
 
-				string format = "{0}." + module.Assembly.Culture + ".resources";
 				foreach (Resource res in module.Resources) {
-					Match match = satellitePattern.Match(res.Name);
-					if (!match.Success)
-						continue;
+					Match match = Regex.Match(res.Name, satellitePattern);
+					if (!match.Success) continue;
 					string typeName = match.Groups[1].Value;
+					string culture = match.Groups[2].Value;
+
 					TypeDef type = mainModule.FindReflection(typeName);
 					if (type == null) {
 						logger.LogWarning(Resources.ResourceAnalyzer_Analyze_CouldNotFindResourceType, typeName);
 						continue;
 					}
+					string format = $"{{0}}.{culture}.resources";
+
 					service.ReduceRenameMode(context, type, RenameMode.Reflection);
 					service.AddReference(context, type, new ResourceReference(res, type, format));
 				}

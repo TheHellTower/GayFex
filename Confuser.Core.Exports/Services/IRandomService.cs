@@ -10,5 +10,7 @@
 		/// <returns>The requested RNG.</returns>
 		/// <exception cref="System.ArgumentNullException"><paramref name="id" /> is <see langword="null"/>.</exception>
 		IRandomGenerator GetRandomGenerator(string id);
+
+		string SeedString { get; }
 	}
 }

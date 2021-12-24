@@ -8,10 +8,15 @@ on:
   schedule:
     - cron: "26 4 * * 0"
 
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
 jobs:
   analyze:
     name: Analyze
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     strategy:
       fail-fast: false

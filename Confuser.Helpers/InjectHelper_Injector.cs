@@ -298,6 +298,9 @@ namespace Confuser.Helpers {
 				newMethodDef.DeclaringType = (TypeDef)importer.Import(methodDef.DeclaringType);
 				newMethodDef.Signature = importer.Import(methodDef.Signature);
 				newMethodDef.Parameters.UpdateParameterTypes();
+				
+				foreach (var paramDef in methodDef.ParamDefs)
+					newMethodDef.ParamDefs.Add(new ParamDefUser(paramDef.Name, paramDef.Sequence, paramDef.Attributes));
 
 				if (methodDef.ImplMap != null)
 					newMethodDef.ImplMap =

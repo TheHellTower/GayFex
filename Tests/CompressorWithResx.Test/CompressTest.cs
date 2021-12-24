@@ -17,16 +17,23 @@ namespace CompressorWithResx.Test {
 		[MemberData(nameof(CompressAndExecuteSkippedTestData), Skip = ".NET Framework 2.0 is not properly supported by the compressor.")]
 		[Trait("Category", "Packer")]
 		[Trait("Packer", "compressor")]
-		public async Task CompressAndExecuteTest(string framework, string compatKey, string deriverKey, string resourceProtectionMode) =>
+		public async Task CompressAndExecuteTest(string framework, string compatKey, string deriverKey, string resourceProtectionMode) {
+			if ("net20".Equals(framework)) {
+				//Buggy test runner
+				outputHelper.WriteLine("Test was executed for disabled test data");
+				return;
+			} 
+
 			await Run(
 				framework,
-				new[] {"CompressorWithResx.exe", Path.Combine("de", "CompressorWithResx.resources.dll")},
-				new[] {"Test (fallback)", "Test (deutsch)"},
+				new[] { "CompressorWithResx.exe", Path.Combine("de", "CompressorWithResx.resources.dll") },
+				new[] { "Test (fallback)", "Test (deutsch)" },
 				resourceProtectionMode != "none"
-					? new SettingItem<IProtection>("resources") {{"mode", resourceProtectionMode}}
-					: null,
+				? new SettingItem<IProtection>("resources") { { "mode", resourceProtectionMode } }
+				: null,
 				$"_{compatKey}_{deriverKey}_{resourceProtectionMode}",
-				packer: new SettingItem<IPacker>("compressor") {{"compat", compatKey}, {"key", deriverKey}});
+				packer: new SettingItem<IPacker>("compressor") { { "compat", compatKey }, { "key", deriverKey } });
+		}
 
 		public static IEnumerable<object[]> CompressAndExecuteTestData() {
 			foreach (var framework in new string[] { "net40", "net471" })

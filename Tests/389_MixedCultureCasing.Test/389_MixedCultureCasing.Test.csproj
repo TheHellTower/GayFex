@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>MixedCultureCasing.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ConfuserTestTargetProject Include="..\389_MixedCultureCasing\389_MixedCultureCasing.csproj" />
+  </ItemGroup>
+  
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+
+</Project>

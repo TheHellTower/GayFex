@@ -38,10 +38,10 @@ namespace Confuser.Renamer.Test.Services {
 			Assert.NotEmpty(obfuscatedName1);
 
 			methodName += "`1";
-			var obfuscatedName2 = nameService.ObfuscateName(methodName, RenameMode.Decodable);
+			var obfuscatedName2 = nameService.ObfuscateName(null, methodName, RenameMode.Decodable, true);
 			Assert.EndsWith("`1", obfuscatedName2, StringComparison.Ordinal);
 
-			var obfuscatedName3 = nameService.ObfuscateName(methodName, RenameMode.Decodable);
+			var obfuscatedName3 = nameService.ObfuscateName(null, methodName, RenameMode.Decodable, true);
 			Assert.EndsWith("`1", obfuscatedName3, StringComparison.Ordinal);
 			Assert.Equal(obfuscatedName2, obfuscatedName3, StringComparer.Ordinal);
 		}

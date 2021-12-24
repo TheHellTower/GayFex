@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -118,9 +119,16 @@ namespace Confuser {
 		/// </summary>
 		/// <param name="buffer">The input buffer.</param>
 		/// <returns>The SHA1 hash of the input buffer.</returns>
-		public static byte[] SHA1(byte[] buffer) {
-			var sha = new SHA1Managed();
-			return sha.ComputeHash(buffer);
+		public static byte[] SHA1(ReadOnlySpan<byte> buffer) {
+			var sha = System.Security.Cryptography.SHA1.Create();
+			byte[] rented = ArrayPool<byte>.Shared.Rent(buffer.Length);
+			try {
+				buffer.CopyTo(rented);
+				return sha.ComputeHash(rented, 0, buffer.Length);
+			}
+			finally {
+				ArrayPool<byte>.Shared.Return(rented);
+			}
 		}
 
 		/// <summary>
@@ -130,7 +138,7 @@ namespace Confuser {
 		/// <param name="buffer2">The input buffer 2.</param>
 		/// <returns>The result buffer.</returns>
 		/// <exception cref="System.ArgumentException">Length of the two buffers are not equal.</exception>
-		public static byte[] Xor(byte[] buffer1, byte[] buffer2) {
+		public static byte[] Xor(ReadOnlySpan<byte> buffer1, ReadOnlySpan<byte> buffer2) {
 			if (buffer1.Length != buffer2.Length)
 				throw new ArgumentException("Length mismatched.");
 			var ret = new byte[buffer1.Length];
@@ -155,7 +163,7 @@ namespace Confuser {
 		/// <param name="buff">The input buffer.</param>
 		/// <param name="charset">The charset.</param>
 		/// <returns>The encoded string.</returns>
-		public static string EncodeString(byte[] buff, char[] charset) {
+		public static string EncodeString(ReadOnlySpan<byte> buff, char[] charset) {
 			int current = buff[0];
 			var ret = new StringBuilder();
 			for (int i = 1; i < buff.Length; i++) {

@@ -11,6 +11,9 @@ namespace Confuser.Renamer {
 		internal IProtectionParameter<bool> ForceRename { get; } = ProtectionParameter.Boolean("forceRen", false);
 		internal IProtectionParameter<uint> IdOffset { get; } = ProtectionParameter.UInteger("idOffset", 0);
 		internal IProtectionParameter<string> NamespaceFormat { get; } = ProtectionParameter.String("nsFormat", "{0}");
+		internal IProtectionParameter<bool> ShortNames { get; } = ProtectionParameter.Boolean("shortNames", true);
+		internal IProtectionParameter<bool> PreserveGenericParams { get; } = ProtectionParameter.Boolean("preserveGenericParams", true);
+		internal IProtectionParameter<bool> GeneratePassword { get; } = ProtectionParameter.Boolean("generatePassword", true);
 
 		internal IProtectionParameter<string> SymbolMapFileName { get; } =
 			ProtectionParameter.String("mapFileName", "symbols.map");

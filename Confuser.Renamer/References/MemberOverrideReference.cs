@@ -10,7 +10,7 @@ namespace Confuser.Renamer.References {
 		readonly IMemberDef thisMemberDef;
 		internal IMemberDef BaseMemberDef { get; }
 
-		public bool ShouldCancelRename => false;
+		public bool ShouldCancelRename => thisMemberDef.Module != BaseMemberDef.Module;
 
 		public MemberOverrideReference(IMemberDef thisMemberDef, IMemberDef baseMemberDef) {
 			this.thisMemberDef = thisMemberDef ?? throw new ArgumentNullException(nameof(thisMemberDef));
@@ -19,7 +19,10 @@ namespace Confuser.Renamer.References {
 		}
 
 		/// <inheritdoc />
-		public bool DelayRenaming(IConfuserContext context, INameService service) => !service.IsRenamed(context, BaseMemberDef);
+		public bool DelayRenaming(IConfuserContext context, INameService service, IDnlibDef currentDef) => 
+			currentDef != BaseMemberDef 
+			&& !ShouldCancelRename 
+			&& !service.IsRenamed(context, BaseMemberDef);
 
 		public bool UpdateNameReference(IConfuserContext context, INameService service) {
 			if (UTF8String.Equals(thisMemberDef.Name, BaseMemberDef.Name)) return false;

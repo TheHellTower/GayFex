@@ -16,8 +16,8 @@ namespace Confuser.Renamer.Services {
 		static readonly object CanRenameKey = new object();
 		static readonly object RenameModeKey = new object();
 		static readonly object ReferencesKey = new object();
-		static readonly object OriginalNameKey = new object();
-		static readonly object OriginalNamespaceKey = new object();
+		static readonly object DisplayNameKey = new object();
+		static readonly object NormalizedNameKey = new object();
 		static readonly object IsRenamedKey = new object();
 
 		private readonly ReadOnlyMemory<byte> nameSeed;
@@ -26,9 +26,12 @@ namespace Confuser.Renamer.Services {
 		private readonly NameProtection _parent;
 
 		readonly HashSet<string> identifiers = new HashSet<string>();
-		readonly byte[] nameId = new byte[8];
-		readonly Dictionary<string, string> nameMap1 = new Dictionary<string, string>();
-		readonly Dictionary<string, string> nameMap2 = new Dictionary<string, string>();
+
+		long _nameId;
+		readonly StringBuilder _nameBuilder = new StringBuilder();
+		readonly Dictionary<string, string> _originalToObfuscatedNameMap = new Dictionary<string, string>();
+		readonly Dictionary<string, string> _obfuscatedToOriginalNameMap = new Dictionary<string, string>();
+		readonly Dictionary<string, string> _prefixesMap = new Dictionary<string, string>();
 		internal ReversibleRenamer reversibleRenamer;
 
 		internal NameService(IServiceProvider provider, NameProtection parent) {
@@ -44,7 +47,8 @@ namespace Confuser.Renamer.Services {
 				new ResourceAnalyzer(),
 				new LdtokenEnumAnalyzer(),
 				new ManifestResourceAnalyzer(),
-				new ReflectionAnalyzer()
+				new ReflectionAnalyzer(),
+				new CallSiteAnalyzer()
 			);
 		}
 
@@ -70,12 +74,17 @@ namespace Confuser.Renamer.Services {
 			context.Annotations.Set(def, CanRenameKey, val);
 		}
 
-		public void SetParam(IConfuserContext context, IDnlibDef def, string name, string value) {
-			context.GetParameters(def).SetParameter(_parent, name, value);
+		public void SetParam<T>(IConfuserContext context, IDnlibDef def, IProtectionParameter<T> protectionParameter, T value) {
+			string serializedValue = protectionParameter.Serialize(value);
+			context.GetParameters(def).SetParameter(_parent, protectionParameter.Name, serializedValue);
 		}
 
-		public string GetParam(IConfuserContext context, IDnlibDef def, string name) {
-			return context.GetParameters(def).GetParameter(_parent, name);
+		public T GetParam<T>(IConfuserContext context, IDnlibDef def, IProtectionParameter<T> protectionParameter) {
+			var parameters = context.GetParameters(def);
+			if (!parameters.HasParameter(_parent, protectionParameter.Name)) return protectionParameter.DefaultValue;
+			
+			string value = context.GetParameters(def).GetParameter(_parent, protectionParameter.Name);
+			return protectionParameter.Deserialize(value);
 		}
 
 		public RenameMode GetRenameMode(IConfuserContext context, object obj) {
@@ -90,6 +99,10 @@ namespace Confuser.Renamer.Services {
 			RenameMode original = GetRenameMode(context, obj);
 			if (original < val)
 				context.Annotations.Set(obj, RenameModeKey, val);
+			if (val <= RenameMode.Reflection && obj is IDnlibDef dnlibDef) {
+				var name = ExtractDisplayNormalizedName(context, dnlibDef, true);
+				SetNormalizedName(context, dnlibDef, name.NormalizedName);
+			}
 		}
 
 		public void AddReference<T>(IConfuserContext context, T obj, INameReference<T> reference) {
@@ -99,31 +112,20 @@ namespace Confuser.Renamer.Services {
 		public void Analyze(IConfuserContext context, IDnlibDef def) {
 			var analyze = context.Pipeline.FindPhase<AnalyzePhase>();
 
-			SetOriginalName(context, def, def.Name);
-			if (def is TypeDef) {
-				GetVTables().GetVTable((TypeDef)def);
-				SetOriginalNamespace(context, def, ((TypeDef)def).Namespace);
+			StoreNames(context, def);
+			if (def is TypeDef typeDef) {
+				GetVTables().GetVTable(typeDef);
 			}
 
 			analyze.Analyze(this, context, EmptyProtectionParameters.Instance, def, true);
 		}
 
 		public void SetNameId(uint id) {
-			for (int i = nameId.Length - 1; i >= 0; i--) {
-				nameId[i] = (byte)(id & 0xff);
-				id >>= 8;
-			}
+			_nameId = id;
 		}
 
-		void IncrementNameId() {
-			for (int i = nameId.Length - 1; i >= 0; i--) {
-				nameId[i]++;
-				if (nameId[i] != 0)
-					break;
-			}
-		}
 
-		string ObfuscateNameInternal(byte[] hash, RenameMode mode) {
+		string ObfuscateNameInternal(ReadOnlySpan<byte> hash, RenameMode mode) {
 			switch (mode) {
 				case RenameMode.Empty:
 					return "";
@@ -136,99 +138,87 @@ namespace Confuser.Renamer.Services {
 				case RenameMode.Reflection:
 					return Utils.EncodeString(hash, reflectionCharset);
 				case RenameMode.Decodable:
-					IncrementNameId();
 					return "_" + Utils.EncodeString(hash, alphaNumCharset);
 				case RenameMode.Sequential:
-					IncrementNameId();
-					return "_" + Utils.EncodeString(nameId, alphaNumCharset);
+					return "_" + GetNextSequentialName();
 				default:
-
 					throw new NotSupportedException("Rename mode '" + mode + "' is not supported.");
 			}
 		}
 
-		string ParseGenericName(string name, out int? count) {
-			if (name.LastIndexOf('`') != -1) {
-				int index = name.LastIndexOf('`');
-				int c;
-				if (int.TryParse(name.Substring(index + 1), out c)) {
+		string ParseGenericName(string name, out int count) {
+			int graveIndex = name.LastIndexOf('`');
+			if (graveIndex != -1) {
+				if (int.TryParse(name.Substring(graveIndex + 1), out int c)) {
 					count = c;
-					return name.Substring(0, index);
+					return name.Substring(0, graveIndex);
 				}
 			}
 
-			count = null;
+			count = 0;
 			return name;
 		}
 
-		string MakeGenericName(string name, int? count) {
-			if (count == null)
-				return name;
-			else
-				return string.Format("{0}`{1}", name, count.Value);
+		string MakeGenericName(string name, int count) => count == 0 ? name : $"{name}`{count}";
+
+		public string ObfuscateName(string name, RenameMode mode) => ObfuscateName(null, name, mode, false);
+
+		public string ObfuscateName(IConfuserContext context, IDnlibDef dnlibDef, RenameMode mode) {
+			var normalizedName = GetNormalizedName(context, dnlibDef);
+			bool preserveGenericParams = GetParam(context, dnlibDef, _parent.Parameters.PreserveGenericParams);
+			return ObfuscateName(null, normalizedName, mode, preserveGenericParams);
 		}
 
-		string INameService.ObfuscateName(ModuleDef module, string name, RenameMode mode) {
-			if (module == null) throw new ArgumentNullException(nameof(module));
+		public string ObfuscateName(string format, string name, RenameMode mode, bool preserveGenericParams = false) {
+			int genericParamsCount = 0;
+			if (preserveGenericParams) {
+				name = ParseGenericName(name, out genericParamsCount);
+			}
 
-			return ObfuscateName(name, mode);
-		}
+			string newName;
 
-		public string ObfuscateName(string name, RenameMode mode) => ObfuscateName(null, null, name, mode);
-
-		public string ObfuscateName(string format, string name, RenameMode mode) => ObfuscateName(format, null, name, mode);
-
-		public string ObfuscateName(ModuleDef module, string name, RenameMode mode) => ObfuscateName(null, module, name, mode);
-
-		public string ObfuscateName(string format, ModuleDef module, string name, RenameMode mode) {
-			string newName = null;
-			name = ParseGenericName(name, out var count);
-
-			if (string.IsNullOrEmpty(name))
+			if (string.IsNullOrEmpty(name) || mode == RenameMode.Empty)
 				return string.Empty;
 
-			if (mode == RenameMode.Empty)
-				return "";
 			if (mode == RenameMode.Debug || mode == RenameMode.Retain) {
 				// When flattening there are issues, in case there is a . in the name of the assembly.
-				newName = MakeGenericName(name.Replace('.', '_'), count);
-				return mode == RenameMode.Debug ? "_" + newName : newName;
+				newName = name.Replace('.', '_');
+				newName = mode == RenameMode.Debug ? "_" + newName : newName;
 			}
-			if (mode == RenameMode.Reversible) {
+			else if (mode == RenameMode.Reversible) {
 				if (reversibleRenamer == null)
 					throw new ArgumentException("Password not provided for reversible renaming.");
 				newName = reversibleRenamer.Encrypt(name);
-				return MakeGenericName(newName, count);
 			}
+			else if (!_originalToObfuscatedNameMap.TryGetValue(name, out newName)) {
+				byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed.Span);
+				while (true) {
+					newName = ObfuscateNameInternal(hash, mode);
 
-			if (nameMap1.ContainsKey(name))
-				return MakeGenericName(nameMap1[name], count);
+					try {
+						if (!(format is null))
+							newName = string.Format(CultureInfo.InvariantCulture, format, newName);
+					}
+					catch (FormatException ex) {
+						throw new ArgumentException(
+							string.Format(CultureInfo.InvariantCulture,
+								Resources.NameService_ObfuscateName_InvalidFormat, format),
+							nameof(format), ex);
+					}
 
-			byte[] hash = Utils.Xor(Utils.SHA1(Encoding.UTF8.GetBytes(name)), nameSeed.ToArray());
-			for (int i = 0; i < 100; i++) {
-				newName = ObfuscateNameInternal(hash, mode);
-
-				try {
-					if (!(format is null))
-						newName = string.Format(CultureInfo.InvariantCulture, format, newName);
+					if (!identifiers.Contains(MakeGenericName(newName, genericParamsCount))
+					    && !_obfuscatedToOriginalNameMap.ContainsKey(newName))
+						break;
+					hash = Utils.SHA1(hash);
 				}
-				catch (FormatException ex) {
-					throw new ArgumentException(
-						string.Format(CultureInfo.InvariantCulture, Resources.NameService_ObfuscateName_InvalidFormat, format), 
-						nameof(format), ex);
+
+				if (mode == RenameMode.Decodable || mode == RenameMode.Sequential) {
+					_obfuscatedToOriginalNameMap.Add(newName, name);
+					_originalToObfuscatedNameMap.Add(name, newName);
 				}
-
-				if (!identifiers.Contains(MakeGenericName(newName, count)))
-					break;
-				hash = Utils.SHA1(hash);
 			}
 
-			if ((mode & RenameMode.Decodable) != 0) {
-				nameMap2[newName] = name;
-				nameMap1[name] = newName;
-			}
-
-			return MakeGenericName(newName, count);
+			return MakeGenericName(newName, genericParamsCount);
 		}
 
 		public string RandomName() {
@@ -241,15 +231,22 @@ namespace Confuser.Renamer.Services {
 			return ObfuscateName(Utils.ToHexString(buf), mode);
 		}
 
-		public void SetOriginalName(IConfuserContext context, object obj, string name) {
-			identifiers.Add(name);
-			context.Annotations.Set(obj, OriginalNameKey, name);
+		public void StoreNames(IConfuserContext context, IDnlibDef dnlibDef) {
+			AddReservedIdentifier(dnlibDef.Name);
+			if (dnlibDef is TypeDef typeDef) {
+				AddReservedIdentifier(typeDef.Namespace);
+			}
+
+			var name = ExtractDisplayNormalizedName(context, dnlibDef);
+			context.Annotations.Set(dnlibDef, DisplayNameKey, name.DisplayName);
+			context.Annotations.Set(dnlibDef, NormalizedNameKey, name.NormalizedName);
 		}
 
-		public void SetOriginalNamespace(IConfuserContext context, object obj, string ns) {
-			identifiers.Add(ns);
-			context.Annotations.Set(obj, OriginalNamespaceKey, ns);
+		public void SetNormalizedName(IConfuserContext context, IDnlibDef dnlibDef, string name) {
+			context.Annotations.Set(dnlibDef, NormalizedNameKey, name);
 		}
+
+		public void AddReservedIdentifier(string id) => identifiers.Add(id);
 
 		public void RegisterRenamer(IRenamer renamer) {
 			Renamers = Renamers.Add(renamer);
@@ -293,7 +290,7 @@ namespace Confuser.Renamer.Services {
 			.Except(new[] {'.'})
 			.ToArray();
 
-		static readonly char[] reflectionCharset = asciiCharset.Except(new[] { ' ', '[', ']' }).ToArray();
+		static readonly char[] reflectionCharset = asciiCharset.Except(new[] {' ', '[', ']'}).ToArray();
 
 		static readonly char[] letterCharset = Enumerable.Range(0, 26)
 			.SelectMany(ord => new[] {(char)('a' + ord), (char)('A' + ord)})
@@ -323,18 +320,95 @@ namespace Confuser.Renamer.Services {
 			return context.Annotations.GetLazy(obj, ReferencesKey, key => new List<INameReference>());
 		}
 
-		public string GetOriginalName(IConfuserContext context, object obj) {
-			return context.Annotations.Get(obj, OriginalNameKey, "");
-		}
+		public string GetDisplayName(IConfuserContext context, IDnlibDef obj) =>
+			context.Annotations.Get(obj, DisplayNameKey, (string)null);
 
-		public string GetOriginalNamespace(IConfuserContext context, object obj) {
-			return context.Annotations.Get(obj, OriginalNamespaceKey, "");
-		}
+		public string GetNormalizedName(IConfuserContext context, IDnlibDef obj) =>
+			context.Annotations.Get(obj, NormalizedNameKey, (string)null);
 
-		public IReadOnlyCollection<KeyValuePair<string, string>> GetNameMap(ModuleDef module) => nameMap2;
+		public IReadOnlyDictionary<string, string> GetNameMap() => _obfuscatedToOriginalNameMap;
 
 		public bool IsRenamed(IConfuserContext context, IDnlibDef def) => context.Annotations.Get(def, IsRenamedKey, !CanRename(context, def));
 
 		public void SetIsRenamed(IConfuserContext context, IDnlibDef def) => context.Annotations.Set(def, IsRenamedKey, true);
+
+		public DisplayNormalizedName ExtractDisplayNormalizedName(IConfuserContext context, IDnlibDef dnlibDef, bool forceShortNames = false) {
+			var shortNames = forceShortNames || GetParam(context, dnlibDef, _parent.Parameters.ShortNames);
+			var renameMode = GetRenameMode(context, dnlibDef);
+
+			if (dnlibDef is TypeDef typeDef) {
+				if (typeDef.DeclaringType != null) {
+					var outerClassName = CompressTypeName(typeDef.DeclaringType.FullName, renameMode);
+					return
+						new DisplayNormalizedName(dnlibDef.FullName, $"{outerClassName.NormalizedName}/{dnlibDef.Name}");
+				}
+
+				return new DisplayNormalizedName(dnlibDef.FullName, dnlibDef.FullName);
+			}
+
+			var displayNameBuilder = new StringBuilder();
+			var normalizedNameBuilder = new StringBuilder();
+			if (dnlibDef is IMemberDef memberDef) {
+				var declaringTypeName = CompressTypeName(memberDef.DeclaringType?.FullName ?? "", renameMode);
+
+				displayNameBuilder.Append(declaringTypeName.DisplayName);
+				displayNameBuilder.Append("::");
+				displayNameBuilder.Append(dnlibDef.Name);
+
+				normalizedNameBuilder.Append(declaringTypeName.NormalizedName);
+				normalizedNameBuilder.Append("::");
+				normalizedNameBuilder.Append(dnlibDef.Name);
+
+				if (memberDef is MethodDef methodDef) {
+					displayNameBuilder.Append('(');
+					normalizedNameBuilder.Append('(');
+					if (methodDef.Signature is MethodSig methodSig) {
+						var methodParams = methodSig.Params;
+						for (var index = 0; index < methodParams.Count; index++) {
+							var parameterName = CompressTypeName(methodParams[index].ToString(), renameMode);
+							displayNameBuilder.Append(parameterName.DisplayName);
+							normalizedNameBuilder.Append(parameterName.NormalizedName);
+
+							if (index < methodParams.Count - 1) {
+								displayNameBuilder.Append(',');
+								normalizedNameBuilder.Append(',');
+							}
+						}
+					}
+
+					displayNameBuilder.Append(')');
+					normalizedNameBuilder.Append(')');
+				}
+			}
+
+			return new DisplayNormalizedName(displayNameBuilder.ToString(),
+				shortNames ? dnlibDef.Name.ToString() : normalizedNameBuilder.ToString());
+		}
+
+		DisplayNormalizedName CompressTypeName(string typeName, RenameMode renameMode)
+		{
+			if (renameMode == RenameMode.Reversible)
+			{
+				if (!_prefixesMap.TryGetValue(typeName, out string prefix))
+				{
+					_prefixesMap.Add(typeName, GetNextSequentialName());
+				}
+
+				return new DisplayNormalizedName(typeName, prefix);
+			}
+
+			return new DisplayNormalizedName(typeName, typeName);
+		}
+
+		string GetNextSequentialName() {
+			var number = _nameId++;
+			var bigLength = (long)alphaNumCharset.Length;
+			_nameBuilder.Clear();
+			do {
+				number = Math.DivRem(number, bigLength, out var remainder);
+				_nameBuilder.Append(alphaNumCharset[remainder]);
+			} while (number != 0);
+			return _nameBuilder.ToString();
+		}
 	}
 }

@@ -12,11 +12,17 @@ namespace Confuser.Core.Services {
 	internal sealed class RandomService : IRandomService {
 		private readonly ReadOnlyMemory<byte> seed; //32 bytes
 
+		public string SeedString { get; }
+
 		/// <summary>
 		///     Initializes a new instance of the <see cref="RandomService" /> class.
 		/// </summary>
 		/// <param name="seed">The project seed.</param>
-		public RandomService(string seed) => this.seed = RandomGenerator.Seed(GetHashAlgorithm(), seed);
+		public RandomService(string seed)
+		{
+			SeedString = string.IsNullOrEmpty(seed) ? Guid.NewGuid().ToString() : seed;
+			this.seed = RandomGenerator.Seed(GetHashAlgorithm(), SeedString);
+		}
 
 		/// <inheritdoc />
 		public IRandomGenerator GetRandomGenerator(string id) {
@@ -37,7 +43,6 @@ namespace Confuser.Core.Services {
 			else
 				return SHA256.Create();
 		}
-
 
 		/// <summary>
 		///     The default random value generator.

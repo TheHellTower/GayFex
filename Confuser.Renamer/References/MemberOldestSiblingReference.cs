@@ -26,7 +26,7 @@ namespace Confuser.Renamer.References {
 		public bool ShouldCancelRename => false;
 
 		/// <inheritdoc />
-		public bool DelayRenaming(IConfuserContext context, INameService service) => false;
+		public bool DelayRenaming(IConfuserContext context, INameService service, IDnlibDef currentDef) => false;
 
 		/// <inheritdoc />
 		public bool UpdateNameReference(IConfuserContext context, INameService service) => false;

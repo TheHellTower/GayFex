@@ -5,8 +5,9 @@ using dnlib.DotNet;
 
 namespace Confuser.Renamer.Analyzers {
 	internal class JsonAnalyzer : IRenamer {
-		public JsonAnalyzer() {
-		}
+		private NameProtection Parent { get; }
+		
+		public JsonAnalyzer(NameProtection parent) => Parent = parent;
 
 		const string JsonProperty = "Newtonsoft.Json.JsonPropertyAttribute";
 		const string JsonIgnore = "Newtonsoft.Json.JsonIgnoreAttribute";
@@ -102,7 +103,7 @@ namespace Confuser.Renamer.Analyzers {
 		void Analyze(IConfuserContext context, INameService service, MethodDef method,
 			IProtectionParameters parameters) {
 			if (GetJsonContainerAttribute(method.DeclaringType) != null && method.IsConstructor) {
-				service.SetParam(context, method, "renameArgs", "false");
+				service.SetParam(context, method, Parent.Parameters.RenameArguments, false);
 			}
 		}
 
