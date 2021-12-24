@@ -2,6 +2,8 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Windows.Win32;
+using Windows.Win32.System.Memory;
 
 namespace Confuser.Runtime {
 	internal static unsafe class AntiTamperJIT {
@@ -58,10 +60,10 @@ namespace Confuser.Runtime {
 				ptr[1] = 0x000000006c6c642e; //.dll....
 			}
 
-			IntPtr jit = NativeMethods.LoadLibrary(new string((sbyte*)ptr));
+			using var jit = PInvoke.LoadLibrary(new string((sbyte*)ptr));
 			ptr[0] = 0x000074694a746567; //getJit
 			var get = (getJit)Marshal.GetDelegateForFunctionPointer(
-				NativeMethods.GetProcAddress(jit, new string((sbyte*)ptr)), typeof(getJit));
+				PInvoke.GetProcAddress(jit, new string((sbyte*)ptr)), typeof(getJit));
 			IntPtr hookPosition = *get();
 			IntPtr original = *(IntPtr*)hookPosition;
 
@@ -72,7 +74,7 @@ namespace Confuser.Runtime {
 				tptr[0] = 0xffffffffffffb848;
 				tptr[1] = 0x90909090e0ffffff;
 
-				NativeMethods.VirtualProtect(trampoline, 12, MemoryProtection.ExecuteReadWrite, out _);
+				PInvoke.VirtualProtect(trampoline.ToPointer(), 12, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 				Marshal.WriteIntPtr(trampoline, 2, original);
 			}
 			else {
@@ -80,7 +82,7 @@ namespace Confuser.Runtime {
 				var tptr = (ulong*)trampoline;
 				tptr[0] = 0x90e0ffffffffffb8;
 
-				NativeMethods.VirtualProtect(trampoline, 7, MemoryProtection.ExecuteReadWrite, out _);
+				PInvoke.VirtualProtect(trampoline.ToPointer(), 7, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 				Marshal.WriteIntPtr(trampoline, 1, original);
 			}
 
@@ -90,9 +92,9 @@ namespace Confuser.Runtime {
 			RuntimeHelpers.PrepareDelegate(originalDelegate);
 			RuntimeHelpers.PrepareDelegate(handler);
 
-			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, MemoryProtection.ExecuteReadWrite, out var oldPl);
+			PInvoke.VirtualProtect(hookPosition.ToPointer(), (nuint)IntPtr.Size, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out var oldPl);
 			Marshal.WriteIntPtr(hookPosition, Marshal.GetFunctionPointerForDelegate(handler));
-			NativeMethods.VirtualProtect(hookPosition, (uint)IntPtr.Size, oldPl, out _);
+			PInvoke.VirtualProtect(hookPosition.ToPointer(), (nuint)IntPtr.Size, oldPl, out _);
 		}
 
 		static void ExtractLocalVars(CORINFO_METHOD_INFO* info, uint len, byte* localVar) {

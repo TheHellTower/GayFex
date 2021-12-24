@@ -2,6 +2,9 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.System.Threading;
 
 namespace Confuser.Runtime {
 	public static class AntiDebugWin32 {
@@ -26,23 +29,33 @@ namespace Confuser.Runtime {
 		public static void Initialize() {
 			const string x = "COR";
 			if (Environment.GetEnvironmentVariable(x + "_PROFILER") != null ||
-			    Environment.GetEnvironmentVariable(x + "_ENABLE_PROFILING") != null)
+				Environment.GetEnvironmentVariable(x + "_ENABLE_PROFILING") != null)
 				Environment.FailFast(null);
 			//Anti dnspy
 			Process here = GetParentProcess();
-			if (!(here is null) && here.ProcessName.ToLower().Contains("dnspy"))
+			if (here is not null && here.ProcessName.ToLower().Contains("dnspy"))
 				Environment.FailFast(DnSpyDetectedMsg);
 
-			var thread = new Thread(Worker) {IsBackground = true};
+			var thread = new Thread(Worker) { IsBackground = true };
 			thread.Start(null);
 		}
-		
+
 		//https://stackoverflow.com/questions/394816/how-to-get-parent-process-in-net-in-managed-way
 
-		private static ParentProcessUtilities PPU;
 		public static Process GetParentProcess() {
 			return ParentProcessUtilities.GetParentProcess();
 		}
+
+#if !NET46_OR_GREATER
+		internal sealed class InternalSafeHandle : SafeHandle {
+
+			public InternalSafeHandle(IntPtr handle) : base(IntPtr.Zero, false) => SetHandle(handle);
+
+			public override bool IsInvalid => handle != IntPtr.Zero;
+
+			protected override bool ReleaseHandle() => false;
+		}
+#endif
 
 		/// <summary>
 		/// A utility class to determine a process parent.
@@ -50,23 +63,18 @@ namespace Confuser.Runtime {
 		[StructLayout(LayoutKind.Sequential)]
 		internal struct ParentProcessUtilities {
 			// These members must match PROCESS_BASIC_INFORMATION
-			internal uint ExitStatus;
+			internal NTSTATUS ExitStatus;
 			internal IntPtr PebBaseAddress;
 			internal UIntPtr AffinityMask;
 			internal int BasePriority;
 			internal UIntPtr UniqueProcessId;
 			internal IntPtr InheritedFromUniqueProcessId;
 
-			[DllImport("ntdll.dll")]
-			private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, uint processInformationLength, out int returnLength);
-			
 			/// <summary>
 			/// Gets the parent process of the current process.
 			/// </summary>
 			/// <returns>An instance of the Process class.</returns>
-			internal static Process GetParentProcess() {
-				return GetParentProcess(Process.GetCurrentProcess().Handle);
-			}
+			internal static Process GetParentProcess() => GetParentProcess(Process.GetCurrentProcess());
 
 			/// <summary>
 			/// Gets the parent process of specified process.
@@ -75,7 +83,16 @@ namespace Confuser.Runtime {
 			/// <returns>An instance of the Process class.</returns>
 			public static Process GetParentProcess(int id) {
 				Process process = Process.GetProcessById(id);
-				return GetParentProcess(process.Handle);
+				return GetParentProcess(process);
+			}
+
+			public static Process GetParentProcess(Process process) {
+#if !NET46_OR_GREATER
+				using SafeHandle processHandle = new InternalSafeHandle(process.Handle);
+				return GetParentProcess(processHandle);
+#else
+				return GetParentProcess(process.SafeHandle);
+#endif
 			}
 
 			/// <summary>
@@ -83,9 +100,10 @@ namespace Confuser.Runtime {
 			/// </summary>
 			/// <param name="handle">The process handle.</param>
 			/// <returns>An instance of the Process class.</returns>
-			public static Process GetParentProcess(IntPtr handle) {
+			public static unsafe Process GetParentProcess(SafeHandle handle) {
 				ParentProcessUtilities pbi = new ParentProcessUtilities();
-				int status = NtQueryInformationProcess(handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out _);
+				uint length = (uint)sizeof(ParentProcessUtilities);
+				var status = PInvoke.NtQueryInformationProcess(handle, PROCESSINFOCLASS.ProcessBasicInformation, &pbi, length, ref length);
 				if (status != 0)
 					return null;
 
@@ -99,19 +117,9 @@ namespace Confuser.Runtime {
 			}
 		}
 
-
-		[DllImport("kernel32.dll")]
-		private static extern bool CloseHandle(IntPtr hObject);
-
-		[DllImport("kernel32.dll")]
-		private static extern bool IsDebuggerPresent();
-
-		[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
-		private static extern void OutputDebugString([In, Optional] string str);
-
 		private static void Worker(object thread) {
 			if (!(thread is Thread th)) {
-				th = new Thread(Worker) {IsBackground = true};
+				th = new Thread(Worker) { IsBackground = true };
 				th.Start(Thread.CurrentThread);
 				Thread.Sleep(500);
 			}
@@ -122,7 +130,7 @@ namespace Confuser.Runtime {
 					Environment.FailFast(ManagedDebuggerActiveMsg);
 
 				// IsDebuggerPresent
-				if (IsDebuggerPresent())
+				if (PInvoke.IsDebuggerPresent())
 					Environment.FailFast(IsDebuggerPresentMsg);
 
 				// OpenProcess
@@ -135,14 +143,14 @@ namespace Confuser.Runtime {
 
 #if !NET20
 				// OutputDebugString
-				OutputDebugString("");
+				PInvoke.OutputDebugString("");
 				if (Marshal.GetLastWin32Error() == 0)
 					Environment.FailFast(OutputDebugStringMsg);
 #endif
 
 				// CloseHandle
 				try {
-					CloseHandle(IntPtr.Zero);
+					PInvoke.CloseHandle(new HANDLE(IntPtr.Zero));
 				}
 				catch {
 					Environment.FailFast(CloseHandleMsg);

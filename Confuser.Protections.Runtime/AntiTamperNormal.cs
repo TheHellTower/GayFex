@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Windows.Win32;
+using Windows.Win32.System.Memory;
 
 namespace Confuser.Runtime {
 	internal static class AntiTamperNormal {
@@ -68,8 +70,7 @@ namespace Confuser.Runtime {
 
 			// Request access to the memory section so it can be modified
 			// (normally parts of the program code aren't writable)
-			var protectionOption = MemoryProtection.ExecuteReadWrite;
-			if (!NativeMethods.VirtualProtect((IntPtr)encPos, encSize << 2, protectionOption, out protectionOption)) {
+			if (!PInvoke.VirtualProtect(encPos, encSize << 2, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out var protectionOption)) {
 				// Changing the access to the memory page was rejected for some reason.
 				// Maybe someone tampered with the assembly and the key was not decoded correctly anymore.
 				// Nothing more to do here.
@@ -78,7 +79,7 @@ namespace Confuser.Runtime {
 
 			// The previous protection option was already set to execute, read, write.
 			// The decryption is either already done or something went wrong.
-			if (protectionOption == MemoryProtection.ExecuteReadWrite)
+			if (protectionOption == PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE)
 				return IntPtr.Zero;
 
 			// Now transform the memory with the decoded key so the method bodies become visible.

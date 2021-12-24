@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net20;net40;netstandard2.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net20;net40;netstandard2.0;netcoreapp3.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>Confuser.Runtime</RootNamespace>
   </PropertyGroup>
@@ -34,7 +34,7 @@
     <Compile Remove="RefProxy.Strong.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <Compile Remove="..\antinet\antinet\HandleProcessCorruptedStateExceptionsAttribute.cs" />
     <Compile Remove="RefProxy.Strong.cs" />
   </ItemGroup>

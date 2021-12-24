@@ -1,5 +1,5 @@
 ﻿namespace Confuser.Protections.AntiTamper {
-	internal enum AntiTamperMode {
+	public enum AntiTamperMode {
 		Normal,
 		JIT
 	}

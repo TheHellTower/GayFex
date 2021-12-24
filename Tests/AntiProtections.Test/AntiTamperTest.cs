@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Confuser.Core;
 using Confuser.Core.Project;
+using Confuser.Protections;
+using Confuser.Protections.AntiTamper;
 using Confuser.UnitTest;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,31 +18,21 @@ namespace AntiProtections.Test {
 		[MemberData(nameof(AntiTamperTestData))]
 		[Trait("Category", "Protection")]
 		[Trait("Protection", "anti tamper")]
-		public async Task ProtectAntiTamperAndExecute(string antiTamperMode, string framework) {
-			var proj = CreateProject(framework);
-			var inputFile = GetInputAssembly(proj, framework);
-			var outputFile = Path.Combine(proj.OutputDirectory, GetExecutableName(framework));
-			proj.Rules.Add(new Rule() {
-				new SettingItem<IProtection>("anti tamper") {
-					{ "mode", antiTamperMode }
-				}
-			});
-			proj.Add(new ProjectModule() { Path = inputFile, SNKeyPath = GetKeyFile() });
-
-			var parameters = new ConfuserParameters {
-				Project = proj,
-				ConfigureLogging = ConfigureLogging()
-			};
-
-			FileUtilities.ClearOutput(outputFile);
-			await ConfuserEngine.Run(parameters);
-			await VerifyTestApplication(inputFile, outputFile);
-		}
+		public Task ProtectAntiTamperAndExecute(string framework, AntiTamperMode antiTamperMode, KeyDeriverMode keyDeriverMode) =>
+			RunWithSettings(
+				framework,
+				new SettingItem<IProtection>(AntiTamperProtection._Id) {
+					{ "mode", Enum.GetName(antiTamperMode) },
+					{ "key", Enum.GetName(keyDeriverMode) }
+				},
+				$"_tamper_{antiTamperMode}_{keyDeriverMode}"
+			);
 
 		public static IEnumerable<object[]> AntiTamperTestData() {
 			foreach (var framework in GetTargetFrameworks())
-				foreach (var mode in new string[] { "Normal", "JIT" })
-					yield return new object[] { mode, framework };
+				foreach (var mode in Enum.GetValues<AntiTamperMode>())
+					foreach (var deriver in Enum.GetValues<KeyDeriverMode>())
+						yield return new object[] { framework, mode, deriver };
 		}
 	}
 }

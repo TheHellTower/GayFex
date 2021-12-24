@@ -228,8 +228,8 @@ namespace Confuser.Helpers {
 				if (interfaceImpl == null) throw new ArgumentNullException(nameof(interfaceImpl));
 
 				var typeDefOrRef = importer.Import(interfaceImpl.Interface);
-				if (!(typeDefOrRef is TypeDef typeDef))
-					typeDef = ((TypeRef)typeDefOrRef).Resolve();
+				var typeDef = typeDefOrRef.ResolveTypeDefThrow();
+
 				if (typeDef != null && !typeDef.IsInterface)
 					throw new InvalidOperationException("Type for Interface is not a interface?!");
 

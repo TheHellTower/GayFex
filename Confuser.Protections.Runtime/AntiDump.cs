@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Windows.Win32;
+using Windows.Win32.System.Memory;
 
 namespace Confuser.Runtime {
 	// ReSharper disable once UnusedMember.Global
@@ -36,7 +38,7 @@ namespace Confuser.Runtime {
 					var oftMod = bas + *(uint*)importDir;
 					var modName = bas + *(uint*)(importDir + 12);
 					var funcName = bas + *(uint*)oftMod + 2;
-					NativeMethods.VirtualProtect(new IntPtr(modName), 11, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(modName, 11, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 
 					*(uint*)@new = 0x6c64746e;
 					*((uint*)@new + 1) = 0x6c642e6c;
@@ -45,7 +47,7 @@ namespace Confuser.Runtime {
 
 					UnsafeMemory.CopyBlock(modName, @new, 11);
 
-					NativeMethods.VirtualProtect(new IntPtr(funcName), 11, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(funcName, 11, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 
 					*(uint*)@new = 0x6f43744e;
 					*((uint*)@new + 1) = 0x6e69746e;
@@ -56,17 +58,17 @@ namespace Confuser.Runtime {
 				}
 
 				for (int i = 0; i < sectNum; i++) {
-					NativeMethods.VirtualProtect(new IntPtr(ptr), 8, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(ptr, 8, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 					UnsafeMemory.InitBlock(ptr, 0, 8);
 					ptr += 0x28;
 				}
 
-				NativeMethods.VirtualProtect(new IntPtr(mdDir), 0x48, MemoryProtection.ExecuteReadWrite, out _);
+				PInvoke.VirtualProtect(mdDir, 0x48, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 				var mdHdr = bas + *(uint*)(mdDir + 8);
 
 				UnsafeMemory.InitBlock(mdDir, 0, 16);
 
-				NativeMethods.VirtualProtect(new IntPtr(mdHdr), 4, MemoryProtection.ExecuteReadWrite, out _);
+				PInvoke.VirtualProtect(mdHdr, 4, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 				*(uint*)mdHdr = 0;
 				mdHdr += 12;
 				mdHdr += *(uint*)mdHdr;
@@ -75,13 +77,13 @@ namespace Confuser.Runtime {
 				ushort numOfStream = *mdHdr;
 				mdHdr += 2;
 				for (int i = 0; i < numOfStream; i++) {
-					NativeMethods.VirtualProtect(new IntPtr(mdHdr), 8, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(mdHdr, 8, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 					//*(uint*)mdHdr = 0;
 					mdHdr += 4;
 					//*(uint*)mdHdr = 0;
 					mdHdr += 4;
 					for (int ii = 0; ii < 8; ii++) {
-						NativeMethods.VirtualProtect(new IntPtr(mdHdr), 4, MemoryProtection.ExecuteReadWrite, out _);
+						PInvoke.VirtualProtect(mdHdr, 4, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 						*mdHdr = 0;
 						mdHdr++;
 						if (*mdHdr == 0) {
@@ -120,7 +122,7 @@ namespace Confuser.Runtime {
 				var vSizes = new uint[sectNum];
 				var rAdrs = new uint[sectNum];
 				for (int i = 0; i < sectNum; i++) {
-					NativeMethods.VirtualProtect(new IntPtr(ptr), 8, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(ptr, 8, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 					Marshal.Copy(new byte[8], 0, (IntPtr)ptr, 8);
 					vAdrs[i] = *(uint*)(ptr + 12);
 					vSizes[i] = *(uint*)(ptr + 8);
@@ -159,7 +161,7 @@ namespace Confuser.Runtime {
 							break;
 						}
 
-					NativeMethods.VirtualProtect(new IntPtr(bas + modName), 11, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(bas + modName, 11, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 
 					*(uint*)@new = 0x6c64746e;
 					*((uint*)@new + 1) = 0x6c642e6c;
@@ -168,7 +170,7 @@ namespace Confuser.Runtime {
 
 					UnsafeMemory.CopyBlock(bas + modName, @new, 11);
 
-					NativeMethods.VirtualProtect(new IntPtr(bas + funcName), 11, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(bas + funcName, 11, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 
 					*(uint*)@new = 0x6f43744e;
 					*((uint*)@new + 1) = 0x6e69746e;
@@ -186,7 +188,7 @@ namespace Confuser.Runtime {
 					}
 
 				var mdDirPtr = bas + mdDir;
-				NativeMethods.VirtualProtect(new IntPtr(mdDirPtr), 0x48, MemoryProtection.ExecuteReadWrite, out _);
+				PInvoke.VirtualProtect(mdDirPtr, 0x48, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 				uint mdHdr = *(uint*)(mdDirPtr + 8);
 				for (int i = 0; i < sectNum; i++)
 					if (vAdrs[i] <= mdHdr && mdHdr < vAdrs[i] + vSizes[i]) {
@@ -197,7 +199,7 @@ namespace Confuser.Runtime {
 				UnsafeMemory.InitBlock(mdDirPtr, 0, 16);
 
 				var mdHdrPtr = bas + mdHdr;
-				NativeMethods.VirtualProtect(new IntPtr(mdHdrPtr), 4, MemoryProtection.ExecuteReadWrite, out _);
+				PInvoke.VirtualProtect(mdHdrPtr, 4, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 				*(uint*)mdHdrPtr = 0;
 				mdHdrPtr += 12;
 				mdHdrPtr += *(uint*)mdHdrPtr;
@@ -206,13 +208,13 @@ namespace Confuser.Runtime {
 				ushort numOfStream = *mdHdrPtr;
 				mdHdrPtr += 2;
 				for (int i = 0; i < numOfStream; i++) {
-					NativeMethods.VirtualProtect(new IntPtr(mdHdrPtr), 8, MemoryProtection.ExecuteReadWrite, out _);
+					PInvoke.VirtualProtect(mdHdrPtr, 8, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 					//*(uint*)mdHdrPtr = 0;
 					mdHdrPtr += 4;
 					//*(uint*)mdHdrPtr = 0;
 					mdHdrPtr += 4;
 					for (int ii = 0; ii < 8; ii++) {
-						NativeMethods.VirtualProtect(new IntPtr(mdHdrPtr), 4, MemoryProtection.ExecuteReadWrite, out _);
+						PInvoke.VirtualProtect(mdHdrPtr, 4, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out _);
 						*mdHdrPtr = 0;
 						mdHdrPtr++;
 						if (*mdHdrPtr == 0) {

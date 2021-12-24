@@ -1,5 +1,5 @@
 ﻿namespace Confuser.Protections {
-	internal enum AntiDebugMode {
+	public enum AntiDebugMode {
 		Safe,
 		Win32,
 		Antinet

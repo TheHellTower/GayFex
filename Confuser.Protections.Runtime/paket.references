@@ -3,3 +3,4 @@ group Build
 
 group Runtime
   Microsoft.NETFramework.ReferenceAssemblies
+  Microsoft.Windows.CsWin32

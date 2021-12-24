@@ -1,5 +1,5 @@
 ﻿namespace Confuser.Protections.AntiTamper {
-	internal enum KeyDeriverMode {
+	public enum KeyDeriverMode {
 		Normal,
 		Dynamic
 	}

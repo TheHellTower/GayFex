@@ -1,0 +1,9 @@
+﻿CloseHandle
+GetProcAddress
+IsDebuggerPresent
+LoadLibrary
+OutputDebugString
+VirtualProtect
+VirtualAlloc
+
+NtQueryInformationProcess
