@@ -39,7 +39,7 @@ namespace Confuser.Helpers {
 			}
 
 			private TypeDefUser CopyDef(TypeDef source) {
-				Debug.Assert(source != null, $"{nameof(source)} != null");
+				Debug.Assert(source is not null, $"{nameof(source)} is not null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (TypeDefUser)importedMember;
@@ -69,7 +69,7 @@ namespace Confuser.Helpers {
 			}
 
 			private MethodDefUser CopyDef(MethodDef source) {
-				Debug.Assert(source != null, $"{nameof(source)} != null");
+				Debug.Assert(source is not null, $"{nameof(source)} is not null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (MethodDefUser)importedMember;
@@ -87,7 +87,7 @@ namespace Confuser.Helpers {
 			}
 
 			private FieldDefUser CopyDef(FieldDef source) {
-				Debug.Assert(source != null, $"{nameof(source)} != null");
+				Debug.Assert(source is not null, $"{nameof(source)} is not null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (FieldDefUser)importedMember;
@@ -101,7 +101,7 @@ namespace Confuser.Helpers {
 			}
 
 			private EventDefUser CopyDef(EventDef source) {
-				Debug.Assert(source != null, $"{nameof(source)} != null");
+				Debug.Assert(source is not null, $"{nameof(source)} is not null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (EventDefUser)importedMember;
@@ -115,7 +115,7 @@ namespace Confuser.Helpers {
 			}
 
 			private PropertyDefUser CopyDef(PropertyDef source) {
-				Debug.Assert(source != null, $"{nameof(source)} != null");
+				Debug.Assert(source is not null, $"{nameof(source)} is not null");
 
 				if (_injectedMembers.TryGetValue(source, out var importedMember))
 					return (PropertyDefUser)importedMember;
@@ -160,7 +160,7 @@ namespace Confuser.Helpers {
 
 			internal MethodDef Inject(MethodDef methodDef) {
 				var existingMappedMethodDef = InjectContext.ResolveMapped(methodDef);
-				if (existingMappedMethodDef != null) return existingMappedMethodDef;
+				if (existingMappedMethodDef is not null) return existingMappedMethodDef;
 
 				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs,
 					new GenericParamContext(), this);
@@ -172,7 +172,7 @@ namespace Confuser.Helpers {
 
 			internal TypeDef Inject(TypeDef typeDef) {
 				var existingMappedTypeDef = InjectContext.ResolveMapped(typeDef);
-				if (existingMappedTypeDef != null) return existingMappedTypeDef;
+				if (existingMappedTypeDef is not null) return existingMappedTypeDef;
 
 				var importer = new Importer(InjectContext.TargetModule, ImporterOptions.TryToUseDefs,
 					new GenericParamContext(), this);
@@ -189,15 +189,15 @@ namespace Confuser.Helpers {
 			}
 
 			private TypeDef InjectTypeDef(TypeDef typeDef, Importer importer) {
-				if (typeDef == null) throw new ArgumentNullException(nameof(typeDef));
+				if (typeDef is null) throw new ArgumentNullException(nameof(typeDef));
 
 				var existingTypeDef = InjectContext.ResolveMapped(typeDef);
-				if (existingTypeDef != null) return existingTypeDef;
+				if (existingTypeDef is not null) return existingTypeDef;
 
 				var newTypeDef = CopyDef(typeDef);
 				newTypeDef.BaseType = importer.Import(typeDef.BaseType);
 
-				if (typeDef.DeclaringType != null)
+				if (typeDef.DeclaringType is not null)
 					newTypeDef.DeclaringType = InjectTypeDef(typeDef.DeclaringType, importer);
 
 				foreach (var iface in typeDef.Interfaces)
@@ -214,23 +214,23 @@ namespace Confuser.Helpers {
 				InjectContext.ApplyMapping(typeDef, newTypeDef);
 
 				var defaultConstructor = typeDef.FindDefaultConstructor();
-				if (defaultConstructor != null)
+				if (defaultConstructor is not null)
 					PendingForInject.Enqueue(defaultConstructor);
 
 				var staticConstructor = typeDef.FindStaticConstructor();
-				if (staticConstructor != null)
+				if (staticConstructor is not null)
 					PendingForInject.Enqueue(staticConstructor);
 
 				return newTypeDef;
 			}
 
 			private InterfaceImplUser InjectInterfaceImpl(InterfaceImpl interfaceImpl, Importer importer) {
-				if (interfaceImpl == null) throw new ArgumentNullException(nameof(interfaceImpl));
+				if (interfaceImpl is null) throw new ArgumentNullException(nameof(interfaceImpl));
 
 				var typeDefOrRef = importer.Import(interfaceImpl.Interface);
 				var typeDef = typeDefOrRef.ResolveTypeDefThrow();
 
-				if (typeDef != null && !typeDef.IsInterface)
+				if (typeDef is not null && !typeDef.IsInterface)
 					throw new InvalidOperationException("Type for Interface is not a interface?!");
 
 				var resultImpl = new InterfaceImplUser(typeDefOrRef);
@@ -249,7 +249,7 @@ namespace Confuser.Helpers {
 			}
 
 			private static CustomAttribute InjectCustomAttribute(CustomAttribute attribute, Importer importer) {
-				Debug.Assert(attribute != null, $"{nameof(attribute)} != null");
+				Debug.Assert(attribute is not null, $"{nameof(attribute)} is not null");
 
 				var result = new CustomAttribute((ICustomAttributeType)importer.Import(attribute.Constructor));
 				foreach (var arg in attribute.ConstructorArguments)
@@ -264,10 +264,10 @@ namespace Confuser.Helpers {
 			}
 
 			private FieldDef InjectFieldDef(FieldDef fieldDef, Importer importer) {
-				Debug.Assert(fieldDef != null, $"{nameof(fieldDef)} != null");
+				Debug.Assert(fieldDef is not null, $"{nameof(fieldDef)} is not null");
 
 				var existingFieldDef = InjectContext.ResolveMapped(fieldDef);
-				if (existingFieldDef != null) return existingFieldDef;
+				if (existingFieldDef is not null) return existingFieldDef;
 
 				var newFieldDef = CopyDef(fieldDef);
 				newFieldDef.Signature = importer.Import(fieldDef.Signature);
@@ -288,11 +288,11 @@ namespace Confuser.Helpers {
 
 			private MethodDef InjectMethodDef(MethodDef methodDef, Importer importer,
 				IEnumerable<IMethodInjectProcessor> methodInjectProcessors) {
-				Debug.Assert(methodDef != null, $"{nameof(methodDef)} != null");
-				Debug.Assert(methodInjectProcessors != null, $"{nameof(methodInjectProcessors)} != null");
+				Debug.Assert(methodDef is not null, $"{nameof(methodDef)} is not null");
+				Debug.Assert(methodInjectProcessors is not null, $"{nameof(methodInjectProcessors)} is not null");
 
 				var existingMethodDef = InjectContext.ResolveMapped(methodDef);
-				if (existingMethodDef != null) return existingMethodDef;
+				if (existingMethodDef is not null) return existingMethodDef;
 
 				var newMethodDef = CopyDef(methodDef);
 				newMethodDef.DeclaringType = (TypeDef)importer.Import(methodDef.DeclaringType);
@@ -302,7 +302,7 @@ namespace Confuser.Helpers {
 				foreach (var paramDef in methodDef.ParamDefs)
 					newMethodDef.ParamDefs.Add(new ParamDefUser(paramDef.Name, paramDef.Sequence, paramDef.Attributes));
 
-				if (methodDef.ImplMap != null)
+				if (methodDef.ImplMap is not null)
 					newMethodDef.ImplMap =
 						new ImplMapUser(new ModuleRefUser(InjectContext.TargetModule, methodDef.ImplMap.Module.Name),
 							methodDef.ImplMap.Name, methodDef.ImplMap.Attributes);
@@ -337,7 +337,7 @@ namespace Confuser.Helpers {
 					}
 
 					foreach (var instr in newMethodDef.Body.Instructions) {
-						if (instr.Operand != null && bodyMap.ContainsKey(instr.Operand))
+						if (instr.Operand is not null && bodyMap.ContainsKey(instr.Operand))
 							instr.Operand = bodyMap[instr.Operand];
 
 						else if (instr.Operand is Instruction[] instructionArrayOp)
@@ -347,12 +347,12 @@ namespace Confuser.Helpers {
 
 					foreach (var eh in methodDef.Body.ExceptionHandlers)
 						newMethodDef.Body.ExceptionHandlers.Add(new ExceptionHandler(eh.HandlerType) {
-							CatchType = eh.CatchType == null ? null : importer.Import(eh.CatchType),
+							CatchType = eh.CatchType is null ? null : importer.Import(eh.CatchType),
 							TryStart = (Instruction)bodyMap[eh.TryStart],
 							TryEnd = (Instruction)bodyMap[eh.TryEnd],
 							HandlerStart = (Instruction)bodyMap[eh.HandlerStart],
 							HandlerEnd = (Instruction)bodyMap[eh.HandlerEnd],
-							FilterStart = eh.FilterStart == null ? null : (Instruction)bodyMap[eh.FilterStart]
+							FilterStart = eh.FilterStart is null ? null : (Instruction)bodyMap[eh.FilterStart]
 						});
 
 					foreach (var processor in methodInjectProcessors)
@@ -367,10 +367,10 @@ namespace Confuser.Helpers {
 			}
 
 			private EventDef InjectEventDef(EventDef eventDef, Importer importer) {
-				Debug.Assert(eventDef != null, $"{nameof(eventDef)} != null");
+				Debug.Assert(eventDef is not null, $"{nameof(eventDef)} is not null");
 
 				var existingEventDef = InjectContext.ResolveMapped(eventDef);
-				if (existingEventDef != null) return existingEventDef;
+				if (existingEventDef is not null) return existingEventDef;
 
 				var newEventDef = CopyDef(eventDef);
 				newEventDef.AddMethod = CopyDef(eventDef.AddMethod);
@@ -393,10 +393,10 @@ namespace Confuser.Helpers {
 			}
 
 			private PropertyDef InjectPropertyDef(PropertyDef propertyDef, Importer importer) {
-				Debug.Assert(propertyDef != null, $"{nameof(propertyDef)} != null");
+				Debug.Assert(propertyDef is not null, $"{nameof(propertyDef)} is not null");
 
 				var existingPropertyDef = InjectContext.ResolveMapped(propertyDef);
-				if (existingPropertyDef != null) return existingPropertyDef;
+				if (existingPropertyDef is not null) return existingPropertyDef;
 
 				var newPropertyDef = CopyDef(propertyDef);
 				foreach (var getMethod in propertyDef.GetMethods)
@@ -425,7 +425,7 @@ namespace Confuser.Helpers {
 			public override ITypeDefOrRef Map(ITypeDefOrRef typeDefOrRef) {
 				if (typeDefOrRef is TypeDef typeDef) {
 					var mappedType = InjectContext.ResolveMapped(typeDef);
-					if (mappedType != null) return mappedType;
+					if (mappedType is not null) return mappedType;
 
 					if (typeDef.Module == InjectContext.OriginModule)
 						return CopyDef(typeDef);
@@ -447,7 +447,7 @@ namespace Confuser.Helpers {
 
 			public override IMethod Map(MethodDef methodDef) {
 				var mappedMethod = InjectContext.ResolveMapped(methodDef);
-				if (mappedMethod != null) return mappedMethod;
+				if (mappedMethod is not null) return mappedMethod;
 
 				if (methodDef.Module == InjectContext.OriginModule)
 					return CopyDef(methodDef);
@@ -456,7 +456,7 @@ namespace Confuser.Helpers {
 
 			public override IField Map(FieldDef fieldDef) {
 				var mappedField = InjectContext.ResolveMapped(fieldDef);
-				if (mappedField != null) return mappedField;
+				if (mappedField is not null) return mappedField;
 
 				if (fieldDef.Module == InjectContext.OriginModule)
 					return CopyDef(fieldDef);
@@ -471,23 +471,23 @@ namespace Confuser.Helpers {
 				internal ImportProcessor(Importer importer) => _importer = importer;
 
 				void IMethodInjectProcessor.Process(MethodDef method) {
-					Debug.Assert(method != null, $"{nameof(method)} != null");
+					Debug.Assert(method is not null, $"{nameof(method)} is not null");
 
 					if (method.HasBody && method.Body.HasInstructions)
 						foreach (var instruction in method.Body.Instructions) {
 							if (instruction.Operand is IType typeOp) {
 								var importedType = _importer.Import(typeOp);
-								Debug.Assert(importedType != null, $"{nameof(importedType)} != null");
+								Debug.Assert(importedType is not null, $"{nameof(importedType)} is not null");
 								instruction.Operand = importedType;
 							}
 							else if (instruction.Operand is IMethod methodOp) {
 								var importedMethod = _importer.Import(methodOp);
-								Debug.Assert(importedMethod != null, $"{nameof(importedMethod)} != null");
+								Debug.Assert(importedMethod is not null, $"{nameof(importedMethod)} is not null");
 								instruction.Operand = importedMethod;
 							}
 							else if (instruction.Operand is IField fieldOp) {
 								var importedField = _importer.Import(fieldOp);
-								Debug.Assert(importedField != null, $"{nameof(importedField)} != null");
+								Debug.Assert(importedField is not null, $"{nameof(importedField)} is not null");
 								instruction.Operand = importedField;
 							}
 						}
