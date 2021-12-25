@@ -46,11 +46,10 @@ namespace Confuser.Analysis {
 		/// be resolved, it itself is returned. Else the resolved type is returned.
 		/// </summary>
 		/// <param name="typeSig">Type signature</param>
-		/// <returns>New <see cref="TypeSig"/> which is never <c>null</c> unless
-		/// <paramref name="typeSig"/> is <c>null</c></returns>
+		/// <returns>New <see cref="TypeSig"/> which is never <see langword="null"/></returns>
+		/// <exception cref="ArgumentNullException"><paramref name="typeSig"/> is <see langword="null"/></exception>
 		public TypeSig Resolve(TypeSig typeSig) {
-			if (typeSig == null)
-				return null;
+			if (typeSig is null) throw new ArgumentNullException(nameof(typeSig));
 
 			var sig = typeSig;
 
@@ -78,14 +77,14 @@ namespace Confuser.Analysis {
 			/// Pushes generic arguments
 			/// </summary>
 			/// <param name="args">The generic arguments</param>
-			public void Push(IList<TypeSig> args) => (_argsStack ?? (_argsStack = new List<IList<TypeSig>>())).Add(args);
+			public void Push(IList<TypeSig> args) => (_argsStack ??= new List<IList<TypeSig>>()).Add(args);
 
 			/// <summary>
 			/// Pops generic arguments
 			/// </summary>
 			/// <returns>The popped generic arguments</returns>
 			public IList<TypeSig> Pop() {
-				if (_argsStack == null) throw new IndexOutOfRangeException();
+				if (_argsStack is null) throw new IndexOutOfRangeException();
 
 				int index = _argsStack.Count - 1;
 				var result = _argsStack[index];
@@ -99,10 +98,10 @@ namespace Confuser.Analysis {
 			/// <param name="number">Generic variable number</param>
 			/// <param name="isTypeVar"></param>
 			/// <returns>A <see cref="TypeSig"/> or <see langword="null" /> if none was found</returns>
-			public TypeSig Resolve(uint number, bool isTypeVar) {
-				if (_argsStack == null) return null;
+			public TypeSig? Resolve(uint number, bool isTypeVar) {
+				if (_argsStack is null) return null;
 
-				TypeSig result = null;
+				TypeSig? result = null;
 				for (int i = _argsStack.Count - 1; i >= 0; i--) {
 					var args = _argsStack[i];
 					if (number >= args.Count)

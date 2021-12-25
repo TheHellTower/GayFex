@@ -13,7 +13,7 @@ namespace Confuser.Analysis {
 
 		public void Initialize(IServiceCollection collection) {
 			collection.AddSingleton(p => new AnalysisService(p));
-			collection.AddTransient<IAnalysisService>(p => p.GetService<AnalysisService>());
+			collection.AddTransient<IAnalysisService>(p => p.GetRequiredService<AnalysisService>());
 		}
 		public void PopulatePipeline(IProtectionPipeline pipeline) { }
 	}

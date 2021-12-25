@@ -13,6 +13,6 @@ namespace Confuser.Analysis {
 		public MethodDef MethodDef { get; }
 
 		// This is the 'parent slot' that this slot overrides.
-		public IVTableSlot Overrides { get; }
+		public IVTableSlot? Overrides { get; }
 	}
 }

@@ -3,7 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Confuser.Analysis</RootNamespace>
+    <Nullable>enable</Nullable>
     <LangVersion>10.0</LangVersion>
+    <ResXFileCodeGenerator_NullForgivingOperators>true</ResXFileCodeGenerator_NullForgivingOperators>
   </PropertyGroup>
 
   <ItemGroup>

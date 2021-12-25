@@ -21,7 +21,7 @@ namespace Confuser.Analysis {
 			return new VTableSignature(sig, method.Name);
 		}
 
-		public bool Equals(VTableSignature other) {
+		public bool Equals(VTableSignature? other) {
 			if (other is null) return false;
 
 			return new SigComparer().Equals(MethodSig, other.MethodSig) &&

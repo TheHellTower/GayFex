@@ -18,11 +18,13 @@ namespace Confuser.Analysis {
 		/// <returns>Resolved type signature.</returns>
 		/// <exception cref="System.ArgumentException">No generic arguments to resolve.</exception>
 		public static TypeSig Resolve(TypeSig typeSig, IList<TypeSig> typeGenArgs) {
-			if (typeGenArgs == null) throw new ArgumentException("No generic arguments to resolve.");
+			if (typeSig is null) throw new ArgumentNullException(nameof(typeSig));
+			if (typeGenArgs is null) throw new ArgumentNullException(nameof(typeGenArgs), "No generic arguments to resolve.");
 
-			var resolver = new GenericArgumentResolver();
-			resolver._genericArguments = new GenericArguments();
-			resolver._recursionCounter = new RecursionCounter();
+			var resolver = new GenericArgumentResolver {
+				_genericArguments = new GenericArguments(),
+				_recursionCounter = new RecursionCounter()
+			};
 			resolver._genericArguments.PushTypeArgs(typeGenArgs);
 
 			return resolver.ResolveGenericArgs(typeSig);
@@ -36,12 +38,13 @@ namespace Confuser.Analysis {
 		/// <returns>Resolved method signature.</returns>
 		/// <exception cref="System.ArgumentException">No generic arguments to resolve.</exception>
 		public static MethodSig Resolve(MethodSig methodSig, IList<TypeSig> typeGenArgs) {
-			if (typeGenArgs == null)
-				throw new ArgumentException("No generic arguments to resolve.");
+			if (methodSig is null) throw new ArgumentNullException(nameof(methodSig));
+			if (typeGenArgs is null) throw new ArgumentNullException(nameof(typeGenArgs), "No generic arguments to resolve.");
 
-			var resolver = new GenericArgumentResolver();
-			resolver._genericArguments = new GenericArguments();
-			resolver._recursionCounter = new RecursionCounter();
+			var resolver = new GenericArgumentResolver {
+				_genericArguments = new GenericArguments(),
+				_recursionCounter = new RecursionCounter()
+			};
 			resolver._genericArguments.PushTypeArgs(typeGenArgs);
 
 			return resolver.ResolveGenericArgs(methodSig);
@@ -57,10 +60,8 @@ namespace Confuser.Analysis {
 		}
 
 		private MethodSig ResolveGenericArgs(MethodSig sig) {
-			if (sig == null)
-				return null;
 			if (!_recursionCounter.Increment())
-				return null;
+				throw new InvalidOperationException("Failed to resolve generic type. Recursion depth exceeded.");
 
 			var result = ResolveGenericArgs(new MethodSig(sig.GetCallingConvention()), sig);
 
@@ -82,8 +83,8 @@ namespace Confuser.Analysis {
 		}
 
 		private TypeSig ResolveGenericArgs(TypeSig typeSig) {
-			if (!_recursionCounter.Increment())
-				return null;
+			if (!_recursionCounter.Increment()) 
+				throw new InvalidOperationException("Failed to resolve generic type. Recursion depth exceeded.");
 
 			if (ReplaceGenericArg(ref typeSig)) {
 				_recursionCounter.Decrement();
@@ -108,16 +109,16 @@ namespace Confuser.Analysis {
 					result = new SZArraySig(ResolveGenericArgs(typeSig.Next));
 					break;
 				case ElementType.MVar:
-					result = new GenericMVar((typeSig as GenericMVar).Number);
+					result = new GenericMVar(((GenericMVar)typeSig).Number);
 					break;
 				case ElementType.CModReqd:
-					result = new CModReqdSig((typeSig as ModifierSig).Modifier, ResolveGenericArgs(typeSig.Next));
+					result = new CModReqdSig(((ModifierSig)typeSig).Modifier, ResolveGenericArgs(typeSig.Next));
 					break;
 				case ElementType.CModOpt:
-					result = new CModOptSig((typeSig as ModifierSig).Modifier, ResolveGenericArgs(typeSig.Next));
+					result = new CModOptSig(((ModifierSig)typeSig).Modifier, ResolveGenericArgs(typeSig.Next));
 					break;
 				case ElementType.Module:
-					result = new ModuleSig((typeSig as ModuleSig).Index, ResolveGenericArgs(typeSig.Next));
+					result = new ModuleSig(((ModuleSig)typeSig).Index, ResolveGenericArgs(typeSig.Next));
 					break;
 				case ElementType.Pinned:
 					result = new PinnedSig(ResolveGenericArgs(typeSig.Next));
@@ -134,7 +135,7 @@ namespace Confuser.Analysis {
 				case ElementType.GenericInst:
 					var gis = (GenericInstSig)typeSig;
 					var genArgs = new List<TypeSig>(gis.GenericArguments.Count);
-					foreach (var ga in gis.GenericArguments)
+					foreach (TypeSig ga in gis.GenericArguments)
 						genArgs.Add(ResolveGenericArgs(ga));
 					
 					result = new GenericInstSig(ResolveGenericArgs(gis.GenericType) as ClassOrValueTypeSig, genArgs);

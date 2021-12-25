@@ -9,28 +9,18 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Confuser.Analysis {
 	internal sealed class VTableStorage {
-		Dictionary<TypeDef, VTable> storage = new Dictionary<TypeDef, VTable>();
-		readonly ILogger logger;
+		private Dictionary<TypeDef, VTable> storage = new Dictionary<TypeDef, VTable>();
+		internal ILogger Logger { get; }
 
 		public VTableStorage(IServiceProvider provider) : 
 			this(provider.GetRequiredService<ILoggerFactory>().CreateLogger("analysis")) { }
 
 		public VTableStorage(ILogger logger) {
-			this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+			Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 		}
 
-		public ILogger GetLogger() {
-			return logger;
-		}
-
-		public VTable this[TypeDef type] {
-			get { return storage.GetValueOrDefault(type, null); }
-			internal set { storage[type] = value; }
-		}
-
-		VTable GetOrConstruct(TypeDef type) {
-			VTable ret;
-			if (!storage.TryGetValue(type, out ret))
+		private VTable GetOrConstruct(TypeDef type) {
+			if (!storage.TryGetValue(type, out var ret))
 				ret = storage[type] = VTable.ConstructVTable(type, this);
 			return ret;
 		}
@@ -38,7 +28,7 @@ namespace Confuser.Analysis {
 		public VTable GetVTable(ITypeDefOrRef type) {
 			switch (type) {
 				case null:
-					return null;
+					throw new ArgumentNullException(nameof(type));
 				case TypeDef typeDef:
 					return GetOrConstruct(typeDef);
 				case TypeRef typeRef:
@@ -66,7 +56,7 @@ namespace Confuser.Analysis {
 			}
 		}
 
-		static VTableSlot ResolveSlot(TypeDef openType, VTableSlot slot, IList<TypeSig> genArgs) {
+		private static VTableSlot ResolveSlot(TypeDef openType, VTableSlot slot, IList<TypeSig> genArgs) {
 			var newSig = GenericArgumentResolver.Resolve(slot.Signature.MethodSig, genArgs);
 			TypeSig newDecl = slot.MethodDefDeclType;
 			if (new SigComparer().Equals(newDecl, openType))
@@ -77,7 +67,7 @@ namespace Confuser.Analysis {
 				new VTableSignature(newSig, slot.Signature.Name), slot.Overrides);
 		}
 
-		static VTable ResolveGenericArgument(TypeDef openType, GenericInstSig genInst, VTable vTable) {
+		private static VTable ResolveGenericArgument(TypeDef openType, GenericInstSig genInst, VTable vTable) {
 			Debug.Assert(new SigComparer().Equals(openType, vTable.Type));
 			var ret = new VTable(genInst);
 			foreach (VTableSlot slot in vTable.Slots) {

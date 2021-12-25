@@ -7,7 +7,7 @@ namespace Confuser.Analysis {
 		}
 
 		internal VTableSlot(TypeSig defDeclType, MethodDef def, TypeSig decl, VTableSignature signature,
-			VTableSlot overrides) {
+			VTableSlot? overrides) {
 			MethodDefDeclType = defDeclType;
 			MethodDef = def;
 			DeclaringType = decl;
@@ -27,19 +27,16 @@ namespace Confuser.Analysis {
 		public MethodDef MethodDef { get; private set; }
 
 		// This is the 'parent slot' that this slot overrides.
-		public VTableSlot Overrides { get; private set; }
+		public VTableSlot? Overrides { get; private set; }
 
 		IVTableSignature IVTableSlot.Signature => Signature;
 
-		IVTableSlot IVTableSlot.Overrides => Overrides;
+		IVTableSlot? IVTableSlot.Overrides => Overrides;
 
-		public VTableSlot OverridedBy(MethodDef method) {
-			return new VTableSlot(method.DeclaringType.ToTypeSig(), method, DeclaringType, Signature, this);
-		}
+		public VTableSlot OverridedBy(MethodDef method) =>
+			new(method.DeclaringType.ToTypeSig(), method, DeclaringType, Signature, this);
 
-		internal VTableSlot Clone() {
-			return new VTableSlot(MethodDefDeclType, MethodDef, DeclaringType, Signature, Overrides);
-		}
+		internal VTableSlot Clone() => new(MethodDefDeclType, MethodDef, DeclaringType, Signature, Overrides);
 
 		public override string ToString() {
 			return MethodDef.ToString();

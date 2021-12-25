@@ -227,18 +227,18 @@ namespace Confuser.Analysis {
 		private static void CheckKeyExist<TKey, TValue>(VTableStorage storage, IDictionary<TKey, TValue> dictionary, TKey key,
 			string name) {
 			if (!dictionary.ContainsKey(key)) {
-				storage.GetLogger().LogError("{0} not found: {1}", name, key);
+				storage.Logger.LogError("{0} not found: {1}", name, key);
 				foreach (var k in dictionary.Keys)
-					storage.GetLogger().LogError("    {0}", k);
+					storage.Logger.LogError("    {0}", k);
 			}
 		}
 
 		[Conditional("DEBUG")]
 		private static void CheckKeyExist<TKey, TValue>(VTableStorage storage, ILookup<TKey, TValue> lookup, TKey key, string name) {
 			if (!lookup.Contains(key)) {
-				storage.GetLogger().LogError("{0} not found: {1}", name, key);
+				storage.Logger.LogError("{0} not found: {1}", name, key);
 				foreach (var k in lookup.Select(g => g.Key))
-					storage.GetLogger().LogError("    {0}", k);
+					storage.Logger.LogError("    {0}", k);
 			}
 		}
 	}
