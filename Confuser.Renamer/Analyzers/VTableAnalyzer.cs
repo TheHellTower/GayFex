@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Confuser.Analysis;
 using Confuser.Core;
 using Confuser.Renamer.References;
 using Confuser.Renamer.Services;
@@ -26,7 +27,7 @@ namespace Confuser.Renamer.Analyzers {
 			if (type.IsInterface)
 				return;
 
-			var vTbl = service.GetVTables()[type];
+			var vTbl = service.GetVTable(type);
 			foreach (var ifaceVTbl in vTbl.InterfaceSlots.Values) {
 				foreach (var slot in ifaceVTbl) {
 					if (slot.Overrides == null)
@@ -70,7 +71,7 @@ namespace Confuser.Renamer.Analyzers {
 			if (!method.IsVirtual)
 				return;
 
-			var vTbl = service.GetVTables().GetVTable(method.DeclaringType);
+			var vTbl = service.GetVTable(method.DeclaringType);
 			var slots = vTbl.FindSlots(method).ToArray();
 
 			IMemberDef discoveredBaseMemberDef = null;
@@ -219,12 +220,10 @@ namespace Confuser.Renamer.Analyzers {
 			var unprocessed = new Queue<MethodDef>();
 			unprocessed.Enqueue(method);
 
-			var vTables = service.GetVTables();
-
 			while (unprocessed.Any()) {
 				var currentMethod = unprocessed.Dequeue();
 
-				var vTbl = vTables[currentMethod.DeclaringType];
+				var vTbl = service.GetVTable(currentMethod.DeclaringType);
 				var slots = vTbl.FindSlots(currentMethod).Where(s => s.Overrides != null);
 
 				bool slotsExists = false;
@@ -282,7 +281,7 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		private static void SetupOverwriteReferences(IConfuserContext context, NameService service, VTableSlot slot, TypeDef thisType) {
+		private static void SetupOverwriteReferences(IConfuserContext context, NameService service, IVTableSlot slot, TypeDef thisType) {
 			var module = thisType.Module;
 			var methodDef = slot.MethodDef;
 			var baseSlot = slot.Overrides;
@@ -330,7 +329,7 @@ namespace Confuser.Renamer.Analyzers {
 				if (targetDef.DeclaringType.IsInterface) {
 					var baseTypeDef = thisType.BaseType?.ResolveTypeDef();
 					if (!(baseTypeDef is null)) {
-						var baseTypeVTable = service.GetVTables()[baseTypeDef];
+						var baseTypeVTable = service.GetVTable(baseTypeDef);
 						if (baseTypeVTable.InterfaceSlots.TryGetValue(targetDef.DeclaringType.ToTypeSig(), out var ifcSlots)) {
 							overrideRefRequired = !ifcSlots.Contains(slot);
 						}

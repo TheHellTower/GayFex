@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Project Dependencies">
+    <ProjectReference Include="..\Confuser.Analysis.Exports\Confuser.Analysis.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />

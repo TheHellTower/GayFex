@@ -2,129 +2,31 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Confuser.Core.Services;
 using dnlib.DotNet;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace Confuser.Renamer {
-	public class VTableSignature {
-		internal VTableSignature(MethodSig sig, string name) {
-			MethodSig = sig;
-			Name = name;
-		}
+namespace Confuser.Analysis {
 
-		public MethodSig MethodSig { get; private set; }
-		public string Name { get; private set; }
-
-		public static VTableSignature FromMethod(IMethod method) {
-			MethodSig sig = method.MethodSig;
-			TypeSig declType = method.DeclaringType.ToTypeSig();
-			if (declType is GenericInstSig) {
-				sig = GenericArgumentResolver.Resolve(sig, ((GenericInstSig)declType).GenericArguments);
-			}
-
-			return new VTableSignature(sig, method.Name);
-		}
-
-		public override bool Equals(object obj) {
-			var other = obj as VTableSignature;
-			if (other == null)
-				return false;
-			return new SigComparer().Equals(MethodSig, other.MethodSig) &&
-				   Name.Equals(other.Name, StringComparison.Ordinal);
-		}
-
-		public override int GetHashCode() {
-			int hash = 17;
-			hash = hash * 7 + new SigComparer().GetHashCode(MethodSig);
-			return hash * 7 + Name.GetHashCode();
-		}
-
-		public static bool operator ==(VTableSignature a, VTableSignature b) {
-			if (ReferenceEquals(a, b))
-				return true;
-			if (!Equals(a, null) && Equals(b, null))
-				return false;
-
-			return a.Equals(b);
-		}
-
-		public static bool operator !=(VTableSignature a, VTableSignature b) {
-			return !(a == b);
-		}
-
-		public override string ToString() {
-			return FullNameFactory.MethodFullName("", Name, MethodSig);
-		}
-	}
-
-	public class VTableSlot {
-		internal VTableSlot(MethodDef def, TypeSig decl, VTableSignature signature)
-			: this(def.DeclaringType.ToTypeSig(), def, decl, signature, null) {
-		}
-
-		internal VTableSlot(TypeSig defDeclType, MethodDef def, TypeSig decl, VTableSignature signature,
-			VTableSlot overrides) {
-			MethodDefDeclType = defDeclType;
-			MethodDef = def;
-			DeclaringType = decl;
-			Signature = signature;
-			Overrides = overrides;
-		}
-
-		// This is the type in which this slot is defined.
-		public TypeSig DeclaringType { get; internal set; }
-
-		// This is the signature of this slot.
-		public VTableSignature Signature { get; internal set; }
-
-		// This is the method that is currently in the slot.
-		public TypeSig MethodDefDeclType { get; private set; }
-		public MethodDef MethodDef { get; private set; }
-
-		// This is the 'parent slot' that this slot overrides.
-		public VTableSlot Overrides { get; private set; }
-
-		public VTableSlot OverridedBy(MethodDef method) {
-			return new VTableSlot(method.DeclaringType.ToTypeSig(), method, DeclaringType, Signature, this);
-		}
-
-		internal VTableSlot Clone() {
-			return new VTableSlot(MethodDefDeclType, MethodDef, DeclaringType, Signature, Overrides);
-		}
-
-		public override string ToString() {
-			return MethodDef.ToString();
-		}
-	}
-
-	public class VTable {
+	internal partial class VTable : IVTable {
 		internal VTable(TypeSig type) {
 			Type = type;
 			Slots = new List<VTableSlot>();
-			InterfaceSlots = new Dictionary<TypeSig, IList<VTableSlot>>(TypeEqualityComparer.Instance);
+			InterfaceSlots = new Dictionary<TypeSig, List<VTableSlot>>(TypeEqualityComparer.Instance);
 		}
 
 		public TypeSig Type { get; private set; }
 
-		public IList<VTableSlot> Slots { get; private set; }
-		public IDictionary<TypeSig, IList<VTableSlot>> InterfaceSlots { get; private set; }
+		public List<VTableSlot> Slots { get; private set; }
+		public Dictionary<TypeSig, List<VTableSlot>> InterfaceSlots { get; private set; }
 
-		class VTableConstruction {
-			// All virtual method slots, excluding interfaces
-			public List<VTableSlot> AllSlots = new List<VTableSlot>();
+		IReadOnlyList<IVTableSlot> IVTable.Slots => Slots;
 
-			// All visible virtual method slots (i.e. excluded those being shadowed)
-			public Dictionary<VTableSignature, VTableSlot> SlotsMap = new Dictionary<VTableSignature, VTableSlot>();
-			public Dictionary<TypeSig, ILookup<VTableSignature, VTableSlot>> InterfaceSlots = new Dictionary<TypeSig, ILookup<VTableSignature, VTableSlot>>(TypeEqualityComparer.Instance);
-		}
+		IReadOnlyDictionary<TypeSig, IReadOnlyList<IVTableSlot>> IVTable.InterfaceSlots => new ReadOnlyInterfaceSlotsDictionary(InterfaceSlots);
 
 		public IEnumerable<VTableSlot> FindSlots(IMethod method) {
 			return Slots
 				.Concat(InterfaceSlots.SelectMany(iface => iface.Value))
-				.Where(slot => slot.MethodDef == method);
+				.Where(slot => MethodEqualityComparer.CompareDeclaringTypes.Equals(slot.MethodDef, method));
 		}
 
 		public static VTable ConstructVTable(TypeDef typeDef, VTableStorage storage) {
@@ -251,7 +153,7 @@ namespace Confuser.Renamer {
 
 			// Populate result V-table
 			ret.InterfaceSlots = vTbl.InterfaceSlots.ToDictionary(
-				kvp => kvp.Key, kvp => (IList<VTableSlot>)kvp.Value.SelectMany(g => g).ToList(), TypeEqualityComparer.Instance);
+				kvp => kvp.Key, kvp => kvp.Value.SelectMany(g => g).ToList(), TypeEqualityComparer.Instance);
 
 			foreach (var slot in vTbl.AllSlots) {
 				ret.Slots.Add(slot);
@@ -260,7 +162,7 @@ namespace Confuser.Renamer {
 			return ret;
 		}
 
-		static void Implements(VTableConstruction vTbl, Dictionary<VTableSignature, MethodDef> virtualMethods,
+		private static void Implements(VTableConstruction vTbl, Dictionary<VTableSignature, MethodDef> virtualMethods,
 			VTable ifaceVTbl, TypeSig iface) {
 			// This is the step 2 of 12.2 algorithm -- use virtual newslot methods for explicit implementation.
 
@@ -301,7 +203,7 @@ namespace Confuser.Renamer {
 			}
 		}
 
-		static void Inherits(VTableConstruction vTbl, VTable baseVTbl) {
+		private static void Inherits(VTableConstruction vTbl, VTable baseVTbl) {
 			foreach (VTableSlot slot in baseVTbl.Slots) {
 				vTbl.AllSlots.Add(slot);
 				// It's possible to have same signature in multiple slots,
@@ -322,7 +224,7 @@ namespace Confuser.Renamer {
 		}
 
 		[Conditional("DEBUG")]
-		static void CheckKeyExist<TKey, TValue>(VTableStorage storage, IDictionary<TKey, TValue> dictionary, TKey key,
+		private static void CheckKeyExist<TKey, TValue>(VTableStorage storage, IDictionary<TKey, TValue> dictionary, TKey key,
 			string name) {
 			if (!dictionary.ContainsKey(key)) {
 				storage.GetLogger().LogError("{0} not found: {1}", name, key);
@@ -332,94 +234,12 @@ namespace Confuser.Renamer {
 		}
 
 		[Conditional("DEBUG")]
-		static void CheckKeyExist<TKey, TValue>(VTableStorage storage, ILookup<TKey, TValue> lookup, TKey key, string name) {
+		private static void CheckKeyExist<TKey, TValue>(VTableStorage storage, ILookup<TKey, TValue> lookup, TKey key, string name) {
 			if (!lookup.Contains(key)) {
 				storage.GetLogger().LogError("{0} not found: {1}", name, key);
 				foreach (var k in lookup.Select(g => g.Key))
 					storage.GetLogger().LogError("    {0}", k);
 			}
-		}
-	}
-
-	public class VTableStorage {
-		Dictionary<TypeDef, VTable> storage = new Dictionary<TypeDef, VTable>();
-		readonly ILogger logger;
-
-		public VTableStorage(IServiceProvider provider) : 
-			this(provider.GetRequiredService<ILoggerFactory>().CreateLogger(NameProtection._Id)) { }
-
-		public VTableStorage(ILogger logger) {
-			this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-		}
-
-		public ILogger GetLogger() {
-			return logger;
-		}
-
-		public VTable this[TypeDef type] {
-			get { return storage.GetValueOrDefault(type, null); }
-			internal set { storage[type] = value; }
-		}
-
-		VTable GetOrConstruct(TypeDef type) {
-			VTable ret;
-			if (!storage.TryGetValue(type, out ret))
-				ret = storage[type] = VTable.ConstructVTable(type, this);
-			return ret;
-		}
-
-		public VTable GetVTable(ITypeDefOrRef type) {
-			if (type == null)
-				return null;
-			if (type is TypeDef)
-				return GetOrConstruct((TypeDef)type);
-			if (type is TypeRef)
-				return GetOrConstruct(((TypeRef)type).ResolveThrow());
-			if (type is TypeSpec) {
-				TypeSig sig = ((TypeSpec)type).TypeSig;
-				if (sig is TypeDefOrRefSig) {
-					TypeDef typeDef = ((TypeDefOrRefSig)sig).TypeDefOrRef.ResolveTypeDefThrow();
-					return GetOrConstruct(typeDef);
-				}
-
-				if (sig is GenericInstSig) {
-					var genInst = (GenericInstSig)sig;
-					TypeDef openType = genInst.GenericType.TypeDefOrRef.ResolveTypeDefThrow();
-					VTable vTable = GetOrConstruct(openType);
-
-					return ResolveGenericArgument(openType, genInst, vTable);
-				}
-
-				throw new NotSupportedException("Unexpected type: " + type);
-			}
-
-			throw new UnreachableException();
-		}
-
-		static VTableSlot ResolveSlot(TypeDef openType, VTableSlot slot, IList<TypeSig> genArgs) {
-			var newSig = GenericArgumentResolver.Resolve(slot.Signature.MethodSig, genArgs);
-			TypeSig newDecl = slot.MethodDefDeclType;
-			if (new SigComparer().Equals(newDecl, openType))
-				newDecl = new GenericInstSig((ClassOrValueTypeSig)openType.ToTypeSig(), genArgs.ToArray());
-			else
-				newDecl = GenericArgumentResolver.Resolve(newDecl, genArgs);
-			return new VTableSlot(newDecl, slot.MethodDef, slot.DeclaringType,
-				new VTableSignature(newSig, slot.Signature.Name), slot.Overrides);
-		}
-
-		static VTable ResolveGenericArgument(TypeDef openType, GenericInstSig genInst, VTable vTable) {
-			Debug.Assert(new SigComparer().Equals(openType, vTable.Type));
-			var ret = new VTable(genInst);
-			foreach (VTableSlot slot in vTable.Slots) {
-				ret.Slots.Add(ResolveSlot(openType, slot, genInst.GenericArguments));
-			}
-
-			foreach (var iface in vTable.InterfaceSlots) {
-				ret.InterfaceSlots.Add(GenericArgumentResolver.Resolve(iface.Key, genInst.GenericArguments),
-					iface.Value.Select(slot => ResolveSlot(openType, slot, genInst.GenericArguments)).ToList());
-			}
-
-			return ret;
 		}
 	}
 }

@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Confuser.UnitTest;
-using dnlib.DotNet;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Confuser.Renamer.Test {
+namespace Confuser.Analysis {
 	public class VTableTest {
 		private readonly ITestOutputHelper outputHelper;
 
@@ -13,7 +12,7 @@ namespace Confuser.Renamer.Test {
 			this.outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
 
 		[Fact]
-		[Trait("Category", "Protection")]
+		[Trait("Category", "Analysis")]
 		[Trait("Protection", "rename")]
 		[Trait("Issue", "https://github.com/mkaring/ConfuserEx/issues/34")]
 		public void DuplicatedMethodSignatureTest() {
@@ -28,7 +27,7 @@ namespace Confuser.Renamer.Test {
 			Assert.Equal(1, CallGenericFunction(refInterface));
 
 			var moduleDef = Helpers.LoadTestModuleDef();
-			var refClassTypeDef = moduleDef.Find("Confuser.Renamer.Test.VTableTestRefClass", false);
+			var refClassTypeDef = moduleDef.Find(typeof(VTableTestRefClass).FullName, false);
 
 			Assert.NotNull(refClassTypeDef);
 

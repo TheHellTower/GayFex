@@ -1,0 +1,6 @@
+dnlib
+Microsoft.Extensions.DependencyInjection.Abstractions
+System.Collections.Immutable
+
+group Build
+  Nerdbank.GitVersioning

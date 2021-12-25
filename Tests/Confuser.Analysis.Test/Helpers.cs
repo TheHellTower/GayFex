@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestPlatform;
 using Moq;
 using Xunit;
 
-namespace Confuser.Renamer.Test {
+namespace Confuser.Analysis {
 	internal static class Helpers {
 		internal static ModuleDefMD LoadTestModuleDef() {
 			var asmResolver = new AssemblyResolver { EnableTypeDefCache = true, FindExactMatch = true };
@@ -21,7 +21,7 @@ namespace Confuser.Renamer.Test {
 			asmResolver.PreSearchPaths.Add(Path.GetDirectoryName(typeof(System.Reflection.Assembly).Module.Assembly.Location));
 #endif
 
-			var thisModule = ModuleDefMD.Load(typeof(Helpers).Module, options);
+			var thisModule = ModuleDefMD.Load(typeof(VTableTest).Module, options);
 			asmResolver.AddToCache(thisModule);
 
 			return thisModule;

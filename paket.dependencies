@@ -47,6 +47,7 @@ group Build
   source https://api.nuget.org/v3/index.json
   
   nuget Nerdbank.GitVersioning
+nuget VocaDb.ResXFileCodeGenerator
 
 group Runtime
   storage: none
@@ -54,7 +55,7 @@ group Runtime
 
   source https://api.nuget.org/v3/index.json
 
-  nuget Microsoft.NETFramework.ReferenceAssemblies strategy: min
+  nuget Microsoft.NETFramework.ReferenceAssemblies
   nuget Microsoft.Windows.CsWin32 prerelease
   github MiloszKrajewski/K4os.Compression.LZ4:1.1.11 src/K4os.Compression.LZ4/Engine/LZ4_xx.cs
 
@@ -65,6 +66,6 @@ group TestTarget
   source https://api.nuget.org/v3/index.json
   
   nuget Microsoft.Build.Framework
-  nuget Microsoft.NETFramework.ReferenceAssemblies strategy: min
+  nuget Microsoft.NETFramework.ReferenceAssemblies
   nuget Newtonsoft.Json
   nuget System.Text.RegularExpressions ~> 4 framework: >= net45

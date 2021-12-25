@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Confuser.Analysis\Confuser.Analysis.csproj" />
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\Confuser.DynCipher\Confuser.DynCipher.csproj" />
     <ProjectReference Include="..\Confuser.Optimizations\Confuser.Optimizations.csproj" />

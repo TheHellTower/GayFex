@@ -57,7 +57,7 @@ namespace Confuser.Renamer {
 				}
 
 				if (def is TypeDef typeDef) {
-					service.GetVTables().GetVTable(typeDef);
+					service.GetVTable(typeDef);
 				}
 
 				token.ThrowIfCancellationRequested();

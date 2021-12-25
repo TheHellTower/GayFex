@@ -1,15 +1,19 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Confuser.Analysis</RootNamespace>
+    <LangVersion>10.0</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup Label="Project Dependencies">
+  <ItemGroup>
     <ProjectReference Include="..\Confuser.Analysis.Exports\Confuser.Analysis.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Core.Exports\Confuser.Core.Exports.csproj" />
     <ProjectReference Include="..\Confuser.Utilities\Confuser.Utilities.csproj" />
-    <ProjectReference Include="..\Confuser.Renamer.Exports\Confuser.Renamer.Exports.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleToTest Include="Confuser.Analysis.Test" />
   </ItemGroup>
 
   <Import Project="..\.paket\Paket.Restore.targets" />

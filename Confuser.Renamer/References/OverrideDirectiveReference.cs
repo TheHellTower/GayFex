@@ -3,15 +3,16 @@ using System.Linq;
 using Confuser.Core;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
+using Confuser.Analysis;
 
 namespace Confuser.Renamer.References {
 	internal sealed class OverrideDirectiveReference : INameReference<MethodDef> {
-		readonly VTableSlot baseSlot;
-		readonly VTableSlot thisSlot;
+		readonly IVTableSlot baseSlot;
+		readonly IVTableSlot thisSlot;
 
 		public bool ShouldCancelRename => baseSlot.MethodDefDeclType is GenericInstSig && thisSlot.MethodDef.Module.IsClr20;
 		
-		public OverrideDirectiveReference(VTableSlot thisSlot, VTableSlot baseSlot) {
+		public OverrideDirectiveReference(IVTableSlot thisSlot, IVTableSlot baseSlot) {
 			this.thisSlot = thisSlot;
 			this.baseSlot = baseSlot;
 		}

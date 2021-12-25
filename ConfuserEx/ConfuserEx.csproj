@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Project Dependencies">
+    <ProjectReference Include="..\Confuser.Analysis\Confuser.Analysis.csproj" />
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
     <ProjectReference Include="..\Confuser.Optimizations\Confuser.Optimizations.csproj" />
     <ProjectReference Include="..\Confuser.Protections\Confuser.Protections.csproj" />

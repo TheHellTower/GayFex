@@ -84,6 +84,7 @@ namespace Confuser.Core {
 				var result = new List<ComposablePartCatalog>();
 
 				result.Add(new AssemblyCatalog(typeof(PluginDiscovery).Assembly));
+				LoadAssemblyCatalog("Confuser.Analysis", result);
 				LoadAssemblyCatalog("Confuser.Optimizations", result);
 				LoadAssemblyCatalog("Confuser.Protections", result);
 				LoadAssemblyCatalog("Confuser.Renamer", result);

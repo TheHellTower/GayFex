@@ -4,6 +4,8 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Confuser.Analysis;
+using Confuser.Analysis.Services;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.Renamer.Analyzers;
@@ -22,7 +24,6 @@ namespace Confuser.Renamer.Services {
 
 		private readonly ReadOnlyMemory<byte> nameSeed;
 		readonly IRandomGenerator random;
-		readonly VTableStorage storage;
 		private readonly NameProtection _parent;
 
 		readonly HashSet<string> identifiers = new HashSet<string>();
@@ -34,10 +35,12 @@ namespace Confuser.Renamer.Services {
 		readonly Dictionary<string, string> _prefixesMap = new Dictionary<string, string>();
 		internal ReversibleRenamer reversibleRenamer;
 
+		private IAnalysisService AnalysisService { get; }
+
 		internal NameService(IServiceProvider provider, NameProtection parent) {
 			_parent = parent ?? throw new ArgumentNullException(nameof(parent));
-			storage = new VTableStorage(provider);
 			random = provider.GetRequiredService<IRandomService>().GetRandomGenerator(NameProtection._FullId);
+			AnalysisService = provider.GetRequiredService<IAnalysisService>();
 			nameSeed = random.NextBytes(20);
 
 			Renamers = ImmutableArray.Create<IRenamer>(
@@ -54,9 +57,7 @@ namespace Confuser.Renamer.Services {
 
 		public IImmutableList<IRenamer> Renamers { get; private set; }
 
-		public VTableStorage GetVTables() {
-			return storage;
-		}
+		public IVTable GetVTable(ITypeDefOrRef typeDefOrRef) => AnalysisService.GetVTable(typeDefOrRef);
 
 		public bool CanRename(IConfuserContext context, IDnlibDef def) {
 			if (context == null) throw new ArgumentNullException(nameof(context));
@@ -114,7 +115,7 @@ namespace Confuser.Renamer.Services {
 
 			StoreNames(context, def);
 			if (def is TypeDef typeDef) {
-				GetVTables().GetVTable(typeDef);
+				GetVTable(typeDef);
 			}
 
 			analyze.Analyze(this, context, EmptyProtectionParameters.Instance, def, true);
