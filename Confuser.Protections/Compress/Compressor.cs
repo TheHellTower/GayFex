@@ -270,7 +270,9 @@ namespace Confuser.Protections {
 			var lateMutationKeys = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
 				.Add(MutationField.KeyI2, compCtx.KeyTokenLoadUpdate);
 
-			var injectResult = InjectHelper.Inject(mainMethod, stubModule,
+			var injectHelper = new InjectHelper(context);
+
+			var injectResult = injectHelper.Inject(mainMethod, stubModule,
 				InjectBehaviors.RenameAndNestBehavior(context, stubModule.GlobalType),
 				new CompressionServiceProcessor(context, stubModule),
 				new MutationProcessor(context.Registry, stubModule) {

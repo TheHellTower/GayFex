@@ -4,7 +4,7 @@ using System.Diagnostics;
 using dnlib.DotNet;
 
 namespace Confuser.Helpers {
-	public static partial class InjectHelper {
+	public partial class InjectHelper {
 		/// <summary>
 		///     The inject context is used to store what definitions were injected from one module into another.
 		/// </summary>
@@ -13,6 +13,11 @@ namespace Confuser.Helpers {
 			///     The mapping of origin definitions to injected definitions.
 			/// </summary>
 			private IImmutableDictionary<IMemberDef, IMemberDef> _map;
+
+			/// <summary>
+			///     The module which source type originated from.
+			/// </summary>
+			internal InjectHelper InjectHelper { get; }
 
 			/// <summary>
 			///     The module which source type originated from.
@@ -30,8 +35,9 @@ namespace Confuser.Helpers {
 			/// </summary>
 			/// <param name="parentContext">The parent context that feeds the initial data.</param>
 			internal InjectContext(InjectContext parentContext) {
-				Debug.Assert(parentContext != null, $"{nameof(parentContext)} != null");
+				Debug.Assert(parentContext is not null, $"{nameof(parentContext)} is not null");
 
+				InjectHelper = parentContext.InjectHelper;
 				OriginModule = parentContext.OriginModule;
 				TargetModule = parentContext.TargetModule;
 				_map = parentContext._map;
@@ -40,9 +46,11 @@ namespace Confuser.Helpers {
 			/// <summary>
 			///     Initializes a new instance of the <see cref="InjectContext" /> class.
 			/// </summary>
+			/// <param name="injectHelper">The parent inject helper.</param>
 			/// <param name="module">The origin module.</param>
 			/// <param name="target">The target module.</param>
-			internal InjectContext(ModuleDef module, ModuleDef target) {
+			internal InjectContext(InjectHelper injectHelper, ModuleDef module, ModuleDef target) {
+				InjectHelper = injectHelper ?? throw new ArgumentNullException(nameof(injectHelper));
 				OriginModule = module ?? throw new ArgumentNullException(nameof(module));
 				TargetModule = target ?? throw new ArgumentNullException(nameof(target));
 

@@ -28,7 +28,8 @@ namespace Confuser.Protections {
 
 		void IProtectionPhase.Execute(IConfuserContext context, IProtectionParameters parameters,
 			CancellationToken token) {
-			var runtime = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
+			var runtimeService = context.Registry.GetRequiredService<ProtectionsRuntimeService>();
+			var runtime = runtimeService.GetRuntimeModule();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
 			var logger = context.Registry.GetRequiredService<ILoggerFactory>().CreateLogger(AntiDumpProtection._Id);
 
@@ -36,7 +37,7 @@ namespace Confuser.Protections {
 				var initMethod = GetInitMethod(module, context, runtime, logger);
 				if (initMethod == null) continue;
 
-				var injectResult = InjectHelper.Inject(initMethod, module,
+				var injectResult = runtimeService.InjectHelper.Inject(initMethod, module,
 					InjectBehaviors.RenameAndNestBehavior(context, module.GlobalType));
 
 				var cctor = module.GlobalType.FindStaticConstructor();

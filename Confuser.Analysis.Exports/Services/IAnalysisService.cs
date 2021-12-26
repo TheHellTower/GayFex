@@ -1,4 +1,5 @@
 ﻿using System;
+using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Analysis.Services {

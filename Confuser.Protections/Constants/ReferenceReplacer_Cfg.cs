@@ -18,7 +18,9 @@ namespace Confuser.Protections.Constants {
 			var rtType = GetRuntimeType("Confuser.Runtime.CFGCtx", ctx);
 			if (rtType == null) return false;
 
-			var injectResult = InjectHelper.Inject(rtType, ctx.Module,
+			var injectHelper = ctx.Context.Registry.GetRequiredService<ProtectionsRuntimeService>().InjectHelper;
+
+			var injectResult = injectHelper.Inject(rtType, ctx.Module,
 				InjectBehaviors.RenameAndInternalizeBehavior(ctx.Context));
 
 			ctx.CfgCtxType = injectResult.Requested.Mapped;

@@ -1,4 +1,5 @@
 ﻿using System;
+using Confuser.Core;
 using dnlib.DotNet;
 
 namespace Confuser.Analysis.Services {
@@ -12,6 +13,7 @@ namespace Confuser.Analysis.Services {
 		public VTable GetVTable(ITypeDefOrRef typeDefOrRef) => VTableStorage.GetVTable(typeDefOrRef);
 
 		IVTable IAnalysisService.GetVTable(ITypeDefOrRef typeDefOrRef) => GetVTable(typeDefOrRef);
-		public (ModuleFramework, Version?) IdentifyModuleFramework(ModuleDef moduleDef) => throw new NotImplementedException();
+		public (ModuleFramework, Version?) IdentifyModuleFramework(ModuleDef moduleDef) =>
+			ModuleFrameworkAnalyzer.IdenitfyFramework(moduleDef ?? throw new ArgumentNullException(nameof(moduleDef)));
 	}
 }

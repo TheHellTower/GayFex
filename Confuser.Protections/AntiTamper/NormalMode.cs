@@ -108,7 +108,9 @@ namespace Confuser.Protections.AntiTamper {
 			var antiTamperInit = context.GetInitMethod(runtimeTypeName, context.CurrentModule);
 			if (antiTamperInit == null) return null;
 
-			var injectResult = InjectHelper.Inject(antiTamperInit, context.CurrentModule,
+			var injectHelper = context.Registry.GetRequiredService<ProtectionsRuntimeService>().InjectHelper;
+
+			var injectResult = injectHelper.Inject(antiTamperInit, context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
 					KeyFieldValues = mutationKeys,

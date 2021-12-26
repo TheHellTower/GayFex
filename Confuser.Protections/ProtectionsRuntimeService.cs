@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Confuser.Core;
 using Confuser.Core.Services;
+using Confuser.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Protections {
@@ -14,8 +15,12 @@ namespace Confuser.Protections {
 
 		private IRuntimeService RuntimeService { get; }
 
+		internal InjectHelper InjectHelper { get; }
+
 		internal ProtectionsRuntimeService(IServiceProvider provider) {
 			if (provider == null) throw new ArgumentNullException(nameof(provider));
+
+			InjectHelper = new InjectHelper(provider);
 
 			var runtimeService = provider.GetRequiredService<IRuntimeService>();
 			RuntimeService = runtimeService;

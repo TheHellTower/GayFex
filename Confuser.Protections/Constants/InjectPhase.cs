@@ -57,11 +57,13 @@ namespace Confuser.Protections.Constants {
 			var constantRuntime = GetRuntimeType(moduleCtx.Module, context, logger);
 			Debug.Assert(constantRuntime != null, $"{nameof(constantRuntime)} != null");
 
+			var injectHelper = context.Registry.GetRequiredService<ProtectionsRuntimeService>().InjectHelper;
+
 			var lateMutationFields = ImmutableDictionary.Create<MutationField, LateMutationFieldUpdate>()
 				.Add(MutationField.KeyI0, moduleCtx.EncodingBufferSizeUpdate)
 				.Add(MutationField.KeyI1, moduleCtx.KeySeedUpdate);
 
-			var initInjectResult = InjectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
+			var initInjectResult = injectHelper.Inject(constantRuntime.FindMethod("Initialize"), context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new CompressionServiceProcessor(context, context.CurrentModule, moduleCtx.UsedCompressionAlgorithm),
 				new MutationProcessor(context.Registry, context.CurrentModule) {
@@ -90,10 +92,10 @@ namespace Confuser.Protections.Constants {
 					.Add(MutationField.KeyI1, decoderDesc.NumberID)
 					.Add(MutationField.KeyI2, decoderDesc.InitializerID);
 
-				using (InjectHelper.CreateChildContext()) {
+				using (injectHelper.CreateChildContext()) {
 					var decoderImpl = moduleCtx.ModeHandler.CreateDecoder(moduleCtx);
 
-					var decoderInjectResult = InjectHelper.Inject(decoder, moduleCtx.Module,
+					var decoderInjectResult = injectHelper.Inject(decoder, moduleCtx.Module,
 						InjectBehaviors.RenameAndInternalizeBehavior(context),
 						new MutationProcessor(context.Registry, context.CurrentModule) {
 							KeyFieldValues = mutationKeys,

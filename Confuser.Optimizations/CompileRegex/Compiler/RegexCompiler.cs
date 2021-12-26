@@ -225,9 +225,11 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 			var stringViewTypeDef = runtimeModule.GetRuntimeType("Confuser.Optimizations.Runtime.ReadOnlyStringView", _targetModule);
 			var stringHelperTypeDef = runtimeModule.GetRuntimeType("Confuser.Optimizations.Runtime.ReadOnlyStringHelper", _targetModule);
 
+			var injectHelper = new InjectHelper(_context);
+
 			foreach (var variable in body.Variables) {
 				if (variable.Type.FullName.Equals("System.ReadOnlySpan`1<System.Char>")) {
-					var injectResult = InjectHelper.Inject(stringViewTypeDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+					var injectResult = injectHelper.Inject(stringViewTypeDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 					variable.Type = injectResult.Requested.Mapped.ToTypeSig();
 				}
 			}
@@ -238,18 +240,18 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					if (member.DeclaringType.FullName.Equals("System.MemoryExtensions")) {
 						if (member.Name.Equals("AsSpan")) {
 							var constructorDef = stringHelperTypeDef.FindMethod("GetView");
-							var injected = InjectHelper.Inject(constructorDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							var injected = injectHelper.Inject(constructorDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 							instruction.Operand = injected.Requested.Mapped;
 						}
 						else if (member.Name.Equals("IndexOf")) {
 							var indexOfMethodDef = stringHelperTypeDef.FindMethod("IndexOf");
-							var injected = InjectHelper.Inject(indexOfMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							var injected = injectHelper.Inject(indexOfMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 							instruction.Operand = injected.Requested.Mapped;
 						}
 						else if (member.Name.Equals("IndexOfAny")) {
 							if (member is MethodSpec methodSpec && methodSpec.Method.GetParamCount() == 3) {
 								var indexOfMethodDef = stringHelperTypeDef.FindMethod("IndexOfAny");
-								var injected = InjectHelper.Inject(indexOfMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+								var injected = injectHelper.Inject(indexOfMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 								instruction.Operand = injected.Requested.Mapped;
 							}
 							else
@@ -261,19 +263,19 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					else if (member.DeclaringType.FullName.Equals("System.ReadOnlySpan`1<System.Char>")) {
 						if (member.Name.Equals("get_Length")) {
 							var getLengthMethodDef = stringViewTypeDef.FindMethod("get_Length");
-							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							var injected = injectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 							instruction.OpCode = OpCodes.Callvirt;
 							instruction.Operand = injected.Requested.Mapped;
 						}
 						else if (member.Name.Equals("Slice")) {
 							var getLengthMethodDef = stringViewTypeDef.FindMethod("Slice");
-							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							var injected = injectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 							instruction.OpCode = OpCodes.Callvirt;
 							instruction.Operand = injected.Requested.Mapped;
 						}
 						else if (member.Name.Equals("get_Item")) {
 							var getLengthMethodDef = stringViewTypeDef.FindMethod("get_Item");
-							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							var injected = injectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 							instruction.OpCode = OpCodes.Callvirt;
 							instruction.Operand = injected.Requested.Mapped;
 						}
@@ -283,7 +285,7 @@ namespace Confuser.Optimizations.CompileRegex.Compiler {
 					else if (member.DeclaringType.FullName.Equals("System.Runtime.InteropServices.MemoryMarshal")) {
 						if (member.Name.Equals("GetReference")) {
 							var getLengthMethodDef = stringHelperTypeDef.FindMethod("GetReference");
-							var injected = InjectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
+							var injected = injectHelper.Inject(getLengthMethodDef, _targetModule, InjectBehaviors.RenameBehavior(_context));
 							instruction.Operand = injected.Requested.Mapped;
 						}
 						else

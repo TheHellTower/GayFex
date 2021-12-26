@@ -83,7 +83,8 @@ namespace Confuser.Protections.Resources {
 			Debug.Assert(context != null, $"{nameof(context)} != null");
 			Debug.Assert(moduleCtx != null, $"{nameof(moduleCtx)} != null");
 
-			var rt = context.Registry.GetRequiredService<ProtectionsRuntimeService>().GetRuntimeModule();
+			var rtService = context.Registry.GetRequiredService<ProtectionsRuntimeService>();
+			var rt = rtService.GetRuntimeModule();
 			var name = context.Registry.GetRequiredService<INameService>();
 			var constant = context.Registry.GetRequiredService<IConstantService>();
 			var marker = context.Registry.GetRequiredService<IMarkerService>();
@@ -117,7 +118,7 @@ namespace Confuser.Protections.Resources {
 				.Add(MutationField.KeyI0, moduleCtx.loadSizeUpdate)
 				.Add(MutationField.KeyI1, moduleCtx.loadSeedUpdate);
 
-			var injectResult = InjectHelper.Inject(rtInitMethod, context.CurrentModule,
+			var injectResult = rtService.InjectHelper.Inject(rtInitMethod, context.CurrentModule,
 				InjectBehaviors.RenameAndNestBehavior(context, context.CurrentModule.GlobalType),
 				new CompressionServiceProcessor(context, context.CurrentModule),
 				new MutationProcessor(context.Registry, context.CurrentModule) {

@@ -106,6 +106,13 @@ namespace Confuser.Core {
 
 				token.ThrowIfCancellationRequested();
 
+				var frameworkDiscoveries = plugInContainer.GetExports<IFrameworkDiscovery>();
+				var installedFrameworks = frameworkDiscoveries.Select(l => l.Value).SelectMany(d => d.GetInstalledFrameworks()).ToArray();
+
+				logger.LogDebug("Found {0} installed frameworks.", installedFrameworks.Length);
+
+				token.ThrowIfCancellationRequested();
+
 				var sortedComponents = new List<IConfuserComponent>();
 				sortedComponents.Add(new CoreComponent(parameters, marker));
 				sortedComponents.AddRange(components.Select(l => l.Value));
@@ -203,7 +210,7 @@ namespace Confuser.Core {
 						ok = true;
 					}
 					catch (Exception) {
-						PrintEnvironmentInfo(context, logger);
+						PrintEnvironmentInfo(context, installedFrameworks, logger);
 						throw;
 					}
 				}
@@ -570,59 +577,11 @@ namespace Confuser.Core {
 			}
 		}
 
-		private static IEnumerable<string> GetFrameworkVersions() {
-			// This function only works on Windows and on the mono runtime on other systems.
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Type.GetType("Mono.Runtime") == null)
-				yield break;
-			
-			// http://msdn.microsoft.com/en-us/library/hh925568.aspx
-			using (RegistryKey ndpKey =
-				RegistryKey.OpenRemoteBaseKey(RegistryHive.LocalMachine, "")
-					.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\")) {
-				foreach (string versionKeyName in ndpKey.GetSubKeyNames()) {
-					if (!versionKeyName.StartsWith("v"))
-						continue;
-
-					RegistryKey versionKey = ndpKey.OpenSubKey(versionKeyName);
-					var name = (string)versionKey.GetValue("Version", "");
-					string sp = versionKey.GetValue("SP", "").ToString();
-					string install = versionKey.GetValue("Install", "").ToString();
-					if (install == "" || sp != "" && install == "1")
-						yield return versionKeyName + "  " + name;
-
-					if (name != "")
-						continue;
-
-					foreach (string subKeyName in versionKey.GetSubKeyNames()) {
-						RegistryKey subKey = versionKey.OpenSubKey(subKeyName);
-						name = (string)subKey.GetValue("Version", "");
-						if (name != "")
-							sp = subKey.GetValue("SP", "").ToString();
-						install = subKey.GetValue("Install", "").ToString();
-
-						if (install == "")
-							yield return versionKeyName + "  " + name;
-						else if (install == "1")
-							yield return "  " + subKeyName + "  " + name;
-					}
-				}
-			}
-
-			using (RegistryKey ndpKey =
-				RegistryKey.OpenRemoteBaseKey(RegistryHive.LocalMachine, "")
-					.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\")) {
-				if (ndpKey.GetValue("Release") == null)
-					yield break;
-				var releaseKey = (int)ndpKey.GetValue("Release");
-				yield return "v4.5 " + releaseKey;
-			}
-		}
-
 		/// <summary>
 		///     Prints the environment information when error occurred.
 		/// </summary>
 		/// <param name="context">The working context.</param>
-		private static void PrintEnvironmentInfo(ConfuserContext context, ILogger logger) {
+		private static void PrintEnvironmentInfo(ConfuserContext context, IEnumerable<IInstalledFramework> installedFrameworks, ILogger logger) {
 			try {
 				if (context.PackerInitiated)
 					return;
@@ -631,13 +590,13 @@ namespace Confuser.Core {
 
 				buildMsg.AppendLine("---BEGIN DEBUG INFO---");
 				var firstFramework = true;
-				foreach (string ver in GetFrameworkVersions()) {
+				foreach (var ver in installedFrameworks) {
 					if (firstFramework) {
 						buildMsg.AppendLine("Installed Framework Versions:");
 						firstFramework = false;
 					}
 
-					buildMsg.AppendFormat("    {0}", ver.Trim()).AppendLine();
+					buildMsg.AppendFormat("    {0}", ver.ToString()).AppendLine();
 				}
 
 				if (!firstFramework) buildMsg.AppendLine();

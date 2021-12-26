@@ -5,11 +5,12 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using Confuser.Analysis;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace Confuser.Helpers {
-	public static partial class InjectHelper {
+	public partial class InjectHelper {
 		/// <summary>
 		///     The injector actually does the injecting.
 		/// </summary>
@@ -198,7 +199,7 @@ namespace Confuser.Helpers {
 				newTypeDef.BaseType = importer.Import(typeDef.BaseType);
 
 				if (typeDef.DeclaringType is not null)
-					newTypeDef.DeclaringType = InjectTypeDef(typeDef.DeclaringType, importer);
+					newTypeDef.DeclaringType = (TypeDef)importer.Import(typeDef.DeclaringType);
 
 				foreach (var iface in typeDef.Interfaces)
 					newTypeDef.Interfaces.Add(InjectInterfaceImpl(iface, importer));
@@ -220,6 +221,11 @@ namespace Confuser.Helpers {
 				var staticConstructor = typeDef.FindStaticConstructor();
 				if (staticConstructor is not null)
 					PendingForInject.Enqueue(staticConstructor);
+
+				var vTable = InjectContext.InjectHelper.AnalysisService.GetVTable(typeDef);
+				foreach (var slot in vTable.AllSlots()) {
+					PendingForInject.Enqueue(slot.MethodDef);
+				}
 
 				return newTypeDef;
 			}
@@ -276,7 +282,7 @@ namespace Confuser.Helpers {
 
 				if (newFieldDef.HasFieldRVA)
 					newFieldDef.RVA = fieldDef.RVA;
-				
+
 				InjectCustomAttributes(fieldDef, newFieldDef, importer);
 
 				InjectBehavior.Process(fieldDef, newFieldDef, importer);
@@ -298,15 +304,18 @@ namespace Confuser.Helpers {
 				newMethodDef.DeclaringType = (TypeDef)importer.Import(methodDef.DeclaringType);
 				newMethodDef.Signature = importer.Import(methodDef.Signature);
 				newMethodDef.Parameters.UpdateParameterTypes();
-				
-				foreach (var paramDef in methodDef.ParamDefs)
-					newMethodDef.ParamDefs.Add(new ParamDefUser(paramDef.Name, paramDef.Sequence, paramDef.Attributes));
+
+				foreach (var paramDef in methodDef.ParamDefs) {
+					var newParamDef = new ParamDefUser(paramDef.Name, paramDef.Sequence, paramDef.Attributes);
+					InjectCustomAttributes(paramDef, newParamDef, importer);
+					newMethodDef.ParamDefs.Add(newParamDef);
+				}
 
 				if (methodDef.ImplMap is not null)
 					newMethodDef.ImplMap =
 						new ImplMapUser(new ModuleRefUser(InjectContext.TargetModule, methodDef.ImplMap.Module.Name),
 							methodDef.ImplMap.Name, methodDef.ImplMap.Attributes);
-				
+
 				InjectCustomAttributes(methodDef, newMethodDef, importer);
 
 				if (methodDef.HasBody) {
@@ -382,7 +391,7 @@ namespace Confuser.Helpers {
 				}
 
 				newEventDef.DeclaringType = (TypeDef)importer.Import(eventDef.DeclaringType);
-				
+
 				InjectCustomAttributes(eventDef, newEventDef, importer);
 
 				InjectBehavior.Process(eventDef, newEventDef, importer);
@@ -410,7 +419,7 @@ namespace Confuser.Helpers {
 				}
 
 				newPropertyDef.DeclaringType = (TypeDef)importer.Import(propertyDef.DeclaringType);
-				
+
 				InjectCustomAttributes(propertyDef, newPropertyDef, importer);
 
 				InjectBehavior.Process(propertyDef, newPropertyDef, importer);

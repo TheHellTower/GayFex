@@ -2,13 +2,13 @@
 using System.Diagnostics;
 
 namespace Confuser.Helpers {
-	public static partial class InjectHelper {
+	public partial class InjectHelper {
 		private sealed class ChildContextRelease : IDisposable {
 			private readonly Action _releaseAction;
 			private bool _disposed = false;
 
 			internal ChildContextRelease(Action releaseAction) {
-				Debug.Assert(releaseAction != null, $"{nameof(releaseAction)} != null");
+				Debug.Assert(releaseAction is not null, $"{nameof(releaseAction)} is not null");
 
 				_releaseAction = releaseAction;
 			}

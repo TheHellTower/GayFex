@@ -3,25 +3,35 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Confuser.Analysis.Services;
+using Confuser.Core;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Confuser.Helpers {
 	/// <summary>
 	///     Provides methods to inject any kind of member from one module to another and transform
 	///     them while doing so according to specific rules.
 	/// </summary>
-	public static partial class InjectHelper {
+	public partial class InjectHelper {
 		/// <summary>The stack of contexts that are parents to the current context.</summary>
-		private static Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>>
-			_parentMaps =
-				new Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>>();
+		private readonly Stack<IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>> _parentMaps = new();
 
 		/// <summary>The current context storage. One context for each pair of source and target module.</summary>
-		private static IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext> _contextMap
-			=
-			ImmutableDictionary.Create<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>();
+		private IImmutableDictionary<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext> _contextMap
+			= ImmutableDictionary.Create<(ModuleDef SourceModule, ModuleDef TargetModule), InjectContext>();
 
-		private static InjectContext GetOrCreateContext(ModuleDef sourceModule, ModuleDef targetModule) {
+		private IAnalysisService AnalysisService { get; }
+
+		public InjectHelper(IConfuserContext confuserContext) : 
+			this((confuserContext ?? throw new ArgumentNullException(nameof(confuserContext))).Registry) { }
+
+		public InjectHelper(IServiceProvider serviceProvider) {
+			if (serviceProvider is null) throw new ArgumentNullException(nameof(serviceProvider));
+			AnalysisService = serviceProvider.GetRequiredService<IAnalysisService>();
+		}
+
+		private InjectContext GetOrCreateContext(ModuleDef sourceModule, ModuleDef targetModule) {
 			Debug.Assert(sourceModule != null, $"{nameof(sourceModule)} != null");
 			Debug.Assert(targetModule != null, $"{nameof(targetModule)} != null");
 
@@ -31,7 +41,7 @@ namespace Confuser.Helpers {
 				// Check if there is an known context on the parent map.
 				if (!_parentMaps.Any() || !_parentMaps.Peek().TryGetValue(key, out context)) {
 					// Also the parent context knows nothing about this context. So there really is known.
-					context = new InjectContext(sourceModule, targetModule);
+					context = new InjectContext(this, sourceModule, targetModule);
 				}
 				else {
 					// We got a context on the parent. This means we need to create a child context that covers all
@@ -90,7 +100,7 @@ namespace Confuser.Helpers {
 		///     Debug.Assert(injectResult1.Requested.Mapped != injectResult2.Requested.Mapped);
 		///     </code>
 		/// </example>
-		public static IDisposable CreateChildContext() {
+		public IDisposable CreateChildContext() {
 			var parentMap = _contextMap;
 			if (_parentMaps.Any()) {
 				var oldParentMap = _parentMaps.Peek();
@@ -111,7 +121,7 @@ namespace Confuser.Helpers {
 			return new ChildContextRelease(ReleaseChildContext);
 		}
 
-		private static void ReleaseChildContext() {
+		private void ReleaseChildContext() {
 			if (!_parentMaps.Any())
 				throw new InvalidOperationException("There is not child context to release. Disposed twice?!");
 
@@ -134,7 +144,7 @@ namespace Confuser.Helpers {
 		/// </remarks>
 		/// <returns>The result of the injection that contains the mapping of all injected members.</returns>
 		/// <exception cref="ArgumentNullException">Any parameter is <see langword="null"/>.</exception>
-		public static InjectResult<MethodDef> Inject(MethodDef methodDef,
+		public InjectResult<MethodDef> Inject(MethodDef methodDef,
 			ModuleDef target,
 			IInjectBehavior behavior,
 			params IMethodInjectProcessor[] methodInjectProcessors) {
@@ -165,7 +175,7 @@ namespace Confuser.Helpers {
 		/// </param>
 		/// <returns>The result of the injection that contains the mapping of all injected members.</returns>
 		/// <exception cref="ArgumentNullException">Any parameter is <see langword="null"/>.</exception>
-		public static InjectResult<TypeDef> Inject(TypeDef typeDef,
+		public InjectResult<TypeDef> Inject(TypeDef typeDef,
 			ModuleDef target,
 			IInjectBehavior behavior,
 			params IMethodInjectProcessor[] methodInjectProcessors) {

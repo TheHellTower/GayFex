@@ -55,10 +55,10 @@ namespace Confuser.Protections.ReferenceProxy {
 
 			switch (ret.Mode) {
 				case Mode.Mild:
-					ret.ModeHandler = store.mild ?? (store.mild = new MildMode());
+					ret.ModeHandler = (store.mild ??= new MildMode());
 					break;
 				case Mode.Strong:
-					ret.ModeHandler = store.strong ?? (store.strong = new StrongMode());
+					ret.ModeHandler = (store.strong ??= new StrongMode(context));
 					break;
 				default:
 					throw new UnreachableException();

@@ -118,7 +118,7 @@ namespace Confuser.Runtime {
 		}
 
 		private static void Worker(object thread) {
-			if (!(thread is Thread th)) {
+			if (thread is not Thread th) {
 				th = new Thread(Worker) { IsBackground = true };
 				th.Start(Thread.CurrentThread);
 				Thread.Sleep(500);
@@ -139,8 +139,6 @@ namespace Confuser.Runtime {
 						Environment.FailFast(CurrentProcessMsg);
 				}
 
-				;
-
 #if !NET20
 				// OutputDebugString
 				PInvoke.OutputDebugString("");
@@ -150,7 +148,7 @@ namespace Confuser.Runtime {
 
 				// CloseHandle
 				try {
-					PInvoke.CloseHandle(new HANDLE(IntPtr.Zero));
+					PInvoke.CloseHandle(default);
 				}
 				catch {
 					Environment.FailFast(CloseHandleMsg);

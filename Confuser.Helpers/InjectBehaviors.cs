@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Confuser.Analysis;
+using Confuser.Analysis.Services;
 using Confuser.Core;
 using Confuser.Renamer.Services;
 using dnlib.DotNet;
@@ -30,9 +32,11 @@ namespace Confuser.Helpers {
 		private class RenameEverythingBehavior : IInjectBehavior {
 			private readonly IConfuserContext _context;
 			private readonly INameService _nameService;
+			private IAnalysisService AnalysisService { get; }
 
 			internal RenameEverythingBehavior(IConfuserContext context) {
 				_context = context ?? throw new ArgumentNullException(nameof(context));
+				AnalysisService = context.Registry.GetRequiredService<IAnalysisService>();
 				_nameService = context.Registry.GetRequiredService<INameService>();
 			}
 
@@ -55,7 +59,30 @@ namespace Confuser.Helpers {
 
 				_nameService.StoreNames(_context, injected);
 
-				if (!injected.IsSpecialName && !injected.DeclaringType.IsDelegate && !injected.IsOverride())
+				bool renamingAllowed = true;
+
+				if (injected.IsSpecialName)
+					renamingAllowed = false;
+
+				if (renamingAllowed) {
+					var vTable = AnalysisService.GetVTable(source.DeclaringType);
+					foreach (var slot in vTable.FindSlots(source)) {
+						var overrideSource = slot.Overrides.MethodDef;
+						if (overrideSource.DeclaringType.IsInterface) {
+							// override of an interface. Renaming is possible, but we may need an method override declaration.
+							var overrideDecl = new MethodOverride(injected, (IMethodDefOrRef)importer.Import(overrideSource));
+							if (!source.Overrides.Any(o => MethodEqualityComparer.CompareDeclaringTypes.Equals(o.MethodDeclaration, overrideDecl.MethodDeclaration))) {
+								source.Overrides.Add(overrideDecl);
+							}
+						}
+						else {
+							renamingAllowed = false;
+						}
+					}
+				}
+
+
+				if (renamingAllowed)
 					injected.Name = GetName(injected.Name);
 
 				// There is no need for this to be renamed again.

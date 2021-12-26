@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
 using Confuser.DynCipher.AST;
@@ -28,6 +29,16 @@ namespace Confuser.Protections.ReferenceProxy {
 			new Dictionary<IRPEncoding, InitMethodDesc[]>();
 
 		private RPContext encodeCtx;
+
+		private InjectHelper InjectHelper { get; }
+
+		internal StrongMode(IConfuserContext context) : this((context ?? throw new ArgumentNullException(nameof(context))).Registry) { }
+
+		internal StrongMode(IServiceProvider serviceProvider) {
+			if (serviceProvider is null) throw new ArgumentNullException(nameof(serviceProvider));
+
+			InjectHelper = serviceProvider.GetRequiredService<ProtectionsRuntimeService>().InjectHelper;
+		}
 
 		/// <summary>
 		/// The instances of initialized key attributes that can be used.
@@ -196,7 +207,7 @@ namespace Confuser.Protections.ReferenceProxy {
 		private MethodDef CreateBridge(
 			RPContext ctx,
 			TypeDef delegateType,
-			FieldDef field, 
+			FieldDef field,
 			MethodSig sig,
 			(Code OpCode, IMethod TargetMethod, IRPEncoding Encoding) key) {
 			var method = new MethodDefUser(CreateProxyMethodName(delegateType, key), sig) {
@@ -300,7 +311,7 @@ namespace Confuser.Protections.ReferenceProxy {
 
 				_keyAttrs[index] = (injectResult.Requested.Mapped, expCompiled);
 
-				foreach (var (_, mapped) in injectResult) 
+				foreach (var (_, mapped) in injectResult)
 					marker.Mark(ctx.Context, mapped, ctx.Protection);
 			}
 
