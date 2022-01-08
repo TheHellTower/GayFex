@@ -8,6 +8,6 @@ namespace Confuser.Core {
 		ModuleFramework ModuleFramework { get; }
 		Version Version { get; }
 
-		AssemblyResolver CreateAssemblyResolver();
+		IAssemblyResolver CreateAssemblyResolver();
 	}
 }

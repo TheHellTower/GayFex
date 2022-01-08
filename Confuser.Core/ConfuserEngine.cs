@@ -106,11 +106,6 @@ namespace Confuser.Core {
 
 				token.ThrowIfCancellationRequested();
 
-				var frameworkDiscoveries = plugInContainer.GetExports<IFrameworkDiscovery>();
-				var installedFrameworks = frameworkDiscoveries.Select(l => l.Value).SelectMany(d => d.GetInstalledFrameworks()).ToArray();
-
-				logger.LogDebug("Found {0} installed frameworks.", installedFrameworks.Length);
-
 				token.ThrowIfCancellationRequested();
 
 				var sortedComponents = new List<IConfuserComponent>();
@@ -152,6 +147,11 @@ namespace Confuser.Core {
 					context.PackerInitiated = parameters.PackerInitiated;
 
 					PrintInfo(context, logger);
+
+					var frameworkDiscoveries = plugInContainer.GetExports<IFrameworkDiscovery>();
+					var installedFrameworks = frameworkDiscoveries.Select(l => l.Value).SelectMany(d => d.GetInstalledFrameworks(context)).ToArray();
+
+					logger.LogDebug("Found {0} installed frameworks.", installedFrameworks.Length);
 
 					try {
 						// Enable watermarking by default

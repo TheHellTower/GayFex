@@ -11,6 +11,6 @@ namespace Confuser.Core {
 	/// </remarks>
 	/// <seealso cref="!:https://docs.microsoft.com/dotnet/framework/mef/"/>
 	public interface IFrameworkDiscovery {
-		IEnumerable<IInstalledFramework> GetInstalledFrameworks();
+		IEnumerable<IInstalledFramework> GetInstalledFrameworks(IServiceProvider services);
 	}
 }

@@ -4,6 +4,8 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Runtime.InteropServices;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
 namespace Confuser.Core.Frameworks {
@@ -11,12 +13,16 @@ namespace Confuser.Core.Frameworks {
 	internal sealed class DotNetFrameworkDiscovery : IFrameworkDiscovery {
 		private List<IInstalledFramework> InstalledFrameworks { get; set; }
 
-		public IEnumerable<IInstalledFramework> GetInstalledFrameworks()
-			=> InstalledFrameworks ??= DiscoverFrameworks().Distinct().ToList();
+		public IEnumerable<IInstalledFramework> GetInstalledFrameworks(IServiceProvider services)
+			=> InstalledFrameworks ??= DiscoverFrameworks(services ?? throw new ArgumentNullException(nameof(services))).Distinct().ToList();
 
-		private static IEnumerable<IInstalledFramework> DiscoverFrameworks() {
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+		private static IEnumerable<IInstalledFramework> DiscoverFrameworks(IServiceProvider services) {
+			var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("framework.discovery");
+
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				logger.LogTrace("Skipping .NET Framework discovery, due to non-windows platform.");
 				yield break;
+			}
 
 			// http://msdn.microsoft.com/en-us/library/hh925568.aspx
 			using (RegistryKey ndpKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\")) {
@@ -63,7 +69,8 @@ namespace Confuser.Core.Frameworks {
 				Version = version;
 			}
 
-			public AssemblyResolver CreateAssemblyResolver() => throw new NotImplementedException();
+			public IAssemblyResolver CreateAssemblyResolver() =>
+				Version.Major < 4 ? new RedirectingAssemblyResolverV2() : new RedirectingAssemblyResolverV4();
 
 			public bool Equals(IInstalledFramework other) => Equals(other as InstalledDotNetFramework);
 			public bool Equals(InstalledDotNetFramework other) => other is not null && Version.Equals(other.Version);
@@ -71,6 +78,28 @@ namespace Confuser.Core.Frameworks {
 			public override bool Equals(object obj) => Equals(obj as InstalledDotNetFramework);
 			public override int GetHashCode() => Version.GetHashCode();
 			public override string ToString() => $".NET Framework v{Version}";
+		}
+
+		private abstract class RedirectingAssemblyResolver : AssemblyResolver {			
+			protected RedirectingAssemblyResolver() {
+				EnableFrameworkRedirect = false;
+				UseGAC = true;
+			}
+
+			protected override IEnumerable<string> FindAssemblies(IAssembly assembly, ModuleDef sourceModule, bool matchExactly) {
+				ApplyFrameworkRedirect(ref assembly);
+				return base.FindAssemblies(assembly, sourceModule, matchExactly);
+			}
+
+			protected abstract void ApplyFrameworkRedirect(ref IAssembly assembly);
+		}
+
+		private sealed class RedirectingAssemblyResolverV2 : RedirectingAssemblyResolver {
+			protected override void ApplyFrameworkRedirect(ref IAssembly assembly) => FrameworkRedirect.ApplyFrameworkRedirectV2(ref assembly);
+		}
+
+		private sealed class RedirectingAssemblyResolverV4 : RedirectingAssemblyResolver {
+			protected override void ApplyFrameworkRedirect(ref IAssembly assembly) => FrameworkRedirect.ApplyFrameworkRedirectV4(ref assembly);
 		}
 	}
 }

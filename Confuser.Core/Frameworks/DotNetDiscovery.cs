@@ -4,9 +4,10 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Confuser.Core.Frameworks {
 	/// <summary>
@@ -16,10 +17,12 @@ namespace Confuser.Core.Frameworks {
 	internal sealed class DotNetDiscovery : IFrameworkDiscovery {
 		private List<IInstalledFramework> InstalledFrameworks { get; set; }
 
-		public IEnumerable<IInstalledFramework> GetInstalledFrameworks()
-			=> InstalledFrameworks ??= DiscoverFrameworks().Distinct().ToList();
+		public IEnumerable<IInstalledFramework> GetInstalledFrameworks(IServiceProvider services)
+			=> InstalledFrameworks ??= DiscoverFrameworks(services ?? throw new ArgumentNullException(nameof(services))).Distinct().ToList();
 
-		private static IEnumerable<IInstalledFramework> DiscoverFrameworks() {
+		private static IEnumerable<IInstalledFramework> DiscoverFrameworks(IServiceProvider services) {
+			var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("framework.discovery");
+
 			var processStartInfo = new ProcessStartInfo {
 				FileName = "dotnet",
 				Arguments = "--list-runtimes",
@@ -35,7 +38,9 @@ namespace Confuser.Core.Frameworks {
 				while ((line = stdOut.ReadLine()) is not null) {
 					runtimeLines.Add(line);
 				}
-			} catch (FileNotFoundException) { }
+			} catch (FileNotFoundException ex) {
+				logger.LogWarning(ex, "Failed to invoke dotnet.");
+			}
 
 			return runtimeLines.Select(line => {
 				var match = Regex.Match(line, @"^([\w\.]+)\s+([\d\.]+)\s+\[([^\]]+)\]$", RegexOptions.CultureInvariant);
@@ -53,7 +58,9 @@ namespace Confuser.Core.Frameworks {
 			    .Select(r => {
 					try {
 						return new InstalledDotNet(r);
-					} catch (ConfuserException) { }
+					} catch (ConfuserException ex) {
+						logger.LogWarning(ex, "Unexpected state of .NET Core/.NET runtime.");
+					}
 					return null;
 				})
 				.Where(i => i is not null);
@@ -92,7 +99,7 @@ namespace Confuser.Core.Frameworks {
 				ExtensionDirectories = extensionDirectories;
 			}
 
-			public AssemblyResolver CreateAssemblyResolver() {
+			public IAssemblyResolver CreateAssemblyResolver() {
 				var resolver = new AssemblyResolver() { UseGAC = false };
 				resolver.PostSearchPaths.Add(MainDirectory.FullName);
 				foreach (var extensionPath in ExtensionDirectories) {
