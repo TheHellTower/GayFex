@@ -46,7 +46,17 @@ namespace Confuser.Renamer.Analyzers {
 					// case here.
 					if (!TypeEqualityComparer.Instance.Equals(slot.MethodDef.DeclaringType, type)) {
 						SetupOverwriteReferences(service, modules, slot, type);
-						//CreateOverrideReference(service, slot.MethodDef, slot.Overrides.MethodDef);
+
+						// If required, create the sibling references, so the names of the interfaces line up correctly.
+						var existingReferences = service.GetReferences(slot.MethodDef);
+						var overrideDef = existingReferences
+							.OfType<MemberOverrideReference>()
+							.FirstOrDefault(r => !MethodEqualityComparer.CompareDeclaringTypes.Equals(r.BaseMemberDef as MethodDef, slot.Overrides.MethodDef));
+
+						if (!(overrideDef is null)) {
+							var baseMemberDef = overrideDef.BaseMemberDef;
+							CreateSiblingReference(slot.Overrides.MethodDef, ref baseMemberDef, service);
+						}
 					}
 
 					// For the case when method in base type implements an interface method for a derived type
@@ -66,9 +76,6 @@ namespace Confuser.Renamer.Analyzers {
 		public static void Analyze(INameService service, ICollection<ModuleDefMD> modules, MethodDef method) {
 			if (!method.IsVirtual)
 				return;
-
-			var vTbl = service.GetVTables()[method.DeclaringType];
-			var slots = vTbl.FindSlots(method).ToArray();
 
 			IMemberDef discoveredBaseMemberDef = null;
 			MethodDef discoveredBaseMethodDef = null;
@@ -118,6 +125,9 @@ namespace Confuser.Renamer.Analyzers {
 			}
 
 			if (!method.IsAbstract) {
+				var vTbl = service.GetVTables()[method.DeclaringType];
+				var slots = vTbl.FindSlots(method).ToArray();
+
 				foreach (var slot in slots) {
 					if (slot.Overrides == null)
 						continue;
@@ -132,9 +142,9 @@ namespace Confuser.Renamer.Analyzers {
 			}
 		}
 
-		static void CreateSiblingReference<T>(T basePropDef, ref T discoveredBaseMemberDef, INameService service) where T : class, IMemberDef {
+		static void CreateSiblingReference<T>(T baseMemberDef, ref T discoveredBaseMemberDef, INameService service) where T : class, IMemberDef {
 			if (discoveredBaseMemberDef is null)
-				discoveredBaseMemberDef = basePropDef;
+				discoveredBaseMemberDef = baseMemberDef;
 			else {
 				var references = service.GetReferences(discoveredBaseMemberDef)
 					.OfType<MemberSiblingReference>()
@@ -148,12 +158,12 @@ namespace Confuser.Renamer.Analyzers {
 				}
 
 				// Check if the discovered base type is the current type. If so, nothing needs to be done.
-				if (ReferenceEquals(basePropDef, discoveredBaseMemberDef)) return;
+				if (ReferenceEquals(baseMemberDef, discoveredBaseMemberDef)) return;
 
-				var reference = new MemberSiblingReference(basePropDef, discoveredBaseMemberDef);
-				service.AddReference(basePropDef, reference);
+				var reference = new MemberSiblingReference(baseMemberDef, discoveredBaseMemberDef);
+				service.AddReference(baseMemberDef, reference);
 				service.AddReference(discoveredBaseMemberDef, reference);
-				UpdateOldestSiblingReference(discoveredBaseMemberDef, basePropDef, service);
+				UpdateOldestSiblingReference(discoveredBaseMemberDef, baseMemberDef, service);
 			}
 		}
 

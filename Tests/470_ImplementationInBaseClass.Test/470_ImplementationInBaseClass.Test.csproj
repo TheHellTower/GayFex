@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RootNamespace>ImplementationInBaseClass.Test</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Confuser.UnitTest\Confuser.UnitTest.csproj" />
+    <ProjectReference Include="..\470_ImplementationInBaseClass\470_ImplementationInBaseClass.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -6,13 +6,13 @@ using dnlib.DotNet;
 
 namespace Confuser.Renamer.References {
 	public sealed class MemberOverrideReference : INameReference<IDnlibDef> {
-		readonly IMemberDef thisMemberDef;
+		internal IMemberDef ThisMemberDef { get; }
 		internal IMemberDef BaseMemberDef { get; }
 
-		public bool ShouldCancelRename => thisMemberDef.Module != BaseMemberDef.Module;
+		public bool ShouldCancelRename => ThisMemberDef.Module != BaseMemberDef.Module;
 
 		public MemberOverrideReference(IMemberDef thisMemberDef, IMemberDef baseMemberDef) {
-			this.thisMemberDef = thisMemberDef ?? throw new ArgumentNullException(nameof(thisMemberDef));
+			ThisMemberDef = thisMemberDef ?? throw new ArgumentNullException(nameof(thisMemberDef));
 			BaseMemberDef = baseMemberDef ?? throw new ArgumentNullException(nameof(baseMemberDef));
 			Debug.Assert(thisMemberDef != baseMemberDef);
 		}
@@ -24,8 +24,8 @@ namespace Confuser.Renamer.References {
 			&& !service.IsRenamed(BaseMemberDef);
 
 		public bool UpdateNameReference(ConfuserContext context, INameService service) {
-			if (UTF8String.Equals(thisMemberDef.Name, BaseMemberDef.Name)) return false;
-			thisMemberDef.Name = BaseMemberDef.Name;
+			if (UTF8String.Equals(ThisMemberDef.Name, BaseMemberDef.Name)) return false;
+			ThisMemberDef.Name = BaseMemberDef.Name;
 			return true;
 		}
 
@@ -34,7 +34,7 @@ namespace Confuser.Renamer.References {
 		public string ToString(INameService nameService) {
 			var builder = new StringBuilder();
 			builder.Append("Member Override Reference").Append("(");
-			builder.Append("This ").AppendReferencedDef(thisMemberDef, nameService);
+			builder.Append("This ").AppendReferencedDef(ThisMemberDef, nameService);
 			builder.Append("; ");
 			builder.Append("Base ").AppendReferencedDef(BaseMemberDef, nameService);
 			builder.Append(")");
