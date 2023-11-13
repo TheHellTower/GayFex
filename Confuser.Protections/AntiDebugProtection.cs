@@ -92,6 +92,7 @@ namespace Confuser.Protections {
 					MethodDef cctor = module.GlobalType.FindStaticConstructor();
 					var init = (MethodDef)members.Single(method => method.Name == "Initialize");
 					cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, init));
+					cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Ldstr, "https://nohello.net/en/"));
 
 					foreach (IDnlibDef member in members) {
 						marker.Mark(member, (Protection)Parent);

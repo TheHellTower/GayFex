@@ -53,10 +53,12 @@ namespace Confuser.Protections.AntiTamper {
 
 			initMethod.Body.SimplifyMacros(initMethod.Parameters);
 			List<Instruction> instrs = initMethod.Body.Instructions.ToList();
+			int typeOfProcessed = 0;
 			for (int i = 0; i < instrs.Count; i++) {
 				Instruction instr = instrs[i];
-				if (instr.OpCode == OpCodes.Ldtoken) {
+				if (instr.OpCode == OpCodes.Ldtoken && typeOfProcessed == 0) {
 					instr.Operand = context.CurrentModule.GlobalType;
+					typeOfProcessed++;
 				}
 				else if (instr.OpCode == OpCodes.Call) {
 					var method = (IMethod)instr.Operand;
@@ -90,6 +92,7 @@ namespace Confuser.Protections.AntiTamper {
 
 			MethodDef cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
 			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, initMethod));
+			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Ldstr, "https://github.com/TheHellTower/GayFex"));
 
 			parent.ExcludeMethod(context, cctor);
 		}

@@ -26,13 +26,13 @@ namespace Confuser.Protections.ControlFlow {
 				if (block.Instructions[i].OpCode.OpCodeType == OpCodeType.Prefix) {
 					skipCount = 1;
 				}
-				else if (HasInstructionSeq(block.Instructions, i,Code.Dup, Code.Ldvirtftn, Code.Newobj)) {
+				else if (HasInstructionSeq(block.Instructions, i, Code.Dup, Code.Ldvirtftn, Code.Newobj)) {
 					skipCount = 2;
 				}
-				else if (HasInstructionSeq(block.Instructions, i,Code.Ldc_I4, Code.Newarr, Code.Dup, Code.Ldtoken, Code.Call)) { // Array initializer
+				else if (HasInstructionSeq(block.Instructions, i, Code.Ldc_I4, Code.Newarr, Code.Dup, Code.Ldtoken, Code.Call)) { // Array initializer
 					skipCount = 4;
 				}
-				else if (HasInstructionSeq(block.Instructions, i,Code.Ldftn, Code.Newobj)) { // Create delegate to function
+				else if (HasInstructionSeq(block.Instructions, i, Code.Ldftn, Code.Newobj)) { // Create delegate to function
 					skipCount = 1;
 				}
 				currentFragment.Add(block.Instructions[i]);
@@ -54,7 +54,8 @@ namespace Confuser.Protections.ControlFlow {
 			return !codes.Where((code, i) => instructions[i + offset].OpCode.Code != code).Any();
 		}
 
-		public override void Mangle(CilBody body, ScopeBlock root, CFContext ctx) {
+		public override List<Instruction> Mangle(CilBody body, ScopeBlock root, CFContext ctx) {
+			List<Instruction> toSend = new List<Instruction>();
 			body.MaxStack++;
 			foreach (InstrBlock block in GetAllBlocks(root)) {
 				LinkedList<Instruction[]> fragments = SpiltFragments(block, ctx);
@@ -80,6 +81,7 @@ namespace Confuser.Protections.ControlFlow {
 					.Concat(newFragments.SelectMany(fragment => fragment))
 					.Concat(last).ToList();
 			}
+			return toSend;
 		}
 	}
 }

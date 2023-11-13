@@ -4,7 +4,7 @@
   <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net47;netstandard2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -14,6 +14,10 @@
     <Description>Protections and packers of ConfuserEx</Description>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <BaseOutputPath>..</BaseOutputPath>
+  </PropertyGroup>
+  
   <ItemGroup Label="Nuget Dependencies">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>

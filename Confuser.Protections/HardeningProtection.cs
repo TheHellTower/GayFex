@@ -24,6 +24,6 @@ namespace Confuser.Protections {
 			pipeline.InsertPreStage(PipelineStage.OptimizeMethods, new HardeningPhase(this));
 
 		/// <inheritdoc />
-		public override ProtectionPreset Preset => ProtectionPreset.Minimum;
+		public override ProtectionPreset Preset => ProtectionPreset.Minimum | ProtectionPreset.Maximum;
 	}
 }

@@ -8,11 +8,10 @@ namespace Confuser.Runtime {
 		[DllImport("kernel32.dll")]
 		static extern bool VirtualProtect(IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 
-
 		[DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
 		static extern bool CheckRemoteDebuggerPresent(IntPtr hProcess, ref bool isDebuggerPresent);
 
-		static unsafe void Initialize() {
+		static unsafe void Initialize(string zyx) {
 			Module m = typeof(AntiTamperAnti).Module;
 			string n = m.FullyQualifiedName;
 			bool f = n.Length > 0 && n[0] == '<';

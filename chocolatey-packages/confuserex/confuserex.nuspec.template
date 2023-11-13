@@ -3,17 +3,17 @@
   <metadata>
     <id>confuserex</id>
     <version>{{PACKAGEVERSION}}</version>
-    <owners>mkaring</owners>
+    <owners>thehelltower</owners>
     <title>ConfuserEx</title>
-    <authors>Martin Karing</authors>
+    <authors>TheHellTower</authors>
     <projectUrl>https://mkaring.github.io/ConfuserEx/</projectUrl>
     <iconUrl>https://mkaring.github.io/ConfuserEx/assets/ConfuserEx.png</iconUrl>
-    <licenseUrl>https://github.com/mkaring/ConfuserEx/blob/v{{PACKAGEVERSION}}/LICENSE.md</licenseUrl>
+    <licenseUrl>https://github.com/TheHellTower/GayFex/blob/v{{PACKAGEVERSION}}/LICENSE.md</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <projectSourceUrl>https://github.com/mkaring/ConfuserEx/tree/v{{PACKAGEVERSION}}</projectSourceUrl>
-    <packageSourceUrl>https://github.com/mkaring/ConfuserEx/tree/v{{PACKAGEVERSION}}/chocolatey-packages/confuserex</packageSourceUrl>
-    <docsUrl>https://github.com/mkaring/ConfuserEx/wiki</docsUrl>
-    <bugTrackerUrl>https://github.com/mkaring/ConfuserEx/issues</bugTrackerUrl>
+    <projectSourceUrl>https://github.com/TheHellTower/GayFex/tree/v{{PACKAGEVERSION}}</projectSourceUrl>
+    <packageSourceUrl>https://github.com/TheHellTower/GayFex/tree/v{{PACKAGEVERSION}}/chocolatey-packages/confuserex</packageSourceUrl>
+    <docsUrl>https://github.com/TheHellTower/GayFex/wiki</docsUrl>
+    <bugTrackerUrl>https://github.com/TheHellTower/GayFex/issues</bugTrackerUrl>
     <tags>confuserex cil confuser dnlib dotnet il msil net .net obfuscator packer protector</tags>
     <summary>ConfuserEx is a open-source protector for .NET applications.</summary>
     <description><![CDATA[ConfuserEx is a open-source protector for .NET applications.
@@ -42,8 +42,8 @@ Confuser.CLI.exe <path to project file>
 ```
 
 The project file is a ConfuserEx Project (*.crproj).
-The format of project file can be found in [docs\ProjectFormat.md](https://github.com/mkaring/ConfuserEx/blob/v{{PACKAGEVERSION}}/docs/ProjectFormat.md)]]></description>
-    <releaseNotes>[View on GitHub](https://github.com/mkaring/ConfuserEx/releases/tag/v{{PACKAGEVERSION}})</releaseNotes>
+The format of project file can be found in [docs\ProjectFormat.md](https://github.com/TheHellTower/GayFex/blob/v{{PACKAGEVERSION}}/docs/ProjectFormat.md)]]></description>
+    <releaseNotes>[View on GitHub](https://github.com/TheHellTower/GayFex/releases/tag/v{{PACKAGEVERSION}})</releaseNotes>
     <dependencies>
       <dependency id="dotnetfx" version="4.6.1.0" />
     </dependencies>

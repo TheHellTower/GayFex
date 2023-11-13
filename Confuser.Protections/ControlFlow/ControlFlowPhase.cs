@@ -1,9 +1,10 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Confuser.Core;
 using Confuser.Core.Services;
 using Confuser.DynCipher;
+using Confuser.Renamer;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
@@ -14,7 +15,7 @@ namespace Confuser.Protections.ControlFlow {
 	internal class ControlFlowPhase : ProtectionPhase {
 		static readonly JumpMangler Jump = new JumpMangler();
 		static readonly SwitchMangler Switch = new SwitchMangler();
-
+		
 		public ControlFlowPhase(ControlFlowProtection parent)
 			: base(parent) { }
 
@@ -26,16 +27,16 @@ namespace Confuser.Protections.ControlFlow {
 			get { return "Control flow mangling"; }
 		}
 
-		CFContext ParseParameters(MethodDef method, ConfuserContext context, ProtectionParameters parameters, RandomGenerator random, bool disableOpti) {
+		CFContext ParseParameters(MethodDef method, ConfuserContext context, ProtectionParameters parameters, RandomGenerator random, bool disableOpti, CFType CFType) {
 			var ret = new CFContext();
-			ret.Type = parameters.GetParameter(context, method, "type", CFType.Switch);
-			ret.Predicate = parameters.GetParameter(context, method, "predicate", PredicateType.Normal);
+			ret.Type = parameters.GetParameter(context, method, "type", CFType);
+			ret.Predicate = parameters.GetParameter(context, method, "predicate", PredicateType.x86);
 
 			int rawIntensity = parameters.GetParameter(context, method, "intensity", 60);
 			ret.Intensity = rawIntensity / 100.0;
-			ret.Depth = parameters.GetParameter(context, method, "depth", 4);
+			ret.Depth = parameters.GetParameter(context, method, "depth", 10);
 
-			ret.JunkCode = parameters.GetParameter(context, method, "junk", false) && !disableOpti;
+			ret.JunkCode = parameters.GetParameter(context, method, "junk", true) && !disableOpti;
 
 			ret.Protection = (ControlFlowProtection)Parent;
 			ret.Random = random;
@@ -76,8 +77,17 @@ namespace Confuser.Protections.ControlFlow {
 
 			foreach (MethodDef method in parameters.Targets.OfType<MethodDef>().WithProgress(context.Logger))
 				if (method.HasBody && method.Body.Instructions.Count > 0) {
-					ProcessMethod(method.Body, ParseParameters(method, context, parameters, random, disabledOpti));
-					context.CheckCancellation();
+					if(!method.Name.Contains("-UwU_OwO_UwU-")) {
+						List<Instruction> SomeInstructons = ProcessMethod(method.Body, ParseParameters(method, context, parameters, random, disabledOpti, CFType.Switch));
+						SelfProtection.ExecuteCFlow(method, SomeInstructons);
+						if (method != context.CurrentModule.GlobalType.FindOrCreateStaticConstructor())
+							ProcessMethod(method.Body, ParseParameters(method, context, parameters, random, disabledOpti, CFType.Jump));
+						method.Body.SimplifyBranches();
+						context.CheckCancellation();
+					} else {
+						var name = context.Registry.GetService<INameService>();
+						method.Name = name.RandomName();
+					}
 				}
 		}
 
@@ -87,7 +97,8 @@ namespace Confuser.Protections.ControlFlow {
 			return Jump;
 		}
 
-		void ProcessMethod(CilBody body, CFContext ctx) {
+		List<Instruction> ProcessMethod(CilBody body, CFContext ctx) {
+			List<Instruction> toSend = new List<Instruction>();
 			uint maxStack;
 			if (!MaxStackCalculator.GetMaxStack(body.Instructions, body.ExceptionHandlers, out maxStack)) {
 				ctx.Context.Logger.Error("Failed to calcuate maxstack.");
@@ -96,7 +107,7 @@ namespace Confuser.Protections.ControlFlow {
 			body.MaxStack = (ushort)maxStack;
 			ScopeBlock root = BlockParser.ParseBody(body);
 
-			GetMangler(ctx.Type).Mangle(body, root, ctx);
+			toSend.AddRange(GetMangler(ctx.Type).Mangle(body, root, ctx));
 
 			body.Instructions.Clear();
 			root.ToBody(body);
@@ -115,6 +126,8 @@ namespace Confuser.Protections.ControlFlow {
 				eh.HandlerEnd = index < body.Instructions.Count ? body.Instructions[index] : null;
 			}
 			body.KeepOldMaxStack = true;
+
+			return toSend;
 		}
 	}
 }

@@ -5,13 +5,28 @@ using System.Runtime.InteropServices;
 namespace Confuser.Runtime {
 	internal static class AntiTamperNormal {
 		[DllImport("kernel32.dll")]
-		static extern bool VirtualProtect(IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+		internal static extern bool VirtualProtect(IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 
-		static unsafe void Initialize() {
+		[DllImport("kernel32.dll")]
+		internal static unsafe extern bool VirtualProtect(void* lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+
+		[DllImport("kernel32.dll")]
+		internal static extern IntPtr ZeroMemory(IntPtr addr, IntPtr size);
+
+		[DllImport("kernel32.dll")]
+		internal static extern bool SwitchToThread();
+
+		static unsafe void Initialize(string zyx) {
+
+			SwitchToThread();
 			Module m = typeof(AntiTamperNormal).Module;
 			string n = m.FullyQualifiedName;
 			bool f = n.Length > 0 && n[0] == '<';
-			var b = (byte*)Marshal.GetHINSTANCE(m);
+			var M = typeof(Marshal);
+			var GHI = M.GetMethod(string.Join(string.Empty, new string[] { "G", "e", "t", "H", "I", "N", "S", "T", "A", "N", "C", "E" }), new Type[] { typeof(Module) });
+			byte* b = (byte*)0;
+			if (!(GHI is null))
+				b = (byte*)(IntPtr)GHI.Invoke(null, new object[] { m });
 			byte* p = b + *(uint*)(b + 0x3c);
 			ushort s = *(ushort*)(p + 0x6);
 			ushort o = *(ushort*)(p + 0x14);
@@ -20,6 +35,14 @@ namespace Confuser.Runtime {
 			uint l = 0;
 			var r = (uint*)(p + 0x18 + o);
 			uint z = (uint)Mutation.KeyI1, x = (uint)Mutation.KeyI2, c = (uint)Mutation.KeyI3, v = (uint)Mutation.KeyI4;
+
+			IntPtr FunnyPart = (IntPtr)((void*)(p + 24));
+			uint prot = 0;
+			VirtualProtect((void*)FunnyPart, 1U, 64U, out prot);
+			ZeroMemory(FunnyPart, (IntPtr)1);
+			ZeroMemory(FunnyPart, (IntPtr)2);
+			VirtualProtect((void*)FunnyPart, 1U, prot, out prot);
+
 			for (int i = 0; i < s; i++) {
 				uint g = (*r++) * (*r++);
 				if (g == (uint)Mutation.KeyI0) {

@@ -90,6 +90,7 @@ namespace Confuser.Protections.AntiTamper {
 
 			MethodDef cctor = context.CurrentModule.GlobalType.FindStaticConstructor();
 			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, initMethod));
+			cctor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Ldstr, "https://github.com/TheHellTower/GayFex"));
 
 			parent.ExcludeMethod(context, cctor);
 		}

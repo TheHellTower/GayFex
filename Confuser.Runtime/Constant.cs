@@ -43,7 +43,26 @@ namespace Confuser.Runtime {
 		static T Get<T>(int id) {
 			// op_equality is not available on .NET Framework 2.0 and older. To ensure compatibility,
 			// we'll be using equals.
-			if (Assembly.GetExecutingAssembly().Equals(Assembly.GetCallingAssembly())) {
+
+			/*string GEASTR = string.Join(string.Empty, new string[] { "G", "e", "t", "E", "x", "e", "c", "u", "t", "i", "n", "g", "A", "s", "s", "e", "m", "b", "l", "y" });
+			Assembly GEA = (Assembly)ASM.GetMethod(GEASTR).Invoke(null, null);
+			string GCASTR = string.Join(string.Empty, new string[] { "G", "e", "t", "C", "a", "l", "l", "i", "n", "g", "A", "s", "s", "e", "m", "b", "l", "y" });
+			Assembly GCA = (Assembly)ASM.GetMethod(GCASTR).Invoke(null, null);*/
+			var ASM = typeof(Assembly);
+			var Strings = new object[] { new string[] { Encoding.UTF8.GetString(new byte[] { 71 }), Encoding.UTF8.GetString(new byte[] { 101 }), Encoding.UTF8.GetString(new byte[] { 116 }) }, new string[] { Encoding.UTF8.GetString(new byte[] { 65 }), Encoding.UTF8.GetString(new byte[] { 115 }), Encoding.UTF8.GetString(new byte[] { 115 }), Encoding.UTF8.GetString(new byte[] { 101 }), Encoding.UTF8.GetString(new byte[] { 109 }), Encoding.UTF8.GetString(new byte[] { 98 }), Encoding.UTF8.GetString(new byte[] { 108 }), Encoding.UTF8.GetString(new byte[] { 121 }) } };
+
+			string GEASTR = string.Join(string.Empty, new string[] { string.Join(string.Empty, (string[])Strings[0]), Encoding.UTF8.GetString(new byte[] { 69 }), Encoding.UTF8.GetString(new byte[] { 120 }), Encoding.UTF8.GetString(new byte[] { 101 }), Encoding.UTF8.GetString(new byte[] { 99 }), Encoding.UTF8.GetString(new byte[] { 117 }), Encoding.UTF8.GetString(new byte[] { 116 }), Encoding.UTF8.GetString(new byte[] { 105 }), Encoding.UTF8.GetString(new byte[] { 110 }), Encoding.UTF8.GetString(new byte[] { 103 }), string.Join(string.Empty, (string[])Strings[1]) });
+			object GEA = ASM.GetMethod(GEASTR).Invoke(null, null);
+			string GCASTR = string.Join(string.Empty, new string[] { string.Join(string.Empty, (string[])Strings[0]), Encoding.UTF8.GetString(new byte[] { 67 }), Encoding.UTF8.GetString(new byte[] { 97 }), Encoding.UTF8.GetString(new byte[] { 108 }), Encoding.UTF8.GetString(new byte[] { 108 }), Encoding.UTF8.GetString(new byte[] { 105 }), Encoding.UTF8.GetString(new byte[] { 110 }), Encoding.UTF8.GetString(new byte[] { 103 }), string.Join(string.Empty, (string[])Strings[1]) });
+			object GCA = ASM.GetMethod(GCASTR).Invoke(null, null);
+			// Comparison is done using is-operator to avoid the op_inequality overload of .NET 4.0
+			// This is required to ensure that the result is .NET 2.0 compatible.
+			if (!(GEA is null) &&
+				!(GCA is null) &&
+				!GCA.Equals(GEA))
+				Environment.FailFast(Encoding.UTF8.GetString(new byte[] { 0, 0, 0, 0, 0, 0, 65 }));
+
+			if (Assembly.GetExecutingAssembly().Equals(Assembly.GetCallingAssembly()) && GCA.Equals(GEA)) {
 				id = Mutation.Placeholder(id);
 				int t = (int)((uint)id >> 30);
 

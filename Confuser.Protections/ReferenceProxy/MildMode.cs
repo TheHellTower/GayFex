@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Confuser.Core;
+using Confuser.Core.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -25,7 +28,7 @@ namespace Confuser.Protections.ReferenceProxy {
 			if (!proxies.TryGetValue(key, out proxy)) {
 				MethodSig sig = CreateProxySignature(ctx, target, invoke.OpCode.Code == Code.Newobj);
 
-				proxy = new MethodDefUser(ctx.Name.RandomName(), sig);
+				proxy = new MethodDefUser($"[{target.MDToken.ToInt32()}]-UwU_OwO_UwU-[{target.MDToken.ToInt32()}]", sig);
 				proxy.Attributes = MethodAttributes.PrivateScope | MethodAttributes.Static;
 				proxy.ImplAttributes = MethodImplAttributes.Managed | MethodImplAttributes.IL;
 				ctx.Method.DeclaringType.Methods.Add(proxy);
@@ -44,8 +47,21 @@ namespace Confuser.Protections.ReferenceProxy {
 				proxy.Body = new CilBody();
 				for (int i = 0; i < proxy.Parameters.Count; i++)
 					proxy.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, proxy.Parameters[i]));
-				proxy.Body.Instructions.Add(Instruction.Create(invoke.OpCode, target));
+
+				Instruction toReplace = Instruction.Create(invoke.OpCode, target);
+				proxy.Body.Instructions.Add(toReplace);
+				proxy.Body.Instructions.Add(Instruction.Create(OpCodes.Nop));
 				proxy.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+
+				IMethod DebugAssert = target.Module.Import(typeof(Debug).GetMethod("Assert", new[] { typeof(bool) }));
+				proxy.Body.Instructions.Insert(0, new Instruction(OpCodes.Call, DebugAssert));
+				proxy.Body.Instructions.Insert(0, new Instruction(OpCodes.Ldc_I4_1));
+
+				if (proxy.ReturnType.ToString().ToLower().Contains("void")) {
+					proxy.Body.Instructions.Insert(proxy.Body.Instructions.Count() - 2, new Instruction(OpCodes.Ldc_I4_1));
+					proxy.Body.Instructions.Insert(proxy.Body.Instructions.Count() - 2, new Instruction(OpCodes.Call, DebugAssert));
+				}
+
 
 				proxies[key] = proxy;
 			}
@@ -56,11 +72,7 @@ namespace Confuser.Protections.ReferenceProxy {
 				for (int i = 0; i < genArgs.Length; i++)
 					genArgs[i] = new GenericVar(i);
 
-				invoke.Operand = new MemberRefUser(
-					ctx.Module,
-					proxy.Name,
-					proxy.MethodSig,
-					new GenericInstSig((ClassOrValueTypeSig)ctx.Method.DeclaringType.ToTypeSig(), genArgs).ToTypeDefOrRef());
+				invoke.Operand = new MemberRefUser(ctx.Module, proxy.Name, proxy.MethodSig, new GenericInstSig((ClassOrValueTypeSig)ctx.Method.DeclaringType.ToTypeSig(), genArgs).ToTypeDefOrRef());
 			}
 			else
 				invoke.Operand = proxy;

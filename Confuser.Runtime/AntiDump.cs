@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace Confuser.Runtime {
 	internal static class AntiDump {
 		[DllImport("kernel32.dll")]
 		static extern unsafe bool VirtualProtect(byte* lpAddress, int dwSize, uint flNewProtect, out uint lpflOldProtect);
-
-		static unsafe void Initialize() {
+		/*static unsafe bool VPP(byte* lpAddress, int dwSize, uint flNewProtect, out uint lpflOldProtect) {
+			return VirtualProtect(lpAddress, dwSize, flNewProtect, out lpflOldProtect);
+		}*/
+		static unsafe void Initialize(string GayFex) {
 			uint old;
 			Module module = typeof(AntiDump).Module;
 			var bas = (byte*)Marshal.GetHINSTANCE(module);

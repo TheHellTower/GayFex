@@ -6,7 +6,7 @@ The archives containing the application can be downloaded from the Github releas
 page of the project and can be verified like this:
 
 1. Download the following installers:
-  Zip: https://github.com/mkaring/ConfuserEx/releases/download/v{{PACKAGEVERSION}}/ConfuserEx.zip
+  Zip: https://github.com/TheHellTower/GayFex/releases/download/v{{PACKAGEVERSION}}/ConfuserEx.zip
 
 2. You can use one of the following methods to obtain the checksum
   - Use powershell function 'Get-Filehash'
@@ -15,4 +15,4 @@ page of the project and can be verified like this:
   checksum type: {{CHECKSUMTYPE}}
   checksum     : {{CHECKSUM}}
 
-File 'LICENSE.md' is obtained from <https://github.com/mkaring/ConfuserEx/blob/v{{PACKAGEVERSION}}/LICENSE.md>
+File 'LICENSE.md' is obtained from <https://github.com/TheHellTower/GayFex/blob/v{{PACKAGEVERSION}}/LICENSE.md>

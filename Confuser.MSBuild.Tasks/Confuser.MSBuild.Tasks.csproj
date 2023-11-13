@@ -4,7 +4,7 @@
   <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net47;netstandard2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -14,7 +14,7 @@
     <Product>ConfuserEx - MSBuild Integration</Product>
     <Description>This package contains the integration of ConfuserEx into the MSBuild build procedure. It allows automatically obfuscating the assemblies during the build.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/mkaring/ConfuserEx</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/TheHellTower/GayFex</PackageProjectUrl>
     <PackageTags>Obfuscation Confuser ConfuserEx</PackageTags>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>

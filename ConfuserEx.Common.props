@@ -7,9 +7,9 @@
 
   <PropertyGroup Label="Assembly Information">
     <_CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</_CurrentYear>
-    <Authors>Ki;Martin Karing</Authors>
-    <Copyright>Copyright © 2014 Ki, 2018 - $(_CurrentYear) Martin Karing</Copyright>
-    <RepositoryUrl>https://github.com/mkaring/ConfuserEx.git</RepositoryUrl>
+    <Authors>Ki;Martin Karing;TheHellTower</Authors>
+    <Copyright>Copyright © 2014 Ki, 2018 Martin Karing, 2023 - $(_CurrentYear) TheHellTower</Copyright>
+    <RepositoryUrl>https://github.com/TheHellTower/GayFex.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
   

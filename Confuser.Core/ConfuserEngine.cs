@@ -35,7 +35,7 @@ namespace Confuser.Core {
 			var nameAttr = (ProductAttribute)assembly.GetCustomAttributes(typeof(ProductAttribute), false)[0];
 			var verAttr = (InformationalAttribute)assembly.GetCustomAttributes(typeof(InformationalAttribute), false)[0];
 			var cpAttr = (CopyrightAttribute)assembly.GetCustomAttributes(typeof(CopyrightAttribute), false)[0];
-			Version = string.Format("{0} {1}", nameAttr.Product, verAttr.InformationalVersion);
+			Version = "GayFex Edition | https://github.com/TheHellTower/GayFex";
 			Copyright = cpAttr.Copyright;
 
 			AppDomain.CurrentDomain.AssemblyResolve += (sender, e) => {
@@ -408,6 +408,9 @@ namespace Confuser.Core {
 				context.CurrentModuleWriterOptions.PdbFileName = Path.ChangeExtension(Path.GetFileName(context.OutputPaths[context.CurrentModuleIndex]), "pdb");
 				context.CurrentModuleWriterOptions.PdbStream = pdb;
 			}
+
+			//Only for testing
+			//context.CurrentModuleWriterOptions.MetadataOptions.Flags = MetadataFlags.KeepOldMaxStack;
 
 			if (context.CurrentModuleWriterOptions is ModuleWriterOptions)
 				context.CurrentModule.Write(output, (ModuleWriterOptions)context.CurrentModuleWriterOptions);

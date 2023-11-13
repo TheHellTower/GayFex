@@ -1,5 +1,4 @@
-﻿using System;
-using Confuser.Core.Services;
+﻿using Confuser.Core.Services;
 using Confuser.DynCipher.AST;
 using Confuser.DynCipher.Generation;
 

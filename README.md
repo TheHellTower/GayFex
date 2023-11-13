@@ -6,6 +6,11 @@
 [![Gitter Chat][img_gitter]][gitter]
 [![MIT License][img_license]][license]
 
+<details>
+    <summary>
+        <h3>Original ReadMe</h3>
+    </summary>
+
 ConfuserEx is a open-source protector for .NET applications.
 It is the successor of [Confuser][confuser] project.
 
@@ -44,20 +49,27 @@ Licensed under the MIT license. See [LICENSE.md][license] for details.
 
 # Credits
 
-**[0xd4d]** for his awesome work and extensive knowledge!
+**[0xd4d]** for his awesome work and extensive knowledge !
+</br>
+**[Martin Karing]** for his awesome updates on ConfuserEx !
+</details>
+
+> **warning** This ConfuserEx repository isn't meant to be taken seriously, if you have any problem, you are advised to try and solve them yourself before opening an issue.
+
 
 [0xd4d]: https://github.com/0xd4d
-[build]: https://ci.appveyor.com/project/mkaring/confuserex/branch/master
-[codefactor]: https://www.codefactor.io/repository/github/mkaring/confuserex/overview/master
+[Martin Karing]: https://github.com/mkaring
+[build]: https://ci.appveyor.com/project/thehelltower/gayfex/branch/master
+[codefactor]: https://www.codefactor.io/repository/github/thehelltower/gayfex/overview/master
 [confuser]: http://confuser.codeplex.com
-[issues]: https://github.com/mkaring/ConfuserEx/issues
+[issues]: https://github.com/thehelltower/gayfex/issues
 [gitter]: https://gitter.im/ConfuserEx/community
 [license]: LICENSE.md
 [project_format]: docs/ProjectFormat.md
-[test]: https://ci.appveyor.com/project/mkaring/confuserex/branch/master/tests
+[test]: https://ci.appveyor.com/project/thehelltower/gayfex/branch/master/tests
 
-[img_build]: https://img.shields.io/appveyor/ci/mkaring/ConfuserEx/master.svg?style=flat
-[img_codefactor]: https://www.codefactor.io/repository/github/mkaring/confuserex/badge/master
-[img_gitter]: https://img.shields.io/gitter/room/mkaring/ConfuserEx.svg?style=flat
-[img_license]: https://img.shields.io/github/license/mkaring/ConfuserEx.svg?style=flat
-[img_test]: https://img.shields.io/appveyor/tests/mkaring/ConfuserEx/master.svg?style=flat&compact_message
+[img_build]: https://img.shields.io/appveyor/ci/thehelltower/gayfex/master.svg?style=flat
+[img_codefactor]: https://www.codefactor.io/repository/github/thehelltower/gayfex/badge/master
+[img_gitter]: https://img.shields.io/gitter/room/thehelltower/gayfex.svg?style=flat
+[img_license]: https://img.shields.io/github/license/thehelltower/gayfex.svg?style=flat
+[img_test]: https://img.shields.io/appveyor/tests/thehelltower/gayfex/master.svg?style=flat&compact_message

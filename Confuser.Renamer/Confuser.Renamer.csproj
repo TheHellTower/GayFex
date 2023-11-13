@@ -4,7 +4,7 @@
   <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net47;netstandard2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <Reference Include="System.Web" Condition="'$(TargetFramework)' == 'net461'" />
+    <Reference Include="System.Web" />
   </ItemGroup>
 
   <ItemGroup Label="Nuget Dependencies">
@@ -27,6 +28,10 @@
   <ItemGroup Label="Project Dependencies">
     <ProjectReference Include="..\Confuser.Core\Confuser.Core.csproj" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <BaseOutputPath>..</BaseOutputPath>
+  </PropertyGroup>
 
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">

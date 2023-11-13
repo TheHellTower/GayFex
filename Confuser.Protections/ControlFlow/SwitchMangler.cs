@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Confuser.Core;
+using Confuser.Core.Helpers;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
 
 namespace Confuser.Protections.ControlFlow {
 	internal class SwitchMangler : ManglerBase {
@@ -187,8 +189,8 @@ namespace Confuser.Protections.ControlFlow {
 			}
 			throw new NotSupportedException();
 		}
-
-		public override void Mangle(CilBody body, ScopeBlock root, CFContext ctx) {
+		public override List<Instruction> Mangle(CilBody body, ScopeBlock root, CFContext ctx) {
+			List<Instruction> toSend = new List<Instruction>();
 			Trace trace = new Trace(body, ctx.Method.ReturnType.RemoveModifiers().ElementType != ElementType.Void);
 			var local = new Local(ctx.Method.Module.CorLibTypes.UInt32);
 			body.Variables.Add(local);
@@ -280,7 +282,9 @@ namespace Confuser.Protections.ControlFlow {
 
 				if (predicate != null) {
 					predicate.Init(body);
-					switchHdr.Add(Instruction.CreateLdcI4(predicate.GetSwitchKey(key[1])));
+					Instruction switchKey = Instruction.CreateLdcI4(predicate.GetSwitchKey(key[1]));
+					switchHdr.Add(switchKey);
+					toSend.Add(switchKey);
 					predicate.EmitSwitchLoad(switchHdr);
 				}
 				else {
@@ -290,6 +294,7 @@ namespace Confuser.Protections.ControlFlow {
 				switchHdr.Add(Instruction.Create(OpCodes.Dup));
 				switchHdr.Add(Instruction.Create(OpCodes.Stloc, local));
 				switchHdr.Add(Instruction.Create(OpCodes.Ldc_I4, statements.Count));
+				toSend.Add(switchHdr[switchHdr.Count() - 1]);
 				switchHdr.Add(Instruction.Create(OpCodes.Rem_Un));
 				switchHdr.Add(switchInstr);
 
@@ -327,7 +332,9 @@ namespace Confuser.Protections.ControlFlow {
 									newStatement.Add(Instruction.Create(OpCodes.Ldloc, local));
 									newStatement.Add(Instruction.CreateLdcI4(r));
 									newStatement.Add(Instruction.Create(OpCodes.Mul));
-									newStatement.Add(Instruction.Create(OpCodes.Ldc_I4, (thisKey * r) ^ targetKey));
+									var minus = Generator.RandomInteger();
+									newStatement.Add(Instruction.Create(OpCodes.Ldc_I4, (thisKey * r) ^ (targetKey - minus) + minus));
+									toSend.Add(switchHdr[switchHdr.Count() - 1]);
 									newStatement.Add(Instruction.Create(OpCodes.Xor));
 								}
 
@@ -400,10 +407,12 @@ namespace Confuser.Protections.ControlFlow {
 								newStatement.Add(Instruction.CreateLdcI4(r));
 								newStatement.Add(Instruction.Create(OpCodes.Mul));
 								newStatement.Add(Instruction.Create(OpCodes.Ldc_I4, (thisKey * r) ^ targetKey));
+								toSend.Add(switchHdr[switchHdr.Count() - 1]);
 								newStatement.Add(Instruction.Create(OpCodes.Xor));
 							}
 							else {
 								newStatement.Add(Instruction.Create(OpCodes.Ldc_I4, targetKey));
+								toSend.Add(switchHdr[switchHdr.Count() - 1]);
 							}
 
 							ctx.AddJump(newStatement, switchHdr[1]);
@@ -436,6 +445,8 @@ namespace Confuser.Protections.ControlFlow {
 					block.Instructions.AddRange(statement);
 				block.Instructions.AddRange(last);
 			}
+
+			return toSend;
 		}
 	}
 }

@@ -4,10 +4,6 @@
                     xmlns:vm="clr-namespace:ConfuserEx.ViewModel">
     <DataTemplate DataType="{x:Type vm:SettingsTabVM}">
         <Grid Background="Transparent" x:Name="PART_SettingsTabGrid">
-            <Grid.Resources>
-                <local:ComponentConverter x:Key="PackerConverter" x:Shared="False"
-                                          Components="{Binding App.Project.Packers}" />
-            </Grid.Resources>
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="40px" />
@@ -19,15 +15,6 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="36px" />
             </Grid.ColumnDefinitions>
-
-            <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="5">
-                <CheckBox Content="Packer : " VerticalAlignment="Center" HorizontalAlignment="Right"
-                          Margin="5,0,0,0" IsChecked="{Binding HasPacker}" />
-                <local:CompComboBox Width="300" Components="{Binding App.Project.Packers}" Margin="5,0,0,0"
-                                    IsEnabled="{Binding HasPacker}" HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    SelectedComponent="{Binding App.Project.Packer.Id, Converter={StaticResource PackerConverter}, Mode=TwoWay}" />
-            </StackPanel>
 
             <Label Grid.Row="1" Grid.Column="0" Content="Modules : " VerticalAlignment="Bottom"
                    HorizontalAlignment="Left" Margin="5,0,0,0" />

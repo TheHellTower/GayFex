@@ -4,7 +4,7 @@
   <Import Project="..\ConfuserEx.Common.props" Condition="Exists('..\ConfuserEx.Common.props')" />
 
   <PropertyGroup Label="Assembly Settings">
-    <TargetFrameworks>net20</TargetFrameworks>
+    <TargetFrameworks>net47;net20</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ConfuserEx.snk</AssemblyOriginatorKeyFile>
@@ -13,6 +13,10 @@
   <PropertyGroup Label="Assembly Information">
     <Title>ConfuserEx Runtime</Title>
     <Description>Runtime library of ConfuserEx</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <BaseOutputPath>..</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

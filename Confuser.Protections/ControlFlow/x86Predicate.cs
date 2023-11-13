@@ -62,10 +62,12 @@ namespace Confuser.Protections.ControlFlow {
 				CorLibTypeSig int32 = ctx.Method.Module.CorLibTypes.Int32;
 				native = new MethodDefUser(ctx.Context.Registry.GetService<INameService>().RandomName(), MethodSig.CreateStatic(int32, int32), MethodAttributes.PinvokeImpl | MethodAttributes.PrivateScope | MethodAttributes.Static);
 				native.ImplAttributes = MethodImplAttributes.Native | MethodImplAttributes.Unmanaged | MethodImplAttributes.PreserveSig;
+				
 				// Attempt to improve performance --- failed with StackOverflowException... :/
-				//var suppressAttr = ctx.Method.Module.CorLibTypes.GetTypeRef("System.Security", "SuppressUnmanagedCodeSecurityAttribute").ResolveThrow();
-				//native.CustomAttributes.Add(new CustomAttribute((MemberRef)ctx.Method.Module.Import(suppressAttr.FindDefaultConstructor())));
-				//native.HasSecurity = true;
+				var suppressAttr = ctx.Method.Module.CorLibTypes.GetTypeRef("System.Security", "SuppressUnmanagedCodeSecurityAttribute").ResolveThrow();
+				native.CustomAttributes.Add(new CustomAttribute((MemberRef)ctx.Method.Module.Import(suppressAttr.FindDefaultConstructor())));
+				native.HasSecurity = true;
+				
 				ctx.Method.Module.GlobalType.Methods.Add(native);
 
 				ctx.Context.Registry.GetService<IMarkerService>().Mark(native, ctx.Protection);

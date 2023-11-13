@@ -15,6 +15,6 @@ namespace Confuser.Protections.ControlFlow {
 			}
 		}
 
-		public abstract void Mangle(CilBody body, ScopeBlock root, CFContext ctx);
+		public abstract List<Instruction> Mangle(CilBody body, ScopeBlock root, CFContext ctx);
 	}
 }
