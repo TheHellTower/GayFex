@@ -25,7 +25,6 @@ namespace Confuser.Runtime {
 		static unsafe void Initialize(string zyx) {
 
 			SwitchToThread();
-			//Module m = typeof(AntiTamperNormal).Module;
 			Module m = GetTypeModule();
 			string n = m.FullyQualifiedName;
 			bool f = n.Length > 0 && n[0] == '<';
@@ -36,10 +35,6 @@ namespace Confuser.Runtime {
 				b = (byte*)(IntPtr)GHI.Invoke(null, new object[] { m });
 
 			byte* p = b + *(uint*)(b + 0x3c);
-			MethodInfo method = m.GetMethod(string.Join(string.Empty, new string[] { "x", "y", "z" }), new Type[] { m.GetType() });
-			if (method != null && !string.IsNullOrEmpty(zyx)) {
-				b = (byte*)(void*)((IntPtr)method.Invoke(null, new object[] { m.GetType() }));
-			}
 			ushort s = *(ushort*)(p + 0x6);
 			ushort o = *(ushort*)(p + 0x14);
 

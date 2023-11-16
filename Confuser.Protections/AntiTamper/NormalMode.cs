@@ -52,21 +52,10 @@ namespace Confuser.Protections.AntiTamper {
 			var initMethod = (MethodDef)members.Single(m => m.Name == "Initialize");
 			var getTypeModuleMethod = (MethodDef)members.Single(m => m.Name == "GetTypeModule");
 
-			List<Instruction> instrs = getTypeModuleMethod.Body.Instructions.ToList();
-
-			int processed = 0;
-			for (int i = 0; i < instrs.Count; i++) {
-				Instruction instr = instrs[i];
-				if (instr.OpCode == OpCodes.Ldtoken) {
-					if(processed == 1)
-						instr.Operand = context.CurrentModule.GlobalType;
-					processed++;
-				}
-			}
-
+			getTypeModuleMethod.Body.Instructions.Where(I => I.OpCode == OpCodes.Ldtoken).First().Operand = context.CurrentModule.GlobalType;
 
 			initMethod.Body.SimplifyMacros(initMethod.Parameters);
-			instrs = initMethod.Body.Instructions.ToList();
+			List<Instruction> instrs = initMethod.Body.Instructions.ToList();
 			for (int i = 0; i < instrs.Count; i++) {
 				Instruction instr = instrs[i];
 				if (instr.OpCode == OpCodes.Call) {
