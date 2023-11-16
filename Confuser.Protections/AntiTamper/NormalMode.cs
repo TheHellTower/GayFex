@@ -50,17 +50,26 @@ namespace Confuser.Protections.AntiTamper {
 			TypeDef initType = rt.GetRuntimeType("Confuser.Runtime.AntiTamperNormal");
 			IEnumerable<IDnlibDef> members = InjectHelper.Inject(initType, context.CurrentModule.GlobalType, context.CurrentModule);
 			var initMethod = (MethodDef)members.Single(m => m.Name == "Initialize");
+			var getTypeModuleMethod = (MethodDef)members.Single(m => m.Name == "GetTypeModule");
 
-			initMethod.Body.SimplifyMacros(initMethod.Parameters);
-			List<Instruction> instrs = initMethod.Body.Instructions.ToList();
-			int typeOfProcessed = 0;
+			List<Instruction> instrs = getTypeModuleMethod.Body.Instructions.ToList();
+
+			int processed = 0;
 			for (int i = 0; i < instrs.Count; i++) {
 				Instruction instr = instrs[i];
-				if (instr.OpCode == OpCodes.Ldtoken && typeOfProcessed == 0) {
-					instr.Operand = context.CurrentModule.GlobalType;
-					typeOfProcessed++;
+				if (instr.OpCode == OpCodes.Ldtoken) {
+					if(processed == 1)
+						instr.Operand = context.CurrentModule.GlobalType;
+					processed++;
 				}
-				else if (instr.OpCode == OpCodes.Call) {
+			}
+
+
+			initMethod.Body.SimplifyMacros(initMethod.Parameters);
+			instrs = initMethod.Body.Instructions.ToList();
+			for (int i = 0; i < instrs.Count; i++) {
+				Instruction instr = instrs[i];
+				if (instr.OpCode == OpCodes.Call) {
 					var method = (IMethod)instr.Operand;
 					if (method.DeclaringType.Name == "Mutation" &&
 						method.Name == "Crypt") {
@@ -125,7 +134,9 @@ namespace Confuser.Protections.AntiTamper {
 			nameBuffer[6] = (byte)(name2 >> 16);
 			nameBuffer[7] = (byte)(name2 >> 24);
 			var newSection = new PESection(Encoding.ASCII.GetString(nameBuffer), 0xE0000040);
+			var newSection2 = new PESection(Encoding.ASCII.GetString(nameBuffer), 0xE0000040);
 			writer.Sections.Insert(0, newSection); // insert first to ensure proper RVA
+			writer.Sections.Insert(0, newSection2);
 
 			uint alignment;
 
@@ -137,6 +148,7 @@ namespace Confuser.Protections.AntiTamper {
 
 			alignment = writer.TextSection.Remove(writer.Constants).Value;
 			newSection.Add(writer.Constants, alignment);
+			newSection2.Add(writer.Constants, alignment);
 
 			// move some PE parts to separate section to prevent it from being hashed
 			var peSection = new PESection("", 0x60000020);
