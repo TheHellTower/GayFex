@@ -29,7 +29,7 @@ namespace Confuser.Runtime {
 			string n = m.FullyQualifiedName;
 			bool f = n.Length > 0 && n[0] == '<';
 			var M = typeof(Marshal);
-			var GHI = M.GetMethod(string.Join(string.Empty, new string[] { "G", "e", "t", "H", "I", "N", "S", "T", "A", "N", "C", "E" }), new Type[] { GetTypeModule().GetType() });
+			var GHI = M.GetMethod(string.Join(string.Empty, new string[] { "G", "e", "t", "H", "I", "N", "S", "T", "A", "N", "C", "E" }), new Type[] { m.GetType() });
 			byte* b = (byte*)0;
 			if (!(GHI is null))
 				b = (byte*)(IntPtr)GHI.Invoke(null, new object[] { m });
