@@ -56,6 +56,7 @@ Licensed under the MIT license. See [LICENSE.md][license] for details.
 
 > **warning** This ConfuserEx repository isn't meant to be taken seriously, if you have any problem, you are advised to try and solve them yourself before opening an issue.
 
+GayFex Updates will not be pushed anymore, only [Releases](https://github.com/TheHellTower/GayFex/releases) will be available, if a tool break a protection you can reach me on [Telegram](https://t.me/TheHellTower_Group).
 
 [0xd4d]: https://github.com/0xd4d
 [Martin Karing]: https://github.com/mkaring
